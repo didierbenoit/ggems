@@ -21,158 +21,20 @@
 
 /*!
  * \file
- * \brief Computes checked endpoints for the current one-meter diagnostic path.
+ * \brief Defines the one-meter FP32 diagnostic flight parameter.
  *
- * The float-bit decomposition implements this diagnostic projection only. It is
- * not a production navigation or physical transport algorithm, does not advance
- * time, and does not impose or verify a unit direction vector.
+ * The shared Transport movement helper commits this displacement. It is not a
+ * physical process or time-of-flight model.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #ifndef GGEMS_TRANSPORT_GGEMS_DIAGNOSTIC_PROJECTION_CLH
-
-/*! \brief Prevents repeated inclusion of this OpenCL header. */
+/*! \brief Prevents repeated inclusion of the diagnostic distance. */
 #define GGEMS_TRANSPORT_GGEMS_DIAGNOSTIC_PROJECTION_CLH
 
-/*! \brief One-meter diagnostic distance in integer picometers. */
-#define GGEMS_DIAGNOSTIC_PROJECTION_DISTANCE_PM 1000000000000UL
-
-/*! \brief Largest representable signed pm coordinate. */
-#define GGEMS_DIAGNOSTIC_INT64_MAX 9223372036854775807L
-
-/*! \brief Smallest representable signed pm coordinate. */
-#define GGEMS_DIAGNOSTIC_INT64_MIN (-9223372036854775807L - 1L)
-
-/*! \brief Unsigned magnitude of the minimum signed coordinate. */
-#define GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE 0x8000000000000000UL
-
-/*! \brief Largest unsigned identifier value used in checked additions. */
-#define GGEMS_DIAGNOSTIC_UINT64_MAX 0xffffffffffffffffUL
-
-// =============================================================================
-// =============================================================================
-
-/*!
- * \brief Converts one direction component to a diagnostic displacement.
- *
- * Decomposes the supplied float bits and rounds \f$10^{12}c\f$ to the nearest
- * integer pm, with halfway values away from zero, where c is the component.
- * Signed zero produces zero. It does not normalize c or require its magnitude
- * to be at most one.
- *
- * \param[in] component Dimensionless binary32 direction component.
- * \param[out] displacement_pm Private destination written only when conversion
- * succeeds.
- * \return One on success; zero for nonfinite input or an unrepresentable signed
- * result.
- */
-static inline uint
-GGEMS_TryScaleDiagnosticProjectionComponent(float component,
-                                            __private long *displacement_pm) {
-  uint bits = as_uint(component);
-  uint negative = bits >> 31U;
-  uint exponent = (bits >> 23U) & 0xffU;
-  uint fraction = bits & 0x007fffffU;
-
-  if (exponent == 0xffU) {
-    return 0U;
-  }
-
-  if (exponent == 0U && fraction == 0U) {
-    *displacement_pm = 0L;
-    return 1U;
-  }
-
-  ulong significand;
-  int exponent2;
-
-  if (exponent == 0U) {
-    significand = (ulong)(fraction);
-    exponent2 = -149;
-  } else {
-    significand = (ulong)(0x00800000U | fraction);
-    exponent2 = (int)(exponent)-150;
-  }
-
-  ulong product = significand * GGEMS_DIAGNOSTIC_PROJECTION_DISTANCE_PM;
-
-  ulong magnitude_limit = negative != 0U ? GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE
-                                         : (ulong)(GGEMS_DIAGNOSTIC_INT64_MAX);
-
-  ulong magnitude = 0UL;
-
-  if (exponent2 >= 0) {
-    uint left_shift = (uint)(exponent2);
-
-    if (left_shift >= 64U || product > (magnitude_limit >> left_shift)) {
-      return 0U;
-    }
-
-    magnitude = product << left_shift;
-  } else {
-    uint right_shift = (uint)(-exponent2);
-
-    if (right_shift > 64U) {
-      magnitude = 0UL;
-    } else if (right_shift == 64U) {
-      magnitude = product >= GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE ? 1UL : 0UL;
-    } else {
-      ulong quotient = product >> right_shift;
-      ulong remainder_mask = (1UL << right_shift) - 1UL;
-      ulong remainder = product & remainder_mask;
-      ulong rounded_threshold = 1UL << (right_shift - 1U);
-
-      magnitude = quotient + (remainder >= rounded_threshold ? 1UL : 0UL);
-    }
-
-    if (magnitude > magnitude_limit) {
-      return 0U;
-    }
-  }
-
-  long result;
-
-  if (negative == 0U) {
-    result = (long)(magnitude);
-  } else if (magnitude == GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE) {
-    result = GGEMS_DIAGNOSTIC_INT64_MIN;
-  } else {
-    result = -(long)(magnitude);
-  }
-
-  *displacement_pm = result;
-  return 1U;
-}
-
-// =============================================================================
-// =============================================================================
-
-/*!
- * \brief Adds a diagnostic displacement without signed overflow.
- *
- * \param[in] position_pm Global starting coordinate in signed integer pm.
- * \param[in] displacement_pm Signed displacement in integer pm.
- * \param[out] endpoint_pm Private destination written only when addition
- * succeeds.
- * \return One with the exact sum on success; zero without writing the endpoint
- * on overflow.
- */
-static inline uint GGEMS_TryAddDiagnosticProjectionDisplacement(
-  long position_pm, long displacement_pm, __private long *endpoint_pm) {
-  if (displacement_pm > 0L &&
-      position_pm > GGEMS_DIAGNOSTIC_INT64_MAX - displacement_pm) {
-    return 0U;
-  }
-
-  if (displacement_pm < 0L &&
-      position_pm < GGEMS_DIAGNOSTIC_INT64_MIN - displacement_pm) {
-    return 0U;
-  }
-
-  *endpoint_pm = position_pm + displacement_pm;
-  return 1U;
-}
+/*! \brief One-meter diagnostic parameter in binary32 picometers. */
+#define GGEMS_DIAGNOSTIC_PROJECTION_DISTANCE_PM 1.0e12F
 
 #endif

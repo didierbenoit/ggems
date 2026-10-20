@@ -138,3 +138,13 @@ TEST(GGEMSTransportChunking, DeviceSlicesAreDisjointExhaustiveAndUint64) {
     EXPECT_EQ(plan[index].worker_count, 64U);
   }
 }
+
+TEST(GGEMSTransportChunking, FinishesAtTheUint64BoundaryWithoutWrapping) {
+  constexpr auto maximum = std::numeric_limits<std::uint64_t>::max();
+  auto chunks = CollectChunks(maximum - 8ULL, 9ULL, 4U);
+  ASSERT_EQ(chunks.size(), 3U);
+  EXPECT_EQ(chunks[0].device_primary_offset, maximum - 8ULL);
+  EXPECT_EQ(chunks[1].device_primary_offset, maximum - 4ULL);
+  EXPECT_EQ(chunks[2].device_primary_offset, maximum);
+  EXPECT_EQ(chunks[2].primary_count, 1U);
+}

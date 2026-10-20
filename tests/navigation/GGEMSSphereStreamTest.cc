@@ -363,6 +363,10 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   source.time_stop_ps = 17;
   auto const result = test::RunStream(context, program, random,
                                       world.BuildRecord(), volume, source);
+  auto const coordinate = [&](std::size_t index) -> long double {
+    return std::bit_cast<float>(
+      static_cast<std::uint32_t>(result.trace[index]));
+  };
   auto const &counts = result.counts;
   EXPECT_TRUE(result.unchanged_rng);
   EXPECT_EQ(counts.overflow_count, 0U);
@@ -377,13 +381,13 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
       EXPECT_EQ(result.trace[2], 1);
       EXPECT_EQ(result.trace[7], 2);
       EXPECT_EQ(result.trace[8], material);
-      EXPECT_EQ((Point{result.trace[4], result.trace[5], result.trace[6]}),
-                (Point{-1, 1, 0}));
+      EXPECT_EQ((Vec{coordinate(4), coordinate(5), coordinate(6)}),
+                (Vec{-1, 1, 0}));
     }
     return;
   }
   EXPECT_EQ(counts.completed_history_count, 1U);
-  EXPECT_EQ(counts.terminal_particle_count, 1U);
+  EXPECT_EQ(counts.terminal_particle_count, 0U); // Derived by Workload.
   auto const &terminal = result.records[1];
   EXPECT_EQ(terminal.status, particles::ToKernelParticleStatus(
                                particles::GGEMSParticleStatus::EscapedWorld));
@@ -413,8 +417,8 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
               world_exit ? 1U : (arrival == 1 ? 2U : 3U));
     EXPECT_EQ(result.trace[offset + 7],
               world_exit ? k_exterior : (arrival == 1 ? material : 0U));
-    Point endpoint{result.trace[offset + 3], result.trace[offset + 4],
-                   result.trace[offset + 5]};
+    Vec endpoint{coordinate(offset + 3), coordinate(offset + 4),
+                 coordinate(offset + 5)};
     if (!world_exit) {
       EXPECT_EQ(result.trace[offset + 2],
                 0); // A curved surface has no planar face.
@@ -424,7 +428,7 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
         static_cast<std::uint32_t>(result.trace[offset + 8]));
       if (std::string{test.name} == "rounded outward arrival" && index == 1) {
         EXPECT_EQ(measured, 0.0);
-        EXPECT_EQ(endpoint, (Point{0, 1, 0}));
+        EXPECT_EQ(endpoint, (Vec{0, 1, 0}));
       }
       auto const segment_error =
         std::abs((static_cast<long double>(measured) - expected) * norm);
@@ -452,12 +456,14 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
       }
       if (std::string{test.name} == "entry rounds to same point" &&
           index == 0) {
-        EXPECT_EQ(endpoint, start);
+        for (std::size_t axis = 0; axis < 3; ++axis) {
+          EXPECT_EQ(endpoint[axis], static_cast<long double>(start[axis]));
+        }
         EXPECT_GT(measured, 0);
       }
     } else {
-      // Independent exact World face condition; the unchanged integer World
-      // fixture suite checks every endpoint component, ties and masks.
+      // Retained exact authored World face reference; discrepancies diagnose
+      // the FP32 representation and movement rather than alter the oracle.
       bool on_outward_face{false};
       for (std::size_t axis = 0; axis < 3; ++axis) {
         EXPECT_LE(std::abs(endpoint[axis]), half[axis]);
@@ -518,8 +524,8 @@ __kernel void analytic_layout(__global ulong *layout) {
     layout_kernel.SetArgSVMPointer(0U, layout_buffer.GetData());
     layout_kernel.Run({1U}, {1U});
     ocl::ReadSVMToHost(layout_buffer, std::span{layout});
-    EXPECT_EQ(layout, (std::array<std::uint64_t, 10>{48, 8, 40, 0, 8, 16, 24,
-                                                     32, 36, 112}));
+    EXPECT_EQ(layout, (std::array<std::uint64_t, 10>{28, 4, 24, 0, 4, 8, 12, 16,
+                                                     20, 80}));
     Errors errors;
     for (auto const &test : Cases()) {
       CheckCase(context, program, random, test, 7U, errors);

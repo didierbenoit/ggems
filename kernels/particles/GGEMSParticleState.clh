@@ -92,75 +92,55 @@ static inline uint GGEMS_ParticleIsProcessFree(uint particle_type) {
 #define GGEMS_PARTICLE_STATUS_ABSORBED 4U
 
 /*!
- * \brief Stores the 112-byte device counterpart of the host particle state.
+ * \brief Stores the 80-byte device counterpart of the host particle state.
  *
- * Positions are global signed integer pm, time is absolute unsigned integer ps,
- * and kinetic energy is unsigned integer micro-eV. Direction components are
- * dimensionless binary32 values; the record itself does not normalize them or
- * initialize its fields. Species/status codes describe stored state, not
- * implemented physical processes.
- *
- * The current stream kernel creates primaries with global_particle_id equal to
- * the reserved primary ID and track_id equal to zero. Other diagnostic paths
- * may use different track/particle ID assignments; global_particle_id is not a
- * universal primary-history identifier.
+ * Global positions use binary32 pm. Time and energy retain unsigned integer
+ * ps and micro-eV. Direction components are dimensionless binary32 values.
+ * Track identifiers are history-local, with zero reserved for the primary.
+ * Current synthetic descendants retain the primary global identifier.
+ * Natural tail padding carries no state. This record performs no validation,
+ * normalization, or field initialization.
  */
 typedef struct GGEMSParticleState {
-  /*! \brief Particle identifier assigned by its source/transport path. */
+  /*!
+   * \brief Primary-history identifier shared by the current synthetic
+   * descendants.
+   */
   ulong global_particle_id;
 
-  /*! \brief Track identifier within the owning transport path. */
-  ulong track_id;
-
-  /*! \brief Parent track identifier, or GGEMS_INVALID_ID_U64 for a primary. */
-  ulong parent_track_id;
-
-  /*! \brief Absolute simulation time in integer picoseconds. */
+  /*! \brief Nonnegative simulation time in integer picoseconds. */
   ulong time_ps;
 
-  /*! \brief Global X position in signed integer picometers. */
-  long position_x_pm;
+  /*! \brief Nonnegative kinetic energy in integer micro-eV. */
+  ulong energy_micro_eV;
 
-  /*! \brief Global Y position in signed integer picometers. */
-  long position_y_pm;
+  /*! \brief History-local track identifier; source primaries use zero. */
+  uint track_id;
 
-  /*! \brief Global Z position in signed integer picometers. */
-  long position_z_pm;
+  /*! \brief History-local parent track identifier, or the invalid 32-bit
+   * sentinel. */
+  uint parent_track_id;
 
-  /*! \brief Numeric species code shared with host particle types. */
-  uint particle_type;
-
-  /*! \brief Numeric lifecycle status shared with the host. */
-  uint status;
-
-  /*! \brief Descendant generation; source primaries use zero. */
-  uint generation;
-
-  /*! \brief Transport-specific flags; source primaries use zero. */
-  uint flags;
-
-  /*!
-   * \brief Navigator identifier; source initialization uses
-   * GGEMS_INVALID_ID_U32.
-   */
+  /*! \brief Current navigator identifier, initially invalid. */
   uint current_navigator_id;
 
-  /*!
-   * \brief Physical volume identifier; source initialization uses
-   * GGEMS_INVALID_ID_U32.
-   */
+  /*! \brief Current volume identifier, initially invalid. */
   uint current_volume_id;
 
-  /*!
-   * \brief Material identifier; source initialization uses
-   * GGEMS_INVALID_ID_U32.
-   */
+  /*! \brief Current material identifier, initially invalid. */
   uint material_id;
 
-  /*!
-   * \brief Region identifier; source initialization uses GGEMS_INVALID_ID_U32.
-   */
+  /*! \brief Current region identifier, initially invalid. */
   uint region_id;
+
+  /*! \brief Global X coordinate in binary32 picometers. */
+  float position_x_pm;
+
+  /*! \brief Global Y coordinate in binary32 picometers. */
+  float position_y_pm;
+
+  /*! \brief Global Z coordinate in binary32 picometers. */
+  float position_z_pm;
 
   /*! \brief Dimensionless X direction component. */
   float direction_x;
@@ -168,14 +148,19 @@ typedef struct GGEMSParticleState {
   /*! \brief Dimensionless Y direction component. */
   float direction_y;
 
-  /*! \brief Dimensionless Z direction component. */
+  /*!
+   * \brief Dimensionless Z direction component, defaulting to +1 on the host.
+   */
   float direction_z;
 
-  /*! \brief Reserved direction component; source primaries use zero. */
-  float direction_w;
+  /*! \brief Kernel numeric particle-species code. */
+  uchar particle_type;
 
-  /*! \brief Nonnegative kinetic energy in integer micro-eV. */
-  ulong energy_micro_eV;
+  /*! \brief Kernel numeric particle-status code. */
+  uchar status;
+
+  /*! \brief Descendant generation; source primaries start at zero. */
+  uchar generation;
 } GGEMSParticleState;
 
 #endif

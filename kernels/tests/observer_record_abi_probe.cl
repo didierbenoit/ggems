@@ -26,6 +26,7 @@
  */
 
 #include "observer/GGEMSObserverRecord.clh"
+#include "particles/GGEMSParticleState.clh"
 
 typedef struct GGEMSObserverConfigAlignmentProbe {
   uchar prefix;
@@ -69,6 +70,7 @@ observer_record_abi_probe(__global ulong *layout,
   GGEMS_WRITE_RECORD_OFFSET(19, energy_micro_eV);
   GGEMS_WRITE_RECORD_OFFSET(20, deposited_energy_micro_eV);
   GGEMS_WRITE_RECORD_OFFSET(21, source_index);
+  GGEMS_WRITE_RECORD_OFFSET(31, position_valid);
 
 #undef GGEMS_WRITE_RECORD_OFFSET
 
@@ -120,4 +122,18 @@ observer_record_abi_probe(__global ulong *layout,
   configs[1].capture_specific_primary_enabled = 1U;
   configs[1].capture_source_index = 9U;
   configs[1].capture_source_local_primary_id = 13UL;
+}
+
+__kernel void observer_particle_export_probe(
+  __global GGEMSParticleState const *particles,
+  volatile __global GGEMSObserverCounters *counters,
+  __global GGEMSObserverRecord *records, uint count) {
+  if (get_global_id(0) != 0U) {
+    return;
+  }
+  for (uint index = 0U; index < count; ++index) {
+    GGEMS_ObserverRecordParticle(counters, records, count,
+                                 GGEMS_OBSERVER_RECORD_KIND_STEP, 9UL, 11UL,
+                                 (ulong)index, 0U, particles[index], 0UL);
+  }
 }

@@ -40,7 +40,7 @@
  *
  * Without Box occurrences the first boundary is the World exit, so the
  * reported status is GGEMS_NAVIGATION_RESOLVED (0), OUTSIDE_WORLD (1) or
- * UNRESOLVED (2) and the endpoint is the exact World-exit commit.
+ * UNRESOLVED (2) and the endpoint is the FP32 World-exit commit.
  *
  * \param[in] world Shared World record.
  * \param[in] volume Single analytic record (None for the World-only probe).
@@ -49,14 +49,14 @@
  * \param[in] ray_count Number of rays.
  * \param[out] statuses Transport outcome per ray.
  * \param[out] endpoints_pm Final positions (unchanged on failure).
- * \param[out] exit_faces Exact crossing mask per ray.
+ * \param[out] exit_faces FP32 crossing mask per ray.
  */
 __kernel void
 world_navigation_probe(__global GGEMSWorldRecord const *world,
                        __global GGEMSAnalyticVolumeRecord const *volume,
-                       __global long const *positions_pm,
+                       __global float const *positions_pm,
                        __global float const *directions, uint ray_count,
-                       __global uint *statuses, __global long *endpoints_pm,
+                       __global uint *statuses, __global float *endpoints_pm,
                        __global uint *exit_faces) {
   uint const ray = (uint)get_global_id(0);
   if (ray >= ray_count) {

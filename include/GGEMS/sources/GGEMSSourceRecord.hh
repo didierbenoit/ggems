@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines the shared analytic-source pose and emission record.
+ * \brief Defines canonical host source pose and emission configuration.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -51,7 +51,7 @@ inline constexpr float k_isotropic_full_sphere_phi_max_rad{
   6.28318530717958647692F};
 
 /*!
- * \brief Packs source pose and analytic birth laws for host/device execution.
+ * \brief Stores canonical source pose and analytic birth laws on the host.
  *
  * The orthonormal axes map local source coordinates into the global frame.
  * Spatial extents are full widths or diameters centered on the local origin.

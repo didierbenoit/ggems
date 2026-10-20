@@ -21,319 +21,177 @@
 
 /*!
  * \file
+ * \brief Checks FP32 movement and atomic rejection at the shared device
+ * boundary.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #include <array>
+#include <bit>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <format>
 #include <limits>
 #include <span>
 #include <utility>
-#include <cstddef>
-#include <numbers>
-#include <string>
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
-#include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
-#include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
+#include "GGEMS/particles/GGEMSParticleState.hh"
+#include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceRunRange.hh"
+#include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
+#include "GGEMS/units/GGEMSBytesUnits.hh"
 
 namespace {
 
-// =============================================================================
-// =============================================================================
-
-using ggems::core::transport::TryAddDiagnosticProjectionDisplacement;
-using ggems::core::transport::TryScaleDiagnosticProjectionComponent;
-
-constexpr std::int64_t k_output_sentinel{123'456'789LL};
-
-// =============================================================================
-// =============================================================================
+using ParticleState = ggems::core::particles::GGEMSParticleState;
 
 class GGEMSDiagnosticProjectionKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
       opencl.Initialize();
     }
-
     ASSERT_FALSE(opencl.GetContext().empty());
-  }
-
-  static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
   }
 };
 
 } // namespace
 
-// =============================================================================
-// =============================================================================
+TEST(GGEMSDiagnosticProjection, DoesNotImposeIntegerEndpointRangeOnFP32Flight) {
+  std::array<ggems::core::sources::GGEMSSourceRecord, 1U> sources{};
+  sources[0].position_z_pm = std::numeric_limits<std::int64_t>::max();
+  std::array<ggems::core::sources::GGEMSSourceRunRange, 1U> ranges{};
+  ranges[0].primary_count = 1ULL;
 
-TEST(GGEMSDiagnosticProjection, ScalesExactAndBinary32Sentinels) {
-  struct Case {
-    float component;
-    std::int64_t expected;
-  };
-
-  constexpr std::array<Case, 11U> k_cases{{
-    {.component = 0.0F, .expected = 0LL},
-    {.component = -0.0F, .expected = 0LL},
-    {.component = 1.0F, .expected = 1'000'000'000'000LL},
-    {.component = -1.0F, .expected = -1'000'000'000'000LL},
-    {.component = 0.5F, .expected = 500'000'000'000LL},
-    {.component = -0.5F, .expected = -500'000'000'000LL},
-    {.component = 0x1p-13F, .expected = 122'070'313LL},
-    {.component = -0x1p-13F, .expected = -122'070'313LL},
-    {
-      .component = std::numbers::inv_sqrt3_v<float>,
-      .expected = 577'350'258'827LL,
-    },
-    {.component = 0.1F, .expected = 100'000'001'490LL},
-    {.component = -0.1F, .expected = -100'000'001'490LL},
-  }};
-
-  for (Case const &test : k_cases) {
-    std::int64_t result{k_output_sentinel};
-
-    ASSERT_TRUE(TryScaleDiagnosticProjectionComponent(test.component, result));
-    EXPECT_EQ(result, test.expected);
-  }
+  EXPECT_NO_THROW(ggems::core::transport::ValidateDiagnosticTransportSources(
+    sources, ranges));
 }
 
-TEST(GGEMSDiagnosticProjection, HandlesSubnormalAndRejectsInvalidValues) {
-  std::int64_t result{k_output_sentinel};
-
-  ASSERT_TRUE(TryScaleDiagnosticProjectionComponent(
-    std::numeric_limits<float>::denorm_min(), result));
-  EXPECT_EQ(result, 0LL);
-
-  constexpr std::array<float, 4U> k_invalid_values{
-    std::numeric_limits<float>::quiet_NaN(),
-    std::numeric_limits<float>::infinity(),
-    -std::numeric_limits<float>::infinity(),
-    std::numeric_limits<float>::max(),
+TEST_F(GGEMSDiagnosticProjectionKernelTest,
+       MovesInFP32AndRejectsInvalidTransactionsWithoutPartialWrite) {
+  constexpr auto distance = static_cast<float>(
+    ggems::core::transport::k_diagnostic_projection_distance_pm);
+  constexpr float nan = std::numeric_limits<float>::quiet_NaN();
+  constexpr float infinity = std::numeric_limits<float>::infinity();
+  constexpr float maximum = std::numeric_limits<float>::max();
+  std::array<float, 15U> parameters{
+    distance, 1.5F,    1.0F,      -0.5F, nan,  infinity, 1.0F, 1.0F,
+    1.0F,     maximum, -infinity, 0.0F,  1.0F, 1.0F,     1.0F,
   };
-
-  for (float value : k_invalid_values) {
-    result = k_output_sentinel;
-    EXPECT_FALSE(TryScaleDiagnosticProjectionComponent(value, result));
-    EXPECT_EQ(result, k_output_sentinel);
+  std::array<ParticleState, parameters.size()> states{};
+  for (auto &state : states) {
+    state.global_particle_id = (1ULL << 40U) + 7ULL;
+    state.time_ps = (1ULL << 55U) + 9ULL;
+    state.energy_micro_eV = 511'000'000'000ULL;
+    state.track_id = 3U;
+    state.parent_track_id = 1U;
+    state.current_navigator_id = 11U;
+    state.current_volume_id = 12U;
+    state.material_id = 13U;
+    state.region_id = 14U;
+    state.position_x_pm = 10.0F;
+    state.position_y_pm = -20.0F;
+    state.position_z_pm = 30.0F;
+    state.direction_x = 1.0F;
+    state.direction_y = -1.0F;
+    state.direction_z = 0.5F;
+    state.particle_type = 1U;
+    state.status = 1U;
+    state.generation = 2U;
   }
-}
-
-TEST(GGEMSDiagnosticProjection, IsSymmetricForRepresentablePairs) {
-  constexpr std::array<float, 5U> k_values{
-    0.1F, 0.5F, 0x1p-13F, std::numbers::inv_sqrt3_v<float>, 1.25F,
-  };
-
-  for (float value : k_values) {
-    std::int64_t positive{0LL};
-    std::int64_t negative{0LL};
-
-    ASSERT_TRUE(TryScaleDiagnosticProjectionComponent(value, positive));
-    ASSERT_TRUE(TryScaleDiagnosticProjectionComponent(-value, negative));
-
-    EXPECT_EQ(positive, -negative);
-  }
-}
-
-TEST(GGEMSDiagnosticProjection, AddsWithoutSignedOverflowOrPartialWrite) {
-  struct Case {
-    std::int64_t position;
-    std::int64_t displacement;
-    bool succeeds;
-    std::int64_t expected;
-  };
-
-  constexpr auto k_max = std::numeric_limits<std::int64_t>::max();
-  constexpr auto k_min = std::numeric_limits<std::int64_t>::min();
-
-  constexpr std::array<Case, 7U> k_cases{
-    {
-      {
-        .position = 10LL,
-        .displacement = 5LL,
-        .succeeds = true,
-        .expected = 15LL,
-      },
-      {
-        .position = k_max - 1LL,
-        .displacement = 1LL,
-        .succeeds = true,
-        .expected = k_max,
-      },
-      {
-        .position = k_min + 1LL,
-        .displacement = -1LL,
-        .succeeds = true,
-        .expected = k_min,
-      },
-      {
-        .position = 0LL,
-        .displacement = k_min,
-        .succeeds = true,
-        .expected = k_min,
-      },
-      {
-        .position = 0LL,
-        .displacement = k_max,
-        .succeeds = true,
-        .expected = k_max,
-      },
-      {
-        .position = k_max,
-        .displacement = 1LL,
-        .succeeds = false,
-        .expected = k_output_sentinel,
-      },
-      {
-        .position = k_min,
-        .displacement = -1LL,
-        .succeeds = false,
-        .expected = k_output_sentinel,
-      },
-    },
-  };
-
-  for (Case const &test : k_cases) {
-    std::int64_t endpoint{k_output_sentinel};
-
-    EXPECT_EQ(TryAddDiagnosticProjectionDisplacement(
-                test.position, test.displacement, endpoint),
-              test.succeeds);
-    EXPECT_EQ(endpoint, test.expected);
-  }
-}
-
-TEST_F(GGEMSDiagnosticProjectionKernelTest, OpenCLMirrorMatchesHost) {
-  constexpr auto k_max = std::numeric_limits<std::int64_t>::max();
-  constexpr auto k_min = std::numeric_limits<std::int64_t>::min();
-
-  std::array<float, 16U> components{
-    0.0F,
-    -0.0F,
-    1.0F,
-    -1.0F,
-    0.5F,
-    -0.5F,
-    0x1p-13F,
-    -0x1p-13F,
-    std::numbers::inv_sqrt3_v<float>,
-    -std::numbers::inv_sqrt3_v<float>,
-    0.1F,
-    -0.1F,
-    std::numeric_limits<float>::denorm_min(),
-    std::numeric_limits<float>::quiet_NaN(),
-    std::numeric_limits<float>::infinity(),
-    std::numeric_limits<float>::max(),
-  };
-
-  std::array<std::int64_t, components.size()> scaled_components{};
-  scaled_components.fill(k_output_sentinel);
-  std::array<std::uint32_t, components.size()> scale_success{};
-
-  std::array<std::int64_t, 7U> positions{
-    10LL, k_max - 1LL, k_min + 1LL, 0LL, 0LL, k_max, k_min,
-  };
-
-  std::array<std::int64_t, positions.size()> displacements{
-    5LL, 1LL, -1LL, k_min, k_max, 1LL, -1LL};
-
-  std::array<std::int64_t, positions.size()> endpoints{};
-  endpoints.fill(k_output_sentinel);
-  std::array<std::uint32_t, positions.size()> addition_success{};
-  std::array<std::uint64_t, 1U> distance_pm{};
+  states[0].position_x_pm = 0.0F;
+  states[0].position_y_pm = 0.0F;
+  states[0].position_z_pm = 0.0F;
+  states[2].position_x_pm = 0x1p60F;
+  states[2].position_y_pm = -0x1p60F;
+  states[2].position_z_pm = 0x1p60F;
+  states[6].direction_z = nan;
+  states[7].direction_y = infinity;
+  states[8].position_z_pm = nan;
+  states[9].direction_z = 2.0F;
+  states[12].direction_x = 0.0F;
+  states[12].direction_y = -0.0F;
+  states[12].direction_z = 0.0F;
+  states[13].position_x_pm = infinity;
+  states[14].direction_x = -infinity;
+  auto const initial = states;
+  std::array<std::uint32_t, parameters.size() + 1U> success{};
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  auto &context = GetContext();
-
-  auto make_buffer =
-    [&context](std::uint64_t size) -> ggems::ocl::GGEMSOpenCLSVMBuffer {
-    return context.CreateSVMBuffer(ggems::units::Bytes{size});
-  };
-
-  auto components_buffer = make_buffer(sizeof(components));
-  auto scaled_buffer = make_buffer(sizeof(scaled_components));
-  auto scale_success_buffer = make_buffer(sizeof(scale_success));
-  auto positions_buffer = make_buffer(sizeof(positions));
-  auto displacements_buffer = make_buffer(sizeof(displacements));
-  auto endpoints_buffer = make_buffer(sizeof(endpoints));
-  auto addition_success_buffer = make_buffer(sizeof(addition_success));
-  auto distance_buffer = make_buffer(sizeof(distance_pm));
-
-  ggems::ocl::WriteSVMFromHost(components_buffer, std::span{components});
-  ggems::ocl::WriteSVMFromHost(scaled_buffer, std::span{scaled_components});
-  ggems::ocl::WriteSVMFromHost(scale_success_buffer, std::span{scale_success});
-  ggems::ocl::WriteSVMFromHost(positions_buffer, std::span{positions});
-  ggems::ocl::WriteSVMFromHost(displacements_buffer, std::span{displacements});
-  ggems::ocl::WriteSVMFromHost(endpoints_buffer, std::span{endpoints});
-  ggems::ocl::WriteSVMFromHost(addition_success_buffer,
-                               std::span{addition_success});
-  ggems::ocl::WriteSVMFromHost(distance_buffer, std::span{distance_pm});
+  auto &context = opencl.GetContext().front();
+  auto state_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{sizeof(states)});
+  auto parameter_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{sizeof(parameters)});
+  auto success_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{sizeof(success)});
+  ggems::ocl::WriteSVMFromHost(state_buffer, std::span{states});
+  ggems::ocl::WriteSVMFromHost(parameter_buffer, std::span{parameters});
+  ggems::ocl::WriteSVMFromHost(success_buffer, std::span{success});
 
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path const kernel_test_root = kernel_root / "tests";
-  std::string const build_options =
-    std::format("-I{}", kernel_root.generic_string());
-
   auto const &program = opencl.GetOrCreateProgram(
-    context, kernel_test_root, "diagnostic_projection_probe", build_options);
-
+    context, kernel_root / "tests", "diagnostic_projection_probe",
+    std::format("-I{}", kernel_root.generic_string()));
   cl::Kernel raw_kernel = program.CreateKernel("diagnostic_projection_probe");
-
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
                                        "diagnostic_projection_probe"};
+  kernel.SetArgSVMPointer(0U, state_buffer.GetData());
+  kernel.SetArgSVMPointer(1U, parameter_buffer.GetData());
+  kernel.SetArgSVMPointer(2U, success_buffer.GetData());
+  kernel.SetArg(3U, static_cast<cl_uint>(states.size()));
+  kernel.Run({states.size()}, {1U});
+  ggems::ocl::ReadSVMToHost(state_buffer, std::span{states});
+  ggems::ocl::ReadSVMToHost(success_buffer, std::span{success});
 
-  kernel.SetArgSVMPointer(0U, components_buffer.GetData());
-  kernel.SetArgSVMPointer(1U, scaled_buffer.GetData());
-  kernel.SetArgSVMPointer(2U, scale_success_buffer.GetData());
-  kernel.SetArg(3U, static_cast<cl_uint>(components.size()));
-  kernel.SetArgSVMPointer(4U, positions_buffer.GetData());
-  kernel.SetArgSVMPointer(5U, displacements_buffer.GetData());
-  kernel.SetArgSVMPointer(6U, endpoints_buffer.GetData());
-  kernel.SetArgSVMPointer(7U, addition_success_buffer.GetData());
-  kernel.SetArg(8U, static_cast<cl_uint>(positions.size()));
-  kernel.SetArgSVMPointer(9U, distance_buffer.GetData());
-  kernel.Run({components.size()}, {1U});
-
-  ggems::ocl::ReadSVMToHost(scaled_buffer, std::span{scaled_components});
-  ggems::ocl::ReadSVMToHost(scale_success_buffer, std::span{scale_success});
-  ggems::ocl::ReadSVMToHost(endpoints_buffer, std::span{endpoints});
-  ggems::ocl::ReadSVMToHost(addition_success_buffer,
-                            std::span{addition_success});
-  ggems::ocl::ReadSVMToHost(distance_buffer, std::span{distance_pm});
-
-  EXPECT_EQ(distance_pm[0U],
-            ggems::core::transport::k_diagnostic_projection_distance_pm);
-
-  for (std::size_t index = 0U; index < components.size(); ++index) {
-    std::int64_t host_result{k_output_sentinel};
-    bool const host_success =
-      TryScaleDiagnosticProjectionComponent(components[index], host_result);
-
-    EXPECT_EQ(scale_success[index], host_success ? 1U : 0U) << index;
-    EXPECT_EQ(scaled_components[index], host_result) << index;
-  }
-
-  for (std::size_t index = 0U; index < positions.size(); ++index) {
-    std::int64_t host_result{k_output_sentinel};
-    bool const host_success = TryAddDiagnosticProjectionDisplacement(
-      positions[index], displacements[index], host_result);
-
-    EXPECT_EQ(addition_success[index], host_success ? 1U : 0U) << index;
-    EXPECT_EQ(endpoints[index], host_result) << index;
+  EXPECT_EQ(success.back(), std::bit_cast<std::uint32_t>(distance));
+  for (std::size_t index = 0U; index < states.size(); ++index) {
+    SCOPED_TRACE(index);
+    bool const accepted = index < 3U || index == 11U;
+    EXPECT_EQ(success[index], accepted ? 1U : 0U);
+    auto const &state = states[index];
+    auto const &before = initial[index];
+    std::array<float, 3U> expected{before.position_x_pm, before.position_y_pm,
+                                   before.position_z_pm};
+    if (index == 0U) {
+      expected = {distance, -distance, 0.5F * distance};
+    } else if (index == 1U) {
+      expected = {11.5F, -21.5F, 30.75F};
+    }
+    std::array<float, 3U> const actual{state.position_x_pm, state.position_y_pm,
+                                       state.position_z_pm};
+    for (std::size_t axis = 0U; axis < actual.size(); ++axis) {
+      EXPECT_EQ(std::bit_cast<std::uint32_t>(actual[axis]),
+                std::bit_cast<std::uint32_t>(expected[axis]));
+    }
+    EXPECT_EQ(state.global_particle_id, before.global_particle_id);
+    EXPECT_EQ(state.time_ps, before.time_ps);
+    EXPECT_EQ(state.energy_micro_eV, before.energy_micro_eV);
+    EXPECT_EQ(state.track_id, before.track_id);
+    EXPECT_EQ(state.parent_track_id, before.parent_track_id);
+    EXPECT_EQ(state.current_navigator_id, before.current_navigator_id);
+    EXPECT_EQ(state.current_volume_id, before.current_volume_id);
+    EXPECT_EQ(state.material_id, before.material_id);
+    EXPECT_EQ(state.region_id, before.region_id);
+    EXPECT_EQ(state.particle_type, before.particle_type);
+    EXPECT_EQ(state.status, before.status);
+    EXPECT_EQ(state.generation, before.generation);
+    EXPECT_EQ(std::bit_cast<std::uint32_t>(state.direction_x),
+              std::bit_cast<std::uint32_t>(before.direction_x));
+    EXPECT_EQ(std::bit_cast<std::uint32_t>(state.direction_y),
+              std::bit_cast<std::uint32_t>(before.direction_y));
+    EXPECT_EQ(std::bit_cast<std::uint32_t>(state.direction_z),
+              std::bit_cast<std::uint32_t>(before.direction_z));
   }
 }

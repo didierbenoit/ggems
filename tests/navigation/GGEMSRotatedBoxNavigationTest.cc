@@ -27,6 +27,7 @@
  */
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -268,7 +269,7 @@ struct Errors {
 
 /*! \brief Intersects a prescribed global plane with a ray, without any search.
  */
-auto Parameter(ExpectedPlane const &plane, Position const &position,
+auto Parameter(ExpectedPlane const &plane, auto const &position,
                Position const &center, std::array<float, 3> const &direction)
   -> long double {
   long double numerator = plane.offset;
@@ -313,9 +314,9 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
   auto box_buffer = buffer(volume);
   auto pose_buffer = buffer(pose);
   particles::GGEMSParticleState particle;
-  particle.position_x_pm = test.start[0];
-  particle.position_y_pm = test.start[1];
-  particle.position_z_pm = test.start[2];
+  particle.position_x_pm = static_cast<float>(test.start[0]);
+  particle.position_y_pm = static_cast<float>(test.start[1]);
+  particle.position_z_pm = static_cast<float>(test.start[2]);
   particle.direction_x = test.direction[0];
   particle.direction_y = test.direction[1];
   particle.direction_z = test.direction[2];
@@ -370,7 +371,9 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
   ASSERT_EQ(trace[2], test.planes.size());
   EXPECT_EQ(trace[0], test.initial_owner);
   EXPECT_EQ(trace[30], 1);
-  auto current = test.start;
+  Vector current{static_cast<long double>(test.start[0]),
+                 static_cast<long double>(test.start[1]),
+                 static_cast<long double>(test.start[2])};
   auto departure = test.initial_owner;
   long double accumulated = 0;
   long double accumulated_length = 0;
@@ -424,7 +427,8 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
       EXPECT_LE(std::abs(accumulated - original) * norm, 2.0L);
     }
     for (std::size_t axis = 0; axis < 3; ++axis) {
-      auto const actual = trace[offset + 5 + axis];
+      long double const actual = std::bit_cast<float>(
+        static_cast<std::uint32_t>(trace[offset + 5 + axis]));
       auto const expected = static_cast<std::int64_t>(
         std::round(static_cast<long double>(current[axis]) +
                    (segment * test.direction[axis])));

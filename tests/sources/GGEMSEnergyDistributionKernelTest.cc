@@ -42,7 +42,7 @@
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
-#include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
@@ -58,7 +58,7 @@ using Distribution = ggems::core::sources::GGEMSEnergyDistribution;
 using EnergyRecord = ggems::core::sources::GGEMSEnergyDistributionRecord;
 using EnergyType = ggems::core::sources::GGEMSEnergyDistributionType;
 using Random = ggems::core::random::GGEMSRandom;
-using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
+using SourceRecord = ggems::core::sources::GGEMSSourceDeviceRecord;
 
 // =============================================================================
 // =============================================================================

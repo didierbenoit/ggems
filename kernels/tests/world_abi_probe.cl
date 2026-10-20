@@ -81,9 +81,9 @@ __kernel void world_abi_probe(__global GGEMSWorldRecord const *worlds,
                        (__private uchar *)&observer_alignment);
   layout[13] = (ulong)((__global uchar *)&observations[1] -
                        (__global uchar *)&observations[0]);
-  layout[14] = (ulong)worlds[1].half_extent_x_pm;
-  layout[15] = (ulong)worlds[1].half_extent_y_pm;
-  layout[16] = (ulong)worlds[1].half_extent_z_pm;
+  layout[14] = (ulong)as_uint(worlds[1].half_extent_x_pm);
+  layout[15] = (ulong)as_uint(worlds[1].half_extent_y_pm);
+  layout[16] = (ulong)as_uint(worlds[1].half_extent_z_pm);
 
   counts[1].outside_world_count = 7U;
   counts[1].unresolved_geometry_count = 11U;

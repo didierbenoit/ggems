@@ -45,6 +45,7 @@
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSSource.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
@@ -72,7 +73,7 @@ using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
 // =============================================================================
 
 struct SamplingResult {
-  std::array<std::int64_t, 3U> position{};
+  std::array<float, 3U> position{};
   std::array<float, 3U> direction{};
 };
 
@@ -173,8 +174,10 @@ protected:
     auto &context = Context();
     SamplingResult result{};
 
+    auto const device_source =
+      ggems::core::sources::BuildSourceDeviceRecord(source);
     auto source_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(source)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(device_source)});
     auto uniform_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(uniforms)});
     auto position_buffer =
@@ -182,7 +185,7 @@ protected:
     auto direction_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(result.direction)});
 
-    ggems::ocl::WriteSVMFromHost(source_buffer, source);
+    ggems::ocl::WriteSVMFromHost(source_buffer, device_source);
     ggems::ocl::WriteSVMFromHost(uniform_buffer, std::span{uniforms});
     ggems::ocl::WriteSVMFromHost(position_buffer, std::span{result.position});
     ggems::ocl::WriteSVMFromHost(direction_buffer, std::span{result.direction});
@@ -230,7 +233,7 @@ protected:
     constexpr std::array<std::uint64_t, 2U> energy_values{40'000ULL, 80'000ULL};
     constexpr std::array<std::uint64_t, 2U> ticket_upper{2'147'483'648ULL,
                                                          4'294'967'296ULL};
-    std::array<std::int64_t, 6U> sampled_positions{};
+    std::array<float, 6U> sampled_positions{};
     std::array<float, 6U> sampled_directions{};
     std::array<std::uint64_t, 4U> sampled_values{};
 
@@ -240,8 +243,10 @@ protected:
       context.CreateSVMBuffer(ggems::units::Bytes{sample_state.size()});
     auto reference_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{reference_state.size()});
+    auto const device_source =
+      ggems::core::sources::BuildSourceDeviceRecord(source);
     auto source_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(source)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(device_source)});
     auto distribution_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(distribution)});
     auto energy_buffer =
@@ -259,7 +264,7 @@ protected:
                                  std::span<std::byte const>{sample_state});
     ggems::ocl::WriteSVMFromHost(reference_buffer,
                                  std::span<std::byte const>{reference_state});
-    ggems::ocl::WriteSVMFromHost(source_buffer, source);
+    ggems::ocl::WriteSVMFromHost(source_buffer, device_source);
     ggems::ocl::WriteSVMFromHost(distribution_buffer, distribution);
     ggems::ocl::WriteSVMFromHost(energy_buffer, std::span{energy_values});
     ggems::ocl::WriteSVMFromHost(ticket_buffer, std::span{ticket_upper});
@@ -327,7 +332,7 @@ TEST_F(GGEMSSourceSamplingKernelTest,
     RunImposedProbe(rectangle.BuildRecord(),
                     {0.75F, 0.25F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
   EXPECT_EQ(rectangle_result.position,
-            (std::array<std::int64_t, 3U>{102LL, 197LL, 300LL}));
+            (std::array<float, 3U>{102LL, 197LL, 300LL}));
 
   Source ellipse{};
   ellipse.SetPositionPicoMeter(100LL, 200LL, 300LL)
@@ -335,7 +340,21 @@ TEST_F(GGEMSSourceSamplingKernelTest,
   SamplingResult const ellipse_result = RunImposedProbe(
     ellipse.BuildRecord(), {0.25F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
   EXPECT_EQ(ellipse_result.position,
-            (std::array<std::int64_t, 3U>{102LL, 200LL, 300LL}));
+            (std::array<float, 3U>{102LL, 200LL, 300LL}));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSSourceSamplingKernelTest,
+       RetainsFractionalPicometerBirthPositions) {
+  Source source{};
+  source.SetPositionPicoMeter(100LL, 200LL, 300LL)
+    .SetRectangleEmissionPicoMeter(8ULL, 12ULL);
+  auto const result =
+    RunImposedProbe(source.BuildRecord(),
+                    {0.5625F, 0.625F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
+  EXPECT_EQ(result.position, (std::array<float, 3U>{100.5F, 201.5F, 300.0F}));
 }
 
 // =============================================================================
@@ -352,8 +371,7 @@ TEST_F(GGEMSSourceSamplingKernelTest,
     RunImposedProbe(rectangle.BuildRecord(),
                     {0.75F, 0.25F, 0.0F, 0.0F, 0.9F, 0.1F, 0.8F, 0.2F});
 
-  EXPECT_EQ(result.position,
-            (std::array<std::int64_t, 3U>{102LL, 197LL, 300LL}));
+  EXPECT_EQ(result.position, (std::array<float, 3U>{102LL, 197LL, 300LL}));
   EXPECT_NEAR(result.direction[0U], 0.0F, 1.0e-6F);
   EXPECT_NEAR(result.direction[1U], 0.0F, 1.0e-6F);
   EXPECT_NEAR(result.direction[2U], 1.0F, 1.0e-6F);
@@ -370,8 +388,7 @@ TEST_F(GGEMSSourceSamplingKernelTest,
     .SetBoxEmissionPicoMeter(8ULL, 12ULL, 16ULL);
   SamplingResult const box_result = RunImposedProbe(
     box.BuildRecord(), {0.75F, 0.25F, 0.5F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
-  EXPECT_EQ(box_result.position,
-            (std::array<std::int64_t, 3U>{100LL, 202LL, 297LL}));
+  EXPECT_EQ(box_result.position, (std::array<float, 3U>{100LL, 202LL, 297LL}));
 
   Source sphere{};
   sphere.SetPositionPicoMeter(100LL, 200LL, 300LL)
@@ -380,7 +397,7 @@ TEST_F(GGEMSSourceSamplingKernelTest,
   SamplingResult const sphere_result = RunImposedProbe(
     sphere.BuildRecord(), {0.125F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
   EXPECT_EQ(sphere_result.position,
-            (std::array<std::int64_t, 3U>{102LL, 200LL, 300LL}));
+            (std::array<float, 3U>{102LL, 200LL, 300LL}));
 
   Source cylinder{};
   cylinder.SetPositionPicoMeter(100LL, 200LL, 300LL)
@@ -389,7 +406,7 @@ TEST_F(GGEMSSourceSamplingKernelTest,
   SamplingResult const cylinder_result = RunImposedProbe(
     cylinder.BuildRecord(), {0.25F, 0.0F, 0.75F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
   EXPECT_EQ(cylinder_result.position,
-            (std::array<std::int64_t, 3U>{102LL, 202LL, 300LL}));
+            (std::array<float, 3U>{102LL, 202LL, 300LL}));
 }
 
 // =============================================================================
@@ -450,13 +467,13 @@ TEST_F(GGEMSSourceSamplingKernelTest, SamplesBoxCenterAndHalfOpenSides) {
 
   auto const center = RunImposedProbe(
     box.BuildRecord(), {0.5F, 0.5F, 0.5F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
-  EXPECT_EQ(center.position, (std::array<std::int64_t, 3U>{0LL, 0LL, 0LL}));
+  EXPECT_EQ(center.position, (std::array<float, 3U>{0LL, 0LL, 0LL}));
 
   auto const lower = RunImposedProbe(
     box.BuildRecord(), {0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
-  EXPECT_EQ(lower.position,
-            (std::array<std::int64_t, 3U>{-k_half_size_pm, -k_half_size_pm,
-                                          -k_half_size_pm}));
+  EXPECT_EQ(
+    lower.position,
+    (std::array<float, 3U>{-k_half_size_pm, -k_half_size_pm, -k_half_size_pm}));
 
   float const upper_uniform = std::nextafter(1.0F, 0.0F);
   auto const upper = RunImposedProbe(box.BuildRecord(), {
@@ -469,9 +486,9 @@ TEST_F(GGEMSSourceSamplingKernelTest, SamplesBoxCenterAndHalfOpenSides) {
                                                           0.0F,
                                                           0.0F,
                                                         });
-  EXPECT_EQ(upper.position, (std::array<std::int64_t, 3U>{
-                              k_half_size_pm - 1LL, k_half_size_pm - 1LL,
-                              k_half_size_pm - 1LL}));
+  EXPECT_EQ(upper.position,
+            (std::array<float, 3U>{k_half_size_pm - 1LL, k_half_size_pm - 1LL,
+                                   k_half_size_pm - 1LL}));
 }
 
 // =============================================================================
@@ -484,13 +501,11 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 
   auto const zero_radius = RunImposedProbe(
     sphere.BuildRecord(), {0.0F, 0.75F, 0.5F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
-  EXPECT_EQ(zero_radius.position,
-            (std::array<std::int64_t, 3U>{0LL, 0LL, 0LL}));
+  EXPECT_EQ(zero_radius.position, (std::array<float, 3U>{0LL, 0LL, 0LL}));
 
   auto const cube_root_radius = RunImposedProbe(
     sphere.BuildRecord(), {0.125F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
-  EXPECT_EQ(cube_root_radius.position,
-            (std::array<std::int64_t, 3U>{0LL, 0LL, 2LL}));
+  EXPECT_EQ(cube_root_radius.position, (std::array<float, 3U>{0LL, 0LL, 2LL}));
 
   Source large_sphere{};
   constexpr std::uint64_t k_diameter_pm{2'000'000ULL};
@@ -518,14 +533,14 @@ TEST_F(GGEMSSourceSamplingKernelTest,
   auto const lower = RunImposedProbe(
     cylinder.BuildRecord(), {0.0F, 0.75F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
   EXPECT_EQ(lower.position,
-            (std::array<std::int64_t, 3U>{0LL, 0LL, -k_half_height_pm}));
+            (std::array<float, 3U>{0LL, 0LL, -k_half_height_pm}));
 
   float const upper_uniform = std::nextafter(1.0F, 0.0F);
   auto const upper =
     RunImposedProbe(cylinder.BuildRecord(),
                     {0.0F, 0.0F, upper_uniform, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
   EXPECT_EQ(upper.position,
-            (std::array<std::int64_t, 3U>{0LL, 0LL, k_half_height_pm - 1LL}));
+            (std::array<float, 3U>{0LL, 0LL, k_half_height_pm - 1LL}));
 
   auto const radial = RunImposedProbe(
     cylinder.BuildRecord(), {0.25F, 0.25F, 0.5F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});

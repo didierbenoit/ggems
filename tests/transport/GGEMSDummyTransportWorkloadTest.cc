@@ -27,6 +27,7 @@
 
 #include <limits>
 #include <cstdint>
+#include <cmath>
 #include <filesystem>
 #include <memory>
 #include <algorithm>
@@ -113,9 +114,15 @@ auto ExpectSourceMatches(
   EXPECT_EQ(observed.particle_type, expected.emitted_particle_type);
   EXPECT_EQ(observed.time_ps, expected.time_start_ps);
 
-  EXPECT_EQ(observed.position_x_pm, expected.position_x_pm);
-  EXPECT_EQ(observed.position_y_pm, expected.position_y_pm);
-  EXPECT_EQ(observed.position_z_pm, expected.position_z_pm);
+  EXPECT_EQ(observed.position_x_pm,
+            static_cast<std::int64_t>(
+              std::round(static_cast<float>(expected.position_x_pm))));
+  EXPECT_EQ(observed.position_y_pm,
+            static_cast<std::int64_t>(
+              std::round(static_cast<float>(expected.position_y_pm))));
+  EXPECT_EQ(observed.position_z_pm,
+            static_cast<std::int64_t>(
+              std::round(static_cast<float>(expected.position_z_pm))));
 
   EXPECT_FLOAT_EQ(observed.direction_x, expected.axis_z_x);
   EXPECT_FLOAT_EQ(observed.direction_y, expected.axis_z_y);
@@ -1101,7 +1108,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
        PropagatesSourceProvenanceToEverySecondaryRecord) {
   constexpr std::uint32_t k_primary_count{128U};
   constexpr std::uint32_t k_observer_capacity{2'048U};
-  constexpr std::uint64_t k_global_begin{500'000ULL};
+  constexpr std::uint64_t k_global_begin{(1ULL << 60U) + 123ULL};
 
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
@@ -1145,6 +1152,12 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
     ASSERT_GE(record.global_primary_id, k_global_begin);
     ASSERT_LT(record.global_primary_id, k_global_begin + k_primary_count);
     EXPECT_EQ(record.deposited_energy_micro_eV, 0ULL);
+    EXPECT_EQ(record.global_particle_id, record.global_primary_id);
+    if (record.record_kind == k_source_record_kind) {
+      EXPECT_EQ(record.track_id, 0ULL);
+      EXPECT_EQ(record.parent_track_id,
+                ggems::core::particles::k_invalid_id_u64);
+    }
     EXPECT_EQ(record.source_index, 0U);
     EXPECT_EQ(record.source_local_primary_id,
               +record.global_primary_id - k_global_begin);
@@ -1154,6 +1167,9 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
     }
 
     has_secondary_record = true;
+    EXPECT_EQ(record.track_id, 1ULL);
+    EXPECT_EQ(record.parent_track_id, 0ULL);
+    EXPECT_EQ(record.generation, 1U);
     ASSERT_GT(record_index, 0U);
 
     auto const &parent_before = records[record_index - 1U];
@@ -1286,5 +1302,44 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   EXPECT_EQ(report.counters.completed_history_count, 64U);
   EXPECT_EQ(report.counters.terminal_particle_count, 64U);
   EXPECT_EQ(report.counters.created_secondary_count, 0U);
+  EXPECT_EQ(report.counters.overflow_count, 0U);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
+       PreservesPerTrackStepCountsAcrossStackBeyondByteRange) {
+  constexpr std::uint32_t k_primary_count{128U};
+  constexpr std::uint32_t k_steps_per_track{300U};
+  ggems::core::random::GGEMSRandom random{};
+  random.SetEngine("philox").SetSeed(7'777'777ULL);
+
+  ggems::core::sources::GGEMSSource source{};
+  source.SetAnalytic()
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(511'000'000'000ULL);
+
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    random,       1U,
+    1U,           0ULL,
+    0U,           1U};
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = k_primary_count;
+  config.source_records = {
+    WithTimeWindow(source.BuildRecord(), 0ULL, 1'000ULL)};
+  config.source_ranges = {
+    {.projection_primary_begin = 0ULL, .primary_count = k_primary_count}};
+  config.max_generation = 1U;
+  config.max_steps_per_track = k_steps_per_track;
+
+  auto const report = workload.Run(config);
+  ASSERT_GT(report.counters.created_secondary_count, 0U);
+  EXPECT_EQ(report.counters.completed_history_count, k_primary_count);
+  EXPECT_EQ(report.counters.terminal_particle_count,
+            k_primary_count + report.counters.created_secondary_count);
+  EXPECT_EQ(report.counters.total_fake_step_count,
+            report.counters.terminal_particle_count * k_steps_per_track);
   EXPECT_EQ(report.counters.overflow_count, 0U);
 }

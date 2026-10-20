@@ -24,7 +24,7 @@
  * \brief Generic accepted movement of a particle to a Navigation boundary.
  *
  * Transport owns the accepted geometric transaction: it asks Navigation for
- * the first physical boundary, commits one canonical position, updates the
+ * the first physical boundary, commits one FP32 position, updates the
  * physical owner of the particle and marks the World exit. History
  * lifecycle (counters, capture, completion) stays in the stream kernel.
  *
@@ -35,7 +35,6 @@
 #ifndef GGEMS_TRANSPORT_CLH
 #define GGEMS_TRANSPORT_CLH
 
-#include "navigation/GGEMSWorldNavigation.clh"
 #include "navigation/GGEMSNavigation.clh"
 #include "particles/GGEMSParticleState.clh"
 #include "geometry/GGEMSWorldRecord.clh"
@@ -44,119 +43,47 @@
 #include "navigation/GGEMSAnalyticNavigation.clh"
 
 /*!
- * \brief Moves the particle to the exact boundary described by a witness.
+ * \brief Commits one finite FP32 endpoint for every transport path.
  *
- * Movement uses the unrounded parameter gap_pm / |limiting component|. The
- * limiting coordinate lands exactly on its plane; every other coordinate is
- * rounded once, nearest with half away from zero on the final coordinate.
- * A rounded coordinate landing on a plane that was not crossed never adds a
- * plane to the exact witness. Energy, time, direction and RNG are untouched.
+ * Position and parameter are in pm; direction is dimensionless. All three
+ * coordinates succeed before publication. Energy, time, direction and RNG are
+ * untouched. This helper remains out of line for the Intel compiler boundary
+ * documented in GGEMS_TransportToNextBoundary.
  *
- * This helper is deliberately kept out of line (see
- * GGEMS_TransportToNextBoundary).
- *
- * \param[in] gap_pm Forward integer gap to the limiting plane.
- * \param[in] limit_mantissa Significand of the limiting direction component.
- * \param[in] limit_exponent Binary exponent of the limiting component.
- * \param[in,out] particle Private state; unchanged when the move fails.
- * \return Nonzero on success; zero if a displacement is not representable.
+ * \param[in] parameter Nonnegative finite ray parameter in pm.
+ * \param[in,out] particle Private state; unchanged on failure.
+ * \return Nonzero on success; zero for nonfinite input or endpoint.
  */
-static __attribute__((noinline)) uint GGEMS_TransportMoveToBoundary(
-  ulong gap_pm, uint limit_mantissa, int limit_exponent,
-  GGEMSParticleState *particle) {
-  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
-                           particle->position_z_pm);
+static __attribute__((noinline)) uint
+GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
+  float3 position = (float3)(particle->position_x_pm, particle->position_y_pm,
+                             particle->position_z_pm);
+
   float3 direction = (float3)(particle->direction_x, particle->direction_y,
                               particle->direction_z);
-  int half_compare = -1;
 
-  for (uint axis = 0U; axis < 3U; ++axis) {
-    GGEMSWorldDirection component = GGEMS_WorldDecodeDirection(direction[axis]);
-    ulong displacement = 0UL;
-
-    // The selected minimum guarantees displacement <= the signed-safe gap.
-    if (GGEMS_WorldDivide(GGEMS_WorldProduct(gap_pm, component.mantissa),
-                          component.exponent - limit_exponent, limit_mantissa,
-                          &displacement, &half_compare) == 0U) {
-      return 0U;
-    }
-
-    long integral = component.negative != 0U
-                      ? position[axis] - (long)displacement
-                      : position[axis] + (long)displacement;
-
-    uint away = half_compare > 0 ||
-                (half_compare == 0 &&
-                 (component.negative != 0U ? integral <= 0L : integral >= 0L));
-
-    position[axis] =
-      integral + (component.negative != 0U ? -(long)away : (long)away);
-  }
-
-  particle->position_x_pm = position.x;
-  particle->position_y_pm = position.y;
-  particle->position_z_pm = position.z;
-
-  return 1U;
-}
-
-/*!
- * \brief Commits a floating analytic endpoint once on the canonical global
- * lattice.
- *
- * The global integer anchor never passes through FP32. A signed integral
- * displacement is added first; the remaining fraction rounds the final signed
- * coordinate half away from zero. All three coordinates succeed before commit.
- * No physical push, energy, time, direction or RNG change is introduced.
- * \param[in] parameter Nonnegative unrounded ray parameter in pm.
- * \param[in,out] particle Private particle, unchanged on failure.
- * \return Nonzero on success; zero for an unrepresentable displacement.
- */
-static __attribute__((noinline)) uint GGEMS_TransportMoveToAnalyticBoundary(
-  float parameter, GGEMSParticleState *particle) {
-  if (GGEMS_NavigationIsFinite(parameter) == 0U || parameter < 0.0F) {
+  // Inspect raw inputs before fast-math can fold nonfinite arithmetic away.
+  if (GGEMS_NavigationIsFinite(parameter) == 0U || parameter < 0.0F ||
+      GGEMS_NavigationIsFinite(position.x) == 0U ||
+      GGEMS_NavigationIsFinite(position.y) == 0U ||
+      GGEMS_NavigationIsFinite(position.z) == 0U ||
+      GGEMS_NavigationIsFinite(direction.x) == 0U ||
+      GGEMS_NavigationIsFinite(direction.y) == 0U ||
+      GGEMS_NavigationIsFinite(direction.z) == 0U ||
+      (direction.x == 0.0F && direction.y == 0.0F && direction.z == 0.0F)) {
     return 0U;
   }
 
-  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
-                           particle->position_z_pm);
-
-  float3 direction = (float3)(particle->direction_x, particle->direction_y,
-                              particle->direction_z);
-
-  for (uint axis = 0U; axis < 3U; ++axis) {
-    float displacement = parameter * direction[axis];
-
-    if (GGEMS_NavigationIsFinite(displacement) == 0U ||
-        fabs(displacement) >= 0x1p63F) {
-      return 0U;
-    }
-
-    long integral = convert_long_rtz(displacement);
-    float fraction = displacement - (float)integral;
-
-    if ((integral > 0L && position[axis] > LONG_MAX - integral) ||
-        (integral < 0L && position[axis] < LONG_MIN - integral)) {
-      return 0U;
-    }
-
-    long coordinate = position[axis] + integral;
-    long adjustment =
-      fraction > 0.5F || (fraction == 0.5F && coordinate >= 0L)     ? 1L
-      : fraction < -0.5F || (fraction == -0.5F && coordinate <= 0L) ? -1L
-                                                                    : 0L;
-
-    if ((coordinate == LONG_MAX && adjustment > 0L) ||
-        (coordinate == LONG_MIN && adjustment < 0L)) {
-      return 0U;
-    }
-
-    position[axis] = coordinate + adjustment;
+  float3 endpoint = position + parameter * direction;
+  if (GGEMS_NavigationIsFinite(endpoint.x) == 0U ||
+      GGEMS_NavigationIsFinite(endpoint.y) == 0U ||
+      GGEMS_NavigationIsFinite(endpoint.z) == 0U) {
+    return 0U;
   }
 
-  particle->position_x_pm = position.x;
-  particle->position_y_pm = position.y;
-  particle->position_z_pm = position.z;
+  particle->position_x_pm = endpoint.x;
+  particle->position_y_pm = endpoint.y;
+  particle->position_z_pm = endpoint.z;
   return 1U;
 }
 
@@ -193,28 +120,22 @@ static __attribute__((noinline)) uint GGEMS_TransportToNextBoundary(
   __global GGEMSAnalyticVolumeRecord const *volume,
   __global void const *box_pose, GGEMSParticleState *particle, uint *event,
   uint *faces) {
-  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
-                           particle->position_z_pm);
+  float3 position = (float3)(particle->position_x_pm, particle->position_y_pm,
+                             particle->position_z_pm);
 
   float3 direction = (float3)(particle->direction_x, particle->direction_y,
                               particle->direction_z);
 
-  GGEMSAnalyticBoundary result;
+  GGEMSBoundaryWitness witness;
   uint const status =
     GGEMS_AnalyticFindBoundary(world, volume, box_pose, position, direction,
-                               particle->current_volume_id, *event, &result);
+                               particle->current_volume_id, *event, &witness);
 
   if (status != GGEMS_NAVIGATION_RESOLVED) {
     return status;
   }
 
-  GGEMSBoundaryWitness witness = result.boundary;
-
-  uint moved =
-    witness.event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT
-      ? GGEMS_TransportMoveToBoundary(witness.gap_pm, witness.mantissa,
-                                      witness.exponent, particle)
-      : GGEMS_TransportMoveToAnalyticBoundary(result.parameter, particle);
+  uint moved = GGEMS_TransportMoveToBoundary(witness.parameter, particle);
 
   if (moved == 0U) {
     return GGEMS_NAVIGATION_UNRESOLVED;

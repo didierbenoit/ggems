@@ -341,7 +341,8 @@ public:
    * \throws GGEMSInternal If padded launch geometry, cursor progress, or
    * retained capture bounds are inconsistent.
    * \throws GGEMSFatal If an OpenCL operation fails.
-   * \throws GGEMSRecoverable If device profiling timestamps are not ordered.
+   * \throws GGEMSRecoverable If FP32 source packing fails or profiling
+   * timestamps are not ordered.
    */
   auto Run(GGEMSTransportRunConfig const &config) -> GGEMSTransportRunReport;
 
@@ -349,9 +350,8 @@ public:
    * \brief Validates a configuration against this workload stable counts.
    *
    * \param[in] config Proposed run assignment.
-   * \throws GGEMSRecoverable If source arrays, ranges, or endpoint envelopes
-   * are invalid.
-   * \throws GGEMSInternal If a built-in diagnostic bound cannot be formed.
+   * \throws GGEMSRecoverable If source arrays, ranges, identities, or canonical
+   * source descriptors are invalid.
    */
   auto ValidateRunConfig(GGEMSTransportRunConfig const &config) const -> void;
 

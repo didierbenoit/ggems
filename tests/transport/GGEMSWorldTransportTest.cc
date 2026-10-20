@@ -29,6 +29,7 @@
  */
 
 #include <array>
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -66,6 +67,7 @@
 #include "GGEMS/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
@@ -478,9 +480,10 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       random.InitializeStates(0ULL, std::span<std::byte>{rng_before});
       ocl::WriteSVMFromHost(rng, std::span<std::byte const>{rng_before});
 
-      geometry::GGEMSWorldRecord const world{.half_extent_x_pm = test.half[0],
-                                             .half_extent_y_pm = test.half[1],
-                                             .half_extent_z_pm = test.half[2]};
+      geometry::GGEMSWorldRecord const world{
+        .half_extent_x_pm = static_cast<float>(test.half[0]),
+        .half_extent_y_pm = static_cast<float>(test.half[1]),
+        .half_extent_z_pm = static_cast<float>(test.half[2])};
       auto world_buffer = buffer(world);
       auto volume_buffer = buffer(geometry::GGEMSAnalyticVolumeRecord{});
       sources::GGEMSSourceRecord source{};
@@ -495,7 +498,7 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       source.energy_micro_eV = 123456789ULL;
       source.time_start_ps = 17ULL;
       source.time_stop_ps = 17ULL;
-      auto source_buffer = buffer(source);
+      auto source_buffer = buffer(sources::BuildSourceDeviceRecord(source));
       auto ranges = buffer(sources::GGEMSSourceRunRange{
         .projection_primary_begin = 0ULL, .primary_count = 1ULL});
       auto populations = buffer(sources::GGEMSSourcePopulationRecord{});
@@ -556,9 +559,9 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       EXPECT_EQ(rng_after, rng_before);
       auto const counts =
         ocl::ReadSVMToHost<transport::GGEMSTransportCounters>(counters_buffer);
-      EXPECT_EQ(counts.consumed_primary_count, 1U);
+      EXPECT_EQ(counts.consumed_primary_count, 0U); // Derived by Workload.
       EXPECT_EQ(counts.completed_history_count, test.outcome == 0U ? 1U : 0U);
-      EXPECT_EQ(counts.terminal_particle_count, test.outcome == 0U ? 1U : 0U);
+      EXPECT_EQ(counts.terminal_particle_count, 0U); // Derived by Workload.
       EXPECT_EQ(counts.outside_world_count, test.outcome == 1U ? 1U : 0U);
       EXPECT_EQ(counts.unresolved_geometry_count, test.outcome == 2U ? 1U : 0U);
       EXPECT_EQ(counts.escaped_world_count, test.outcome == 0U ? 1U : 0U);
@@ -704,9 +707,10 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
       "world_navigation_probe"};
     for (auto const &test : k_cases) {
       SCOPED_TRACE(test.name);
-      geometry::GGEMSWorldRecord const world{.half_extent_x_pm = test.half[0],
-                                             .half_extent_y_pm = test.half[1],
-                                             .half_extent_z_pm = test.half[2]};
+      geometry::GGEMSWorldRecord const world{
+        .half_extent_x_pm = static_cast<float>(test.half[0]),
+        .half_extent_y_pm = static_cast<float>(test.half[1]),
+        .half_extent_z_pm = static_cast<float>(test.half[2])};
       auto world_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(world)});
       ocl::WriteSVMFromHost(world_buffer, world);
       // A default analytic record selects the World-only transaction.
@@ -714,16 +718,16 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
       auto volume_buffer =
         context.CreateSVMBuffer(units::Bytes{sizeof(no_volume)});
       ocl::WriteSVMFromHost(volume_buffer, no_volume);
-      auto positions =
-        context.CreateSVMBuffer(units::Bytes{sizeof(test.start)});
-      ocl::WriteSVMFromHost(positions,
-                            std::span<std::int64_t const>{test.start});
+      std::array<float, 3> const start{static_cast<float>(test.start[0]),
+                                       static_cast<float>(test.start[1]),
+                                       static_cast<float>(test.start[2])};
+      auto positions = context.CreateSVMBuffer(units::Bytes{sizeof(start)});
+      ocl::WriteSVMFromHost(positions, std::span<float const>{start});
       auto directions =
         context.CreateSVMBuffer(units::Bytes{sizeof(test.direction)});
       ocl::WriteSVMFromHost(directions, std::span<float const>{test.direction});
       auto statuses = context.CreateSVMBuffer(units::Bytes{sizeof(cl_uint)});
-      auto endpoints =
-        context.CreateSVMBuffer(units::Bytes{sizeof(test.start)});
+      auto endpoints = context.CreateSVMBuffer(units::Bytes{sizeof(start)});
       auto faces = context.CreateSVMBuffer(units::Bytes{sizeof(cl_uint)});
       kernel.SetArgSVMPointer(0U, world_buffer.GetData());
       kernel.SetArgSVMPointer(1U, volume_buffer.GetData());
@@ -736,9 +740,13 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
       kernel.Run({64U}, {64U});
       EXPECT_EQ(ocl::ReadSVMToHost<cl_uint>(statuses), test.outcome);
       EXPECT_EQ(ocl::ReadSVMToHost<cl_uint>(faces), test.faces);
-      std::array<std::int64_t, 3> endpoint{};
-      ocl::ReadSVMToHost(endpoints, std::span<std::int64_t>{endpoint});
-      EXPECT_EQ(endpoint, test.outcome == 0U ? test.end : test.start);
+      std::array<float, 3> endpoint{};
+      ocl::ReadSVMToHost(endpoints, std::span<float>{endpoint});
+      auto const &expected = test.outcome == 0U ? test.end : test.start;
+      for (std::size_t axis = 0; axis < 3; ++axis) {
+        EXPECT_EQ(static_cast<long double>(endpoint[axis]),
+                  static_cast<long double>(expected[axis]));
+      }
     }
   }
 }
@@ -794,9 +802,9 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
       sizeof(observer::GGEMSObserverRecord),
       alignof(observer::GGEMSObserverRecord),
       sizeof(observer::GGEMSObserverRecord),
-      41ULL,
-      59ULL,
-      83ULL};
+      std::bit_cast<std::uint32_t>(worlds[1].half_extent_x_pm),
+      std::bit_cast<std::uint32_t>(worlds[1].half_extent_y_pm),
+      std::bit_cast<std::uint32_t>(worlds[1].half_extent_z_pm)};
     EXPECT_EQ(layout, expected);
     ocl::ReadSVMToHost(counter_buffer,
                        std::span<transport::GGEMSTransportCounters>{counts});

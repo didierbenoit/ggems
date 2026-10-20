@@ -38,23 +38,21 @@
 /*!
  * \brief Transforms a canonical global ray into the Box frame once.
  *
- * Integer center subtraction precedes FP32 conversion. The packed column
- * axes apply R^T to the relative position and stored direction, including
- * identity poses. Host World admission makes the integer subtraction safe.
+ * FP32 center subtraction and packed column axes apply R^T to the position
+ * and stored direction, including identity poses.
  * \param[in] pose Immutable center and local axes in global coordinates.
- * \param[in] position Canonical global position in integer pm.
+ * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.
  * \param[out] local_position FP32 local position in pm.
  * \param[out] local_direction FP32 local direction.
  */
 static inline void GGEMS_BoxLocalRay(__global GGEMSBoxPoseRecord const *pose,
-                                     long3 position, float3 direction,
+                                     float3 position, float3 direction,
                                      float3 *local_position,
                                      float3 *local_direction) {
-  long3 relative =
-    position - (long3)(pose->center_x_pm, pose->center_y_pm, pose->center_z_pm);
+  float3 offset = position - (float3)(pose->center_x_pm, pose->center_y_pm,
+                                      pose->center_z_pm);
 
-  float3 offset = convert_float3(relative);
   float3 axis_x = (float3)(pose->axis_x_x, pose->axis_x_y, pose->axis_x_z);
   float3 axis_y = (float3)(pose->axis_y_x, pose->axis_y_y, pose->axis_y_z);
   float3 axis_z = (float3)(pose->axis_z_x, pose->axis_z_y, pose->axis_z_z);
@@ -70,14 +68,14 @@ static inline void GGEMS_BoxLocalRay(__global GGEMSBoxPoseRecord const *pose,
  * \brief Locates the forward owner with the local FP32 slab predicate.
  * \param[in] box Local half extents and owner identities.
  * \param[in] pose Center and axes for every Box, including identity.
- * \param[in] position Canonical start already validated against the World.
+ * \param[in] position FP32 start already validated against the World.
  * \param[in] direction Actual finite, nonzero stored direction.
  * \param[out] owner Packed forward VolumeID/MaterialID.
  * \return Resolved according to the FP32 slab classification.
  */
 static inline uint GGEMS_BoxLocate(__global GGEMSBoxRecord const *box,
                                    __global GGEMSBoxPoseRecord const *pose,
-                                   long3 position, float3 direction,
+                                   float3 position, float3 direction,
                                    ulong *owner) {
   float3 local_position;
   float3 local_direction;
@@ -85,9 +83,8 @@ static inline uint GGEMS_BoxLocate(__global GGEMSBoxRecord const *box,
   GGEMS_BoxLocalRay(pose, position, direction, &local_position,
                     &local_direction);
 
-  float3 half_extent =
-    (float3)((float)box->half_extent_x_pm, (float)box->half_extent_y_pm,
-             (float)box->half_extent_z_pm);
+  float3 half_extent = (float3)(box->half_extent_x_pm, box->half_extent_y_pm,
+                                box->half_extent_z_pm);
 
   *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
 
@@ -116,28 +113,25 @@ static inline uint GGEMS_BoxLocate(__global GGEMSBoxRecord const *box,
  * identity algorithm is used.
  * \param[in] box Local half extents and owner identities.
  * \param[in] pose Center and axes for every Box.
- * \param[in] position Canonical start in the closed World.
+ * \param[in] position FP32 start in the closed World.
  * \param[in] direction Actual stored finite direction.
  * \param[in] current_owner Accepted departure owner.
  * \param[in,out] witness World exit on entry; selected crossing on success.
- * \param[in,out] parameter World limit on entry; selected FP32 parameter on
- * success.
  * \return Resolved or unresolved for invalid arithmetic or boundary ordering.
  */
 static inline uint
 GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
-                      __global GGEMSBoxPoseRecord const *pose, long3 position,
+                      __global GGEMSBoxPoseRecord const *pose, float3 position,
                       float3 direction, uint current_owner,
-                      GGEMSBoundaryWitness *witness, float *parameter) {
+                      GGEMSBoundaryWitness *witness) {
   float3 local_position;
   float3 local_direction;
 
   GGEMS_BoxLocalRay(pose, position, direction, &local_position,
                     &local_direction);
 
-  float3 half_extent =
-    (float3)((float)box->half_extent_x_pm, (float)box->half_extent_y_pm,
-             (float)box->half_extent_z_pm);
+  float3 half_extent = (float3)(box->half_extent_x_pm, box->half_extent_y_pm,
+                                box->half_extent_z_pm);
 
   uint inside = current_owner == box->volume_id;
   float near_parameter = -INFINITY;
@@ -186,11 +180,11 @@ GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
 
   float candidate = inside != 0U ? far_parameter : near_parameter;
   if (GGEMS_NavigationIsFinite(candidate) == 0U || candidate < 0.0F ||
-      candidate >= *parameter) {
+      candidate >= witness->parameter) {
     return GGEMS_NAVIGATION_UNRESOLVED;
   }
 
-  *parameter = candidate;
+  witness->parameter = candidate;
   witness->faces = inside != 0U ? far_faces : near_faces;
   witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
                                 : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;

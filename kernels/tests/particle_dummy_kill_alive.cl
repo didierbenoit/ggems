@@ -45,7 +45,6 @@ __kernel void particle_dummy_kill_alive(__global GGEMSParticleState *particles,
   if (particle.status == GGEMS_PARTICLE_STATUS_ALIVE) {
     particle.status = GGEMS_PARTICLE_STATUS_KILLED;
     particle.time_ps += 1UL;
-    particle.flags |= 1U;
   }
 
   particles[particle_index] = particle;

@@ -83,6 +83,7 @@ TEST(GGEMSObserverRecord, RecordIsKernelFriendly) {
   EXPECT_EQ(offsetof(ObserverRecord, energy_micro_eV), 112U);
   EXPECT_EQ(offsetof(ObserverRecord, deposited_energy_micro_eV), 120U);
   EXPECT_EQ(offsetof(ObserverRecord, source_index), 128U);
+  EXPECT_EQ(offsetof(ObserverRecord, position_valid), 132U);
 }
 
 // =============================================================================
@@ -92,6 +93,7 @@ TEST(GGEMSObserverRecord, DefaultRecordIsEmptyAndInactive) {
   ggems::core::observer::GGEMSObserverRecord record{};
 
   EXPECT_EQ(record.run_id, 0ULL);
+  EXPECT_EQ(record.position_valid, 1U);
   EXPECT_EQ(record.global_primary_id, ggems::core::particles::k_invalid_id_u64);
   EXPECT_EQ(record.source_local_primary_id,
             ggems::core::particles::k_invalid_id_u64);

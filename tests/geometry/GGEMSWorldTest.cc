@@ -240,7 +240,8 @@ TEST(GGEMSWorld, PreservesExactFacesBeyondBinary64IntegerPrecision) {
   GGEMSWorld const world = MakeWorld(size, size, size, Vacuum());
   EXPECT_EQ(world.GetHalfExtentPM().x, static_cast<std::uint64_t>(k_half_pm));
 
-  EXPECT_EQ(world.BuildRecord().half_extent_x_pm, k_half_pm);
+  EXPECT_EQ(world.BuildRecord().half_extent_x_pm,
+            static_cast<float>(k_half_pm));
   EXPECT_EQ(world.GetLowerCornerPM().x, -k_half_pm);
   EXPECT_EQ(world.GetUpperCornerPM().x, k_half_pm);
 }
@@ -323,17 +324,24 @@ TEST(GGEMSWorld, SetterOrderDoesNotChangeTheCompiledScene) {
   std::array<std::uint32_t, 1U> const material_ids{1U};
   GGEMSBoxRecord const first_record = first.BuildBoxRecords(material_ids)[0U];
   GGEMSBoxRecord const second_record = second.BuildBoxRecords(material_ids)[0U];
-  EXPECT_EQ(first_record.half_extent_x_pm, second_record.half_extent_x_pm);
-  EXPECT_EQ(first_record.half_extent_y_pm, second_record.half_extent_y_pm);
-  EXPECT_EQ(first_record.half_extent_z_pm, second_record.half_extent_z_pm);
-  EXPECT_EQ(first_record.half_extent_x_pm, 30'000'000'000ULL);
+  EXPECT_EQ(first_record.half_extent_x_pm,
+            static_cast<float>(second_record.half_extent_x_pm));
+  EXPECT_EQ(first_record.half_extent_y_pm,
+            static_cast<float>(second_record.half_extent_y_pm));
+  EXPECT_EQ(first_record.half_extent_z_pm,
+            static_cast<float>(second_record.half_extent_z_pm));
+  EXPECT_EQ(first_record.half_extent_x_pm,
+            static_cast<float>(30'000'000'000ULL));
   auto const first_pose = first.BuildBoxPoseRecord();
   auto const second_pose = second.BuildBoxPoseRecord();
   ASSERT_TRUE(first_pose.has_value());
   ASSERT_TRUE(second_pose.has_value());
-  EXPECT_EQ(first_pose->center_x_pm, second_pose->center_x_pm);
-  EXPECT_EQ(first_pose->center_y_pm, second_pose->center_y_pm);
-  EXPECT_EQ(first_pose->center_z_pm, second_pose->center_z_pm);
+  EXPECT_EQ(first_pose->center_x_pm,
+            static_cast<float>(second_pose->center_x_pm));
+  EXPECT_EQ(first_pose->center_y_pm,
+            static_cast<float>(second_pose->center_y_pm));
+  EXPECT_EQ(first_pose->center_z_pm,
+            static_cast<float>(second_pose->center_z_pm));
   EXPECT_EQ(first_record.volume_id, 1U);
   EXPECT_EQ(first_record.material_id, 1U);
 }
@@ -410,9 +418,11 @@ TEST(GGEMSWorld, CompilesExactMaterialIdentitiesWithTheMaterialsAuthority) {
   EXPECT_EQ(vacuum.volume_id, 1U);
   EXPECT_EQ(vacuum.material_id, 0U);
 
-  EXPECT_EQ(water.half_extent_x_pm, vacuum.half_extent_x_pm);
-  EXPECT_EQ(water.half_extent_z_pm, vacuum.half_extent_z_pm);
-  EXPECT_EQ(water.half_extent_x_pm, 30'000'000'000ULL);
+  EXPECT_EQ(water.half_extent_x_pm,
+            static_cast<float>(vacuum.half_extent_x_pm));
+  EXPECT_EQ(water.half_extent_z_pm,
+            static_cast<float>(vacuum.half_extent_z_pm));
+  EXPECT_EQ(water.half_extent_x_pm, static_cast<float>(30'000'000'000ULL));
 }
 
 // =============================================================================

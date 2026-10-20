@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <cstdint>
 #include <filesystem>
 #include <set>
@@ -165,6 +166,8 @@ auto ExpectDiagnosticProjection(TransportRunReport const &report,
                                 ObserverRecord const &source) -> void {
   ObserverRecord const *terminal = FindTerminal(report, source);
   ASSERT_NE(terminal, nullptr);
+  ASSERT_EQ(source.position_valid, 1U);
+  ASSERT_EQ(terminal->position_valid, 1U);
 
   std::array<float, 3U> const direction{
     source.direction_x,
@@ -182,11 +185,26 @@ auto ExpectDiagnosticProjection(TransportRunReport const &report,
     terminal->position_z_pm,
   };
 
+  constexpr auto distance = static_cast<float>(
+    ggems::core::transport::k_diagnostic_projection_distance_pm);
   for (std::size_t axis = 0U; axis < 3U; ++axis) {
-    std::int64_t displacement{0LL};
-    ASSERT_TRUE(ggems::core::transport::TryScaleDiagnosticProjectionComponent(
-      direction[axis], displacement));
-    EXPECT_EQ(end[axis], begin[axis] + displacement);
+    // Observer publishes rounded integers, so the original float birth lies
+    // within a half-pm interval. Bound both permitted FP32 contraction paths.
+    float const lower = std::nextafter(
+      static_cast<float>(static_cast<long double>(begin[axis]) - 0.5L),
+      -std::numeric_limits<float>::infinity());
+    float const upper = std::nextafter(
+      static_cast<float>(static_cast<long double>(begin[axis]) + 0.5L),
+      std::numeric_limits<float>::infinity());
+    float const displacement = std::fma(distance, direction[axis], 0.0F);
+    float const minimum = std::min(std::fma(distance, direction[axis], lower),
+                                   std::fma(1.0F, displacement, lower));
+    float const maximum = std::max(std::fma(distance, direction[axis], upper),
+                                   std::fma(1.0F, displacement, upper));
+    EXPECT_GE(static_cast<long double>(end[axis]),
+              std::round(static_cast<long double>(minimum)));
+    EXPECT_LE(static_cast<long double>(end[axis]),
+              std::round(static_cast<long double>(maximum)));
   }
 }
 
@@ -697,4 +715,39 @@ TEST_F(GGEMSSourceSamplingTransportTest,
       ExpectDiagnosticProjection(report, source_observation);
     }
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSSourceSamplingTransportTest,
+       ReportsExtendedFocusCollapseWithoutCompletingHistory) {
+  // The focus lies outside canonical support, but both positions collapse to
+  // the same binary32 coordinate. This is an invalid trajectory, not a flight.
+  constexpr std::int64_t origin{1LL << 60U};
+  ggems::core::sources::GGEMSSource source{};
+  source.SetPositionPicoMeter(origin, origin, origin)
+    .SetBoxEmissionPicoMeter(8ULL, 8ULL, 8ULL)
+    .SetFocusedAngularDistributionPicoMeter(origin, origin, origin + 1'000LL);
+  constexpr std::array<std::uint64_t, 1U> counts{1ULL};
+
+  ggems::core::random::GGEMSRandom random{};
+  random.SetEngine("philox").SetSeed(12'345ULL);
+  TransportWorkload workload{Context(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             1U,
+                             *MakeMonoSourceConfiguration(1U),
+                             0ULL,
+                             0U,
+                             2U};
+
+  auto const report = workload.Run(MakeConfig({source.BuildRecord()}, counts));
+  EXPECT_EQ(report.counters.consumed_primary_count, 1U);
+  EXPECT_EQ(report.counters.completed_history_count, 0U);
+  EXPECT_EQ(report.counters.terminal_particle_count, 0U);
+  EXPECT_EQ(report.counters.created_secondary_count, 0U);
+  EXPECT_EQ(report.counters.overflow_count, 1U);
+  EXPECT_EQ(RecordsOfKind(report, ObserverRecordKind::Source).size(), 1U);
+  EXPECT_TRUE(RecordsOfKind(report, ObserverRecordKind::Terminal).empty());
 }

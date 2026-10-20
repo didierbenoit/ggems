@@ -42,7 +42,7 @@ TEST(GGEMSParticleState, IsKernelFriendly) {
     std::is_standard_layout_v<ggems::core::particles::GGEMSParticleState>);
   EXPECT_TRUE(
     std::is_trivially_copyable_v<ggems::core::particles::GGEMSParticleState>);
-  EXPECT_EQ(sizeof(ggems::core::particles::GGEMSParticleState), 112U);
+  EXPECT_EQ(sizeof(ggems::core::particles::GGEMSParticleState), 80U);
 }
 
 // =============================================================================
@@ -53,8 +53,8 @@ TEST(GGEMSParticleState, DefaultStateIsInactive) {
 
   EXPECT_EQ(particle.global_particle_id,
             ggems::core::particles::k_invalid_id_u64);
-  EXPECT_EQ(particle.track_id, ggems::core::particles::k_invalid_id_u64);
-  EXPECT_EQ(particle.parent_track_id, ggems::core::particles::k_invalid_id_u64);
+  EXPECT_EQ(particle.track_id, ggems::core::particles::k_invalid_id_u32);
+  EXPECT_EQ(particle.parent_track_id, ggems::core::particles::k_invalid_id_u32);
 
   EXPECT_EQ(particle.particle_type,
             ggems::core::particles::ToKernelParticleType(
@@ -75,7 +75,6 @@ TEST(GGEMSParticleState, DefaultStateIsInactive) {
   EXPECT_FLOAT_EQ(particle.direction_x, 0.0F);
   EXPECT_FLOAT_EQ(particle.direction_y, 0.0F);
   EXPECT_FLOAT_EQ(particle.direction_z, 1.0F);
-  EXPECT_FLOAT_EQ(particle.direction_w, 0.0F);
   EXPECT_EQ(particle.energy_micro_eV, 0ULL);
 }
 
@@ -144,10 +143,16 @@ TEST(GGEMSParticleState, ParticleTypeValuesAreKernelCompatible) {
 
 TEST(GGEMSParticleState, MicroElectronVoltEnergyPreservesLayoutAndWidth) {
   using State = ggems::core::particles::GGEMSParticleState;
-  EXPECT_EQ(sizeof(State), 112U);
+  EXPECT_EQ(sizeof(State), 80U);
   EXPECT_EQ(alignof(State), 8U);
-  EXPECT_EQ(offsetof(State, direction_w), 100U);
-  EXPECT_EQ(offsetof(State, energy_micro_eV), 104U);
+  EXPECT_EQ(offsetof(State, position_x_pm), 48U);
+  EXPECT_EQ(offsetof(State, particle_type), 72U);
+  EXPECT_EQ(offsetof(State, status), 73U);
+  EXPECT_EQ(offsetof(State, generation), 74U);
+  EXPECT_EQ(offsetof(State, energy_micro_eV), 16U);
   EXPECT_TRUE(
     (std::is_same_v<decltype(State::energy_micro_eV), std::uint64_t>));
+  EXPECT_TRUE((std::is_same_v<decltype(State::track_id), std::uint32_t>));
+  EXPECT_TRUE((std::is_same_v<decltype(State::position_x_pm), float>));
+  EXPECT_TRUE((std::is_same_v<decltype(State::generation), std::uint8_t>));
 }

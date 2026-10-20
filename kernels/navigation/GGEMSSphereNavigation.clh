@@ -36,26 +36,25 @@
 #include "navigation/GGEMSNavigation.clh"
 
 /*!
- * \brief Locates the forward owner of a canonical birth in the closed World.
+ * \brief Locates the forward owner of a FP32 birth in the closed World.
  *
- * Integer center subtraction precedes FP32 conversion. Direct squared-radius
+ * FP32 center subtraction precedes direct squared-radius
  * classification uses inward radial motion at a represented surface; an
  * outward or tangent surface birth belongs to the World. No tolerance or
  * displacement is introduced.
  * \param[in] sphere Complete ball and owner identities.
- * \param[in] position Canonical point already validated against the World.
+ * \param[in] position FP32 point already validated against the World.
  * \param[in] direction Actual finite, nonzero stored direction.
  * \param[out] owner Packed forward VolumeID/MaterialID.
  * \return Resolved according to the FP32 radial classification.
  */
 static inline uint GGEMS_SphereLocate(__global GGEMSSphereRecord const *sphere,
-                                      long3 position, float3 direction,
+                                      float3 position, float3 direction,
                                       ulong *owner) {
-  long3 relative = position - (long3)(sphere->center_x_pm, sphere->center_y_pm,
+  float3 offset = position - (float3)(sphere->center_x_pm, sphere->center_y_pm,
                                       sphere->center_z_pm);
 
-  float3 offset = convert_float3(relative);
-  float radius = (float)sphere->radius_pm;
+  float radius = sphere->radius_pm;
   float radial = dot(offset, offset) - radius * radius;
   float motion = dot(offset, direction);
   uint inside = radial < 0.0F || (radial == 0.0F && motion < 0.0F);
@@ -77,23 +76,20 @@ static inline uint GGEMS_SphereLocate(__global GGEMSSphereRecord const *sphere,
  * while direction stays unchanged. Arithmetic failures remain unresolved; no
  * compensation, near-surface envelope, or endpoint repair is applied.
  * \param[in] sphere Immutable full ball.
- * \param[in] position Canonical start in the closed World.
+ * \param[in] position FP32 start in the closed World.
  * \param[in] direction Actual stored finite direction.
  * \param[in] current_owner Accepted departure owner.
  * \param[in,out] witness World exit on entry; chosen crossing on success.
- * \param[in,out] parameter World parameter on entry; selected parameter on
- * success.
  * \return Resolved or unresolved for invalid arithmetic or boundary ordering.
  */
 static inline uint
 GGEMS_SphereFindBoundary(__global GGEMSSphereRecord const *sphere,
-                         long3 position, float3 direction, uint current_owner,
-                         GGEMSBoundaryWitness *witness, float *parameter) {
-  long3 relative = position - (long3)(sphere->center_x_pm, sphere->center_y_pm,
+                         float3 position, float3 direction, uint current_owner,
+                         GGEMSBoundaryWitness *witness) {
+  float3 offset = position - (float3)(sphere->center_x_pm, sphere->center_y_pm,
                                       sphere->center_z_pm);
 
-  float3 offset = convert_float3(relative);
-  float radius = (float)sphere->radius_pm;
+  float radius = sphere->radius_pm;
   float a = dot(direction, direction);
   float b = dot(offset, direction);
 
@@ -119,11 +115,11 @@ GGEMS_SphereFindBoundary(__global GGEMSSphereRecord const *sphere,
   float candidate = (inside != 0U ? -b + root : -b - root) / a;
 
   if (GGEMS_NavigationIsFinite(candidate) == 0U || candidate < 0.0F ||
-      candidate >= *parameter) {
+      candidate >= witness->parameter) {
     return GGEMS_NAVIGATION_UNRESOLVED;
   }
 
-  *parameter = candidate;
+  witness->parameter = candidate;
 
   witness->faces = 0U;
   witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT

@@ -29,19 +29,17 @@
 
 #pragma once
 
-#include <cstdint>
-
 namespace ggems::geometry {
 
 /*! \brief Device box parameters; all-zero denotes an unconfigured World. */
 struct GGEMSWorldRecord {
-  /*! \brief Positive X half extent in signed integer pm. */
-  std::int64_t half_extent_x_pm{0};
+  /*! \brief Positive X half extent in signed FP32 pm. */
+  float half_extent_x_pm{0.0F};
 
-  /*! \brief Positive Y half extent in signed integer pm. */
-  std::int64_t half_extent_y_pm{0};
+  /*! \brief Positive Y half extent in signed FP32 pm. */
+  float half_extent_y_pm{0.0F};
 
-  /*! \brief Positive Z half extent in signed integer pm. */
-  std::int64_t half_extent_z_pm{0};
+  /*! \brief Positive Z half extent in signed FP32 pm. */
+  float half_extent_z_pm{0.0F};
 };
 } // namespace ggems::geometry

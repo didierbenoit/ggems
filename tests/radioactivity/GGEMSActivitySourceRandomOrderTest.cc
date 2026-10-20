@@ -46,6 +46,7 @@
 #include "GGEMS/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
@@ -110,6 +111,9 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
   source_record.time_stop_ps =
     source_record.time_start_ps + 1'000'000'000'000ULL;
 
+  auto const device_source =
+    ggems::core::sources::BuildSourceDeviceRecord(source_record);
+
   PopulationRecord const population{
     .population_mode = ggems::core::sources::ToKernelSourcePopulationMode(
       ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven),
@@ -143,7 +147,7 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
     std::vector<std::byte> sample_state = initial_state;
     std::vector<std::byte> reference_state = initial_state;
 
-    std::array<std::int64_t, 6U> sampled_positions{};
+    std::array<float, 6U> sampled_positions{};
     std::array<float, 6U> sampled_directions{};
     std::array<std::uint64_t, 4U> sampled_values{};
     std::array<std::uint32_t, 2U> next_words{};
@@ -153,7 +157,7 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
     auto reference_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{reference_state.size()});
     auto source_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(source_record)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(device_source)});
     auto population_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(population)});
     auto emission_buffer =
@@ -177,7 +181,7 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
                                  std::span<std::byte const>{sample_state});
     ggems::ocl::WriteSVMFromHost(reference_buffer,
                                  std::span<std::byte const>{reference_state});
-    ggems::ocl::WriteSVMFromHost(source_buffer, source_record);
+    ggems::ocl::WriteSVMFromHost(source_buffer, device_source);
     ggems::ocl::WriteSVMFromHost(population_buffer, population);
     ggems::ocl::WriteSVMFromHost(emission_buffer, emission);
     ggems::ocl::WriteSVMFromHost(distribution_buffer, energy_distribution);

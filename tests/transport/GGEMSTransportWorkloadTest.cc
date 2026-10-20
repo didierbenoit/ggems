@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -238,9 +239,15 @@ auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
     EXPECT_EQ(record.deposited_energy_micro_eV, 0ULL);
   }
 
-  EXPECT_EQ(source_record.position_x_pm, source.position_x_pm);
-  EXPECT_EQ(source_record.position_y_pm, source.position_y_pm);
-  EXPECT_EQ(source_record.position_z_pm, source.position_z_pm);
+  EXPECT_EQ(source_record.position_x_pm,
+            static_cast<std::int64_t>(
+              std::round(static_cast<float>(source.position_x_pm))));
+  EXPECT_EQ(source_record.position_y_pm,
+            static_cast<std::int64_t>(
+              std::round(static_cast<float>(source.position_y_pm))));
+  EXPECT_EQ(source_record.position_z_pm,
+            static_cast<std::int64_t>(
+              std::round(static_cast<float>(source.position_z_pm))));
 
   EXPECT_EQ(terminal_record.position_x_pm, terminal_position[0U]);
   EXPECT_EQ(terminal_record.position_y_pm, terminal_position[1U]);
@@ -694,7 +701,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 
 TEST_F(GGEMSTransportWorkloadTest,
-       RejectsEndpointOverflowAndInvalidSourceRanges) {
+       AcceptsFp32EndpointsOutsideIntegerExportRangeAndRejectsInvalidRanges) {
   SourceRecord const overflowing = MakeSourceRecord(
     {std::numeric_limits<std::int64_t>::max(), 0LL, 0LL}, {1.0, 0.0, 0.0});
   constexpr std::array<std::uint64_t, 1U> k_counts{1ULL};
@@ -713,8 +720,15 @@ TEST_F(GGEMSTransportWorkloadTest,
 
   auto config = MakeConfig({overflowing}, k_counts, 1U);
 
-  EXPECT_THROW(workload.ValidateRunConfig(config),
-               ggems::core::GGEMSRecoverable);
+  EXPECT_NO_THROW(workload.ValidateRunConfig(config));
+  config.observer_config.enabled = 1U;
+  config.observer_config.capture_first_primary_count_per_source = 1U;
+  auto const report = workload.Run(config);
+  ExpectMinimalCounters(report, 1U);
+  ASSERT_EQ(report.observer_records.size(), 2U);
+  for (auto const &record : report.observer_records) {
+    EXPECT_EQ(record.position_valid, 0U);
+  }
 
   SourceRecord const valid = MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0});
 
@@ -745,4 +759,39 @@ TEST_F(GGEMSTransportWorkloadTest, RejectsZeroStableSourceCount) {
   };
 
   EXPECT_THROW(construct(), ggems::core::GGEMSExceptionBase);
+}
+
+TEST(GGEMSTransportRunRanges, PreservesUint64PopulationAndChecksActualIdRange) {
+  constexpr auto maximum = std::numeric_limits<std::uint64_t>::max();
+  SourceRecord const source =
+    MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
+  constexpr std::array<std::uint64_t, 1U> counts{maximum};
+  auto config = MakeConfig({source}, counts, 1U);
+  config.total_primary_count = maximum;
+  auto validate = [&]() -> void {
+    ggems::core::transport::ValidateTransportRunConfig(config, 1U, 0U, 64U,
+                                                       100U);
+  };
+  EXPECT_NO_THROW(validate());
+  config.projection_history_offset = 1ULL;
+  EXPECT_NO_THROW(validate());
+  config.projection_history_offset = 2ULL;
+  EXPECT_THROW(validate(), ggems::core::GGEMSRecoverable);
+  config.projection_history_offset = 0ULL;
+  config.device_primary_offset = maximum - 3ULL;
+  config.total_primary_count = 4ULL;
+  EXPECT_THROW(validate(), ggems::core::GGEMSRecoverable);
+  config.total_primary_count = 3ULL;
+  EXPECT_NO_THROW(validate());
+}
+
+TEST(GGEMSTransportRunRanges, RejectsWrappedSourcePopulationTotal) {
+  SourceRecord const source =
+    MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
+  constexpr std::array<std::uint64_t, 2U> counts{
+    std::numeric_limits<std::uint64_t>::max(), 1ULL};
+  auto config = MakeConfig({source, source}, counts, 1U);
+  EXPECT_THROW(ggems::core::transport::ValidateTransportRunConfig(
+                 config, 2U, 0U, 64U, 100U),
+               ggems::core::GGEMSRecoverable);
 }

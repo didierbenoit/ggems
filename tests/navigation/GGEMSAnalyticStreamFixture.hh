@@ -57,6 +57,7 @@
 #include "GGEMS/sources/GGEMSSourceEmissionRecord.hh"
 #include "GGEMS/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
@@ -105,9 +106,9 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
   ReplaceUnique(
     source, "    uint const status = GGEMS_TransportToNextBoundary(",
     "    uint const departure_owner = particle->current_volume_id;\n"
-    "    GGEMSAnalyticBoundary selected;\n"
+    "    GGEMSBoundaryWitness selected;\n"
     "    GGEMS_AnalyticFindBoundary(world, volume, box_pose,\n"
-    "      (long3)(particle->position_x_pm, particle->position_y_pm, "
+    "      (float3)(particle->position_x_pm, particle->position_y_pm, "
     "particle->position_z_pm),\n"
     "      (float3)(particle->direction_x, particle->direction_y, "
     "particle->direction_z),\n"
@@ -121,9 +122,9 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
     "      trace[offset] = departure_owner;\n"
     "      trace[offset + 1U] = particle->current_volume_id;\n"
     "      trace[offset + 2U] = faces;\n"
-    "      trace[offset + 3U] = particle->position_x_pm;\n"
-    "      trace[offset + 4U] = particle->position_y_pm;\n"
-    "      trace[offset + 5U] = particle->position_z_pm;\n"
+    "      trace[offset + 3U] = (long)as_uint(particle->position_x_pm);\n"
+    "      trace[offset + 4U] = (long)as_uint(particle->position_y_pm);\n"
+    "      trace[offset + 5U] = (long)as_uint(particle->position_z_pm);\n"
     "      trace[offset + 6U] = event;\n"
     "      trace[offset + 7U] = particle->material_id;\n"
     "      trace[offset + 8U] = (long)as_uint(selected.parameter);\n"
@@ -163,7 +164,7 @@ inline auto RunStream(ocl::GGEMSOpenCLContext &context,
   ocl::WriteSVMFromHost(rng, std::span<std::byte const>{rng_before});
 
   auto world_buffer = buffer(world);
-  auto source_buffer = buffer(source);
+  auto source_buffer = buffer(sources::BuildSourceDeviceRecord(source));
   auto ranges = buffer(sources::GGEMSSourceRunRange{
     .projection_primary_begin = 0ULL, .primary_count = 1U});
   auto populations = buffer(sources::GGEMSSourcePopulationRecord{});

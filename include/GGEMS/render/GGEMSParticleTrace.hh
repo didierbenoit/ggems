@@ -202,7 +202,8 @@ private:
 /*!
  * \brief Converts captured canonical coordinates to display meters.
  *
- * \param[in] record Observer record containing signed picometer coordinates.
+ * \param[in] record Observer record with position_valid nonzero and signed
+ * picometer coordinates.
  * \return Binary32 global point; conversion may lose canonical precision.
  */
 [[nodiscard]] auto ToParticleTracePointMeter(
@@ -212,11 +213,13 @@ private:
 /*!
  * \brief Connects adjacent traceable records with distinct canonical positions.
  *
- * Filters invalid primary/track IDs and Unknown/Anomaly kinds. A stable sort
+ * Filters invalid local track IDs and Unknown/Anomaly kinds. The full uint64
+ * primary identity range is retained. A stable sort
  * orders by run ID, global particle ID, track ID, then capture kind (Source,
  * SecondaryStep, Step, Terminal). Matching also requires equal global-primary,
  * source-slot, and source-local-primary IDs. Time is retained as metadata, not
- * used as the sort key.
+ * used as the sort key. An unavailable exported position breaks connectivity;
+ * the surrounding valid points are never connected across that record.
  *
  * \param[in] records Borrowed captures; input order breaks equal sort-key ties.
  * \return Owned segments; empty when no distinct adjacent trace points remain.

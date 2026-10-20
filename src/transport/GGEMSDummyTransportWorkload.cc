@@ -1,5 +1,3 @@
-#include "GGEMS/transport/GGEMSDummyTransportWorkload.hh"
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -15,9 +13,10 @@
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/particles/GGEMSParticleState.hh"
-#include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
+#include "GGEMS/transport/GGEMSDummyTransportWorkload.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomState.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
@@ -35,7 +34,7 @@ using PhiloxState = ggems::core::random::GGEMSPhiloxState;
 using ObserverConfigRecord = ggems::core::observer::GGEMSObserverConfigRecord;
 using ObserverCounters = ggems::core::observer::GGEMSObserverCounters;
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
-using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
+using SourceDeviceRecord = ggems::core::sources::GGEMSSourceDeviceRecord;
 using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 
 // =============================================================================
@@ -120,8 +119,9 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
         context.CreateSVMBuffer(ComputeWorkerFinalStatesSize(worker_count))},
       counters_buffer_{context.CreateSVMBuffer(
         ggems::units::Bytes{sizeof(TransportCounters)})},
-      source_records_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
-        static_cast<std::uint64_t>(source_count_) * sizeof(SourceRecord)})},
+      source_records_buffer_{context.CreateSVMBuffer(
+        ggems::units::Bytes{static_cast<std::uint64_t>(source_count_) *
+                            sizeof(SourceDeviceRecord)})},
       source_ranges_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
         static_cast<std::uint64_t>(source_count_) * sizeof(SourceRunRange)})},
       observer_config_buffer_{context.CreateSVMBuffer(
@@ -257,12 +257,22 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
     }
   }
 
+  std::vector<SourceDeviceRecord> device_source_records;
+  device_source_records.reserve(config.source_records.size());
+
+  for (std::size_t index = 0U; index < config.source_records.size(); ++index) {
+    device_source_records.push_back(
+      config.source_ranges[index].primary_count == 0ULL
+        ? SourceDeviceRecord{}
+        : sources::BuildSourceDeviceRecord(config.source_records[index]));
+  }
+
   ResetCountersInSVM();
   ClearWorkerFinalStatesInSVM();
   ResetObserverInSVM();
   ggems::ocl::WriteSVMFromHost(
     source_records_buffer_,
-    std::span<SourceRecord const>{config.source_records});
+    std::span<SourceDeviceRecord const>{device_source_records});
   ggems::ocl::WriteSVMFromHost(
     source_ranges_buffer_,
     std::span<SourceRunRange const>{config.source_ranges});

@@ -35,6 +35,7 @@
  */
 
 #include <array>
+#include <bit>
 #include <cmath>
 #include <numbers>
 #include <optional>
@@ -111,9 +112,10 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
                       BoxCase const &test, std::uint32_t box_material,
                       geometry::GGEMSBoxPoseRecord const *pose = nullptr)
   -> void {
-  geometry::GGEMSWorldRecord const world{.half_extent_x_pm = test.half[0],
-                                         .half_extent_y_pm = test.half[1],
-                                         .half_extent_z_pm = test.half[2]};
+  geometry::GGEMSWorldRecord const world{
+    .half_extent_x_pm = static_cast<float>(test.half[0]),
+    .half_extent_y_pm = static_cast<float>(test.half[1]),
+    .half_extent_z_pm = static_cast<float>(test.half[2])};
   sources::GGEMSSourceRecord source{};
   source.emitted_particle_type =
     particles::ToKernelParticleType(particles::GGEMSParticleType::Aionino);
@@ -129,21 +131,21 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
   // The authoring ABI stores an integer center and integer half extents.
   // The caller excludes frozen scenes with odd full widths explicitly.
   geometry::GGEMSBoxRecord const box{
-    .half_extent_x_pm =
-      static_cast<std::uint64_t>((test.upper[0] - test.lower[0]) / 2),
-    .half_extent_y_pm =
-      static_cast<std::uint64_t>((test.upper[1] - test.lower[1]) / 2),
-    .half_extent_z_pm =
-      static_cast<std::uint64_t>((test.upper[2] - test.lower[2]) / 2),
+    .half_extent_x_pm = static_cast<float>(
+      static_cast<std::uint64_t>((test.upper[0] - test.lower[0]) / 2)),
+    .half_extent_y_pm = static_cast<float>(
+      static_cast<std::uint64_t>((test.upper[1] - test.lower[1]) / 2)),
+    .half_extent_z_pm = static_cast<float>(
+      static_cast<std::uint64_t>((test.upper[2] - test.lower[2]) / 2)),
     .volume_id = k_box,
     .material_id = box_material};
   geometry::GGEMSBoxPoseRecord const identity_pose{
     .center_x_pm =
-      test.lower[0] + static_cast<std::int64_t>(box.half_extent_x_pm),
+      static_cast<float>(test.lower[0] + ((test.upper[0] - test.lower[0]) / 2)),
     .center_y_pm =
-      test.lower[1] + static_cast<std::int64_t>(box.half_extent_y_pm),
+      static_cast<float>(test.lower[1] + ((test.upper[1] - test.lower[1]) / 2)),
     .center_z_pm =
-      test.lower[2] + static_cast<std::int64_t>(box.half_extent_z_pm),
+      static_cast<float>(test.lower[2] + ((test.upper[2] - test.lower[2]) / 2)),
     .axis_x_x = 1.0F,
     .axis_y_y = 1.0F,
     .axis_z_z = 1.0F};
@@ -164,9 +166,15 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
       EXPECT_EQ(trace[offset], expected.departure);
       EXPECT_EQ(trace[offset + 1U], expected.arrival);
       EXPECT_EQ(trace[offset + 2U], expected.faces);
-      EXPECT_EQ(trace[offset + 3U], expected.endpoint[0]);
-      EXPECT_EQ(trace[offset + 4U], expected.endpoint[1]);
-      EXPECT_EQ(trace[offset + 5U], expected.endpoint[2]);
+      EXPECT_EQ(static_cast<long double>(std::bit_cast<float>(
+                  static_cast<std::uint32_t>(trace[offset + 3U]))),
+                static_cast<long double>(expected.endpoint[0]));
+      EXPECT_EQ(static_cast<long double>(std::bit_cast<float>(
+                  static_cast<std::uint32_t>(trace[offset + 4U]))),
+                static_cast<long double>(expected.endpoint[1]));
+      EXPECT_EQ(static_cast<long double>(std::bit_cast<float>(
+                  static_cast<std::uint32_t>(trace[offset + 5U]))),
+                static_cast<long double>(expected.endpoint[2]));
       EXPECT_EQ(trace[offset + 6U], ExpectedEvent(expected));
       EXPECT_EQ(trace[offset + 7U],
                 ExpectedMaterial(expected.arrival, box_material));
@@ -176,7 +184,7 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
   EXPECT_TRUE(result.unchanged_rng);
   auto const &counts = result.counts;
   EXPECT_EQ(counts.completed_history_count, 1U);
-  EXPECT_EQ(counts.terminal_particle_count, 1U);
+  EXPECT_EQ(counts.terminal_particle_count, 0U); // Derived by Workload.
   EXPECT_EQ(counts.escaped_world_count, 1U);
   EXPECT_EQ(counts.outside_world_count, 0U);
   EXPECT_EQ(counts.unresolved_geometry_count, 0U);

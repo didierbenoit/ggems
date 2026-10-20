@@ -42,6 +42,7 @@
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
@@ -96,14 +97,17 @@ auto RunCases(ggems::ocl::GGEMSOpenCLContext &context, WorldRecord const &world,
               std::span<RayCase const> cases) -> void {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-  std::vector<std::int64_t> positions;
+  std::vector<float> positions;
   std::vector<float> directions;
   std::vector<std::uint32_t> statuses(cases.size(), 0xFFFF'FFFFU);
-  std::vector<std::int64_t> endpoints(3U * cases.size(), k_untouched);
+  std::vector<float> endpoints(3U * cases.size(),
+                               static_cast<float>(k_untouched));
   std::vector<std::uint32_t> faces(cases.size(), 0xFFFF'FFFFU);
 
   for (RayCase const &ray : cases) {
-    positions.insert(positions.end(), ray.position.begin(), ray.position.end());
+    for (auto coordinate : ray.position) {
+      positions.push_back(static_cast<float>(coordinate));
+    }
     directions.insert(directions.end(), ray.direction.begin(),
                       ray.direction.end());
   }
@@ -166,7 +170,8 @@ auto RunCases(ggems::ocl::GGEMSOpenCLContext &context, WorldRecord const &world,
     EXPECT_EQ(faces[index], ray.faces);
 
     for (std::size_t axis = 0U; axis < 3U; ++axis) {
-      EXPECT_EQ(endpoints[(3U * index) + axis], ray.endpoint[axis]);
+      EXPECT_EQ(static_cast<long double>(endpoints[(3U * index) + axis]),
+                static_cast<long double>(ray.endpoint[axis]));
     }
   }
 }
@@ -184,9 +189,9 @@ auto ForEachContext(auto &&body) -> void {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, ExitsTheCubicWorldAlongAxesAndDiagonals) {
-  WorldRecord const world{.half_extent_x_pm = k_100_mm,
-                          .half_extent_y_pm = k_100_mm,
-                          .half_extent_z_pm = k_100_mm};
+  WorldRecord const world{.half_extent_x_pm = static_cast<float>(k_100_mm),
+                          .half_extent_y_pm = static_cast<float>(k_100_mm),
+                          .half_extent_z_pm = static_cast<float>(k_100_mm)};
 
   std::array<RayCase, 10U> const cases{{
     // W01: center to +X, 100 mm of travel to the +X face.
@@ -254,9 +259,9 @@ TEST_F(GGEMSNavigationDeviceTest, ExitsTheCubicWorldAlongAxesAndDiagonals) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, CommitsExactlyRoundedLateralCoordinates) {
-  WorldRecord const world{.half_extent_x_pm = k_100_mm,
-                          .half_extent_y_pm = 2 * k_100_mm,
-                          .half_extent_z_pm = k_100_mm / 2};
+  WorldRecord const world{.half_extent_x_pm = static_cast<float>(k_100_mm),
+                          .half_extent_y_pm = static_cast<float>(2 * k_100_mm),
+                          .half_extent_z_pm = static_cast<float>(k_100_mm / 2)};
 
   // Stored binary32 components of normalize(1, 2, 3) and normalize(0, .6, .8).
   constexpr std::array<float, 3U> k_dir_123{0.267261237F, 0.534522474F,
@@ -305,8 +310,9 @@ TEST_F(GGEMSNavigationDeviceTest, CommitsExactlyRoundedLateralCoordinates) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, RoundsHalfPicometerSumsAwayFromZero) {
-  WorldRecord const world{
-    .half_extent_x_pm = 10, .half_extent_y_pm = 10, .half_extent_z_pm = 10};
+  WorldRecord const world{.half_extent_x_pm = static_cast<float>(10),
+                          .half_extent_y_pm = static_cast<float>(10),
+                          .half_extent_z_pm = static_cast<float>(10)};
 
   std::array<RayCase, 8U> const cases{{
     // x travels 11 pm, y moves 5.5 pm: sums 5.5, 2.5, -0.5, -5.5, 0.5.
@@ -365,9 +371,9 @@ TEST_F(GGEMSNavigationDeviceTest, RoundsHalfPicometerSumsAwayFromZero) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, HandlesBoundaryStartsAndInvalidInputs) {
-  WorldRecord const world{.half_extent_x_pm = k_100_mm,
-                          .half_extent_y_pm = k_100_mm,
-                          .half_extent_z_pm = k_100_mm};
+  WorldRecord const world{.half_extent_x_pm = static_cast<float>(k_100_mm),
+                          .half_extent_y_pm = static_cast<float>(k_100_mm),
+                          .half_extent_z_pm = static_cast<float>(k_100_mm)};
   std::array<RayCase, 9U> const cases{{
     // Start on the -X face pointing inward: full 200 mm crossing.
     {.position = {-k_100_mm, 12'345LL, -6'789LL},
@@ -434,9 +440,10 @@ TEST_F(GGEMSNavigationDeviceTest, HandlesBoundaryStartsAndInvalidInputs) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, HandlesTheLargestWorldAndTinyComponents) {
-  WorldRecord const largest{.half_extent_x_pm = k_max_half_pm,
-                            .half_extent_y_pm = k_max_half_pm,
-                            .half_extent_z_pm = k_max_half_pm};
+  WorldRecord const largest{
+    .half_extent_x_pm = static_cast<float>(k_max_half_pm),
+    .half_extent_y_pm = static_cast<float>(k_max_half_pm),
+    .half_extent_z_pm = static_cast<float>(k_max_half_pm)};
 
   std::array<RayCase, 6U> const largest_cases{{
     // Full crossing of 2^63 - 2 pm along x without overflow.
@@ -475,9 +482,9 @@ TEST_F(GGEMSNavigationDeviceTest, HandlesTheLargestWorldAndTinyComponents) {
      .faces = 0U},
   }};
 
-  WorldRecord const cube{.half_extent_x_pm = k_100_mm,
-                         .half_extent_y_pm = k_100_mm,
-                         .half_extent_z_pm = k_100_mm};
+  WorldRecord const cube{.half_extent_x_pm = static_cast<float>(k_100_mm),
+                         .half_extent_y_pm = static_cast<float>(k_100_mm),
+                         .half_extent_z_pm = static_cast<float>(k_100_mm)};
   float const denorm = std::numeric_limits<float>::denorm_min();
 
   std::array<RayCase, 2U> const tiny_cases{{

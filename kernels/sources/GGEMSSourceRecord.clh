@@ -80,11 +80,12 @@
 /*!
  * \brief Packs the host-resolved pose and analytic source birth laws.
  *
- * Field order and scalar widths match the host record. Axis columns map local
- * coordinates to the global frame. The host prepares the frame and validates
- * the shape, angular domain, and focus; device helpers consume those values
- * without repeating that validation. Full widths/diameters are in integer pm.
- * The record does not imply unconditional direction normalization.
+ * Field order and scalar widths match host GGEMSSourceDeviceRecord. Axis
+ * columns map local coordinates to the global frame. The host prepares the
+ * frame and validates the shape, angular domain, and focus; device helpers
+ * consume those values without repeating that validation. Spatial fields are
+ * binary32 values in pm. The record does not imply unconditional direction
+ * normalization.
  *
  * Population and energy-table descriptors are separate. Source-array slot
  * indices drive execution lookup; source_id is metadata and is not copied into
@@ -103,14 +104,14 @@ typedef struct GGEMSSourceRecord {
   /*! \brief Count-driven mono energy in micro-eV; unused for table laws. */
   ulong energy_micro_eV;
 
-  /*! \brief Global X coordinate of the source origin in signed pm. */
-  long position_x_pm;
+  /*! \brief Global X coordinate of the source origin in binary32 pm. */
+  float position_x_pm;
 
-  /*! \brief Global Y coordinate of the source origin in signed pm. */
-  long position_y_pm;
+  /*! \brief Global Y coordinate of the source origin in binary32 pm. */
+  float position_y_pm;
 
-  /*! \brief Global Z coordinate of the source origin in signed pm. */
-  long position_z_pm;
+  /*! \brief Global Z coordinate of the source origin in binary32 pm. */
+  float position_z_pm;
 
   /*! \brief Source-kind code; the current sampler uses analytic records. */
   uint source_type;
@@ -158,24 +159,24 @@ typedef struct GGEMSSourceRecord {
   uint angular_distribution_type;
 
   /*! \brief Full X width or diameter in pm, according to shape. */
-  ulong geometry_size_x_pm;
+  float geometry_size_x_pm;
 
   /*! \brief Full Y width or repeated radial diameter in pm. */
-  ulong geometry_size_y_pm;
+  float geometry_size_y_pm;
 
-  /*! \brief Global X coordinate of the focus in signed pm. */
-  long focus_position_x_pm;
+  /*! \brief Global X coordinate of the focus in binary32 pm. */
+  float focus_position_x_pm;
 
-  /*! \brief Global Y coordinate of the focus in signed pm. */
-  long focus_position_y_pm;
+  /*! \brief Global Y coordinate of the focus in binary32 pm. */
+  float focus_position_y_pm;
 
-  /*! \brief Global Z coordinate of the focus in signed pm. */
-  long focus_position_z_pm;
+  /*! \brief Global Z coordinate of the focus in binary32 pm. */
+  float focus_position_z_pm;
 
   /*!
    * \brief Full Z width, cylinder height, or repeated sphere diameter in pm.
    */
-  ulong geometry_size_z_pm;
+  float geometry_size_z_pm;
 
   /*! \brief Lower dimensionless cosine bound; larger polar angle. */
   float isotropic_cos_theta_lower;

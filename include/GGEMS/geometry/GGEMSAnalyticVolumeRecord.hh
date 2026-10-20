@@ -43,23 +43,23 @@ enum class GGEMSAnalyticKind : std::uint32_t {
   /*! \brief Local Box with a separate FP32 pose. */
   Box = 1,
 
-  /*! \brief Full ball with integer center and radius. */
+  /*! \brief Full ball with FP32 center and radius. */
   Sphere = 3,
 };
 
-/*! \brief Scalar 40-byte Sphere parameters and owner identities. */
+/*! \brief Scalar 24-byte Sphere parameters and owner identities. */
 struct GGEMSSphereRecord {
   /*! \brief Global center X in pm. */
-  std::int64_t center_x_pm{0};
+  float center_x_pm{0.0F};
 
   /*! \brief Global center Y in pm. */
-  std::int64_t center_y_pm{0};
+  float center_y_pm{0.0F};
 
   /*! \brief Global center Z in pm. */
-  std::int64_t center_z_pm{0};
+  float center_z_pm{0.0F};
 
   /*! \brief Strictly positive radius in pm. */
-  std::uint64_t radius_pm{0};
+  float radius_pm{0.0F};
 
   /*! \brief Snapshot-local physical owner. */
   std::uint32_t volume_id{1};
@@ -78,7 +78,7 @@ union GGEMSAnalyticParameters {
 };
 
 /*!
- * \brief Scalar 48-byte scene record, including the no-volume case.
+ * \brief Scalar 28-byte scene record, including the no-volume case.
  *
  * Mirrors GGEMSAnalyticVolumeRecord.clh. Every Box uses the separately
  * supplied GGEMSBoxPoseRecord. All programs receive this same scene layout.
@@ -86,9 +86,6 @@ union GGEMSAnalyticParameters {
 struct GGEMSAnalyticVolumeRecord {
   /*! \brief Predicate and active union member. */
   GGEMSAnalyticKind kind{GGEMSAnalyticKind::None};
-
-  /*! \brief Explicit alignment padding, initialized to zero. */
-  std::uint32_t padding{0};
 
   /*! \brief Shape parameters; box is active for None and Box. */
   GGEMSAnalyticParameters parameters{};

@@ -286,9 +286,9 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
     HalfExtent3PM const half = boxes[index].GetHalfExtentPM();
 
     records.push_back(GGEMSBoxRecord{
-      .half_extent_x_pm = half.x,
-      .half_extent_y_pm = half.y,
-      .half_extent_z_pm = half.z,
+      .half_extent_x_pm = static_cast<float>(half.x),
+      .half_extent_y_pm = static_cast<float>(half.y),
+      .half_extent_z_pm = static_cast<float>(half.z),
       .volume_id = static_cast<std::uint32_t>(index) + 1U,
       .material_id = material_ids[index],
     });
@@ -310,9 +310,9 @@ auto GGEMSWorld::BuildBoxPoseRecord() const
   auto const &rotation = boxes.front().GetRotation();
 
   return GGEMSBoxPoseRecord{
-    .center_x_pm = center.x,
-    .center_y_pm = center.y,
-    .center_z_pm = center.z,
+    .center_x_pm = static_cast<float>(center.x),
+    .center_y_pm = static_cast<float>(center.y),
+    .center_z_pm = static_cast<float>(center.z),
     .axis_x_x = static_cast<float>(rotation.axis_x.x),
     .axis_x_y = static_cast<float>(rotation.axis_x.y),
     .axis_x_z = static_cast<float>(rotation.axis_x.z),
@@ -365,9 +365,9 @@ auto GGEMSWorld::Contains(Position3PM position) const noexcept -> bool {
 // -----------------------------------------------------------------------------
 
 auto GGEMSWorld::BuildRecord() const noexcept -> GGEMSWorldRecord {
-  return {.half_extent_x_pm = static_cast<CoordinatePM>(half_extent_pm_.x),
-          .half_extent_y_pm = static_cast<CoordinatePM>(half_extent_pm_.y),
-          .half_extent_z_pm = static_cast<CoordinatePM>(half_extent_pm_.z)};
+  return {.half_extent_x_pm = static_cast<float>(half_extent_pm_.x),
+          .half_extent_y_pm = static_cast<float>(half_extent_pm_.y),
+          .half_extent_z_pm = static_cast<float>(half_extent_pm_.z)};
 }
 
 // -----------------------------------------------------------------------------
@@ -414,12 +414,13 @@ auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id) const
   if (auto const *sphere = std::get_if<GGEMSSphere>(&volume_)) {
     auto const center = sphere->GetPositionPM();
     return {.kind = GGEMSAnalyticKind::Sphere,
-            .parameters = {.sphere = {.center_x_pm = center.x,
-                                      .center_y_pm = center.y,
-                                      .center_z_pm = center.z,
-                                      .radius_pm = sphere->GetRadiusPM(),
-                                      .volume_id = 1U,
-                                      .material_id = material_id}}};
+            .parameters = {
+              .sphere = {.center_x_pm = static_cast<float>(center.x),
+                         .center_y_pm = static_cast<float>(center.y),
+                         .center_z_pm = static_cast<float>(center.z),
+                         .radius_pm = static_cast<float>(sphere->GetRadiusPM()),
+                         .volume_id = 1U,
+                         .material_id = material_id}}};
   }
 
   return {};

@@ -30,6 +30,7 @@
  */
 
 #include <array>
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -80,15 +81,16 @@ constexpr std::int64_t k_100_mm{100'000'000'000LL};
 
 /*! \brief Asymmetric, off-center Box: x in [-20, 40], y in [-30, -10],
  * z in [-10, 20] mm. */
-constexpr GGEMSBoxRecord k_box_record{.half_extent_x_pm = 30'000'000'000ULL,
-                                      .half_extent_y_pm = 10'000'000'000ULL,
-                                      .half_extent_z_pm = 15'000'000'000ULL,
-                                      .volume_id = k_box,
-                                      .material_id = 1U};
+constexpr GGEMSBoxRecord k_box_record{
+  .half_extent_x_pm = static_cast<float>(30'000'000'000ULL),
+  .half_extent_y_pm = static_cast<float>(10'000'000'000ULL),
+  .half_extent_z_pm = static_cast<float>(15'000'000'000ULL),
+  .volume_id = k_box,
+  .material_id = 1U};
 constexpr ggems::geometry::GGEMSBoxPoseRecord k_box_pose{
-  .center_x_pm = 10'000'000'000LL,
-  .center_y_pm = -20'000'000'000LL,
-  .center_z_pm = 5'000'000'000LL,
+  .center_x_pm = static_cast<float>(10'000'000'000LL),
+  .center_y_pm = static_cast<float>(-20'000'000'000LL),
+  .center_z_pm = static_cast<float>(5'000'000'000LL),
   .axis_x_x = 1.0F,
   .axis_y_y = 1.0F,
   .axis_z_z = 1.0F};
@@ -111,10 +113,12 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
              std::span<GGEMSBoxRecord const> boxes,
              std::span<RayCase const> cases) -> void {
   auto const ray_count = static_cast<std::uint32_t>(cases.size());
-  std::vector<std::int64_t> positions;
+  std::vector<float> positions;
   std::vector<float> directions;
   for (RayCase const &ray : cases) {
-    positions.insert(positions.end(), ray.position.begin(), ray.position.end());
+    for (auto coordinate : ray.position) {
+      positions.push_back(static_cast<float>(coordinate));
+    }
     directions.insert(directions.end(), ray.direction.begin(),
                       ray.direction.end());
   }
@@ -144,7 +148,7 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
   auto position_buffer = make(positions);
   auto direction_buffer = make(directions);
   std::vector<std::uint32_t> const zeros(ray_count, 0U);
-  std::vector<std::int64_t> const zeros64(3ULL * ray_count, 0);
+  std::vector<float> const zeros64(3ULL * ray_count, 0);
   auto start_owners = make(zeros);
   auto statuses = make(zeros);
   auto events = make(zeros);
@@ -178,7 +182,7 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
   std::vector<std::uint32_t> got_status(ray_count);
   std::vector<std::uint32_t> got_event(ray_count);
   std::vector<std::uint32_t> got_faces(ray_count);
-  std::vector<std::int64_t> got_end(3ULL * ray_count);
+  std::vector<float> got_end(3ULL * ray_count);
   std::vector<std::uint32_t> got_arrival(ray_count);
   ggems::ocl::ReadSVMToHost(start_owners, std::span{got_owner});
   ggems::ocl::ReadSVMToHost(statuses, std::span{got_status});
@@ -194,9 +198,12 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
                   ray.position[0U], ray.position[1U], ray.position[2U],
                   ray.direction[0U], ray.direction[1U], ray.direction[2U]));
     EXPECT_EQ(got_status[index], ray.status);
-    EXPECT_EQ(got_end[(3U * index)], ray.endpoint[0U]);
-    EXPECT_EQ(got_end[(3U * index) + 1U], ray.endpoint[1U]);
-    EXPECT_EQ(got_end[(3U * index) + 2U], ray.endpoint[2U]);
+    EXPECT_EQ(static_cast<long double>(got_end[(3U * index)]),
+              static_cast<long double>(ray.endpoint[0U]));
+    EXPECT_EQ(static_cast<long double>(got_end[(3U * index) + 1U]),
+              static_cast<long double>(ray.endpoint[1U]));
+    EXPECT_EQ(static_cast<long double>(got_end[(3U * index) + 2U]),
+              static_cast<long double>(ray.endpoint[2U]));
     if (got_owner[index] == k_exterior && got_status[index] != k_resolved) {
       // AnalyticLocate does not define ownership when location fails.
       continue;
@@ -209,9 +216,10 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
 }
 
 auto ExpectRays(std::span<RayCase const> cases) -> void {
-  GGEMSWorldRecord const world{.half_extent_x_pm = k_100_mm,
-                               .half_extent_y_pm = k_100_mm,
-                               .half_extent_z_pm = k_100_mm};
+  GGEMSWorldRecord const world{.half_extent_x_pm = static_cast<float>(k_100_mm),
+                               .half_extent_y_pm = static_cast<float>(k_100_mm),
+                               .half_extent_z_pm =
+                                 static_cast<float>(k_100_mm)};
   std::array<GGEMSBoxRecord, 1U> const boxes{k_box_record};
   for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
     SCOPED_TRACE(context.GetDevice().GetName());
@@ -227,11 +235,12 @@ auto ExpectRays(std::span<RayCase const> cases) -> void {
 TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
   for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
     SCOPED_TRACE(context.GetDevice().GetName());
-    GGEMSBoxRecord const populated{.half_extent_x_pm = 1'000'000'000'001ULL,
-                                   .half_extent_y_pm = 2ULL,
-                                   .half_extent_z_pm = 3'000'000'000'003ULL,
-                                   .volume_id = 7U,
-                                   .material_id = 8U};
+    GGEMSBoxRecord const populated{
+      .half_extent_x_pm = static_cast<float>(1'000'000'000'001ULL),
+      .half_extent_y_pm = static_cast<float>(2ULL),
+      .half_extent_z_pm = static_cast<float>(3'000'000'000'003ULL),
+      .volume_id = 7U,
+      .material_id = 8U};
     std::array<GGEMSBoxRecord, 2U> boxes{{GGEMSBoxRecord{}, populated}};
     auto box_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(boxes)});
@@ -263,9 +272,9 @@ TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
       offsetof(GGEMSBoxRecord, material_id),
       alignof(GGEMSBoxRecord),
       sizeof(GGEMSBoxRecord),
-      populated.half_extent_x_pm,
-      populated.half_extent_y_pm,
-      populated.half_extent_z_pm,
+      std::bit_cast<std::uint32_t>(populated.half_extent_x_pm),
+      std::bit_cast<std::uint32_t>(populated.half_extent_y_pm),
+      std::bit_cast<std::uint32_t>(populated.half_extent_z_pm),
       populated.volume_id,
       populated.material_id};
     EXPECT_EQ(layout, expected);

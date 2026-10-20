@@ -216,6 +216,18 @@ TEST(GGEMSTransportObserverDump,
 // =============================================================================
 // =============================================================================
 
+TEST(GGEMSTransportObserverDump, IdentifiesUnrepresentablePosition) {
+  GGEMSObserverRecord record = MakeRecord(0ULL, 10ULL);
+  record.position_valid = 0U;
+  std::array<GGEMSObserverRecord, 1U> const records{{record}};
+  std::string const dump = BuildObserverDump(records);
+  EXPECT_NE(dump.find("unrepresentable"), std::string::npos);
+  EXPECT_EQ(dump.find("(0.00 pm, 0.00 pm, 0.00 pm)"), std::string::npos);
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSTransportObserverDump, KeepsOriginalRecordIndexAfterDisplaySorting) {
   std::array<GGEMSObserverRecord, 2U> const records{{
     MakeRecord(8ULL, 20ULL),

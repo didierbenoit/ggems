@@ -46,7 +46,7 @@ __kernel void activity_source_random_order_probe(
   __global GGEMSEnergyDistributionRecord const *energy_distribution,
   __global ulong const *energy_values_micro_eV,
   __global ulong const *cumulative_ticket_upper,
-  __global long *sampled_positions, __global float *sampled_directions,
+  __global float *sampled_positions, __global float *sampled_directions,
   __global ulong *sampled_values, __global uint *next_words) {
   if (get_global_id(0) != 0U) {
     return;
@@ -72,7 +72,7 @@ __kernel void activity_source_random_order_probe(
     source->time_start_ps, source->time_stop_ps, population->scaled_decay,
     reference_time_word);
 
-  long3 const reference_position =
+  float3 const reference_position =
     GGEMS_SourceSamplePositionFromUniforms(source, reference_position_uniforms);
 
   float3 const reference_direction = GGEMS_SourceSampleDirectionFromUniforms(

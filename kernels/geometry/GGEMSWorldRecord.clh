@@ -30,16 +30,16 @@
 #ifndef GGEMS_WORLD_RECORD_CLH
 #define GGEMS_WORLD_RECORD_CLH
 
-/*! \brief Host-mirrored box parameters in signed integer pm (24 bytes). */
+/*! \brief Host-mirrored box parameters in signed FP32 pm (12 bytes). */
 typedef struct GGEMSWorldRecord {
   /*! \brief Positive X half extent; all-zero record denotes no World. */
-  long half_extent_x_pm;
+  float half_extent_x_pm;
 
   /*! \brief Positive Y half extent; all-zero record denotes no World. */
-  long half_extent_y_pm;
+  float half_extent_y_pm;
 
   /*! \brief Positive Z half extent; all-zero record denotes no World. */
-  long half_extent_z_pm;
+  float half_extent_z_pm;
 } GGEMSWorldRecord;
 
 #endif
