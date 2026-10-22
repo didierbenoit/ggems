@@ -134,8 +134,8 @@ GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
                                 box->half_extent_z_pm);
 
   uint inside = current_owner == box->volume_id;
-  float near_parameter = -INFINITY;
-  float far_parameter = INFINITY;
+  float near_parameter = -FLT_MAX;
+  float far_parameter = FLT_MAX;
   uint near_faces = 0U;
   uint far_faces = 0U;
 

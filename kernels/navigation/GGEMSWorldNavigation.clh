@@ -91,7 +91,7 @@ GGEMS_WorldValidateRay(__global GGEMSWorldRecord const *world, float3 position,
 static inline uint
 GGEMS_WorldFindBoundary(__global GGEMSWorldRecord const *world, float3 position,
                         float3 direction, GGEMSBoundaryWitness *witness) {
-  witness->parameter = INFINITY;
+  witness->parameter = FLT_MAX;
   witness->faces = 0U;
   witness->event = GGEMS_NAVIGATION_EVENT_NONE;
   witness->arrival_volume_id = GGEMS_VOLUME_ID_EXTERIOR;
