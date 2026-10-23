@@ -20,7 +20,6 @@
 #include "GGEMS/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/units/GGEMSEnergyUnits.hh"
-#include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
@@ -289,6 +288,10 @@ auto FormatTableLength(std::int64_t length_pm) -> std::string {
 // =============================================================================
 
 auto FormatPosition(GGEMSObserverRecord const &record) -> std::string {
+  if (record.position_valid == 0U) {
+    return "unrepresentable";
+  }
+
   return std::format("({}, {}, {})", FormatTableLength(record.position_x_pm),
                      FormatTableLength(record.position_y_pm),
                      FormatTableLength(record.position_z_pm));

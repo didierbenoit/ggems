@@ -29,6 +29,7 @@
  */
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -63,6 +64,8 @@
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 
 #include "GGEMSNavigationTestDevices.hh"
+#include "GGEMSBoxFP32Oracle.hh"
+#include "GGEMSFP32TestOracle.hh"
 
 namespace {
 
@@ -79,8 +82,6 @@ using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 using World = ggems::geometry::GGEMSWorld;
 using ggems::geometry::MakePositionPM;
-
-constexpr std::int64_t k_100_mm{100'000'000'000LL};
 
 auto Material(char const *name) -> ggems::core::materials::GGEMSMaterial {
   return ggems::core::materials::builtins::BuildBuiltInMaterial(name);
@@ -104,11 +105,8 @@ auto MakeBox(char const *material = "Water") -> Box {
   return box;
 }
 
-/*! \brief Device record of MakeBox() admitted and compiled by the World with
- * Material 1. */
-auto MakeBoxRecord() -> BoxRecord {
-  World world = MakeWorld();
-  world.AddVolume(MakeBox());
+/*! \brief Compile extents from the same World that supplies the Box pose. */
+auto MakeBoxRecord(World const &world) -> BoxRecord {
   world.Validate();
   std::array<std::uint32_t, 1U> const material_ids{1U};
   return world.BuildBoxRecords(material_ids)[0U];
@@ -148,6 +146,7 @@ auto MakeWorkload(ggems::ocl::GGEMSOpenCLContext &context,
                   std::span<BoxRecord const> boxes)
   -> std::unique_ptr<TransportWorkload> {
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources;
+  sources.reserve(source_count);
   for (std::size_t index = 0U; index < source_count; ++index) {
     sources.push_back(std::make_shared<ggems::core::sources::GGEMSSource>());
   }
@@ -164,11 +163,10 @@ auto MakeWorkload(ggems::ocl::GGEMSOpenCLContext &context,
     world, volume);
 }
 
-/*! \brief One history: start, direction and its World exit. */
+/*! \brief One authored history; its represented World exit is analytic. */
 struct HistoryCase {
   std::array<std::int64_t, 3U> position_pm;
   std::array<double, 3U> direction;
-  std::array<std::int64_t, 3U> exit_pm;
 };
 
 /*! \brief Records of one history in device publication order. */
@@ -181,6 +179,33 @@ auto RecordsOf(TransportRunReport const &report, std::uint64_t primary_id)
     }
   }
   return records;
+}
+
+/*! \brief Independently intersect the packed scene and bound all movement
+ * stages; canonical observer export contributes at most one half pm. */
+auto ExpectWorldExit(ObserverRecord const &record, World const &world,
+                     SourceRecord const &source) -> void {
+  auto const volume = world.BuildAnalyticVolumeRecord(1U);
+  auto const pose = world.BuildBoxPoseRecord();
+  auto const *box = pose.has_value() ? &volume.parameters.box : nullptr;
+  std::array const start{
+    source.position_x_pm,
+    source.position_y_pm,
+    source.position_z_pm,
+  };
+  std::array const direction{source.axis_z_x, source.axis_z_y, source.axis_z_z};
+  auto const expected = ggems::test::box_oracle::WorldExit(
+    world.BuildRecord(), box, pose.has_value() ? &*pose : nullptr,
+    ggems::test::box_oracle::PackedPoint(start), direction);
+  std::array const actual{
+    record.position_x_pm,
+    record.position_y_pm,
+    record.position_z_pm,
+  };
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    ggems::test::fp32::ExpectWithin(static_cast<double>(actual[axis]),
+                                    expected[axis], 0.5);
+  }
 }
 
 /*! \brief Runs every history in one launch and checks completion and exit. */
@@ -219,9 +244,14 @@ auto ExpectHistories(World const &world, std::span<BoxRecord const> boxes,
       EXPECT_EQ(source.record_kind,
                 ggems::core::observer::ToKernelObserverRecordKind(
                   ObserverRecordKind::Source));
-      EXPECT_EQ(source.position_x_pm, history.position_pm[0U]);
-      EXPECT_EQ(source.position_y_pm, history.position_pm[1U]);
-      EXPECT_EQ(source.position_z_pm, history.position_pm[2U]);
+      // Source export tests the exact upload conversion, not intersection
+      // accuracy. These ordinary-range integer floats export without loss.
+      EXPECT_EQ(source.position_x_pm,
+                std::llround(static_cast<float>(history.position_pm[0U])));
+      EXPECT_EQ(source.position_y_pm,
+                std::llround(static_cast<float>(history.position_pm[1U])));
+      EXPECT_EQ(source.position_z_pm,
+                std::llround(static_cast<float>(history.position_pm[2U])));
 
       ObserverRecord const &terminal = history_records.back();
       EXPECT_EQ(terminal.record_kind,
@@ -229,9 +259,7 @@ auto ExpectHistories(World const &world, std::span<BoxRecord const> boxes,
                   ObserverRecordKind::Terminal));
       EXPECT_EQ(terminal.status, ggems::core::particles::ToKernelParticleStatus(
                                    ParticleStatus::EscapedWorld));
-      EXPECT_EQ(terminal.position_x_pm, history.exit_pm[0U]);
-      EXPECT_EQ(terminal.position_y_pm, history.exit_pm[1U]);
-      EXPECT_EQ(terminal.position_z_pm, history.exit_pm[2U]);
+      ExpectWorldExit(terminal, world, records[index]);
       EXPECT_EQ(terminal.energy_micro_eV, records[index].energy_micro_eV);
       EXPECT_EQ(terminal.time_ps, records[index].time_start_ps);
       EXPECT_FLOAT_EQ(terminal.direction_x, records[index].axis_z_x);
@@ -247,36 +275,43 @@ auto ExpectHistories(World const &world, std::span<BoxRecord const> boxes,
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, AioninoCrossesTheBoxThenExitsTheWorld) {
-  World const world = MakeWorld();
-  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord()};
+  World const world = MakeWorld().AddVolume(MakeBox());
+  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord(world)};
 
   // The intermediate boundaries of these histories are verified by the
   // traced-stream test; this launch checks the unmodified production stream.
   std::vector<HistoryCase> const cases{
     // Axis-aligned: World -> Box (-X face) -> World (+X face) -> World exit.
-    {.position_pm = {-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0, 0.0, 0.0},
-     .exit_pm = {k_100_mm, -20'000'000'000LL, 5'000'000'000LL}},
+    {
+      .position_pm = {-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
+      .direction = {1.0, 0.0, 0.0},
+    },
     // Body diagonal through the corner, exit through +Y, World exit +Z.
-    {.position_pm = {-50'000'000'000LL, -60'000'000'000LL, -40'000'000'000LL},
-     .direction = {1.0, 1.0, 1.0},
-     .exit_pm = {90'000'000'000LL, 80'000'000'000LL, k_100_mm}},
-    // Oblique miss (stored normalized (1,2,3)) with oracle-rounded World exit.
-    {.position_pm = {-20'000'000'000LL, -90'000'000'000LL, -10'000'000'000LL},
-     .direction = {1.0, 2.0, 3.0},
-     .exit_pm = {16'666'665'304LL, -16'666'669'392LL, k_100_mm}},
+    {
+      .position_pm = {-50'000'000'000LL, -60'000'000'000LL, -40'000'000'000LL},
+      .direction = {1.0, 1.0, 1.0},
+    },
+    // Oblique miss (stored normalized (1,2,3)) with an independent packed-scene
+    // World exit.
+    {
+      .position_pm = {-20'000'000'000LL, -90'000'000'000LL, -10'000'000'000LL},
+      .direction = {1.0, 2.0, 3.0},
+    },
     // Sliding along the +Y Box face plane: no boundary.
-    {.position_pm = {-90'000'000'000LL, -10'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0, 0.0, 0.0},
-     .exit_pm = {k_100_mm, -10'000'000'000LL, 5'000'000'000LL}},
-    // One picometer inside the +Y face plane: true crossing.
-    {.position_pm = {-90'000'000'000LL, -10'000'000'001LL, 5'000'000'000LL},
-     .direction = {1.0, 0.0, 0.0},
-     .exit_pm = {k_100_mm, -10'000'000'001LL, 5'000'000'000LL}},
+    {
+      .position_pm = {-90'000'000'000LL, -10'000'000'000LL, 5'000'000'000LL},
+      .direction = {1.0, 0.0, 0.0},
+    },
+    // One micrometer inside the +Y face plane: distinct after FP32 packing.
+    {
+      .position_pm = {-90'000'000'000LL, -10'001'000'000LL, 5'000'000'000LL},
+      .direction = {1.0, 0.0, 0.0},
+    },
     // Moving along the +Z face plane diagonally: tangent, no boundary.
-    {.position_pm = {-90'000'000'000LL, -40'000'000'000LL, 20'000'000'000LL},
-     .direction = {1.0, 1.0, 0.0},
-     .exit_pm = {50'000'000'000LL, k_100_mm, 20'000'000'000LL}},
+    {
+      .position_pm = {-90'000'000'000LL, -40'000'000'000LL, 20'000'000'000LL},
+      .direction = {1.0, 1.0, 0.0},
+    },
   };
 
   ExpectHistories(world, boxes, cases);
@@ -286,30 +321,36 @@ TEST_F(GGEMSNavigationDeviceTest, AioninoCrossesTheBoxThenExitsTheWorld) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, AioninoBornInsideOrOnTheBoxSurface) {
-  World const world = MakeWorld();
-  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord()};
+  World const world = MakeWorld().AddVolume(MakeBox());
+  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord(world)};
 
   std::vector<HistoryCase> const cases{
     // Born strictly inside, -Z: Box exit then World exit.
-    {.position_pm = {0LL, -20'000'000'000LL, 0LL},
-     .direction = {0.0, 0.0, -1.0},
-     .exit_pm = {0LL, -20'000'000'000LL, -k_100_mm}},
+    {
+      .position_pm = {0LL, -20'000'000'000LL, 0LL},
+      .direction = {0.0, 0.0, -1.0},
+    },
     // Born on the -X face pointing inward: Box owner, exits through +X.
-    {.position_pm = {-20'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0, 0.0, 0.0},
-     .exit_pm = {k_100_mm, -20'000'000'000LL, 5'000'000'000LL}},
+    {
+      .position_pm = {-20'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
+      .direction = {1.0, 0.0, 0.0},
+    },
     // Born on the -X face pointing outward: World owner, no Box event.
-    {.position_pm = {-20'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {-1.0, 0.0, 0.0},
-     .exit_pm = {-k_100_mm, -20'000'000'000LL, 5'000'000'000LL}},
-    // Born on the (-X,-Y) edge with both faces left inward: Box owner.
-    {.position_pm = {-20'000'000'000LL, -30'000'000'000LL, 0LL},
-     .direction = {1.0, 1.0, 0.0},
-     .exit_pm = {k_100_mm, 90'000'000'000LL, 0LL}},
+    {
+      .position_pm = {-20'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
+      .direction = {-1.0, 0.0, 0.0},
+    },
+    // Authored (-X,-Y) edge packs 1024 pm outside -Y: World owner,
+    // then -Y entry, +Y exit, +X World exit (traced companion test).
+    {
+      .position_pm = {-20'000'000'000LL, -30'000'000'000LL, 0LL},
+      .direction = {1.0, 1.0, 0.0},
+    },
     // Born inside, exits through the -Y face then the World -Y face.
-    {.position_pm = {0LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {0.0, -1.0, 0.0},
-     .exit_pm = {0LL, -k_100_mm, 5'000'000'000LL}},
+    {
+      .position_pm = {0LL, -20'000'000'000LL, 5'000'000'000LL},
+      .direction = {0.0, -1.0, 0.0},
+    },
   };
 
   ExpectHistories(world, boxes, cases);
@@ -319,8 +360,8 @@ TEST_F(GGEMSNavigationDeviceTest, AioninoBornInsideOrOnTheBoxSurface) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, WorldOnlyAndOtherSpeciesAreUnchangedByBoxes) {
-  World const world = MakeWorld();
-  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord()};
+  World const world = MakeWorld().AddVolume(MakeBox());
+  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord(world)};
 
   for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
     SCOPED_TRACE(context.GetDevice().GetName());
@@ -329,28 +370,37 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOnlyAndOtherSpeciesAreUnchangedByBoxes) {
     auto workload = MakeWorkload(context, random, 2U, &world, boxes);
     // A Gamma through the Box keeps the one-meter diagnostic projection; a
     // second Aionino shares the launch so multi-source ordering is exercised.
-    auto const config = MakeConfig(
-      {MakeSource({-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-                  {1.0, 0.0, 0.0}, ParticleType::Gamma),
-       MakeSource({-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-                  {1.0, 0.0, 0.0})});
+    auto const config = MakeConfig({
+      MakeSource({-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
+                 {1.0, 0.0, 0.0}, ParticleType::Gamma),
+      MakeSource({-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
+                 {1.0, 0.0, 0.0}),
+    });
     ASSERT_NO_THROW(workload->ValidateRunConfig(config));
     auto const report = workload->Run(config);
 
     EXPECT_EQ(report.counters.completed_history_count, 2U);
     EXPECT_EQ(report.counters.escaped_world_count, 1U);
+    EXPECT_EQ(report.counters.unresolved_geometry_count, 0U);
+    EXPECT_EQ(report.counters.terminal_particle_count, 2U);
 
     auto const gamma = RecordsOf(report, 0U);
     ASSERT_EQ(gamma.size(), 2U);
-    EXPECT_EQ(gamma.back().position_x_pm,
-              -90'000'000'000LL + 1'000'000'000'000LL);
+    auto const gamma_endpoint = ggems::test::fp32::Add(
+      ggems::test::fp32::FromFloat(
+        static_cast<float>(config.source_records[0].position_x_pm)),
+      ggems::test::fp32::Multiply(
+        ggems::test::fp32::FromFloat(1'000'000'000'000.0F),
+        ggems::test::fp32::FromFloat(config.source_records[0].axis_z_x)));
+    ggems::test::fp32::ExpectWithin(
+      static_cast<double>(gamma.back().position_x_pm), gamma_endpoint, 0.5);
     EXPECT_EQ(
       gamma.back().status,
       ggems::core::particles::ToKernelParticleStatus(ParticleStatus::Killed));
 
     auto const aionino = RecordsOf(report, 1U);
     ASSERT_EQ(aionino.size(), 2U);
-    EXPECT_EQ(aionino.back().position_x_pm, k_100_mm);
+    ExpectWorldExit(aionino.back(), world, config.source_records[1]);
     EXPECT_EQ(aionino.back().status,
               ggems::core::particles::ToKernelParticleStatus(
                 ParticleStatus::EscapedWorld));
@@ -399,11 +449,13 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
     run.SetRandom(rng);
     run.AddSource(source);
     run.SetObserver(observer);
-    run.SetWorld(MakeWorld().AddVolume(MakeBox("Vacuum")));
+    auto const owned_world = MakeWorld().AddVolume(MakeBox("Vacuum"));
+    run.SetWorld(owned_world);
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     ASSERT_EQ(observer->GetRecords().size(), 2U);
-    EXPECT_EQ(observer->GetRecords().back().position_x_pm, k_100_mm);
+    ExpectWorldExit(observer->GetRecords().back(), owned_world,
+                    source->BuildRecord());
   }
   {
     // Replacing the attached World before Initialize replaces its whole
@@ -428,8 +480,8 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     ASSERT_EQ(inner_observer->GetRecords().size(), 2U);
-    EXPECT_EQ(inner_observer->GetRecords().back().position_x_pm,
-              25'000'000'000LL);
+    ExpectWorldExit(inner_observer->GetRecords().back(), small,
+                    inner_source->BuildRecord());
   }
 
   ggems::core::GGEMSRun run{};
@@ -439,6 +491,7 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
   World world = MakeWorld();
   world.AddVolume(MakeBox());
   run.SetWorld(world);
+  World const frozen_world = world;
   // The Run owns its copy: later edits of the authoring object (a 400 mm
   // World would move the exit to +200 mm) and attachment after Initialize do
   // not reach the frozen scene.
@@ -449,7 +502,7 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
 
   auto const records = observer->GetRecords();
   ASSERT_EQ(records.size(), 2U);
-  EXPECT_EQ(records[1U].position_x_pm, k_100_mm);
+  ExpectWorldExit(records[1U], frozen_world, source->BuildRecord());
   EXPECT_EQ(records[1U].status, ggems::core::particles::ToKernelParticleStatus(
                                   ParticleStatus::EscapedWorld));
 }
@@ -466,13 +519,15 @@ TEST_F(GGEMSNavigationDeviceTest, AioninoUsesTheUploadedRotatedBoxPose) {
     HistoryCase{
       .position_pm = {-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
       .direction = {1.0, 0.0, 0.0},
-      .exit_pm = {k_100_mm, -20'000'000'000LL, 5'000'000'000LL}},
+    },
     HistoryCase{
       .position_pm = {10'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
       .direction = {-1.0, 0.0, 0.0},
-      .exit_pm = {-k_100_mm, -20'000'000'000LL, 5'000'000'000LL}},
-    HistoryCase{.position_pm = {-90'000'000'000LL, 80'000'000'000LL, 0},
-                .direction = {1.0, 0.0, 0.0},
-                .exit_pm = {k_100_mm, 80'000'000'000LL, 0}}};
+    },
+    HistoryCase{
+      .position_pm = {-90'000'000'000LL, 80'000'000'000LL, 0},
+      .direction = {1.0, 0.0, 0.0},
+    },
+  };
   ExpectHistories(world, boxes, cases);
 }

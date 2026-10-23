@@ -64,8 +64,9 @@ inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
  *
  * The World frame is the canonical global frame of Position3PM and Direction3:
  * right-handed with X x Y = Z and default direction +Z. Faces lie at exactly
- * +/- half extent on the integer picometer lattice, for device Navigation. The
- * World medium is an explicit owned Material value; exact Vacuum is admissible.
+ * +/- half extent on the host integer picometer lattice. Device records convert
+ * these spatial values once to FP32 pm for Navigation. The World medium is an
+ * explicit owned Material value; exact Vacuum is admissible.
  *
  * The object is a host authoring value. A default-constructed World has no
  * size, no Material and no volume; SetSize(), SetMaterial() and AddVolume()
@@ -102,6 +103,18 @@ public:
    * \return This World for chained configuration.
    */
   auto SetMaterial(core::materials::GGEMSMaterial material) -> GGEMSWorld &;
+
+  /*!
+   * \brief Returns the effective World surface half-band in FP32 pm.
+   * \return Uploaded half-band, or zero before the World size is set.
+   */
+  [[nodiscard]] auto GetNavigationTolerancePM() const noexcept -> float;
+
+  /*!
+   * \brief Returns the effective single-volume surface half-band in FP32 pm.
+   * \return Uploaded Box/Sphere half-band, or zero for a World-only scene.
+   */
+  [[nodiscard]] auto GetVolumeNavigationTolerancePM() const noexcept -> float;
 
   /*!
    * \brief Adds one complete physical volume owned by this World.
@@ -153,7 +166,8 @@ public:
    * containment check.
    *
    * \throws GGEMSRecoverable If the World size or Material is not set, or if a
-   * volume is not strictly inside the World.
+   * volume is not strictly inside the World, or the requested FP32 tolerance
+   * cannot resolve the admitted feature and World-clearance bands.
    */
   auto Validate() const -> void;
 
@@ -163,7 +177,7 @@ public:
    *
    * Admission belongs to Validate(); this method only packs. Volume
    * identity is 1 after the World (identity 0). Every Box stores local half
-   * extents and uses the separate center and FP32 pose record.
+   * extents in FP32 pm and uses the separate FP32 center and pose record.
    *
    * \param[in] material_ids Dense snapshot-local Material identity of each
    * Box, supplied by the scene compiler in GetBoxes() order.
@@ -210,7 +224,7 @@ public:
   /*!
    * \brief Packs immutable geometry parameters for the device.
    *
-   * \return Three signed half extents in canonical pm; all zero before
+   * \return FP32 half extents and surface half-band in pm; all zero before
    * SetSize(), which the device treats as an unconfigured World.
    */
   [[nodiscard]] auto BuildRecord() const noexcept -> GGEMSWorldRecord;
@@ -254,6 +268,11 @@ private:
 
   /*! \brief Owned single physical volume, absent until AddVolume(). */
   std::variant<std::monostate, GGEMSBox, GGEMSSphere> volume_;
+
+  /*!
+   * \brief Explicit surface half-band; absent selects per-boundary defaults.
+   */
+  std::optional<units::Length> navigation_tolerance_;
 };
 
 } // namespace ggems::geometry

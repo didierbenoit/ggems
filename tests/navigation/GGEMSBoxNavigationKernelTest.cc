@@ -30,6 +30,7 @@
  */
 
 #include <array>
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -52,6 +53,8 @@
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 
 #include "GGEMSNavigationTestDevices.hh"
+#include "GGEMSBoxFP32Oracle.hh"
+#include "GGEMSFP32TestOracle.hh"
 
 namespace {
 
@@ -76,22 +79,28 @@ constexpr std::uint32_t k_face_plus_y{8U};
 constexpr std::uint32_t k_face_minus_z{16U};
 constexpr std::uint32_t k_face_plus_z{32U};
 
-constexpr std::int64_t k_100_mm{100'000'000'000LL};
+// A 2^30-pm grid unit is 1.073741824 mm. Integer grid coordinates below
+// preserve the authored face/edge/corner ties through every FP32 subtraction.
+constexpr std::int64_t k_unit{1'073'741'824LL};
+constexpr std::int64_t k_world_half{(100 * k_unit)};
 
 /*! \brief Asymmetric, off-center Box: x in [-20, 40], y in [-30, -10],
- * z in [-10, 20] mm. */
-constexpr GGEMSBoxRecord k_box_record{.half_extent_x_pm = 30'000'000'000ULL,
-                                      .half_extent_y_pm = 10'000'000'000ULL,
-                                      .half_extent_z_pm = 15'000'000'000ULL,
-                                      .volume_id = k_box,
-                                      .material_id = 1U};
+ * z in [-10, 20] grid units. */
+constexpr GGEMSBoxRecord k_box_record{
+  .half_extent_x_pm = static_cast<float>((30 * k_unit)),
+  .half_extent_y_pm = static_cast<float>((10 * k_unit)),
+  .half_extent_z_pm = static_cast<float>((15 * k_unit)),
+  .volume_id = k_box,
+  .material_id = 1U,
+};
 constexpr ggems::geometry::GGEMSBoxPoseRecord k_box_pose{
-  .center_x_pm = 10'000'000'000LL,
-  .center_y_pm = -20'000'000'000LL,
-  .center_z_pm = 5'000'000'000LL,
+  .center_x_pm = static_cast<float>((10 * k_unit)),
+  .center_y_pm = static_cast<float>(-(20 * k_unit)),
+  .center_z_pm = static_cast<float>((5 * k_unit)),
   .axis_x_x = 1.0F,
   .axis_y_y = 1.0F,
-  .axis_z_z = 1.0F};
+  .axis_z_z = 1.0F,
+};
 
 /*! \brief One transaction: start, direction and the expected device answer. */
 struct RayCase {
@@ -101,7 +110,6 @@ struct RayCase {
   std::uint32_t status;
   std::uint32_t event;
   std::uint32_t faces;
-  std::array<std::int64_t, 3U> endpoint;
   std::uint32_t arrival;
 };
 
@@ -111,10 +119,12 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
              std::span<GGEMSBoxRecord const> boxes,
              std::span<RayCase const> cases) -> void {
   auto const ray_count = static_cast<std::uint32_t>(cases.size());
-  std::vector<std::int64_t> positions;
+  std::vector<float> positions;
   std::vector<float> directions;
   for (RayCase const &ray : cases) {
-    positions.insert(positions.end(), ray.position.begin(), ray.position.end());
+    for (auto coordinate : ray.position) {
+      positions.push_back(static_cast<float>(coordinate));
+    }
     directions.insert(directions.end(), ray.direction.begin(),
                       ray.direction.end());
   }
@@ -122,7 +132,8 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
   auto make =
     [&context](auto const &values) -> ggems::ocl::GGEMSOpenCLSVMBuffer {
     auto buffer = context.CreateSVMBuffer(ggems::units::Bytes{
-      static_cast<std::uint64_t>(values.size() * sizeof(values[0]))});
+      static_cast<std::uint64_t>(values.size() * sizeof(values[0])),
+    });
     ggems::ocl::WriteSVMFromHost(buffer, std::span{values});
     return buffer;
   };
@@ -144,7 +155,7 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
   auto position_buffer = make(positions);
   auto direction_buffer = make(directions);
   std::vector<std::uint32_t> const zeros(ray_count, 0U);
-  std::vector<std::int64_t> const zeros64(3ULL * ray_count, 0);
+  std::vector<float> const zeros64(3ULL * ray_count, 0);
   auto start_owners = make(zeros);
   auto statuses = make(zeros);
   auto events = make(zeros);
@@ -178,7 +189,7 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
   std::vector<std::uint32_t> got_status(ray_count);
   std::vector<std::uint32_t> got_event(ray_count);
   std::vector<std::uint32_t> got_faces(ray_count);
-  std::vector<std::int64_t> got_end(3ULL * ray_count);
+  std::vector<float> got_end(3ULL * ray_count);
   std::vector<std::uint32_t> got_arrival(ray_count);
   ggems::ocl::ReadSVMToHost(start_owners, std::span{got_owner});
   ggems::ocl::ReadSVMToHost(statuses, std::span{got_status});
@@ -194,9 +205,24 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
                   ray.position[0U], ray.position[1U], ray.position[2U],
                   ray.direction[0U], ray.direction[1U], ray.direction[2U]));
     EXPECT_EQ(got_status[index], ray.status);
-    EXPECT_EQ(got_end[(3U * index)], ray.endpoint[0U]);
-    EXPECT_EQ(got_end[(3U * index) + 1U], ray.endpoint[1U]);
-    EXPECT_EQ(got_end[(3U * index) + 2U], ray.endpoint[2U]);
+    auto const start = ggems::test::box_oracle::PackedPoint(ray.position);
+    if (ray.status == k_resolved) {
+      auto const parameter = ggems::test::box_oracle::Parameter(
+        world, boxes.front(), k_box_pose, start, ray.direction, ray.faces,
+        ray.event == k_event_world_exit);
+      auto const expected =
+        ggems::test::box_oracle::Advance(start, ray.direction, parameter);
+      for (std::size_t axis = 0; axis < 3; ++axis) {
+        ggems::test::fp32::ExpectWithin(got_end[(3U * index) + axis],
+                                        expected[axis]);
+      }
+    } else {
+      // An unresolved transaction must not commit a position change.
+      for (std::size_t axis = 0; axis < 3; ++axis) {
+        EXPECT_EQ(got_end[(3U * index) + axis],
+                  static_cast<float>(ray.position[axis]));
+      }
+    }
     if (got_owner[index] == k_exterior && got_status[index] != k_resolved) {
       // AnalyticLocate does not define ownership when location fails.
       continue;
@@ -209,9 +235,11 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
 }
 
 auto ExpectRays(std::span<RayCase const> cases) -> void {
-  GGEMSWorldRecord const world{.half_extent_x_pm = k_100_mm,
-                               .half_extent_y_pm = k_100_mm,
-                               .half_extent_z_pm = k_100_mm};
+  GGEMSWorldRecord const world{
+    .half_extent_x_pm = static_cast<float>(k_world_half),
+    .half_extent_y_pm = static_cast<float>(k_world_half),
+    .half_extent_z_pm = static_cast<float>(k_world_half),
+  };
   std::array<GGEMSBoxRecord, 1U> const boxes{k_box_record};
   for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
     SCOPED_TRACE(context.GetDevice().GetName());
@@ -227,11 +255,13 @@ auto ExpectRays(std::span<RayCase const> cases) -> void {
 TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
   for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
     SCOPED_TRACE(context.GetDevice().GetName());
-    GGEMSBoxRecord const populated{.half_extent_x_pm = 1'000'000'000'001ULL,
-                                   .half_extent_y_pm = 2ULL,
-                                   .half_extent_z_pm = 3'000'000'000'003ULL,
-                                   .volume_id = 7U,
-                                   .material_id = 8U};
+    GGEMSBoxRecord const populated{
+      .half_extent_x_pm = static_cast<float>(1'000'000'000'001ULL),
+      .half_extent_y_pm = static_cast<float>(2ULL),
+      .half_extent_z_pm = static_cast<float>(3'000'000'000'003ULL),
+      .volume_id = 7U,
+      .material_id = 8U,
+    };
     std::array<GGEMSBoxRecord, 2U> boxes{{GGEMSBoxRecord{}, populated}};
     auto box_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(boxes)});
@@ -263,11 +293,12 @@ TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
       offsetof(GGEMSBoxRecord, material_id),
       alignof(GGEMSBoxRecord),
       sizeof(GGEMSBoxRecord),
-      populated.half_extent_x_pm,
-      populated.half_extent_y_pm,
-      populated.half_extent_z_pm,
+      std::bit_cast<std::uint32_t>(populated.half_extent_x_pm),
+      std::bit_cast<std::uint32_t>(populated.half_extent_y_pm),
+      std::bit_cast<std::uint32_t>(populated.half_extent_z_pm),
       populated.volume_id,
-      populated.material_id};
+      populated.material_id,
+    };
     EXPECT_EQ(layout, expected);
 
     ggems::ocl::ReadSVMToHost(box_buffer, std::span<GGEMSBoxRecord>{boxes});
@@ -285,89 +316,112 @@ TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, LocatesOwnersAndFindsAxisAlignedBoundaries) {
-  std::array<RayCase, 9U> const cases{{
-    // World start, +X through the Box: first boundary is the -X Box entry.
-    {.position = {-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_entry,
-     .faces = k_face_minus_x,
-     .endpoint = {-20'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_box},
-    // Box start (strictly inside), +X: exit through the +X Box face.
-    {.position = {0LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.0F, 0.0F},
-     .start_owner = k_box,
-     .status = k_resolved,
-     .event = k_event_exit,
-     .faces = k_face_plus_x,
-     .endpoint = {40'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_world},
-    // World start after the Box, +X: no crossing, World exit, exterior owner.
-    {.position = {40'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_plus_x,
-     .endpoint = {k_100_mm, -20'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_exterior},
-    // On the -X Box face pointing inward: owned by the Box, exits at +X.
-    {.position = {-20'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.0F, 0.0F},
-     .start_owner = k_box,
-     .status = k_resolved,
-     .event = k_event_exit,
-     .faces = k_face_plus_x,
-     .endpoint = {40'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_world},
-    // On the -X Box face pointing outward: World owner, straight to -X World.
-    {.position = {-20'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {-1.0F, 0.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_minus_x,
-     .endpoint = {-k_100_mm, -20'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_exterior},
-    // Sliding along the +Y Box face plane (y = -10 mm): no entry.
-    {.position = {-90'000'000'000LL, -10'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_plus_x,
-     .endpoint = {k_100_mm, -10'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_exterior},
-    // One picometer inside the +Y face plane: true entry through -X.
-    {.position = {-90'000'000'000LL, -10'000'000'001LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_entry,
-     .faces = k_face_minus_x,
-     .endpoint = {-20'000'000'000LL, -10'000'000'001LL, 5'000'000'000LL},
-     .arrival = k_box},
-    // Parallel ray outside the slab: no entry.
-    {.position = {-90'000'000'000LL, -9'999'999'999LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_plus_x,
-     .endpoint = {k_100_mm, -9'999'999'999LL, 5'000'000'000LL},
-     .arrival = k_exterior},
-    // Box behind the start (moving away): no entry.
-    {.position = {50'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_plus_x,
-     .endpoint = {k_100_mm, -20'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_exterior},
-  }};
+  std::array<RayCase, 9U> const cases{
+    {
+      // World start, +X through the Box: first boundary is the -X Box entry.
+      {
+        .position = {-(90 * k_unit), -(20 * k_unit), (5 * k_unit)},
+        .direction = {1.0F, 0.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_entry,
+        .faces = k_face_minus_x,
+        .arrival = k_box,
+      },
+      // Box start (strictly inside), +X: exit through the +X Box face.
+      {
+        .position = {0LL, -(20 * k_unit), (5 * k_unit)},
+        .direction = {1.0F, 0.0F, 0.0F},
+        .start_owner = k_box,
+        .status = k_resolved,
+        .event = k_event_exit,
+        .faces = k_face_plus_x,
+        .arrival = k_world,
+      },
+      // World start after the Box, +X: no crossing, World exit, exterior owner.
+      {
+        .position = {(40 * k_unit), -(20 * k_unit), (5 * k_unit)},
+        .direction = {1.0F, 0.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_plus_x,
+        .arrival = k_exterior,
+      },
+      // On the -X Box face pointing inward: owned by the Box, exits at +X.
+      {
+        .position = {-(20 * k_unit), -(20 * k_unit), (5 * k_unit)},
+        .direction = {1.0F, 0.0F, 0.0F},
+        .start_owner = k_box,
+        .status = k_resolved,
+        .event = k_event_exit,
+        .faces = k_face_plus_x,
+        .arrival = k_world,
+      },
+      // On the -X Box face pointing outward: World owner, straight to -X World.
+      {
+        .position = {-(20 * k_unit), -(20 * k_unit), (5 * k_unit)},
+        .direction = {-1.0F, 0.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_minus_x,
+        .arrival = k_exterior,
+      },
+      // Sliding along the +Y Box face plane (y = -10 grid units): no entry.
+      {
+        .position = {-(90 * k_unit), -(10 * k_unit), (5 * k_unit)},
+        .direction = {1.0F, 0.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_plus_x,
+        .arrival = k_exterior,
+      },
+      // One 1.048576-micrometer step inside the +Y face plane: true entry
+      // through
+      // -X.
+      {
+        .position =
+          {
+            -(90 * k_unit),
+            -((10 * k_unit) + (k_unit / 1024)),
+            (5 * k_unit),
+          },
+        .direction = {1.0F, 0.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_entry,
+        .faces = k_face_minus_x,
+        .arrival = k_box,
+      },
+      // Parallel ray outside the slab: no entry.
+      {
+        .position =
+          {
+            -(90 * k_unit),
+            -((10 * k_unit) - (k_unit / 1024)),
+            (5 * k_unit),
+          },
+        .direction = {1.0F, 0.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_plus_x,
+        .arrival = k_exterior,
+      },
+      // Box behind the start (moving away): no entry.
+      {
+        .position = {(50 * k_unit), -(20 * k_unit), (5 * k_unit)},
+        .direction = {1.0F, 0.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_plus_x,
+        .arrival = k_exterior,
+      },
+    },
+  };
 
   ExpectRays(cases);
 }
@@ -376,80 +430,92 @@ TEST_F(GGEMSNavigationDeviceTest, LocatesOwnersAndFindsAxisAlignedBoundaries) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, HandlesEdgesCornersTangentsAndDiagonals) {
-  std::array<RayCase, 8U> const cases{{
-    // Body diagonal entering exactly through the (-X,-Y,-Z) corner.
-    {.position = {-50'000'000'000LL, -60'000'000'000LL, -40'000'000'000LL},
-     .direction = {1.0F, 1.0F, 1.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_entry,
-     .faces = k_face_minus_x | k_face_minus_y | k_face_minus_z,
-     .endpoint = {-20'000'000'000LL, -30'000'000'000LL, -10'000'000'000LL},
-     .arrival = k_box},
-    // From that corner, inside: the +Y face limits first.
-    {.position = {-20'000'000'000LL, -30'000'000'000LL, -10'000'000'000LL},
-     .direction = {1.0F, 1.0F, 1.0F},
-     .start_owner = k_box,
-     .status = k_resolved,
-     .event = k_event_exit,
-     .faces = k_face_plus_y,
-     .endpoint = {0LL, -10'000'000'000LL, 10'000'000'000LL},
-     .arrival = k_world},
-    // Entering exactly through the (-X,-Y) edge.
-    {.position = {-30'000'000'000LL, -40'000'000'000LL, 0LL},
-     .direction = {1.0F, 1.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_entry,
-     .faces = k_face_minus_x | k_face_minus_y,
-     .endpoint = {-20'000'000'000LL, -30'000'000'000LL, 0LL},
-     .arrival = k_box},
-    // Touching the (-X,-Y) edge and leaving: tangent, no entry.
-    {.position = {-30'000'000'000LL, -20'000'000'000LL, 0LL},
-     .direction = {1.0F, -1.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_minus_y,
-     .endpoint = {50'000'000'000LL, -k_100_mm, 0LL},
-     .arrival = k_exterior},
-    // Moving along the +Z face plane (z = 20 mm) diagonally: no entry.
-    {.position = {-90'000'000'000LL, -40'000'000'000LL, 20'000'000'000LL},
-     .direction = {1.0F, 1.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_plus_y,
-     .endpoint = {50'000'000'000LL, k_100_mm, 20'000'000'000LL},
-     .arrival = k_exterior},
-    // Oblique miss (1,2,3): World exit through +Z with rounded coordinates.
-    {.position = {-20'000'000'000LL, -90'000'000'000LL, -10'000'000'000LL},
-     .direction = {1.0F, 2.0F, 3.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_plus_z,
-     .endpoint = {16'666'666'667LL, -16'666'666'667LL, k_100_mm},
-     .arrival = k_exterior},
-    // Edge start with both coincident faces left inward: Box owner.
-    {.position = {-20'000'000'000LL, -30'000'000'000LL, 0LL},
-     .direction = {1.0F, 1.0F, 0.0F},
-     .start_owner = k_box,
-     .status = k_resolved,
-     .event = k_event_exit,
-     .faces = k_face_plus_y,
-     .endpoint = {0LL, -10'000'000'000LL, 0LL},
-     .arrival = k_world},
-    // Edge start with one coincident face left outward: World owner.
-    {.position = {-20'000'000'000LL, -30'000'000'000LL, 0LL},
-     .direction = {1.0F, -1.0F, 0.0F},
-     .start_owner = k_world,
-     .status = k_resolved,
-     .event = k_event_world_exit,
-     .faces = k_face_minus_y,
-     .endpoint = {50'000'000'000LL, -k_100_mm, 0LL},
-     .arrival = k_exterior},
-  }};
+  std::array<RayCase, 8U> const cases{
+    {
+      // Body diagonal entering exactly through the (-X,-Y,-Z) corner.
+      {
+        .position = {-(50 * k_unit), -(60 * k_unit), -(40 * k_unit)},
+        .direction = {1.0F, 1.0F, 1.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_entry,
+        .faces = k_face_minus_x | k_face_minus_y | k_face_minus_z,
+        .arrival = k_box,
+      },
+      // From that corner, inside: the +Y face limits first.
+      {
+        .position = {-(20 * k_unit), -(30 * k_unit), -(10 * k_unit)},
+        .direction = {1.0F, 1.0F, 1.0F},
+        .start_owner = k_box,
+        .status = k_resolved,
+        .event = k_event_exit,
+        .faces = k_face_plus_y,
+        .arrival = k_world,
+      },
+      // Entering exactly through the (-X,-Y) edge.
+      {
+        .position = {-(30 * k_unit), -(40 * k_unit), 0LL},
+        .direction = {1.0F, 1.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_entry,
+        .faces = k_face_minus_x | k_face_minus_y,
+        .arrival = k_box,
+      },
+      // Touching the (-X,-Y) edge and leaving: tangent, no entry.
+      {
+        .position = {-(30 * k_unit), -(20 * k_unit), 0LL},
+        .direction = {1.0F, -1.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_minus_y,
+        .arrival = k_exterior,
+      },
+      // Moving along the +Z face plane (z = 20 grid units) diagonally: no
+      // entry.
+      {
+        .position = {-(90 * k_unit), -(40 * k_unit), (20 * k_unit)},
+        .direction = {1.0F, 1.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_plus_y,
+        .arrival = k_exterior,
+      },
+      // Oblique miss (1,2,3): World exit through +Z with an independent plane
+      // intersection.
+      {
+        .position = {-(20 * k_unit), -(90 * k_unit), -(10 * k_unit)},
+        .direction = {1.0F, 2.0F, 3.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_plus_z,
+        .arrival = k_exterior,
+      },
+      // Edge start with both coincident faces left inward: Box owner.
+      {
+        .position = {-(20 * k_unit), -(30 * k_unit), 0LL},
+        .direction = {1.0F, 1.0F, 0.0F},
+        .start_owner = k_box,
+        .status = k_resolved,
+        .event = k_event_exit,
+        .faces = k_face_plus_y,
+        .arrival = k_world,
+      },
+      // Edge start with one coincident face left outward: World owner.
+      {
+        .position = {-(20 * k_unit), -(30 * k_unit), 0LL},
+        .direction = {1.0F, -1.0F, 0.0F},
+        .start_owner = k_world,
+        .status = k_resolved,
+        .event = k_event_world_exit,
+        .faces = k_face_minus_y,
+        .arrival = k_exterior,
+      },
+    },
+  };
 
   ExpectRays(cases);
 }
@@ -458,27 +524,32 @@ TEST_F(GGEMSNavigationDeviceTest, HandlesEdgesCornersTangentsAndDiagonals) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, ReportsUnresolvedAndExactTies) {
-  std::array<RayCase, 2U> const cases{{
-    // Zero direction inside the Box: unresolved, position and owner unchanged.
-    {.position = {0LL, -20'000'000'000LL, 5'000'000'000LL},
-     .direction = {0.0F, 0.0F, 0.0F},
-     .start_owner = k_box,
-     .status = k_unresolved,
-     .event = 0U,
-     .faces = 0U,
-     .endpoint = {0LL, -20'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_box},
-    // Inside the Box, exact simultaneous exit through the (+X,+Y) edge:
-    // 30 mm / 1 along X equals 15 mm / 0.5 along Y.
-    {.position = {10'000'000'000LL, -25'000'000'000LL, 5'000'000'000LL},
-     .direction = {1.0F, 0.5F, 0.0F},
-     .start_owner = k_box,
-     .status = k_resolved,
-     .event = k_event_exit,
-     .faces = k_face_plus_x | k_face_plus_y,
-     .endpoint = {40'000'000'000LL, -10'000'000'000LL, 5'000'000'000LL},
-     .arrival = k_world},
-  }};
+  std::array<RayCase, 2U> const cases{
+    {
+      // Zero direction inside the Box: unresolved, position and owner
+      // unchanged.
+      {
+        .position = {0LL, -(20 * k_unit), (5 * k_unit)},
+        .direction = {0.0F, 0.0F, 0.0F},
+        .start_owner = k_box,
+        .status = k_unresolved,
+        .event = 0U,
+        .faces = 0U,
+        .arrival = k_box,
+      },
+      // Inside the Box, exact simultaneous exit through the (+X,+Y) edge:
+      // 30 grid units / 1 along X equals 15 grid units / 0.5 along Y.
+      {
+        .position = {(10 * k_unit), -(25 * k_unit), (5 * k_unit)},
+        .direction = {1.0F, 0.5F, 0.0F},
+        .start_owner = k_box,
+        .status = k_resolved,
+        .event = k_event_exit,
+        .faces = k_face_plus_x | k_face_plus_y,
+        .arrival = k_world,
+      },
+    },
+  };
 
   ExpectRays(cases);
 }

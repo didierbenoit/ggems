@@ -35,7 +35,6 @@
 #include <span>
 #include <functional>
 
-#include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSParticleColors.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
@@ -84,10 +83,11 @@ RecordKindSortOrder(core::observer::GGEMSObserverRecordKind kind) noexcept
 // =============================================================================
 
 /*!
- * \brief Selects records with usable primary/track IDs and ordinary kinds.
+ * \brief Selects records with a usable local track ID and ordinary kinds.
  *
  * \param[in] record Capture to classify.
- * \return False for invalid primary or track IDs, Unknown, or Anomaly.
+ * The maximum uint64 primary identity is a valid transport endpoint.
+ * \return False for invalid local track IDs, Unknown, or Anomaly.
  */
 [[nodiscard]] auto
 IsTraceableRecord(core::observer::GGEMSObserverRecord const &record) noexcept
@@ -347,6 +347,13 @@ auto BuildParticleTraceSegments(
 
   for (auto const *record : views) {
     core::observer::GGEMSObserverRecord const &current = *record;
+
+    // Retain invalid exports until here so adjacent valid points cannot bridge
+    // them.
+    if (current.position_valid == 0U) {
+      previous = nullptr;
+      continue;
+    }
 
     if (previous == nullptr || !SameTrace(*previous, current)) {
       previous = &current;

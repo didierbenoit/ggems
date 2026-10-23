@@ -76,11 +76,11 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
   float3 direction =
     (float3)(particle.direction_x, particle.direction_y, particle.direction_z);
   ulong owner;
-  uint status =
-    GGEMS_AnalyticLocate(world, volume, pose,
-                         (long3)(particle.position_x_pm, particle.position_y_pm,
-                                 particle.position_z_pm),
-                         direction, &owner);
+  uint status = GGEMS_AnalyticLocate(world, volume, pose,
+                                     (float3)(particle.position_x_pm,
+                                              particle.position_y_pm,
+                                              particle.position_z_pm),
+                                     direction, &owner);
   trace[1] = status;
   trace[2] = 0L;
 
@@ -96,11 +96,11 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
 
   for (uint index = 0U; index < 3U; ++index) {
     uint departure = particle.current_volume_id;
-    GGEMSAnalyticBoundary selected;
+    GGEMSBoundaryWitness selected;
     status = GGEMS_AnalyticFindBoundary(world, volume, pose,
-                                        (long3)(particle.position_x_pm,
-                                                particle.position_y_pm,
-                                                particle.position_z_pm),
+                                        (float3)(particle.position_x_pm,
+                                                 particle.position_y_pm,
+                                                 particle.position_z_pm),
                                         direction, departure, event, &selected);
     trace[1] = status;
 
@@ -109,11 +109,6 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
     }
 
     float parameter = selected.parameter;
-    if (selected.boundary.event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) {
-      parameter = ldexp((float)selected.boundary.gap_pm /
-                          (float)selected.boundary.mantissa,
-                        -selected.boundary.exponent);
-    }
     parameters[2U * index] = parameter;
     parameters[2U * index + 1U] = parameter * length(direction);
     status = GGEMS_TransportToNextBoundary(world, volume, pose, &particle,
@@ -131,9 +126,9 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
     trace[offset + 2U] = departure;
     trace[offset + 3U] = particle.current_volume_id;
     trace[offset + 4U] = particle.material_id;
-    trace[offset + 5U] = particle.position_x_pm;
-    trace[offset + 6U] = particle.position_y_pm;
-    trace[offset + 7U] = particle.position_z_pm;
+    trace[offset + 5U] = (long)as_uint(particle.position_x_pm);
+    trace[offset + 6U] = (long)as_uint(particle.position_y_pm);
+    trace[offset + 7U] = (long)as_uint(particle.position_z_pm);
     trace[offset + 8U] = particle.status;
     if (event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) {
       break;

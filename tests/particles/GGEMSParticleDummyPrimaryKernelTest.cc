@@ -135,11 +135,10 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
     EXPECT_EQ(particle.global_particle_id,
               k_global_particle_offset + static_cast<std::uint64_t>(i));
 
-    EXPECT_EQ(particle.track_id,
-              k_global_particle_offset + static_cast<std::uint64_t>(i));
+    EXPECT_EQ(particle.track_id, 0U);
 
     EXPECT_EQ(particle.parent_track_id,
-              ggems::core::particles::k_invalid_id_u64);
+              ggems::core::particles::k_invalid_id_u32);
 
     EXPECT_EQ(particle.particle_type, particle_type);
 
@@ -150,9 +149,9 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
     EXPECT_EQ(particle.generation, 0U);
     EXPECT_EQ(particle.time_ps, 0ULL);
 
-    EXPECT_EQ(particle.position_x_pm, 0LL);
-    EXPECT_EQ(particle.position_y_pm, 0LL);
-    EXPECT_EQ(particle.position_z_pm, 0LL);
+    EXPECT_FLOAT_EQ(particle.position_x_pm, 0.0F);
+    EXPECT_FLOAT_EQ(particle.position_y_pm, 0.0F);
+    EXPECT_FLOAT_EQ(particle.position_z_pm, 0.0F);
 
     EXPECT_EQ(particle.current_navigator_id,
               ggems::core::particles::k_invalid_id_u32);
@@ -164,7 +163,6 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
     EXPECT_FLOAT_EQ(particle.direction_x, 0.0F);
     EXPECT_FLOAT_EQ(particle.direction_y, 0.0F);
     EXPECT_FLOAT_EQ(particle.direction_z, 1.0F);
-    EXPECT_FLOAT_EQ(particle.direction_w, 0.0F);
 
     EXPECT_EQ(particle.energy_micro_eV, k_energy_micro_eV);
   }

@@ -37,7 +37,7 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
@@ -52,7 +52,7 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
+using SourceRecord = ggems::core::sources::GGEMSSourceDeviceRecord;
 using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 
 // =============================================================================
@@ -170,9 +170,12 @@ constexpr std::size_t k_source_range_count{2U};
       record.time_start_ps,
       record.time_stop_ps,
       record.energy_micro_eV,
-      std::bit_cast<std::uint64_t>(record.position_x_pm),
-      std::bit_cast<std::uint64_t>(record.position_y_pm),
-      std::bit_cast<std::uint64_t>(record.position_z_pm),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.position_x_pm)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.position_y_pm)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.position_z_pm)),
       static_cast<std::uint64_t>(record.source_type),
       static_cast<std::uint64_t>(record.emitted_particle_type),
       static_cast<std::uint64_t>(record.flags),
@@ -188,12 +191,18 @@ constexpr std::size_t k_source_range_count{2U};
       static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_z)),
       static_cast<std::uint64_t>(record.emission_geometry_type),
       static_cast<std::uint64_t>(record.angular_distribution_type),
-      record.geometry_size_x_pm,
-      record.geometry_size_y_pm,
-      std::bit_cast<std::uint64_t>(record.focus_position_x_pm),
-      std::bit_cast<std::uint64_t>(record.focus_position_y_pm),
-      std::bit_cast<std::uint64_t>(record.focus_position_z_pm),
-      record.geometry_size_z_pm,
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.geometry_size_x_pm)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.geometry_size_y_pm)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.focus_position_x_pm)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.focus_position_y_pm)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.focus_position_z_pm)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.geometry_size_z_pm)),
       static_cast<std::uint64_t>(
         std::bit_cast<std::uint32_t>(record.isotropic_cos_theta_lower)),
       static_cast<std::uint64_t>(
@@ -308,7 +317,7 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
   std::string const build_options =
     std::format("-I{}", kernel_root.generic_string());
 
-  auto &program = opencl.GetOrCreateProgram(
+  auto const &program = opencl.GetOrCreateProgram(
     context, kernel_test_root, "source_record_abi_probe", build_options);
   cl::Kernel raw_kernel = program.CreateKernel("source_record_abi_probe");
 

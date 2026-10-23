@@ -40,21 +40,12 @@
 #include "navigation/GGEMSBoxNavigation.clh"
 #include "navigation/GGEMSSphereNavigation.clh"
 
-/*! \brief Private selected event; no persistent floating position. */
-typedef struct GGEMSAnalyticBoundary {
-  /*! \brief Event, arrival owner, and exact evidence for World movement. */
-  GGEMSBoundaryWitness boundary;
-
-  /*! \brief Transient FP32 ray parameter in pm for analytic movement. */
-  float parameter;
-} GGEMSAnalyticBoundary;
-
 /*!
  * \brief Locates the forward owner through the selected analytic predicate.
- * \param[in] world Exact finite World.
+ * \param[in] world FP32 finite World.
  * \param[in] volume Single volume or None.
  * \param[in] box_pose Separate pose for every Box; unused for other kinds.
- * \param[in] position Canonical global position.
+ * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.
  * \param[out] owner Packed VolumeID/MaterialID on success.
  * \return Resolved, outside World, or unresolved.
@@ -62,13 +53,12 @@ typedef struct GGEMSAnalyticBoundary {
 static inline uint
 GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
                      __global GGEMSAnalyticVolumeRecord const *volume,
-                     __global void const *box_pose, long3 position,
+                     __global void const *box_pose, float3 position,
                      float3 direction, ulong *owner) {
-  GGEMSWorldBoundary world_exit =
-    GGEMS_WorldFindBoundary(world, position, direction);
+  uint status = GGEMS_WorldValidateRay(world, position, direction);
 
-  if (world_exit.status != GGEMS_WORLD_EXIT) {
-    return world_exit.status;
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
   }
 
   if (volume->kind == GGEMS_ANALYTIC_BOX) {
@@ -88,15 +78,15 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
 }
 
 /*!
- * \brief Selects the next analytic crossing or exact World exit.
+ * \brief Selects the next analytic crossing or FP32 World exit.
  *
  * One convex volume and an unchanged straight-flight direction cannot reenter
  * after an accepted exit. Accepted ownership therefore selects the next root
- * without relocating the rounded canonical endpoint.
- * \param[in] world Exact World exit authority.
+ * without relocating the FP32 endpoint.
+ * \param[in] world FP32 World exit authority.
  * \param[in] volume Single volume or None.
  * \param[in] box_pose Separate pose for every Box; unused for other kinds.
- * \param[in] position Canonical anchor in integer pm.
+ * \param[in] position Global FP32 anchor in pm.
  * \param[in] direction Actual stored direction.
  * \param[in] current_owner Known physical departure VolumeID.
  * \param[in] last_event Previously accepted event while direction is unchanged.
@@ -107,13 +97,10 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
 static inline uint
 GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
                            __global GGEMSAnalyticVolumeRecord const *volume,
-                           __global void const *box_pose, long3 position,
+                           __global void const *box_pose, float3 position,
                            float3 direction, uint current_owner,
-                           uint last_event, GGEMSAnalyticBoundary *result) {
-  uint status = GGEMS_NavigationFindWorldBoundary(world, position, direction,
-                                                  &result->boundary);
-
-  result->parameter = 0.0F;
+                           uint last_event, GGEMSBoundaryWitness *result) {
+  uint status = GGEMS_WorldFindBoundary(world, position, direction, result);
 
   if (status != GGEMS_NAVIGATION_RESOLVED ||
       volume->kind == GGEMS_ANALYTIC_NONE ||
@@ -122,20 +109,14 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
     return status;
   }
 
-  result->parameter =
-    ldexp((float)result->boundary.gap_pm / (float)result->boundary.mantissa,
-          -result->boundary.exponent);
-
   if (volume->kind == GGEMS_ANALYTIC_BOX) {
     return GGEMS_BoxFindBoundary(&volume->parameters.box,
                                  (__global GGEMSBoxPoseRecord const *)box_pose,
-                                 position, direction, current_owner,
-                                 &result->boundary, &result->parameter);
+                                 position, direction, current_owner, result);
   }
 
   return GGEMS_SphereFindBoundary(&volume->parameters.sphere, position,
-                                  direction, current_owner, &result->boundary,
-                                  &result->parameter);
+                                  direction, current_owner, result);
 }
 
 #endif

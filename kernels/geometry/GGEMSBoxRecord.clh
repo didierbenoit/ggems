@@ -38,28 +38,32 @@
 #define GGEMS_VOLUME_ID_EXTERIOR 0xFFFFFFFFU
 
 /*!
- * \brief Scalar 32-byte local Box half extents and snapshot identities.
+ * \brief Scalar 24-byte local Box half extents and snapshot identities.
  *
- * Every Box uses positive canonical half extents and a separate FP32 pose,
+ * Every Box uses positive FP32 half extents in pm and a separate FP32 pose,
  * including identity placement. The local Box is the physical OBB, never its
- * global AABB. The host guarantees strict containment within the World.
+ * global AABB. The authored host scene is strictly contained in the World
+ * before conversion to these FP32 records.
  * Mirrors the corresponding host/device record field for field.
  */
 typedef struct GGEMSBoxRecord {
-  /*! \brief Positive local X half extent in integer pm. */
-  ulong half_extent_x_pm;
+  /*! \brief Positive local X half extent in FP32 pm. */
+  float half_extent_x_pm;
 
-  /*! \brief Positive local Y half extent in integer pm. */
-  ulong half_extent_y_pm;
+  /*! \brief Positive local Y half extent in FP32 pm. */
+  float half_extent_y_pm;
 
-  /*! \brief Positive local Z half extent in integer pm. */
-  ulong half_extent_z_pm;
+  /*! \brief Positive local Z half extent in FP32 pm. */
+  float half_extent_z_pm;
 
   /*! \brief Snapshot-local physical volume identity; never the World's. */
   uint volume_id;
 
   /*! \brief Dense snapshot-local Material identity of the Box medium. */
   uint material_id;
+
+  /*! \brief Closed Cartesian surface half-band in local pm. */
+  float tolerance_pm;
 } GGEMSBoxRecord;
 
 #endif

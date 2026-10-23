@@ -29,8 +29,11 @@
  */
 
 #include <array>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <numbers>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -42,6 +45,9 @@
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/GGEMSSphere.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
@@ -240,7 +246,8 @@ TEST(GGEMSWorld, PreservesExactFacesBeyondBinary64IntegerPrecision) {
   GGEMSWorld const world = MakeWorld(size, size, size, Vacuum());
   EXPECT_EQ(world.GetHalfExtentPM().x, static_cast<std::uint64_t>(k_half_pm));
 
-  EXPECT_EQ(world.BuildRecord().half_extent_x_pm, k_half_pm);
+  EXPECT_EQ(world.BuildRecord().half_extent_x_pm,
+            static_cast<float>(k_half_pm));
   EXPECT_EQ(world.GetLowerCornerPM().x, -k_half_pm);
   EXPECT_EQ(world.GetUpperCornerPM().x, k_half_pm);
 }
@@ -249,7 +256,7 @@ TEST(GGEMSWorld, PreservesExactFacesBeyondBinary64IntegerPrecision) {
 // =============================================================================
 
 TEST(GGEMSWorld, OwnedMaterialOutlivesTheCallerMaterial) {
-  auto const build = []() -> GGEMSWorld {
+  auto const build = [] -> GGEMSWorld {
     auto air = ggems::core::materials::builtins::BuildBuiltInMaterial("Air");
     return MakeWorld(1_m, 1_m, 1_m, air);
     // air is destroyed here; the World keeps its own copy.
@@ -323,17 +330,24 @@ TEST(GGEMSWorld, SetterOrderDoesNotChangeTheCompiledScene) {
   std::array<std::uint32_t, 1U> const material_ids{1U};
   GGEMSBoxRecord const first_record = first.BuildBoxRecords(material_ids)[0U];
   GGEMSBoxRecord const second_record = second.BuildBoxRecords(material_ids)[0U];
-  EXPECT_EQ(first_record.half_extent_x_pm, second_record.half_extent_x_pm);
-  EXPECT_EQ(first_record.half_extent_y_pm, second_record.half_extent_y_pm);
-  EXPECT_EQ(first_record.half_extent_z_pm, second_record.half_extent_z_pm);
-  EXPECT_EQ(first_record.half_extent_x_pm, 30'000'000'000ULL);
+  EXPECT_EQ(first_record.half_extent_x_pm,
+            static_cast<float>(second_record.half_extent_x_pm));
+  EXPECT_EQ(first_record.half_extent_y_pm,
+            static_cast<float>(second_record.half_extent_y_pm));
+  EXPECT_EQ(first_record.half_extent_z_pm,
+            static_cast<float>(second_record.half_extent_z_pm));
+  EXPECT_EQ(first_record.half_extent_x_pm,
+            static_cast<float>(30'000'000'000ULL));
   auto const first_pose = first.BuildBoxPoseRecord();
   auto const second_pose = second.BuildBoxPoseRecord();
   ASSERT_TRUE(first_pose.has_value());
   ASSERT_TRUE(second_pose.has_value());
-  EXPECT_EQ(first_pose->center_x_pm, second_pose->center_x_pm);
-  EXPECT_EQ(first_pose->center_y_pm, second_pose->center_y_pm);
-  EXPECT_EQ(first_pose->center_z_pm, second_pose->center_z_pm);
+  EXPECT_EQ(first_pose->center_x_pm,
+            static_cast<float>(second_pose->center_x_pm));
+  EXPECT_EQ(first_pose->center_y_pm,
+            static_cast<float>(second_pose->center_y_pm));
+  EXPECT_EQ(first_pose->center_z_pm,
+            static_cast<float>(second_pose->center_z_pm));
   EXPECT_EQ(first_record.volume_id, 1U);
   EXPECT_EQ(first_record.material_id, 1U);
 }
@@ -410,9 +424,11 @@ TEST(GGEMSWorld, CompilesExactMaterialIdentitiesWithTheMaterialsAuthority) {
   EXPECT_EQ(vacuum.volume_id, 1U);
   EXPECT_EQ(vacuum.material_id, 0U);
 
-  EXPECT_EQ(water.half_extent_x_pm, vacuum.half_extent_x_pm);
-  EXPECT_EQ(water.half_extent_z_pm, vacuum.half_extent_z_pm);
-  EXPECT_EQ(water.half_extent_x_pm, 30'000'000'000ULL);
+  EXPECT_EQ(water.half_extent_x_pm,
+            static_cast<float>(vacuum.half_extent_x_pm));
+  EXPECT_EQ(water.half_extent_z_pm,
+            static_cast<float>(vacuum.half_extent_z_pm));
+  EXPECT_EQ(water.half_extent_x_pm, static_cast<float>(30'000'000'000ULL));
 }
 
 // =============================================================================
@@ -441,4 +457,167 @@ TEST(GGEMSWorld, CopiesOwnTheirMaterialAndVolumes) {
   EXPECT_EQ(original.GetMaterial().GetName(), "Vacuum");
   EXPECT_EQ(original.GetBoxes().size(), 1U);
   EXPECT_EQ(original.GetBoxes()[0U].GetMaterial().GetName(), "Water");
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSWorld, AutomaticToleranceAdaptsToMedicalWorldAndSolidScales) {
+  std::array const sizes{100_mm, 1_m, 3_m};
+  std::array const expected_world_pm{32768.0F, 262144.0F, 1048576.0F};
+  for (std::size_t index = 0U; index < sizes.size(); ++index) {
+    SCOPED_TRACE(index);
+    auto world = MakeWorld(sizes[index], sizes[index], sizes[index], Vacuum());
+    ggems::geometry::GGEMSSphere sphere;
+    sphere.SetRadius(1_mm).SetMaterial(Water());
+    world.AddVolume(sphere);
+    ASSERT_NO_THROW(world.Validate());
+    auto const record = world.BuildRecord();
+    EXPECT_EQ(record.tolerance_pm, expected_world_pm[index]);
+    EXPECT_EQ(world.GetNavigationTolerancePM(), record.tolerance_pm);
+    EXPECT_TRUE(std::isnormal(record.tolerance_pm));
+    EXPECT_GT(record.half_extent_x_pm + record.tolerance_pm,
+              record.half_extent_x_pm);
+    EXPECT_LT(record.half_extent_x_pm - record.tolerance_pm,
+              record.half_extent_x_pm);
+    auto const solid = world.BuildAnalyticVolumeRecord(7U).parameters.sphere;
+    EXPECT_EQ(solid.tolerance_pm, expected_world_pm[index]);
+    EXPECT_EQ(solid.volume_id, 1U);
+    EXPECT_EQ(solid.material_id, 7U);
+    EXPECT_EQ(world.GetVolumeNavigationTolerancePM(), solid.tolerance_pm);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSWorld,
+     RetainsResolvedSmallFeaturesAndRejectsRemoteParameterCollapse) {
+  auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
+  GGEMSBox box;
+  box.SetSize(20_um, 20_um, 20_um).SetMaterial(Water());
+  world.AddVolume(box);
+  ASSERT_NO_THROW(world.Validate());
+  auto const solid = world.BuildAnalyticVolumeRecord(5U).parameters.box;
+  EXPECT_EQ(solid.tolerance_pm, 1048576.0F);
+  EXPECT_GT(solid.half_extent_x_pm, 8.0F * solid.tolerance_pm);
+  EXPECT_EQ(solid.volume_id, 1U);
+  EXPECT_EQ(solid.material_id, 5U);
+
+  box.SetSize(1_um, 20_um, 20_um);
+  auto unresolved = MakeWorld(3_m, 3_m, 3_m, Vacuum());
+  unresolved.AddVolume(box);
+  EXPECT_THROW(unresolved.Validate(), GGEMSRecoverable);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSWorld, LocalSurfaceEnvelopeCanExceedTheWorldBaseline) {
+  auto centered = MakeWorld(3_m, 3_m, 3_m, Vacuum());
+  GGEMSBox box;
+  box.SetSize(20_um, 20_um, 20_um).SetMaterial(Water());
+  centered.AddVolume(box);
+  ASSERT_NO_THROW(centered.Validate());
+  box.SetPosition(MakePositionPM(1'300'000'000'000LL, 0, 0));
+  auto shifted = MakeWorld(3_m, 3_m, 3_m, Vacuum());
+  shifted.AddVolume(box);
+  ASSERT_NO_THROW(shifted.Validate());
+  EXPECT_EQ(centered.GetVolumeNavigationTolerancePM(), 1048576.0F);
+  EXPECT_EQ(shifted.GetVolumeNavigationTolerancePM(), 2097152.0F);
+  EXPECT_GT(shifted.GetVolumeNavigationTolerancePM(),
+            shifted.GetNavigationTolerancePM());
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSWorld, RotatedBoxIncludesTheRemoteWorldQueryResolution) {
+  auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
+  GGEMSBox box;
+  box.SetSize(20_um, 20_um, 20_um)
+    .SetRotation(13_deg, -27_deg, 41_deg)
+    .SetMaterial(Water());
+  world.AddVolume(box);
+  ASSERT_NO_THROW(world.Validate());
+  EXPECT_EQ(world.GetVolumeNavigationTolerancePM(),
+            world.GetNavigationTolerancePM());
+  EXPECT_EQ(world.BuildAnalyticVolumeRecord(3U).parameters.box.tolerance_pm,
+            1048576.0F);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSWorld, RejectsUnresolvedPhysicalFeatures) {
+  auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
+  ggems::geometry::GGEMSSphere sphere;
+  sphere.SetRadius(1_um).SetMaterial(Water());
+  world.AddVolume(sphere);
+
+  EXPECT_THROW(world.Validate(), GGEMSRecoverable);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSWorld, RequiresDistinctWorldAndSolidToleranceBandsAfterPacking) {
+  for (auto const gap : {1_um, 10_um}) {
+    SCOPED_TRACE(gap.value);
+    auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
+    ggems::geometry::GGEMSSphere sphere;
+    sphere.SetRadius(1_mm)
+      .SetPosition(MakePositionPM(1'500'000'000'000LL - 1'000'000'000LL -
+                                    static_cast<std::int64_t>(gap.value),
+                                  0, 0))
+      .SetMaterial(Water());
+    world.AddVolume(sphere);
+    if (gap == 1_um) {
+      EXPECT_THROW(world.Validate(), GGEMSRecoverable);
+    } else {
+      EXPECT_NO_THROW(world.Validate());
+      EXPECT_GT(world.GetVolumeNavigationTolerancePM(),
+                world.GetNavigationTolerancePM());
+    }
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSWorld, ScalarWorldRecordCarriesTheToleranceWithoutParticleState) {
+  using ggems::geometry::GGEMSWorldRecord;
+  EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSWorldRecord>);
+  EXPECT_TRUE(std::is_standard_layout_v<GGEMSWorldRecord>);
+  EXPECT_EQ(sizeof(GGEMSWorldRecord), 16U);
+  EXPECT_EQ(alignof(GGEMSWorldRecord), 4U);
+  EXPECT_EQ(offsetof(GGEMSWorldRecord, tolerance_pm), 12U);
+  GGEMSWorld const empty;
+  EXPECT_EQ(empty.BuildRecord().tolerance_pm, 0.0F);
+  EXPECT_EQ(empty.GetVolumeNavigationTolerancePM(), 0.0F);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSWorld, RotatedBoxClearanceProjectsTheLocalSurfaceBand) {
+  for (auto const gap_pm : {3'500'000LL, 5'000'000LL}) {
+    SCOPED_TRACE(gap_pm);
+    auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
+    GGEMSBox box;
+    box.SetSize(2_mm, 2_mm, 2_mm)
+      .SetRotation(0_deg, 0_deg, 45_deg)
+      .SetMaterial(Water());
+    // The local Cartesian band expands X by sqrt(2) times its width.
+    auto const extent_pm = static_cast<std::int64_t>(
+      std::ceil(std::numbers::sqrt2 * 1'000'000'000.0));
+    box.SetPosition(
+      MakePositionPM(1'500'000'000'000LL - extent_pm - gap_pm, 0, 0));
+    world.AddVolume(box);
+    if (gap_pm == 3'500'000LL) {
+      EXPECT_THROW(world.Validate(), GGEMSRecoverable);
+    } else {
+      EXPECT_NO_THROW(world.Validate());
+    }
+  }
 }

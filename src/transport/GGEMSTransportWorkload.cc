@@ -48,6 +48,7 @@
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
@@ -405,11 +406,10 @@ auto ValidateTransportRunConfig(GGEMSTransportRunConfig const &config,
 
   std::uint64_t const workload_primary_count = config.total_primary_count;
 
-  std::uint64_t const last_projection_primary_id =
-    config.device_primary_offset + workload_primary_count - 1ULL;
-
-  if (!(last_projection_primary_id < projection_primary_count)) {
-    throw ggems::core::GGEMSRecoverable(
+  if (config.device_primary_offset >= projection_primary_count ||
+      workload_primary_count >
+        projection_primary_count - config.device_primary_offset) {
+    throw GGEMSRecoverable(
       "Transport workload primary interval is outside the source ranges.");
   }
 }
@@ -442,8 +442,9 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
       counters_buffer_{context.CreateSVMBuffer(
         ggems::units::Bytes{sizeof(TransportCounters)})},
-      source_records_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
-        static_cast<std::uint64_t>(source_count_) * sizeof(SourceRecord)})},
+      source_records_buffer_{context.CreateSVMBuffer(
+        ggems::units::Bytes{static_cast<std::uint64_t>(source_count_) *
+                            sizeof(sources::GGEMSSourceDeviceRecord)})},
       source_population_records_buffer_{context.CreateSVMBuffer(
         ggems::units::Bytes{static_cast<std::uint64_t>(source_count_) *
                             sizeof(SourcePopulationRecord)})},
@@ -692,9 +693,18 @@ auto GGEMSTransportWorkload::ReadObserverRecordsFromSVM(
 
 auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
   -> GGEMSTransportRunReport {
+  std::vector<sources::GGEMSSourceDeviceRecord> device_sources;
+  device_sources.reserve(config.source_records.size());
+  for (std::size_t index = 0U; index < config.source_records.size(); ++index) {
+    device_sources.push_back(
+      config.source_ranges[index].primary_count == 0ULL
+        ? sources::GGEMSSourceDeviceRecord{}
+        : sources::BuildSourceDeviceRecord(config.source_records[index]));
+  }
+
   ggems::ocl::WriteSVMFromHost(
     source_records_buffer_,
-    std::span<SourceRecord const>{config.source_records});
+    std::span<sources::GGEMSSourceDeviceRecord const>{device_sources});
 
   ggems::ocl::WriteSVMFromHost(
     source_population_records_buffer_,
@@ -757,7 +767,7 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
     profiler.Stop();
     profiler.RecordKernelEvent(event);
 
-    TransportCounters const counters = ReadCountersFromSVM();
+    TransportCounters counters = ReadCountersFromSVM();
     ObserverCounters const observer_counters = ReadObserverCountersFromSVM();
     std::vector<ObserverRecord> observer_records =
       ReadObserverRecordsFromSVM(observer_counters.record_count);
@@ -766,6 +776,11 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
       throw ggems::core::GGEMSInternal(
         "Transport chunk primary cursor stopped before its assigned range.");
     }
+
+    // The exhausted claim range proves admission; this stream has one track
+    // per history, so each actual completion is exactly one terminal particle.
+    counters.consumed_primary_count = chunk.primary_count;
+    counters.terminal_particle_count = counters.completed_history_count;
     report.counters.next_primary_id += chunk.primary_count;
     report.counters.consumed_primary_count += counters.consumed_primary_count;
     report.counters.completed_history_count += counters.completed_history_count;

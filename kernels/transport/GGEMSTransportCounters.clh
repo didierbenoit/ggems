@@ -44,13 +44,22 @@ typedef struct GGEMSTransportCounters {
   /*! \brief Atomic chunk-local claim cursor, including terminating claims. */
   uint next_primary_id;
 
-  /*! \brief Primaries matched to a source before birth initialization. */
+  /*!
+   * \brief Zero in the stream kernel; host derives admitted primaries from the
+   * chunk.
+   */
   uint consumed_primary_count;
 
-  /*! \brief Histories reaching termination, even after projection failure. */
+  /*!
+   *\brief Actual successful histories, accumulated privately and published
+   *per worker.
+   */
   uint completed_history_count;
 
-  /*! \brief Particles completing World exit or diagnostic termination. */
+  /*!
+   *\brief Zero in the stream kernel; host derives terminals from actual
+   * completions.
+   */
   uint terminal_particle_count;
 
   /*! \brief Created secondary count; untouched by the stream kernel. */
@@ -71,7 +80,10 @@ typedef struct GGEMSTransportCounters {
    */
   uint electron_to_electron_count;
 
-  /*! \brief Failed ID, source/emission lookup, or projection operations. */
+  /*!
+   *\brief Nonfinite diagnostic endpoints; no terminal publication or
+   * completion.
+   */
   uint overflow_count;
 
   /*! \brief Maximum synthetic stack depth; untouched by the stream kernel. */
@@ -86,7 +98,6 @@ typedef struct GGEMSTransportCounters {
   /*! \brief Navigation queries without a resolvable boundary; no completion. */
   uint unresolved_geometry_count;
 
-  /*! \brief Navigated histories completed at the World boundary. */
   uint escaped_world_count;
 } GGEMSTransportCounters;
 

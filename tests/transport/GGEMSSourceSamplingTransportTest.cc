@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <cstdint>
 #include <filesystem>
 #include <set>
@@ -43,6 +44,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSFP32TestOracle.hh"
+
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
@@ -52,7 +55,9 @@
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
+#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 
 namespace {
@@ -165,6 +170,8 @@ auto ExpectDiagnosticProjection(TransportRunReport const &report,
                                 ObserverRecord const &source) -> void {
   ObserverRecord const *terminal = FindTerminal(report, source);
   ASSERT_NE(terminal, nullptr);
+  ASSERT_EQ(source.position_valid, 1U);
+  ASSERT_EQ(terminal->position_valid, 1U);
 
   std::array<float, 3U> const direction{
     source.direction_x,
@@ -182,11 +189,26 @@ auto ExpectDiagnosticProjection(TransportRunReport const &report,
     terminal->position_z_pm,
   };
 
+  constexpr auto distance = static_cast<float>(
+    ggems::core::transport::k_diagnostic_projection_distance_pm);
   for (std::size_t axis = 0U; axis < 3U; ++axis) {
-    std::int64_t displacement{0LL};
-    ASSERT_TRUE(ggems::core::transport::TryScaleDiagnosticProjectionComponent(
-      direction[axis], displacement));
-    EXPECT_EQ(end[axis], begin[axis] + displacement);
+    // Observer publishes rounded integers, so the original float birth lies
+    // within a half-pm interval. Bound both permitted FP32 contraction paths.
+    float const lower = std::nextafter(
+      static_cast<float>(static_cast<long double>(begin[axis]) - 0.5L),
+      -std::numeric_limits<float>::infinity());
+    float const upper = std::nextafter(
+      static_cast<float>(static_cast<long double>(begin[axis]) + 0.5L),
+      std::numeric_limits<float>::infinity());
+    float const displacement = std::fma(distance, direction[axis], 0.0F);
+    float const minimum = std::min(std::fma(distance, direction[axis], lower),
+                                   std::fma(1.0F, displacement, lower));
+    float const maximum = std::max(std::fma(distance, direction[axis], upper),
+                                   std::fma(1.0F, displacement, upper));
+    EXPECT_GE(static_cast<long double>(end[axis]),
+              std::round(static_cast<long double>(minimum)));
+    EXPECT_LE(static_cast<long double>(end[axis]),
+              std::round(static_cast<long double>(maximum)));
   }
 }
 
@@ -199,7 +221,7 @@ protected:
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
     if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
+      opencl.SelectDevices({"all"});
       opencl.Initialize();
     }
 
@@ -288,104 +310,155 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
 TEST_F(GGEMSSourceSamplingTransportTest,
        SamplesRectangleEllipseAndCircleInTheirLocalPlanes) {
-  ggems::core::sources::GGEMSSource rectangle{};
-  rectangle.SetPositionPicoMeter(100'000'000'000LL, 0LL, 0LL)
-    .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
-    .SetRectangleEmissionPicoMeter(40'000'000'000ULL, 20'000'000'000ULL);
+  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+    SCOPED_TRACE(context.GetDevice().GetName());
+    ggems::core::sources::GGEMSSource rectangle{};
+    rectangle.SetPositionPicoMeter(100'000'000'000LL, 0LL, 0LL)
+      .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
+      .SetRectangleEmissionPicoMeter(40'000'000'000ULL, 20'000'000'000ULL);
 
-  ggems::core::sources::GGEMSSource ellipse{};
-  ellipse.SetEllipseEmissionPicoMeter(30'000'000'000ULL, 10'000'000'000ULL);
+    ggems::core::sources::GGEMSSource ellipse{};
+    ellipse.SetEllipseEmissionPicoMeter(30'000'000'000ULL, 10'000'000'000ULL);
 
-  ggems::core::sources::GGEMSSource circle{};
-  circle.SetCircleEmissionPicoMeter(20'000'000'000ULL);
+    ggems::core::sources::GGEMSSource circle{};
+    circle.SetCircleEmissionPicoMeter(20'000'000'000ULL);
 
-  constexpr std::array<std::uint64_t, 3U> k_counts{256ULL, 256ULL, 256ULL};
+    constexpr std::array<std::uint64_t, 3U> k_counts{256ULL, 256ULL, 256ULL};
 
-  ggems::core::random::GGEMSRandom random{};
-  random.SetEngine("philox").SetSeed(8'888ULL);
+    ggems::core::random::GGEMSRandom random{};
+    random.SetEngine("philox").SetSeed(8'888ULL);
 
-  TransportWorkload workload{Context(),
-                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-                             random,
-                             64U,
-                             *MakeMonoSourceConfiguration(3U),
-                             0ULL,
-                             0U,
-                             1'536U};
+    TransportWorkload workload{context,
+                               std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                               random,
+                               64U,
+                               *MakeMonoSourceConfiguration(3U),
+                               0ULL,
+                               0U,
+                               1'536U};
 
-  auto const report = workload.Run(MakeConfig(
-    {rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()},
-    k_counts));
+    auto const report = workload.Run(MakeConfig(
+      {rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()},
+      k_counts));
 
-  auto const source_records = RecordsOfKind(report, ObserverRecordKind::Source);
-  ASSERT_EQ(source_records.size(), 768U);
+    auto const source_records =
+      RecordsOfKind(report, ObserverRecordKind::Source);
+    ASSERT_EQ(source_records.size(), 768U);
 
-  std::array<std::set<std::tuple<std::int64_t, std::int64_t, std::int64_t>>, 3U>
-    distinct_positions;
+    std::array<std::set<std::tuple<std::int64_t, std::int64_t, std::int64_t>>,
+               3U>
+      distinct_positions;
 
-  std::array<SourceRecord, 3U> const configured_sources{
-    rectangle.BuildRecord(),
-    ellipse.BuildRecord(),
-    circle.BuildRecord(),
-  };
+    std::array<SourceRecord, 3U> const configured_sources{
+      rectangle.BuildRecord(),
+      ellipse.BuildRecord(),
+      circle.BuildRecord(),
+    };
 
-  for (ObserverRecord const &record : source_records) {
-    auto const source_index = static_cast<std::size_t>(record.source_index);
+    for (ObserverRecord const &record : source_records) {
+      auto const source_index = static_cast<std::size_t>(record.source_index);
 
-    ASSERT_LT(source_index, configured_sources.size());
+      ASSERT_LT(source_index, configured_sources.size());
 
-    SourceRecord const &source = configured_sources[source_index];
+      SourceRecord const &source = configured_sources[source_index];
 
-    long double const delta_x_pm =
-      static_cast<long double>(record.position_x_pm) -
-      static_cast<long double>(source.position_x_pm);
-    long double const delta_y_pm =
-      static_cast<long double>(record.position_y_pm) -
-      static_cast<long double>(source.position_y_pm);
-    long double const delta_z_pm =
-      static_cast<long double>(record.position_z_pm) -
-      static_cast<long double>(source.position_z_pm);
+      ASSERT_EQ(record.position_valid, 1U);
+      auto const uploaded =
+        ggems::core::sources::BuildSourceDeviceRecord(source);
+      std::array<double, 3U> const center{
+        uploaded.position_x_pm,
+        uploaded.position_y_pm,
+        uploaded.position_z_pm,
+      };
+      std::array<double, 3U> const authored_center{
+        static_cast<double>(source.position_x_pm),
+        static_cast<double>(source.position_y_pm),
+        static_cast<double>(source.position_z_pm),
+      };
+      std::array<double, 3U> const observed{
+        static_cast<double>(record.position_x_pm),
+        static_cast<double>(record.position_y_pm),
+        static_cast<double>(record.position_z_pm),
+      };
+      std::array<std::array<double, 3U>, 3U> const axes{
+        {
+          {uploaded.axis_x_x, uploaded.axis_x_y, uploaded.axis_x_z},
+          {uploaded.axis_y_x, uploaded.axis_y_y, uploaded.axis_y_z},
+          {uploaded.axis_z_x, uploaded.axis_z_y, uploaded.axis_z_z},
+        },
+      };
+      double const half_x = 0.5 * uploaded.geometry_size_x_pm;
+      double const half_y = 0.5 * uploaded.geometry_size_y_pm;
+      std::array<double, 3U> local{};
+      std::array<double, 3U> local_error{};
+      double authored_plane = 0.0;
+      double center_plane_shift = 0.0;
+      for (std::size_t axis = 0U; axis < 3U; ++axis) {
+        double const displacement_bound = (std::abs(axes[0U][axis]) * half_x) +
+                                          (std::abs(axes[1U][axis]) * half_y);
+        // Two products and their sum precede center addition. A zero
+        // displacement component is exactly the uploaded center; this matters
+        // for the +X-normal rectangle and avoids a scale-only plane tolerance.
+        double const coordinate_error =
+          displacement_bound == 0.0
+            ? 0.0
+            : ggems::test::fp32::RoundoffBound(displacement_bound, 3U) +
+                (0.5 * ggems::test::fp32::Ulp(std::abs(center[axis]) +
+                                              displacement_bound));
+        for (std::size_t basis = 0U; basis < 3U; ++basis) {
+          local[basis] += (observed[axis] - center[axis]) * axes[basis][axis];
+          local_error[basis] +=
+            std::abs(axes[basis][axis]) * (coordinate_error + 0.5);
+        }
+        authored_plane +=
+          (observed[axis] - authored_center[axis]) * axes[2U][axis];
+        center_plane_shift +=
+          (center[axis] - authored_center[axis]) * axes[2U][axis];
+      }
+      // These fixtures use exactly orthonormal axis permutations. General
+      // rotations additionally need the uploaded frame's Gram-matrix error.
+      for (std::size_t left = 0U; left < 3U; ++left) {
+        for (std::size_t right = 0U; right < 3U; ++right) {
+          double product = 0.0;
+          for (std::size_t axis = 0U; axis < 3U; ++axis) {
+            product += axes[left][axis] * axes[right][axis];
+          }
+          ASSERT_EQ(product, left == right ? 1.0 : 0.0);
+        }
+      }
+      SCOPED_TRACE(::testing::Message()
+                   << "authored plane residual [pm]=" << authored_plane
+                   << "; uploaded-center shift [pm]=" << center_plane_shift);
+      EXPECT_NEAR(local[2U], 0.0, local_error[2U]);
+      EXPECT_NEAR(authored_plane, center_plane_shift, local_error[2U]);
 
-    long double const local_x = (delta_x_pm * source.axis_x_x) +
-                                (delta_y_pm * source.axis_x_y) +
-                                (delta_z_pm * source.axis_x_z);
-    long double const local_y = (delta_x_pm * source.axis_y_x) +
-                                (delta_y_pm * source.axis_y_y) +
-                                (delta_z_pm * source.axis_y_z);
-    long double const local_z = (delta_x_pm * source.axis_z_x) +
-                                (delta_y_pm * source.axis_z_y) +
-                                (delta_z_pm * source.axis_z_z);
+      if (record.source_index == 0U) {
+        EXPECT_LE(std::abs(local[0U]), half_x + local_error[0U]);
+        EXPECT_LE(std::abs(local[1U]), half_y + local_error[1U]);
+      } else {
+        double const normalized_x = local[0U] / half_x;
+        double const normalized_y = local[1U] / half_y;
+        // Preserve the existing 10 ppm sampler support contract separately
+        // from coordinate-transform and observer rounding uncertainty.
+        double const support_error =
+          2.0 * ((local_error[0U] / half_x) + (local_error[1U] / half_y));
+        EXPECT_LE((normalized_x * normalized_x) + (normalized_y * normalized_y),
+                  1.00001 + support_error);
+      }
 
-    EXPECT_NEAR(static_cast<double>(local_z), 0.0, 2.0);
+      EXPECT_FLOAT_EQ(record.direction_x, source.axis_z_x);
+      EXPECT_FLOAT_EQ(record.direction_y, source.axis_z_y);
+      EXPECT_FLOAT_EQ(record.direction_z, source.axis_z_z);
 
-    auto const geometry_size_x_pm =
-      static_cast<long double>(source.geometry_size_x_pm);
-    auto const geometry_size_y_pm =
-      static_cast<long double>(source.geometry_size_y_pm);
+      distinct_positions[record.source_index].emplace(
+        record.position_x_pm, record.position_y_pm, record.position_z_pm);
 
-    if (record.source_index == 0U) {
-      EXPECT_LE(std::abs(local_x), (0.5L * geometry_size_x_pm) + 2.0L);
-      EXPECT_LE(std::abs(local_y), (0.5L * geometry_size_y_pm) + 2.0L);
-    } else {
-      long double const normalized_x = 2.0L * local_x / geometry_size_x_pm;
-      long double const normalized_y = 2.0L * local_y / geometry_size_y_pm;
-
-      EXPECT_LE((normalized_x * normalized_x) + (normalized_y * normalized_y),
-                1.00001L);
+      ExpectDiagnosticProjection(report, record);
     }
 
-    EXPECT_FLOAT_EQ(record.direction_x, source.axis_z_x);
-    EXPECT_FLOAT_EQ(record.direction_y, source.axis_z_y);
-    EXPECT_FLOAT_EQ(record.direction_z, source.axis_z_z);
-
-    distinct_positions[record.source_index].emplace(
-      record.position_x_pm, record.position_y_pm, record.position_z_pm);
-
-    ExpectDiagnosticProjection(report, record);
-  }
-
-  for (auto const &positions : distinct_positions) {
-    EXPECT_GT(positions.size(), 1U);
+    for (auto const &positions : distinct_positions) {
+      EXPECT_GT(positions.size(), 1U);
+    }
   }
 }
 
@@ -697,4 +770,39 @@ TEST_F(GGEMSSourceSamplingTransportTest,
       ExpectDiagnosticProjection(report, source_observation);
     }
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSSourceSamplingTransportTest,
+       ReportsExtendedFocusCollapseWithoutCompletingHistory) {
+  // The focus lies outside canonical support, but both positions collapse to
+  // the same binary32 coordinate. This is an invalid trajectory, not a flight.
+  constexpr std::int64_t origin{1LL << 60U};
+  ggems::core::sources::GGEMSSource source{};
+  source.SetPositionPicoMeter(origin, origin, origin)
+    .SetBoxEmissionPicoMeter(8ULL, 8ULL, 8ULL)
+    .SetFocusedAngularDistributionPicoMeter(origin, origin, origin + 1'000LL);
+  constexpr std::array<std::uint64_t, 1U> counts{1ULL};
+
+  ggems::core::random::GGEMSRandom random{};
+  random.SetEngine("philox").SetSeed(12'345ULL);
+  TransportWorkload workload{Context(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             1U,
+                             *MakeMonoSourceConfiguration(1U),
+                             0ULL,
+                             0U,
+                             2U};
+
+  auto const report = workload.Run(MakeConfig({source.BuildRecord()}, counts));
+  EXPECT_EQ(report.counters.consumed_primary_count, 1U);
+  EXPECT_EQ(report.counters.completed_history_count, 0U);
+  EXPECT_EQ(report.counters.terminal_particle_count, 0U);
+  EXPECT_EQ(report.counters.created_secondary_count, 0U);
+  EXPECT_EQ(report.counters.overflow_count, 1U);
+  EXPECT_EQ(RecordsOfKind(report, ObserverRecordKind::Source).size(), 1U);
+  EXPECT_TRUE(RecordsOfKind(report, ObserverRecordKind::Terminal).empty());
 }

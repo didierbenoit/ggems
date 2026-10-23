@@ -27,6 +27,7 @@
  */
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -60,18 +61,18 @@
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
 #include "GGEMSNavigationTestDevices.hh"
+#include "GGEMSBoxFP32Oracle.hh"
+#include "GGEMSFP32TestOracle.hh"
 
 namespace {
 using namespace ggems;
 using namespace ggems::core;
 using namespace ggems::units;
 using Position = std::array<std::int64_t, 3>;
-using Vector = std::array<long double, 3>;
 
-/*! \brief A hand-selected physical plane, not a host slab navigator. */
+/*! \brief A hand-selected physical face and event, independent of the device.
+ */
 struct ExpectedPlane {
-  Vector normal;
-  long double offset;
   std::uint32_t faces;
   std::uint32_t event;
 };
@@ -88,44 +89,42 @@ struct Case {
   std::uint32_t initial_owner{0};
   std::vector<ExpectedPlane> planes;
   std::uint32_t expected_status{0};
-  bool qualify_world_parameter{true};
 };
 
-/*! \brief Builds authored poses, with expected planes derived independently. */
+/*! \brief Builds authored poses with independently selected crossing faces. */
 auto Cases() -> std::vector<Case> {
-  Vector const x{1.0L, 0.0L, 0.0L};
-  // Prescribed planes use the physical angle represented by the canonical
-  // picoradian input, independently of the production rotation builder.
-  auto const cosine_forty_five = std::cos(ToRadians(45.0_deg));
-  auto const sine_forty_five = std::sin(ToRadians(45.0_deg));
-  auto const cosine_thirty = std::cos(ToRadians(30.0_deg));
-  auto const sine_thirty = std::sin(ToRadians(30.0_deg));
   std::vector<Case> cases;
   Case axis{.name = "90-degree axis swap", .planes = {}};
-  axis.planes = {{.normal = x, .offset = -10, .faces = 8, .event = 2},
-                 {.normal = x, .offset = 10, .faces = 4, .event = 3},
-                 {.normal = x, .offset = 100, .faces = 2, .event = 1}};
+  axis.planes = {
+    {.faces = 8, .event = 2},
+    {.faces = 4, .event = 3},
+    {.faces = 2, .event = 1},
+  };
   cases.push_back(axis);
   for (auto const sign : {-1.0F, 1.0F}) {
     for (auto const initial_y : {0, 1}) {
       Case half = axis;
-      half.name = "final signed half-pm rounding";
+      half.name = "signed fractional continuous motion";
       half.start = {
-        -11, static_cast<std::int64_t>(-sign * static_cast<float>(initial_y)),
-        0};
+        -11,
+        static_cast<std::int64_t>(-sign * static_cast<float>(initial_y)),
+        0,
+      };
       half.direction[1] = 0.5F * sign;
       cases.push_back(half);
     }
   }
   Case pathological = axis;
-  pathological.name = "near-parallel unresolved surface";
-  // The former 1e-20 rad rotation quantizes to zero. Keep a true nonzero
-  // normal motion below the existing 2^-48 direction-resolution band instead:
-  // at this exact quarter turn, local y is 10 and its motion is -2^-60.
-  pathological.start = {-10, -50, 0};
-  pathological.direction = {0x1p-60F, 1.0F, 0.0F};
-  pathological.expected_status = 2;
-  pathological.planes.clear();
+  pathological.name = "finite shallow incidence";
+  // Replace the removed 2^-48 resolution-band contract with a separated,
+  // exactly represented shallow hit through the local X planes.
+  pathological.start = {-9, -50, 0};
+  pathological.direction = {0.125F, 1.0F, 0.0F};
+  pathological.planes = {
+    {.faces = 1, .event = 2},
+    {.faces = 2, .event = 3},
+    {.faces = 8, .event = 1},
+  };
   cases.push_back(pathological);
   Case inside = axis;
   inside.name = "inside birth";
@@ -140,13 +139,13 @@ auto Cases() -> std::vector<Case> {
   outward.name = "outward face birth";
   outward.start = {-10, 0, 0};
   outward.direction = {-1.0F, 0.0F, 0.0F};
-  outward.planes = {{.normal = x, .offset = -100, .faces = 1, .event = 1}};
+  outward.planes = {{.faces = 1, .event = 1}};
   cases.push_back(outward);
   for (auto const height : {20, 21}) {
     Case miss = axis;
     miss.name = height == 20 ? "grazing face" : "no hit";
     miss.start[1] = height;
-    miss.planes = {{.normal = x, .offset = 100, .faces = 2, .event = 1}};
+    miss.planes = {{.faces = 2, .event = 1}};
     cases.push_back(miss);
     if (height == 20) {
       miss.name = "grazing edge";
@@ -164,7 +163,6 @@ auto Cases() -> std::vector<Case> {
   shifted.name = "negative shifted center";
   shifted.center = {-13, 17, -9};
   shifted.start = {-63, 17, -9};
-  shifted.planes.back().offset = 113;
   cases.push_back(shifted);
   Case negative = axis;
   negative.name = "negative quarter turn";
@@ -177,32 +175,31 @@ auto Cases() -> std::vector<Case> {
   diagonal.rotation[2] = 45.0_deg;
   diagonal.start = {-40, -40, 0};
   diagonal.direction = {0.5F, 0.5F, 0.0F};
-  Vector const diagonal_normal{cosine_forty_five, sine_forty_five, 0};
   diagonal.planes = {
-    {.normal = diagonal_normal, .offset = -20, .faces = 1, .event = 2},
-    {.normal = diagonal_normal, .offset = 20, .faces = 2, .event = 3},
-    {.normal = x, .offset = 100, .faces = 10, .event = 1}};
+    {.faces = 1, .event = 2},
+    {.faces = 2, .event = 3},
+    {.faces = 10, .event = 1},
+  };
   cases.push_back(diagonal);
   Case tiny = axis;
-  tiny.name = "positive entry with zero rounded displacement";
+  tiny.name = "positive entry with fractional displacement";
   tiny.half = {2, 5, 5};
   tiny.rotation[2] = 45.0_deg;
   tiny.start = {-3, 0, 0};
   tiny.planes = {
-    {.normal = diagonal_normal, .offset = -2, .faces = 1, .event = 2},
-    {.normal = diagonal_normal, .offset = 2, .faces = 2, .event = 3},
-    {.normal = x, .offset = 100, .faces = 2, .event = 1}};
+    {.faces = 1, .event = 2},
+    {.faces = 2, .event = 3},
+    {.faces = 2, .event = 1},
+  };
   cases.push_back(tiny);
-  tiny.name = "entry and exit at the same canonical point";
+  tiny.name = "distinct FP32 entry and exit within one canonical pm";
   tiny.half = {1, 1, 1};
   tiny.start = {-1, 1, 0};
   tiny.planes = {
-    {.normal = {-sine_forty_five, cosine_forty_five, 0},
-     .offset = 1,
-     .faces = 8,
-     .event = 2},
-    {.normal = diagonal_normal, .offset = 1, .faces = 2, .event = 3},
-    {.normal = x, .offset = 100, .faces = 2, .event = 1}};
+    {.faces = 8, .event = 2},
+    {.faces = 2, .event = 3},
+    {.faces = 2, .event = 1},
+  };
   cases.push_back(tiny);
   Case spatial = axis;
   spatial.name = "three-angle oblique ray";
@@ -210,18 +207,16 @@ auto Cases() -> std::vector<Case> {
   spatial.rotation = {30.0_deg, 45.0_deg, 30.0_deg};
   spatial.start = {-60, -40, -20};
   spatial.direction = {0.75F, 0.5F, 0.25F};
-  Vector const spatial_normal{cosine_thirty * cosine_forty_five,
-                              sine_thirty * cosine_forty_five,
-                              -sine_forty_five};
   spatial.planes = {
-    {.normal = spatial_normal, .offset = -10, .faces = 1, .event = 2},
-    {.normal = spatial_normal, .offset = 10, .faces = 2, .event = 3},
-    {.normal = x, .offset = 100, .faces = 2, .event = 1}};
+    {.faces = 1, .event = 2},
+    {.faces = 2, .event = 3},
+    {.faces = 2, .event = 1},
+  };
   cases.push_back(spatial);
   for (auto const scale :
-       {1LL, 100'000'000LL, 1'000'000'000LL, 100'000'000'000LL}) {
+       {1LL, 100'000'000LL, 1'000'000'000LL, 15'000'000'000LL}) {
     Case medical = axis;
-    medical.name = "meter Box";
+    medical.name = "3-meter World";
     if (scale == 1) {
       medical.name = "30-degree oblique face";
     } else if (scale == 100'000'000LL) {
@@ -233,21 +228,23 @@ auto Cases() -> std::vector<Case> {
     medical.half = {10 * scale, 30 * scale, 50 * scale};
     medical.world_half = 100 * scale;
     medical.start = {-60 * scale, 3 * scale, 0};
-    Vector const normal{cosine_thirty, sine_thirty, 0};
     medical.planes = {
-      {.normal = normal, .offset = -10.0L * scale, .faces = 1, .event = 2},
-      {.normal = normal, .offset = 10.0L * scale, .faces = 2, .event = 3},
-      {.normal = x, .offset = 100.0L * scale, .faces = 2, .event = 1}};
+      {.faces = 1, .event = 2},
+      {.faces = 2, .event = 3},
+      {.faces = 2, .event = 1},
+    };
     cases.push_back(medical);
     if (scale == 1'000'000'000LL) {
-      medical.name = "small offset at large common translation";
-      medical.qualify_world_parameter = false;
-      medical.world_half = 1LL << 61;
-      medical.center = {(1LL << 60) + 123, -(1LL << 59) + 17, -111};
+      medical.name = "translated centimeter Box in 3-meter World";
+      medical.world_half = 1'500'000'000'000LL;
+      medical.center = {
+        300'000'000'000LL,
+        -200'000'000'000LL,
+        100'000'000'000LL,
+      };
       for (std::size_t axis_index = 0; axis_index < 3; ++axis_index) {
         medical.start[axis_index] += medical.center[axis_index];
       }
-      medical.planes.back().offset = medical.world_half - medical.center[0];
       cases.push_back(medical);
     }
   }
@@ -257,29 +254,14 @@ auto Cases() -> std::vector<Case> {
 /*! \brief Records the separately measured position, parameter and length
  * errors. */
 struct Errors {
-  long double position{0};
-  long double segment_parameter{0};
-  long double accumulated_parameter{0};
-  long double accumulated_length{0};
-  long double world_position{0};
-  long double world_parameter{0};
-  long double world_length{0};
+  double position{0};
+  double segment_parameter{0};
+  double accumulated_parameter{0};
+  double accumulated_length{0};
+  double world_position{0};
+  double world_parameter{0};
+  double world_length{0};
 };
-
-/*! \brief Intersects a prescribed global plane with a ray, without any search.
- */
-auto Parameter(ExpectedPlane const &plane, Position const &position,
-               Position const &center, std::array<float, 3> const &direction)
-  -> long double {
-  long double numerator = plane.offset;
-  long double denominator = 0;
-  for (std::size_t axis = 0; axis < 3; ++axis) {
-    numerator -= plane.normal[axis] *
-                 static_cast<long double>(position[axis] - center[axis]);
-    denominator += plane.normal[axis] * direction[axis];
-  }
-  return numerator / denominator;
-}
 
 /*! \brief Executes production queries/transactions and checks the prescribed
  * sequence. */
@@ -304,6 +286,14 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
   world.Validate();
   auto const pose = *world.BuildBoxPoseRecord();
   auto const volume = world.BuildAnalyticVolumeRecord(7U);
+  // Upload quantization is an exact conversion contract, separate from the
+  // accumulated intersection/movement assertions below.
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    EXPECT_EQ(ggems::test::box_oracle::HalfExtents(volume.parameters.box)[axis],
+              static_cast<float>(test.half[axis]));
+    EXPECT_EQ(ggems::test::box_oracle::Center(pose)[axis],
+              static_cast<float>(test.center[axis]));
+  }
   auto buffer = [&context](auto const &value) -> ocl::GGEMSOpenCLSVMBuffer {
     auto result = context.CreateSVMBuffer(units::Bytes{sizeof(value)});
     ocl::WriteSVMFromHost(result, value);
@@ -313,9 +303,9 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
   auto box_buffer = buffer(volume);
   auto pose_buffer = buffer(pose);
   particles::GGEMSParticleState particle;
-  particle.position_x_pm = test.start[0];
-  particle.position_y_pm = test.start[1];
-  particle.position_z_pm = test.start[2];
+  particle.position_x_pm = static_cast<float>(test.start[0]);
+  particle.position_y_pm = static_cast<float>(test.start[1]);
+  particle.position_z_pm = static_cast<float>(test.start[2]);
   particle.direction_x = test.direction[0];
   particle.direction_y = test.direction[1];
   particle.direction_z = test.direction[2];
@@ -334,10 +324,11 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
     context, program.CreateKernel("rotated_box_navigation_probe"),
     "rotated_box_navigation_probe"};
   std::array<void *, 7> pointers{
-    world_buffer.GetData(), box_buffer.GetData(),
-    pose_buffer.GetData(),  particle_buffer.GetData(),
-    trace_buffer.GetData(), parameter_buffer.GetData(),
-    layout_buffer.GetData()};
+    world_buffer.GetData(),  box_buffer.GetData(),
+    pose_buffer.GetData(),   particle_buffer.GetData(),
+    trace_buffer.GetData(),  parameter_buffer.GetData(),
+    layout_buffer.GetData(),
+  };
   for (cl_uint index = 0; index < pointers.size(); ++index) {
     kernel.SetArgSVMPointer(index, pointers[index]);
   }
@@ -360,7 +351,8 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
     offsetof(geometry::GGEMSBoxPoseRecord, axis_z_y),
     offsetof(geometry::GGEMSBoxPoseRecord, axis_z_z),
     sizeof(particles::GGEMSParticleState),
-    sizeof(geometry::GGEMSBoxRecord)};
+    sizeof(geometry::GGEMSBoxRecord),
+  };
   EXPECT_EQ(layout, expected_layout);
   ASSERT_EQ(trace[1], test.expected_status);
   if (test.expected_status != 0) {
@@ -370,15 +362,22 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
   ASSERT_EQ(trace[2], test.planes.size());
   EXPECT_EQ(trace[0], test.initial_owner);
   EXPECT_EQ(trace[30], 1);
-  auto current = test.start;
+  namespace oracle = ggems::test::box_oracle;
+  namespace fp32 = ggems::test::fp32;
+  auto const packed_start = oracle::PackedPoint(test.start);
+  auto reference = packed_start;
+  auto const world_record = world.BuildRecord();
+  auto const &box_record = volume.parameters.box;
   auto departure = test.initial_owner;
-  long double accumulated = 0;
-  long double accumulated_length = 0;
-  long double norm_squared = 0;
-  for (auto const component : test.direction) {
-    norm_squared += static_cast<long double>(component) * component;
-  }
-  auto const norm = std::sqrt(norm_squared);
+  double accumulated = 0;
+  double accumulated_length = 0;
+  fp32::Scalar parameter_sum{};
+  fp32::Scalar length_sum{};
+  double maximum_position_error = 0;
+  double maximum_position_budget = 0;
+  double maximum_budget_fraction = 0;
+  auto const norm = fp32::Sqrt(
+    oracle::Dot(oracle::PackedPoint(test.direction), test.direction));
   for (std::size_t index = 0; index < test.planes.size(); ++index) {
     auto const &plane = test.planes[index];
     auto const offset = 3 + (9 * index);
@@ -400,52 +399,73 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
               particles::ToKernelParticleStatus(
                 plane.event == 1 ? particles::GGEMSParticleStatus::EscapedWorld
                                  : particles::GGEMSParticleStatus::Alive));
-    auto const segment = Parameter(plane, current, test.center, test.direction);
+    auto const segment =
+      oracle::Parameter(world_record, box_record, pose, reference,
+                        test.direction, plane.faces, plane.event == 1);
     auto const original =
-      Parameter(plane, test.start, test.center, test.direction);
-    accumulated += parameters[2 * index];
-    accumulated_length += parameters[(2 * index) + 1];
-    if (plane.event != 1) {
-      errors.segment_parameter = std::max(
-        errors.segment_parameter, std::abs(parameters[2 * index] - segment));
-      errors.accumulated_parameter = std::max(errors.accumulated_parameter,
-                                              std::abs(accumulated - original));
+      oracle::Parameter(world_record, box_record, pose, packed_start,
+                        test.direction, plane.faces, plane.event == 1);
+    auto const length = fp32::Multiply(segment, norm);
+    fp32::ExpectWithin(parameters[2 * index], segment);
+    fp32::ExpectWithin(parameters[(2 * index) + 1], length);
+    // These sums are host binary64 diagnostics, so propagate the per-segment
+    // uncertainty without adding fictitious FP32 host-addition roundoff.
+    parameter_sum.value += segment.value;
+    parameter_sum.error += segment.error;
+    length_sum.value += length.value;
+    length_sum.error += length.error;
+    accumulated += static_cast<double>(parameters[2 * index]);
+    accumulated_length += static_cast<double>(parameters[(2 * index) + 1]);
+    fp32::ExpectWithin(accumulated, {
+                                      .value = original.value,
+                                      .error = parameter_sum.error,
+                                    });
+    fp32::ExpectWithin(accumulated_length,
+                       {
+                         .value = original.value * norm.value,
+                         .error = length_sum.error,
+                       });
+    errors.segment_parameter = std::max(
+      errors.segment_parameter,
+      std::abs(static_cast<double>(parameters[2 * index]) - segment.value));
+    if (plane.event == 1) {
+      errors.world_parameter = std::max(errors.world_parameter,
+                                        std::abs(accumulated - original.value));
+      errors.world_length =
+        std::max(errors.world_length,
+                 std::abs(accumulated_length - (original.value * norm.value)));
+    } else {
+      errors.accumulated_parameter = std::max(
+        errors.accumulated_parameter, std::abs(accumulated - original.value));
       errors.accumulated_length =
         std::max(errors.accumulated_length,
-                 std::abs(accumulated_length - (original * norm)));
-      EXPECT_LE(std::abs(parameters[2 * index] - segment), 0.1L);
-      EXPECT_LE(std::abs(accumulated - original) * norm, 2.0L);
+                 std::abs(accumulated_length - (original.value * norm.value)));
     }
-    if (plane.event == 1 && test.qualify_world_parameter) {
-      errors.world_parameter =
-        std::max(errors.world_parameter, std::abs(accumulated - original));
-      errors.world_length = std::max(
-        errors.world_length, std::abs(accumulated_length - (original * norm)));
-      EXPECT_LE(std::abs(accumulated - original) * norm, 2.0L);
-    }
+    reference = oracle::Advance(reference, test.direction, segment);
     for (std::size_t axis = 0; axis < 3; ++axis) {
-      auto const actual = trace[offset + 5 + axis];
-      auto const expected = static_cast<std::int64_t>(
-        std::round(static_cast<long double>(current[axis]) +
-                   (segment * test.direction[axis])));
-      EXPECT_LE(std::abs(actual - expected), 1);
-      if (plane.event != 1) {
-        long double const discrepancy =
-          std::abs(static_cast<long double>(actual - test.start[axis]) -
-                   (original * test.direction[axis]));
-        errors.position = std::max(errors.position, discrepancy);
-        EXPECT_LE(discrepancy, 2.0L);
+      double const actual = static_cast<double>(std::bit_cast<float>(
+        static_cast<std::uint32_t>(trace[offset + 5 + axis])));
+      fp32::ExpectWithin(actual, reference[axis]);
+      double const discrepancy = std::abs(actual - reference[axis].value);
+      maximum_position_error = std::max(maximum_position_error, discrepancy);
+      maximum_position_budget =
+        std::max(maximum_position_budget, reference[axis].error);
+      if (reference[axis].error > 0) {
+        maximum_budget_fraction = std::max(maximum_budget_fraction,
+                                           discrepancy / reference[axis].error);
       }
-      if (plane.event == 1) {
-        long double const discrepancy =
-          std::abs(static_cast<long double>(actual - test.start[axis]) -
-                   (original * test.direction[axis]));
-        errors.world_position = std::max(errors.world_position, discrepancy);
-        EXPECT_LE(discrepancy, 2.0L);
-      }
-      current[axis] = actual;
+      auto &maximum =
+        plane.event == 1 ? errors.world_position : errors.position;
+      maximum = std::max(maximum, discrepancy);
     }
     departure = arrival;
+  }
+  if (test.world_half >= 1'000'000'000LL) {
+    std::cout << std::format(
+      "Box oracle [{}]: max coordinate error {:.6f} pm ({:.6f} nm); "
+      "max propagated bound {:.6f} pm; max error/bound {:.6f}\n",
+      test.name, maximum_position_error, maximum_position_error / 1000.0,
+      maximum_position_budget, maximum_budget_fraction);
   }
 }
 } // namespace
@@ -464,11 +484,20 @@ TEST_F(GGEMSNavigationDeviceTest,
     EXPECT_FALSE(
       program.Matches(context, root / "tests", "rotated_box_navigation_probe",
                       options + " -DGGEMS_TEST_DIFFERENT_OPTIONS=1"));
-#ifdef GGEMS_DEBUG_MODE
-    EXPECT_EQ(program.GetBuildOptions().find("-cl-fast-relaxed-math"),
-              std::string::npos);
-#else
-    EXPECT_NE(program.GetBuildOptions().find("-cl-fast-relaxed-math"),
+    // Caller options contain only the include path: these are the default
+    // program math options, not an explicit unsafe-math override test.
+    for (auto const *flag : {
+           "-cl-fast-relaxed-math",
+           "-cl-unsafe-math-optimizations",
+           "-cl-finite-math-only",
+           "-cl-mad-enable",
+           "-cl-denorms-are-zero",
+         }) {
+      EXPECT_EQ(program.GetBuildOptions().find(flag), std::string::npos)
+        << flag;
+    }
+#ifndef GGEMS_DEBUG_MODE
+    EXPECT_EQ(program.GetBuildOptions().find("-cl-opt-disable"),
               std::string::npos);
 #endif
     Errors errors;

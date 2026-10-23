@@ -79,20 +79,31 @@ TEST(GGEMSOpenCLProgramTest,
         context.GetDevice().GetDeviceNative(), &options_error);
     ASSERT_EQ(options_error, CL_SUCCESS);
 
-    std::array const reported_options{std::string{program.GetBuildOptions()},
-                                      native_options};
+    std::array const reported_options{
+      std::string{program.GetBuildOptions()},
+      native_options,
+    };
     for (auto const &reported : reported_options) {
       SCOPED_TRACE(reported);
       std::string const options{" " + reported + " "};
 #ifdef GGEMS_DEBUG_MODE
       EXPECT_TRUE(options.contains(" -g "));
       EXPECT_TRUE(options.contains(" -cl-opt-disable "));
-      EXPECT_FALSE(options.contains(" -cl-fast-relaxed-math "));
 #else
       EXPECT_FALSE(options.contains(" -g "));
       EXPECT_FALSE(options.contains(" -cl-opt-disable "));
-      EXPECT_TRUE(options.contains(" -cl-fast-relaxed-math "));
 #endif
+      // This program uses default options; explicit caller overrides are tested
+      // separately and are not subject to the default arithmetic policy.
+      for (auto const *unsafe_option : {
+             " -cl-fast-relaxed-math ",
+             " -cl-unsafe-math-optimizations ",
+             " -cl-finite-math-only ",
+             " -cl-mad-enable ",
+             " -cl-denorms-are-zero ",
+           }) {
+        EXPECT_FALSE(options.contains(unsafe_option)) << unsafe_option;
+      }
     }
 
     EXPECT_EQ(std::filesystem::weakly_canonical(program.GetSourcePath()),

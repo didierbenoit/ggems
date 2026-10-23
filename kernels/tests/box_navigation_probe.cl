@@ -72,9 +72,9 @@ __kernel void box_record_abi_probe(__global GGEMSBoxRecord *boxes,
                       (__private uchar const *)&alignment);
   layout[7] = (ulong)((__global uchar const *)&boxes[1] -
                       (__global uchar const *)&boxes[0]);
-  layout[8] = (ulong)boxes[1].half_extent_x_pm;
-  layout[9] = (ulong)boxes[1].half_extent_y_pm;
-  layout[10] = (ulong)boxes[1].half_extent_z_pm;
+  layout[8] = (ulong)as_uint(boxes[1].half_extent_x_pm);
+  layout[9] = (ulong)as_uint(boxes[1].half_extent_y_pm);
+  layout[10] = (ulong)as_uint(boxes[1].half_extent_z_pm);
   layout[11] = (ulong)boxes[1].volume_id;
   layout[12] = (ulong)boxes[1].material_id;
   boxes[0].half_extent_x_pm = boxes[1].half_extent_x_pm + 1U;
@@ -104,10 +104,10 @@ __kernel void box_record_abi_probe(__global GGEMSBoxRecord *boxes,
 __kernel void box_navigation_probe(
   __global GGEMSWorldRecord const *world,
   __global GGEMSAnalyticVolumeRecord const *volume,
-  __global GGEMSBoxPoseRecord const *pose, __global long const *positions_pm,
+  __global GGEMSBoxPoseRecord const *pose, __global float const *positions_pm,
   __global float const *directions, uint ray_count, __global uint *start_owners,
   __global uint *statuses, __global uint *events, __global uint *exit_faces,
-  __global long *endpoints_pm, __global uint *arrival_owners) {
+  __global float *endpoints_pm, __global uint *arrival_owners) {
   uint const ray = (uint)get_global_id(0);
   if (ray >= ray_count) {
     return;
@@ -135,8 +135,8 @@ __kernel void box_navigation_probe(
   ulong owner = 0UL;
   uint const locate_status = GGEMS_AnalyticLocate(
     world, volume, pose,
-    (long3)(particle.position_x_pm, particle.position_y_pm,
-            particle.position_z_pm),
+    (float3)(particle.position_x_pm, particle.position_y_pm,
+             particle.position_z_pm),
     (float3)(particle.direction_x, particle.direction_y, particle.direction_z),
     &owner);
   if (locate_status != GGEMS_NAVIGATION_RESOLVED) {

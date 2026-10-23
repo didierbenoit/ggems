@@ -43,25 +43,28 @@
 /*! \brief Full solid Sphere. */
 #define GGEMS_ANALYTIC_SPHERE 3U
 
-/*! \brief Scalar 40-byte ball and ownership record, matching the host. */
+/*! \brief Scalar 28-byte ball and ownership record, matching the host. */
 typedef struct GGEMSSphereRecord {
   /*! \brief Global center X in pm. */
-  long center_x_pm;
+  float center_x_pm;
 
   /*! \brief Global center Y in pm. */
-  long center_y_pm;
+  float center_y_pm;
 
   /*! \brief Global center Z in pm. */
-  long center_z_pm;
+  float center_z_pm;
 
   /*! \brief Strictly positive radius in pm. */
-  ulong radius_pm;
+  float radius_pm;
 
   /*! \brief Physical owner identity. */
   uint volume_id;
 
   /*! \brief Dense exact Material identity. */
   uint material_id;
+
+  /*! \brief Closed radial surface half-band in pm. */
+  float tolerance_pm;
 } GGEMSSphereRecord;
 
 /*! \brief Payload selected by the enclosing analytic tag. */
@@ -73,13 +76,10 @@ typedef union GGEMSAnalyticParameters {
   GGEMSSphereRecord sphere;
 } GGEMSAnalyticParameters;
 
-/*! \brief One 48-byte scene record shared by every transport program. */
+/*! \brief One 32-byte scene record shared by every transport program. */
 typedef struct GGEMSAnalyticVolumeRecord {
   /*! \brief GGEMS_ANALYTIC_* predicate selection. */
   uint kind;
-
-  /*! \brief Explicit alignment padding. */
-  uint padding;
 
   /*! \brief Shape payload; no rotation is allocated for a Sphere. */
   GGEMSAnalyticParameters parameters;

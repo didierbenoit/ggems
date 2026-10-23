@@ -50,7 +50,8 @@ struct GGEMSTransportCounters {
   std::uint32_t next_primary_id{0U};
 
   /*!
-   * \brief Primaries matched to a source and admitted to birth initialization.
+   * \brief Admitted primaries; the stream host derives this from the exhausted
+   * chunk.
    */
   std::uint32_t consumed_primary_count{0U};
 
@@ -60,7 +61,10 @@ struct GGEMSTransportCounters {
    */
   std::uint32_t completed_history_count{0U};
 
-  /*! \brief Particles completing World exit or diagnostic projection. */
+  /*!
+   * \brief Terminal particles; the stream host derives this from actual
+   * completions.
+   */
   std::uint32_t terminal_particle_count{0U};
 
   /*!
@@ -78,7 +82,8 @@ struct GGEMSTransportCounters {
   std::uint32_t electron_to_electron_count{0U};
 
   /*!
-   * \brief Failed identifier, source initialization, or endpoint operations.
+   * \brief Nonfinite diagnostic endpoints; no terminal publication or
+   * completion.
    */
   std::uint32_t overflow_count{0U};
 

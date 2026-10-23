@@ -184,6 +184,53 @@ TEST(GGEMSParticleTrace, ConsecutiveRecordsInSameTrackProduceSegments) {
 // =============================================================================
 // =============================================================================
 
+TEST(GGEMSParticleTrace, PreservesFiniteGlobalPrimaryIdentityAboveUint32) {
+  constexpr std::uint64_t primary_id{4'294'967'337ULL};
+  std::array<GGEMSObserverRecord, 3U> records{{
+    GGEMSObserverRecord{},
+    MakeRecord(0ULL, primary_id, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
+    MakeRecord(0ULL, primary_id, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
+               GGEMSParticleType::Gamma, 1'000'000'000'000LL, 0LL, 0LL),
+  }};
+  records[1U].global_particle_id = primary_id;
+  records[2U].global_particle_id = primary_id;
+  auto const segments = ggems::render::BuildParticleTraceSegments(records);
+  ASSERT_EQ(segments.size(), 1U);
+  EXPECT_EQ(segments[0U].global_primary_id, primary_id);
+  EXPECT_EQ(segments[0U].track_id, 0ULL);
+  EXPECT_FLOAT_EQ(segments[0U].begin.x_m, 0.0F);
+  EXPECT_FLOAT_EQ(segments[0U].end.x_m, 1.0F);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTrace, UnrepresentablePositionBreaksConnectivity) {
+  std::array<GGEMSObserverRecord, 5U> records{{
+    MakeRecord(0ULL, 1ULL, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 1'000'000'000'000LL, 0LL, 0LL),
+    MakeRecord(0ULL, 1ULL, 0ULL, 1ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 2'000'000'000'000LL, 0LL, 0LL),
+    MakeRecord(0ULL, 1ULL, 0ULL, 2ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
+    MakeRecord(0ULL, 1ULL, 0ULL, 3ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 3'000'000'000'000LL, 0LL, 0LL),
+    MakeRecord(0ULL, 1ULL, 0ULL, 4ULL, GGEMSObserverRecordKind::Terminal,
+               GGEMSParticleType::Gamma, 4'000'000'000'000LL, 0LL, 0LL),
+  }};
+  records[2U].position_valid = 0U;
+  auto const segments = ggems::render::BuildParticleTraceSegments(records);
+  ASSERT_EQ(segments.size(), 2U);
+  EXPECT_FLOAT_EQ(segments[0U].begin.x_m, 1.0F);
+  EXPECT_FLOAT_EQ(segments[0U].end.x_m, 2.0F);
+  EXPECT_FLOAT_EQ(segments[1U].begin.x_m, 3.0F);
+  EXPECT_FLOAT_EQ(segments[1U].end.x_m, 4.0F);
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSParticleTrace, RecordsAreSortedBeforeSegmentConstruction) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(0ULL, 3ULL, 9ULL, 20ULL, GGEMSObserverRecordKind::Step,

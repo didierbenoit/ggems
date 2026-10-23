@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Validates device World navigation against independent exact ray
+ * \brief Validates device World navigation against independent represented ray
  * fixtures.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
@@ -29,12 +29,13 @@
  */
 
 #include <array>
+#include <bit>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <format>
-#include <limits>
 #include <memory>
 #include <ostream>
 #include <span>
@@ -43,6 +44,8 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSFP32TestOracle.hh"
 
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/GGEMSException.hh"
@@ -66,6 +69,7 @@
 #include "GGEMS/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
@@ -81,7 +85,6 @@ struct WorldCase {
   std::array<std::int64_t, 3> half;
   std::array<std::int64_t, 3> start;
   std::array<float, 3> direction;
-  std::array<std::int64_t, 3> end;
   std::uint32_t faces;
   std::uint32_t outcome;
 };
@@ -99,56 +102,51 @@ auto MakeVacuumWorld(units::Length size) -> geometry::GGEMSWorld {
   return world;
 }
 
-// Exact rational goldens for the stored binary32 inputs. No float epsilon.
-// W01 is 200 mm full size and +X; travel is exactly 100 mm = 10^11 pm.
+// Topology fixtures have exact expected faces and outcomes. Spatial references
+// are evaluated independently in binary64 from the uploaded binary32 values.
+// Picometer-scale cases below exercise arithmetic and observer conversion only;
+// they do not claim picometer navigation accuracy at medical geometry scales.
 constexpr std::array k_cases{
   WorldCase{.name = "W01",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
             .start = {0LL, 0LL, 0LL},
             .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {100000000000LL, 0LL, 0LL},
             .faces = 2U,
             .outcome = 0U},
   WorldCase{.name = "CenterMinusX",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
             .start = {0LL, 0LL, 0LL},
             .direction = {-0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {-100000000000LL, 0LL, 0LL},
             .faces = 1U,
             .outcome = 0U},
   WorldCase{.name = "CenterPlusY",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
             .start = {0LL, 0LL, 0LL},
             .direction = {0x0.0p+0F, 0x1.0000000000000p+0F, 0x0.0p+0F},
-            .end = {0LL, 100000000000LL, 0LL},
             .faces = 8U,
             .outcome = 0U},
   WorldCase{.name = "CenterMinusY",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
             .start = {0LL, 0LL, 0LL},
             .direction = {0x0.0p+0F, -0x1.0000000000000p+0F, 0x0.0p+0F},
-            .end = {0LL, -100000000000LL, 0LL},
             .faces = 4U,
             .outcome = 0U},
   WorldCase{.name = "CenterPlusZ",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
             .start = {0LL, 0LL, 0LL},
             .direction = {0x0.0p+0F, 0x0.0p+0F, 0x1.0000000000000p+0F},
-            .end = {0LL, 0LL, 100000000000LL},
             .faces = 32U,
             .outcome = 0U},
   WorldCase{.name = "CenterMinusZ",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
             .start = {0LL, 0LL, 0LL},
             .direction = {0x0.0p+0F, 0x0.0p+0F, -0x1.0000000000000p+0F},
-            .end = {0LL, 0LL, -100000000000LL},
             .faces = 16U,
             .outcome = 0U},
   WorldCase{.name = "OffCenterAsymmetric",
             .half = {100000000000LL, 200000000000LL, 300000000000LL},
-            .start = {23000000001LL, -57LL, 813LL},
+            .start = {23000000000LL, -7000000000LL, 13000000000LL},
             .direction = {-0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {-100000000000LL, -57LL, 813LL},
             .faces = 1U,
             .outcome = 0U},
   WorldCase{
@@ -156,7 +154,6 @@ constexpr std::array k_cases{
     .half = {100000000000LL, 200000000000LL, 300000000000LL},
     .start = {0LL, 0LL, 0LL},
     .direction = {0x1.6a09e60000000p-1F, 0x1.6a09e60000000p-1F, 0x0.0p+0F},
-    .end = {100000000000LL, 100000000000LL, 0LL},
     .faces = 2U,
     .outcome = 0U},
   WorldCase{
@@ -164,7 +161,6 @@ constexpr std::array k_cases{
     .half = {100000000000LL, 100000000000LL, 200000000000LL},
     .start = {0LL, 0LL, 0LL},
     .direction = {0x1.6a09e60000000p-1F, -0x1.6a09e60000000p-1F, 0x0.0p+0F},
-    .end = {100000000000LL, -100000000000LL, 0LL},
     .faces = 6U,
     .outcome = 0U},
   WorldCase{.name = "ExactCorner",
@@ -172,7 +168,6 @@ constexpr std::array k_cases{
             .start = {0LL, 0LL, 0LL},
             .direction = {0x1.279a740000000p-1F, 0x1.279a740000000p-1F,
                           -0x1.279a740000000p-1F},
-            .end = {100000000000LL, 100000000000LL, -100000000000LL},
             .faces = 26U,
             .outcome = 0U},
   WorldCase{
@@ -180,105 +175,90 @@ constexpr std::array k_cases{
     .half = {29LL, 37LL, 53LL},
     .start = {-7LL, 3LL, -11LL},
     .direction = {0x1.3333340000000p-1F, 0x1.99999a0000000p-1F, 0x0.0p+0F},
-    .end = {19LL, 37LL, -11LL},
     .faces = 8U,
     .outcome = 0U},
   WorldCase{.name = "FaceOut0P",
             .half = {11LL, 23LL, 37LL},
             .start = {11LL, 0LL, 0LL},
             .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {11LL, 0LL, 0LL},
             .faces = 2U,
             .outcome = 0U},
   WorldCase{.name = "FaceIn0P",
             .half = {11LL, 23LL, 37LL},
             .start = {11LL, 0LL, 0LL},
             .direction = {-0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {-11LL, 0LL, 0LL},
             .faces = 1U,
             .outcome = 0U},
   WorldCase{.name = "FaceOut0M",
             .half = {11LL, 23LL, 37LL},
             .start = {-11LL, 0LL, 0LL},
             .direction = {-0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {-11LL, 0LL, 0LL},
             .faces = 1U,
             .outcome = 0U},
   WorldCase{.name = "FaceIn0M",
             .half = {11LL, 23LL, 37LL},
             .start = {-11LL, 0LL, 0LL},
             .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {11LL, 0LL, 0LL},
             .faces = 2U,
             .outcome = 0U},
   WorldCase{.name = "FaceOut1P",
             .half = {11LL, 23LL, 37LL},
             .start = {0LL, 23LL, 0LL},
             .direction = {0x0.0p+0F, 0x1.0000000000000p+0F, 0x0.0p+0F},
-            .end = {0LL, 23LL, 0LL},
             .faces = 8U,
             .outcome = 0U},
   WorldCase{.name = "FaceIn1P",
             .half = {11LL, 23LL, 37LL},
             .start = {0LL, 23LL, 0LL},
             .direction = {0x0.0p+0F, -0x1.0000000000000p+0F, 0x0.0p+0F},
-            .end = {0LL, -23LL, 0LL},
             .faces = 4U,
             .outcome = 0U},
   WorldCase{.name = "FaceOut1M",
             .half = {11LL, 23LL, 37LL},
             .start = {0LL, -23LL, 0LL},
             .direction = {0x0.0p+0F, -0x1.0000000000000p+0F, 0x0.0p+0F},
-            .end = {0LL, -23LL, 0LL},
             .faces = 4U,
             .outcome = 0U},
   WorldCase{.name = "FaceIn1M",
             .half = {11LL, 23LL, 37LL},
             .start = {0LL, -23LL, 0LL},
             .direction = {0x0.0p+0F, 0x1.0000000000000p+0F, 0x0.0p+0F},
-            .end = {0LL, 23LL, 0LL},
             .faces = 8U,
             .outcome = 0U},
   WorldCase{.name = "FaceOut2P",
             .half = {11LL, 23LL, 37LL},
             .start = {0LL, 0LL, 37LL},
             .direction = {0x0.0p+0F, 0x0.0p+0F, 0x1.0000000000000p+0F},
-            .end = {0LL, 0LL, 37LL},
             .faces = 32U,
             .outcome = 0U},
   WorldCase{.name = "FaceIn2P",
             .half = {11LL, 23LL, 37LL},
             .start = {0LL, 0LL, 37LL},
             .direction = {0x0.0p+0F, 0x0.0p+0F, -0x1.0000000000000p+0F},
-            .end = {0LL, 0LL, -37LL},
             .faces = 16U,
             .outcome = 0U},
   WorldCase{.name = "FaceOut2M",
             .half = {11LL, 23LL, 37LL},
             .start = {0LL, 0LL, -37LL},
             .direction = {0x0.0p+0F, 0x0.0p+0F, -0x1.0000000000000p+0F},
-            .end = {0LL, 0LL, -37LL},
             .faces = 16U,
             .outcome = 0U},
   WorldCase{.name = "FaceIn2M",
             .half = {11LL, 23LL, 37LL},
             .start = {0LL, 0LL, -37LL},
             .direction = {0x0.0p+0F, 0x0.0p+0F, 0x1.0000000000000p+0F},
-            .end = {0LL, 0LL, 37LL},
             .faces = 32U,
             .outcome = 0U},
   WorldCase{.name = "FaceCoincident",
             .half = {11LL, 23LL, 37LL},
             .start = {11LL, 0LL, 0LL},
             .direction = {0x0.0p+0F, 0x1.0000000000000p+0F, 0x0.0p+0F},
-            .end = {11LL, 23LL, 0LL},
             .faces = 8U,
             .outcome = 0U},
   WorldCase{.name = "EdgeCoincident",
             .half = {11LL, 23LL, 37LL},
             .start = {-11LL, 23LL, 0LL},
             .direction = {-0x0.0p+0F, 0x0.0p+0F, 0x1.0000000000000p+0F},
-            .end = {-11LL, 23LL, 37LL},
             .faces = 32U,
             .outcome = 0U},
   WorldCase{.name = "CornerIn",
@@ -286,7 +266,6 @@ constexpr std::array k_cases{
             .start = {11LL, 11LL, 11LL},
             .direction = {-0x1.279a740000000p-1F, -0x1.279a740000000p-1F,
                           -0x1.279a740000000p-1F},
-            .end = {-11LL, -11LL, -11LL},
             .faces = 21U,
             .outcome = 0U},
   WorldCase{
@@ -294,35 +273,30 @@ constexpr std::array k_cases{
     .half = {11LL, 11LL, 11LL},
     .start = {11LL, 11LL, 11LL},
     .direction = {-0x1.6a09e60000000p-1F, 0x1.6a09e60000000p-1F, 0x0.0p+0F},
-    .end = {11LL, 11LL, 11LL},
     .faces = 8U,
     .outcome = 0U},
-  WorldCase{.name = "OnePmInside",
+  WorldCase{.name = "RepresentedInsideMargin",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
-            .start = {99999999999LL, 0LL, 0LL},
+            .start = {99000000000LL, 0LL, 0LL},
             .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {100000000000LL, 0LL, 0LL},
             .faces = 2U,
             .outcome = 0U},
-  WorldCase{.name = "OnePmOutside",
+  WorldCase{.name = "RepresentedOutsideMargin",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
-            .start = {100000000001LL, 0LL, 0LL},
+            .start = {101000000000LL, 0LL, 0LL},
             .direction = {-0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {100000000001LL, 0LL, 0LL},
             .faces = 0U,
             .outcome = 1U},
-  WorldCase{.name = "OutsideInt64Min",
+  WorldCase{.name = "OutsideNegativeFace",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
-            .start = {std::numeric_limits<std::int64_t>::min(), 0LL, 0LL},
+            .start = {-101000000000LL, 0LL, 0LL},
             .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {std::numeric_limits<std::int64_t>::min(), 0LL, 0LL},
             .faces = 0U,
             .outcome = 1U},
   WorldCase{.name = "SmallestWorld",
             .half = {1LL, 1LL, 1LL},
             .start = {0LL, 0LL, 0LL},
             .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {1LL, 0LL, 0LL},
             .faces = 2U,
             .outcome = 0U},
   WorldCase{
@@ -330,7 +304,6 @@ constexpr std::array k_cases{
     .half = {1LL, 5LL, 5LL},
     .start = {0LL, -1LL, 0LL},
     .direction = {0x1.c9f25c0000000p-1F, 0x1.c9f25c0000000p-2F, 0x0.0p+0F},
-    .end = {1LL, -1LL, 0LL},
     .faces = 2U,
     .outcome = 0U},
   WorldCase{
@@ -338,7 +311,6 @@ constexpr std::array k_cases{
     .half = {1LL, 5LL, 5LL},
     .start = {0LL, 1LL, 0LL},
     .direction = {-0x1.c9f25c0000000p-1F, -0x1.c9f25c0000000p-2F, 0x0.0p+0F},
-    .end = {-1LL, 1LL, 0LL},
     .faces = 1U,
     .outcome = 0U},
   WorldCase{
@@ -346,7 +318,6 @@ constexpr std::array k_cases{
     .half = {1LL, 5LL, 5LL},
     .start = {0LL, 0LL, 0LL},
     .direction = {0x1.c9f25c0000000p-1F, 0x1.c9f25c0000000p-2F, 0x0.0p+0F},
-    .end = {1LL, 1LL, 0LL},
     .faces = 2U,
     .outcome = 0U},
   WorldCase{
@@ -354,43 +325,32 @@ constexpr std::array k_cases{
     .half = {1LL, 5LL, 5LL},
     .start = {0LL, 0LL, 0LL},
     .direction = {-0x1.c9f25c0000000p-1F, -0x1.c9f25c0000000p-2F, 0x0.0p+0F},
-    .end = {-1LL, -1LL, 0LL},
     .faces = 1U,
     .outcome = 0U},
-  WorldCase{
-    .name = "BeyondDoubleLattice",
-    .half = {9007199254740993LL, 9007199254740993LL, 9007199254740993LL},
-    .start = {9007199254740992LL, -9007199254740986LL, 19LL},
-    .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-    .end = {9007199254740993LL, -9007199254740986LL, 19LL},
-    .faces = 2U,
-    .outcome = 0U},
-  WorldCase{.name = "MaximumWorldAxis",
-            .half = {4611686018427387903LL, 4611686018427387903LL,
-                     4611686018427387903LL},
-            .start = {-4611686018427387903LL, 1LL, 3LL},
+  WorldCase{.name = "MeterScaleOffCenter",
+            .half = {1500000000000LL, 1250000000000LL, 1000000000000LL},
+            .start = {1100000000000LL, -900000000000LL, 100000000000LL},
             .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {4611686018427387903LL, 1LL, 3LL},
             .faces = 2U,
             .outcome = 0U},
-  WorldCase{.name = "MaximumWorldDiagonal",
-            .half = {4611686018427387903LL, 4611686018427387903LL,
-                     4611686018427387903LL},
-            .start = {-4611686018427387903LL, -4611686018427387903LL,
-                      -4611686018427387903LL},
+  WorldCase{.name = "MedicalWorldAxis",
+            .half = {1500000000000LL, 1000000000000LL, 750000000000LL},
+            .start = {-1400000000000LL, 1000000000LL, 3000000000LL},
+            .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
+            .faces = 2U,
+            .outcome = 0U},
+  WorldCase{.name = "MedicalWorldDiagonal",
+            .half = {1500000000000LL, 1500000000000LL, 1500000000000LL},
+            .start = {-1000000000000LL, -1000000000000LL, -1000000000000LL},
             .direction = {0x1.279a740000000p-1F, 0x1.279a740000000p-1F,
                           0x1.279a740000000p-1F},
-            .end = {4611686018427387903LL, 4611686018427387903LL,
-                    4611686018427387903LL},
             .faces = 42U,
             .outcome = 0U},
   WorldCase{
-    .name = "NearTieOnePm",
-    .half = {4611686018427387903LL, 4611686018427387903LL,
-             4611686018427387903LL},
-    .start = {0LL, 1LL, 0LL},
+    .name = "SeparatedFaceParameters",
+    .half = {1500000000000LL, 1500000000000LL, 1500000000000LL},
+    .start = {0LL, 1000000000LL, 0LL},
     .direction = {0x1.6a09e60000000p-1F, 0x1.6a09e60000000p-1F, 0x0.0p+0F},
-    .end = {4611686018427387902LL, 4611686018427387903LL, 0LL},
     .faces = 8U,
     .outcome = 0U},
   WorldCase{
@@ -398,7 +358,6 @@ constexpr std::array k_cases{
     .half = {13LL, 13LL, 13LL},
     .start = {0LL, 1LL, 0LL},
     .direction = {0x1.6a09e60000000p-1F, 0x1.6a09e60000000p-1F, 0x0.0p+0F},
-    .end = {12LL, 13LL, 0LL},
     .faces = 8U,
     .outcome = 0U},
   WorldCase{
@@ -406,7 +365,6 @@ constexpr std::array k_cases{
     .half = {100LL, 100LL, 100LL},
     .start = {99LL, 99LL, 0LL},
     .direction = {0x1.c9f25c0000000p-1F, 0x1.c9f25c0000000p-2F, 0x0.0p+0F},
-    .end = {100LL, 100LL, 0LL},
     .faces = 2U,
     .outcome = 0U},
   WorldCase{
@@ -414,7 +372,6 @@ constexpr std::array k_cases{
     .half = {100000000000LL, 100000000000LL, 100000000000LL},
     .start = {0LL, 0LL, 0LL},
     .direction = {0x1.0000000000000p-126F, 0x0.0p+0F, 0x1.0000000000000p+0F},
-    .end = {0LL, 0LL, 100000000000LL},
     .faces = 32U,
     .outcome = 0U},
   WorldCase{
@@ -422,26 +379,55 @@ constexpr std::array k_cases{
     .half = {100000000000LL, 100000000000LL, 100000000000LL},
     .start = {0LL, 0LL, 0LL},
     .direction = {0x1.0000000000000p-149F, 0x0.0p+0F, 0x1.0000000000000p+0F},
-    .end = {0LL, 0LL, 100000000000LL},
     .faces = 32U,
     .outcome = 0U},
   WorldCase{.name = "ZeroDirection",
             .half = {100000000000LL, 100000000000LL, 100000000000LL},
             .start = {0LL, 0LL, 0LL},
             .direction = {0x0.0p+0F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {0LL, 0LL, 0LL},
             .faces = 0U,
             .outcome = 2U},
-  // The unit-direction parameter (2^62-1) * 2^126 pm fits no integer, but
-  // the endpoint is representable: the exact witness commits it.
-  WorldCase{.name = "HugeParameterStillExits",
-            .half = {4611686018427387903LL, 4611686018427387903LL,
-                     4611686018427387903LL},
+  WorldCase{.name = "FiniteObliqueMeterScale",
+            .half = {1500000000000LL, 1000000000000LL, 750000000000LL},
             .start = {0LL, 0LL, 0LL},
-            .direction = {0x1.0000000000000p-126F, 0x0.0p+0F, 0x0.0p+0F},
-            .end = {4611686018427387903LL, 0LL, 0LL},
-            .faces = 2U,
+            .direction = {0.6F, 0.8F, 0.0F},
+            .faces = 8U,
             .outcome = 0U}};
+
+// Intersect the independently specified expected face, not a device-selected
+// result. The fixture's exact status/mask checks separately test topology.
+// Budget: one subtraction, standard OpenCL division (2.5 ULP), multiplication,
+// and addition; observer export contributes another 0.5 pm at the call site.
+auto RepresentedEndpoint(WorldCase const &test)
+  -> std::array<ggems::test::fp32::Scalar, 3> {
+  using namespace ggems::test::fp32;
+  std::array<Scalar, 3> start{};
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    start[axis] = FromFloat(static_cast<float>(test.start[axis]));
+  }
+  if (test.outcome != 0U) {
+    return start;
+  }
+  std::size_t face_axis{};
+  while (face_axis < 3U && (test.faces & (3U << (2U * face_axis))) == 0U) {
+    ++face_axis;
+  }
+  if (face_axis == 3U) {
+    ADD_FAILURE() << "Successful fixture has no independently specified face";
+    return start;
+  }
+  float const side =
+    (test.faces & (2U << (2U * face_axis))) != 0U ? 1.0F : -1.0F;
+  auto const face = FromFloat(side * static_cast<float>(test.half[face_axis]));
+  auto const parameter = Divide(Subtract(face, start[face_axis]),
+                                FromFloat(test.direction[face_axis]));
+  std::array<Scalar, 3> endpoint{};
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    endpoint[axis] =
+      Add(start[axis], Multiply(parameter, FromFloat(test.direction[axis])));
+  }
+  return endpoint;
+}
 
 class GGEMSWorldTransportTest : public testing::Test {
 protected:
@@ -478,9 +464,10 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       random.InitializeStates(0ULL, std::span<std::byte>{rng_before});
       ocl::WriteSVMFromHost(rng, std::span<std::byte const>{rng_before});
 
-      geometry::GGEMSWorldRecord const world{.half_extent_x_pm = test.half[0],
-                                             .half_extent_y_pm = test.half[1],
-                                             .half_extent_z_pm = test.half[2]};
+      geometry::GGEMSWorldRecord const world{
+        .half_extent_x_pm = static_cast<float>(test.half[0]),
+        .half_extent_y_pm = static_cast<float>(test.half[1]),
+        .half_extent_z_pm = static_cast<float>(test.half[2])};
       auto world_buffer = buffer(world);
       auto volume_buffer = buffer(geometry::GGEMSAnalyticVolumeRecord{});
       sources::GGEMSSourceRecord source{};
@@ -495,7 +482,7 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       source.energy_micro_eV = 123456789ULL;
       source.time_start_ps = 17ULL;
       source.time_stop_ps = 17ULL;
-      auto source_buffer = buffer(source);
+      auto source_buffer = buffer(sources::BuildSourceDeviceRecord(source));
       auto ranges = buffer(sources::GGEMSSourceRunRange{
         .projection_primary_begin = 0ULL, .primary_count = 1ULL});
       auto populations = buffer(sources::GGEMSSourcePopulationRecord{});
@@ -556,9 +543,9 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       EXPECT_EQ(rng_after, rng_before);
       auto const counts =
         ocl::ReadSVMToHost<transport::GGEMSTransportCounters>(counters_buffer);
-      EXPECT_EQ(counts.consumed_primary_count, 1U);
+      EXPECT_EQ(counts.consumed_primary_count, 0U); // Derived by Workload.
       EXPECT_EQ(counts.completed_history_count, test.outcome == 0U ? 1U : 0U);
-      EXPECT_EQ(counts.terminal_particle_count, test.outcome == 0U ? 1U : 0U);
+      EXPECT_EQ(counts.terminal_particle_count, 0U); // Derived by Workload.
       EXPECT_EQ(counts.outside_world_count, test.outcome == 1U ? 1U : 0U);
       EXPECT_EQ(counts.unresolved_geometry_count, test.outcome == 2U ? 1U : 0U);
       EXPECT_EQ(counts.escaped_world_count, test.outcome == 0U ? 1U : 0U);
@@ -576,18 +563,35 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       ocl::ReadSVMToHost(observations,
                          std::span<observer::GGEMSObserverRecord>{records});
       auto const &birth = records[0];
-      EXPECT_EQ(birth.position_x_pm, test.start[0]);
-      EXPECT_EQ(birth.position_y_pm, test.start[1]);
-      EXPECT_EQ(birth.position_z_pm, test.start[2]);
+      ASSERT_EQ(birth.position_valid, 1U);
+      std::array const birth_position{
+        birth.position_x_pm,
+        birth.position_y_pm,
+        birth.position_z_pm,
+      };
+      for (std::size_t axis = 0; axis < 3; ++axis) {
+        ggems::test::fp32::ExpectWithin(
+          static_cast<double>(birth_position[axis]),
+          ggems::test::fp32::FromFloat(static_cast<float>(test.start[axis])),
+          0.5);
+      }
       EXPECT_EQ(birth.status, particles::ToKernelParticleStatus(
                                 particles::GGEMSParticleStatus::Alive));
       if (test.outcome != 0U) {
         continue;
       }
       auto const &end = records[1];
-      EXPECT_EQ(end.position_x_pm, test.end[0]);
-      EXPECT_EQ(end.position_y_pm, test.end[1]);
-      EXPECT_EQ(end.position_z_pm, test.end[2]);
+      ASSERT_EQ(end.position_valid, 1U);
+      auto const expected = RepresentedEndpoint(test);
+      std::array const endpoint{
+        end.position_x_pm,
+        end.position_y_pm,
+        end.position_z_pm,
+      };
+      for (std::size_t axis = 0; axis < 3; ++axis) {
+        ggems::test::fp32::ExpectWithin(static_cast<double>(endpoint[axis]),
+                                        expected[axis], 0.5);
+      }
       EXPECT_EQ(end.status, particles::ToKernelParticleStatus(
                               particles::GGEMSParticleStatus::EscapedWorld));
       EXPECT_EQ(end.energy_micro_eV, source.energy_micro_eV);
@@ -627,10 +631,13 @@ TEST_F(GGEMSWorldTransportTest,
   ASSERT_NO_THROW(run.Run());
   auto const successful = observer->GetRecords();
   ASSERT_EQ(successful.size(), 2U);
-  EXPECT_EQ(successful.back().position_x_pm, 100'000'000'000LL);
-  // One picometer outside the +X face: rejected by the static origin
+  ASSERT_EQ(successful.back().position_valid, 1U);
+  ggems::test::fp32::ExpectWithin(
+    static_cast<double>(successful.back().position_x_pm),
+    ggems::test::fp32::FromFloat(100'000'000'000.0F), 0.5);
+  // One millimeter outside the +X face: rejected by the static origin
   // preflight before any launch, so nothing new is published.
-  source->SetPositionPicoMeter(100'000'000'001LL, 0LL, 0LL);
+  source->SetPositionPicoMeter(101'000'000'000LL, 0LL, 0LL);
   EXPECT_THROW(run.Run(), GGEMSRecoverable);
   EXPECT_EQ(observer->GetRecords().size(), successful.size());
   EXPECT_EQ(observer->GetRecords().back().position_x_pm,
@@ -640,7 +647,7 @@ TEST_F(GGEMSWorldTransportTest,
 TEST_F(GGEMSWorldTransportTest,
        RunRejectsDeviceOutsideBirthWithoutPublishingAndRecovers) {
   using namespace units;
-  // Point origin inside a 2 pm World; a later rectangular emission generates
+  // Point origin inside a 2 mm World; a later rectangular emission generates
   // births outside the World on the device, exercising the counter-to-error
   // path of GGEMSRun rather than the static origin preflight.
   auto source = std::make_shared<sources::GGEMSSource>();
@@ -656,12 +663,12 @@ TEST_F(GGEMSWorldTransportTest,
   run.SetRandom(rng);
   run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorld(MakeVacuumWorld(2_pm));
+  run.SetWorld(MakeVacuumWorld(2_mm));
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
   auto const before = observer->GetRecords();
   ASSERT_EQ(before.size(), 2U);
-  EXPECT_EQ(before.back().position_z_pm, 1LL);
+  EXPECT_EQ(before.back().position_z_pm, 1'000'000'000LL);
 
   source->SetRectangleEmissionPicoMeter(200'000'000'000ULL, 200'000'000'000ULL);
   EXPECT_THROW(run.Run(), GGEMSRecoverable);
@@ -674,7 +681,7 @@ TEST_F(GGEMSWorldTransportTest,
   source->SetPointEmission();
   ASSERT_NO_THROW(run.Run());
   ASSERT_EQ(observer->GetRecords().size(), 2U);
-  EXPECT_EQ(observer->GetRecords().back().position_z_pm, 1LL);
+  EXPECT_EQ(observer->GetRecords().back().position_z_pm, 1'000'000'000LL);
   EXPECT_EQ(observer->GetRecords().back().status,
             particles::ToKernelParticleStatus(
               particles::GGEMSParticleStatus::EscapedWorld));
@@ -693,7 +700,9 @@ TEST_F(GGEMSWorldTransportTest, AioninoRequiresExplicitWorld) {
 }
 
 TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
+  std::size_t device_index{};
   for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+    auto const current_device = device_index++;
     SCOPED_TRACE(context.GetDevice().GetName());
     std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
     auto const &program = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
@@ -704,9 +713,10 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
       "world_navigation_probe"};
     for (auto const &test : k_cases) {
       SCOPED_TRACE(test.name);
-      geometry::GGEMSWorldRecord const world{.half_extent_x_pm = test.half[0],
-                                             .half_extent_y_pm = test.half[1],
-                                             .half_extent_z_pm = test.half[2]};
+      geometry::GGEMSWorldRecord const world{
+        .half_extent_x_pm = static_cast<float>(test.half[0]),
+        .half_extent_y_pm = static_cast<float>(test.half[1]),
+        .half_extent_z_pm = static_cast<float>(test.half[2])};
       auto world_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(world)});
       ocl::WriteSVMFromHost(world_buffer, world);
       // A default analytic record selects the World-only transaction.
@@ -714,16 +724,16 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
       auto volume_buffer =
         context.CreateSVMBuffer(units::Bytes{sizeof(no_volume)});
       ocl::WriteSVMFromHost(volume_buffer, no_volume);
-      auto positions =
-        context.CreateSVMBuffer(units::Bytes{sizeof(test.start)});
-      ocl::WriteSVMFromHost(positions,
-                            std::span<std::int64_t const>{test.start});
+      std::array<float, 3> const start{static_cast<float>(test.start[0]),
+                                       static_cast<float>(test.start[1]),
+                                       static_cast<float>(test.start[2])};
+      auto positions = context.CreateSVMBuffer(units::Bytes{sizeof(start)});
+      ocl::WriteSVMFromHost(positions, std::span<float const>{start});
       auto directions =
         context.CreateSVMBuffer(units::Bytes{sizeof(test.direction)});
       ocl::WriteSVMFromHost(directions, std::span<float const>{test.direction});
       auto statuses = context.CreateSVMBuffer(units::Bytes{sizeof(cl_uint)});
-      auto endpoints =
-        context.CreateSVMBuffer(units::Bytes{sizeof(test.start)});
+      auto endpoints = context.CreateSVMBuffer(units::Bytes{sizeof(start)});
       auto faces = context.CreateSVMBuffer(units::Bytes{sizeof(cl_uint)});
       kernel.SetArgSVMPointer(0U, world_buffer.GetData());
       kernel.SetArgSVMPointer(1U, volume_buffer.GetData());
@@ -736,9 +746,26 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
       kernel.Run({64U}, {64U});
       EXPECT_EQ(ocl::ReadSVMToHost<cl_uint>(statuses), test.outcome);
       EXPECT_EQ(ocl::ReadSVMToHost<cl_uint>(faces), test.faces);
-      std::array<std::int64_t, 3> endpoint{};
-      ocl::ReadSVMToHost(endpoints, std::span<std::int64_t>{endpoint});
-      EXPECT_EQ(endpoint, test.outcome == 0U ? test.end : test.start);
+      std::array<float, 3> endpoint{};
+      ocl::ReadSVMToHost(endpoints, std::span<float>{endpoint});
+      auto const expected = RepresentedEndpoint(test);
+      for (std::size_t axis = 0; axis < 3; ++axis) {
+        if (std::fpclassify(test.direction[axis]) == FP_SUBNORMAL) {
+          // Optional denormal support may preserve or flush this input. Retain
+          // the measured displacement diagnostically; topology stays exact.
+          SCOPED_TRACE(std::format("subnormal axis {} displacement = {} pm",
+                                   axis, endpoint[axis]));
+          RecordProperty(
+            std::format("subnormal_device_{}_axis_{}_pm", current_device, axis),
+            std::format("{}", endpoint[axis]));
+          ASSERT_TRUE(std::isfinite(endpoint[axis]));
+          EXPECT_GE(endpoint[axis], 0.0F);
+          EXPECT_LE(static_cast<double>(endpoint[axis]),
+                    expected[axis].value + expected[axis].error);
+        } else {
+          ggems::test::fp32::ExpectWithin(endpoint[axis], expected[axis]);
+        }
+      }
     }
   }
 }
@@ -794,9 +821,9 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
       sizeof(observer::GGEMSObserverRecord),
       alignof(observer::GGEMSObserverRecord),
       sizeof(observer::GGEMSObserverRecord),
-      41ULL,
-      59ULL,
-      83ULL};
+      std::bit_cast<std::uint32_t>(worlds[1].half_extent_x_pm),
+      std::bit_cast<std::uint32_t>(worlds[1].half_extent_y_pm),
+      std::bit_cast<std::uint32_t>(worlds[1].half_extent_z_pm)};
     EXPECT_EQ(layout, expected);
     ocl::ReadSVMToHost(counter_buffer,
                        std::span<transport::GGEMSTransportCounters>{counts});
@@ -833,7 +860,10 @@ TEST_F(GGEMSWorldTransportTest, OtherSpeciesKeepDiagnosticMovementWithWorld) {
     auto const records = observer->GetRecords();
     ASSERT_EQ(records.size(), 2U);
     auto const &terminal = records.back();
-    EXPECT_EQ(terminal.position_x_pm, 1'000'000'000'000LL);
+    ASSERT_EQ(terminal.position_valid, 1U);
+    ggems::test::fp32::ExpectWithin(
+      static_cast<double>(terminal.position_x_pm),
+      ggems::test::fp32::FromFloat(1'000'000'000'000.0F), 0.5);
     EXPECT_EQ(terminal.status, particles::ToKernelParticleStatus(
                                  particles::GGEMSParticleStatus::Killed));
     EXPECT_EQ(terminal.particle_type, particles::ToKernelParticleType(type));

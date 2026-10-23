@@ -29,50 +29,45 @@
 
 #pragma once
 
-#include <cstdint>
-
 namespace ggems::geometry {
 
-/*! \brief Scalar 64-byte pose; mirrors GGEMSBoxPoseRecord.clh. */
+/*! \brief Scalar 48-byte pose; mirrors GGEMSBoxPoseRecord.clh. */
 struct GGEMSBoxPoseRecord {
-  /*! \brief Global center X coordinate in integer pm. */
-  std::int64_t center_x_pm{0};
+  /*! \brief Global center X coordinate in FP32 pm. */
+  float center_x_pm{0.0F};
 
-  /*! \brief Global center Y coordinate in integer pm. */
-  std::int64_t center_y_pm{0};
+  /*! \brief Global center Y coordinate in FP32 pm. */
+  float center_y_pm{0.0F};
 
-  /*! \brief Global center Z coordinate in integer pm. */
-  std::int64_t center_z_pm{0};
+  /*! \brief Global center Z coordinate in FP32 pm. */
+  float center_z_pm{0.0F};
 
   /*! \brief World X component of local X. */
-  float axis_x_x{1.0};
+  float axis_x_x{1.0F};
 
   /*! \brief World Y component of local X. */
-  float axis_x_y{0.0};
+  float axis_x_y{0.0F};
 
   /*! \brief World Z component of local X. */
-  float axis_x_z{0.0};
+  float axis_x_z{0.0F};
 
   /*! \brief World X component of local Y. */
-  float axis_y_x{0.0};
+  float axis_y_x{0.0F};
 
   /*! \brief World Y component of local Y. */
-  float axis_y_y{1.0};
+  float axis_y_y{1.0F};
 
   /*! \brief World Z component of local Y. */
-  float axis_y_z{0.0};
+  float axis_y_z{0.0F};
 
   /*! \brief World X component of local Z. */
-  float axis_z_x{0.0};
+  float axis_z_x{0.0F};
 
   /*! \brief World Y component of local Z. */
-  float axis_z_y{0.0};
+  float axis_z_y{0.0F};
 
   /*! \brief World Z component of local Z. */
-  float axis_z_z{1.0};
-
-  /*! \brief Explicit alignment padding, initialized to zero. */
-  std::uint32_t padding{0U};
+  float axis_z_z{1.0F};
 };
 
 } // namespace ggems::geometry

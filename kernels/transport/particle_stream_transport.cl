@@ -37,8 +37,8 @@
 #include "random/GGEMSRandom.clh"
 #include "transport/GGEMSTransport.clh"
 
-#include "transport/GGEMSDiagnosticProjection.clh"
 #include "transport/GGEMSTransportCounters.clh"
+#include "transport/GGEMSDiagnosticProjection.clh"
 #include "sources/GGEMSSourcePopulationRecord.clh"
 #include "sources/GGEMSSourceEmissionRecord.clh"
 #include "sources/GGEMSSourceEmissionRange.clh"
@@ -99,8 +99,8 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
 
   uint const locate_status = GGEMS_AnalyticLocate(
     world, volume, box_pose,
-    (long3)(particle->position_x_pm, particle->position_y_pm,
-            particle->position_z_pm),
+    (float3)(particle->position_x_pm, particle->position_y_pm,
+             particle->position_z_pm),
     (float3)(particle->direction_x, particle->direction_y,
              particle->direction_z),
     &owner);
@@ -139,7 +139,6 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
     }
 
     if (event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) {
-      atomic_inc(&counters->escaped_world_count);
       return 0U;
     }
   }
@@ -164,18 +163,20 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
  *
  * The run-wide population index is device_primary_offset plus the claimed
  * index. Adding projection_history_offset produces the global primary
- * identity; both additions are checked. The first nonempty matching half-open
- * source range selects the source slot and source-local index. Missing ranges
- * and failed birth initialization increment overflow_count and skip
- * completion.
+ * identity; host preflight proves both additions representable and source
+ * ranges contiguous and covering this chunk. The matching half-open source
+ * range selects the source slot and source-local index. Birth dispatch is
+ * infallible for the validated descriptors.
  *
  * A Process-free species (GGEMS_ParticleIsProcessFree) navigates the World
  * and its analytic volume boundary by boundary and commits its final
  * accepted interval before EscapedWorld completion. Outside births and
  * unresolved queries increment distinct failure counters without terminal
- * publication or history completion. Other species retain the checked
- * one-meter projection and diagnostic Killed completion until their physical
- * Processes exist. Energy, time and direction are unchanged in both paths.
+ * publication or history completion. Other species use the same FP32 movement
+ * for a one-meter diagnostic projection and diagnostic Killed completion until
+ * their physical Processes exist. A nonfinite endpoint fails without terminal
+ * publication or completion. Energy, time and direction are unchanged in both
+ * paths.
  *
  * With observer support enabled, capture selection precedes initialization
  * and optional source/terminal records have zero deposited energy. All
@@ -261,6 +262,9 @@ __kernel void particle_stream_transport(
     return;
   }
 
+  uint completed_count = 0U;
+  uint escaped_count = 0U;
+
   while (1) {
     uint local_primary_id = atomic_add(&counters->next_primary_id, 1U);
 
@@ -298,8 +302,6 @@ __kernel void particle_stream_transport(
     }
 #endif
 
-    atomic_inc(&counters->consumed_primary_count);
-
     __global GGEMSSourceRecord const *source =
       &source_records[selected_source_index];
 
@@ -327,49 +329,13 @@ __kernel void particle_stream_transport(
                                   counters) != 0U) {
         continue;
       }
+
+      ++escaped_count;
     } else {
-      long displacement_x_pm = 0L;
-      long displacement_y_pm = 0L;
-      long displacement_z_pm = 0L;
-
-      uint valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-        particle.direction_x, &displacement_x_pm);
-
-      if (valid_projection != 0U) {
-        valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-          particle.direction_y, &displacement_y_pm);
-      }
-
-      if (valid_projection != 0U) {
-        valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-          particle.direction_z, &displacement_z_pm);
-      }
-
-      long endpoint_x_pm = particle.position_x_pm;
-      long endpoint_y_pm = particle.position_y_pm;
-      long endpoint_z_pm = particle.position_z_pm;
-
-      if (valid_projection != 0U) {
-        valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-          particle.position_x_pm, displacement_x_pm, &endpoint_x_pm);
-      }
-
-      if (valid_projection != 0U) {
-        valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-          particle.position_y_pm, displacement_y_pm, &endpoint_y_pm);
-      }
-
-      if (valid_projection != 0U) {
-        valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-          particle.position_z_pm, displacement_z_pm, &endpoint_z_pm);
-      }
-
-      if (valid_projection != 0U) {
-        particle.position_x_pm = endpoint_x_pm;
-        particle.position_y_pm = endpoint_y_pm;
-        particle.position_z_pm = endpoint_z_pm;
-      } else {
+      if (GGEMS_TransportMoveToBoundary(GGEMS_DIAGNOSTIC_PROJECTION_DISTANCE_PM,
+                                        &particle) == 0U) {
         atomic_inc(&counters->overflow_count);
+        continue;
       }
 
       particle.status = GGEMS_PARTICLE_STATUS_KILLED;
@@ -384,7 +350,17 @@ __kernel void particle_stream_transport(
     }
 #endif
 
-    atomic_inc(&counters->terminal_particle_count);
-    atomic_inc(&counters->completed_history_count);
+    ++completed_count;
+  }
+
+  // Every worker publishes actual outcomes once. Claim scheduling is unchanged.
+  // The host derives consumed from the exhausted chunk and terminal from
+  // completed.
+  if (completed_count != 0U) {
+    atomic_add(&counters->completed_history_count, completed_count);
+  }
+
+  if (escaped_count != 0U) {
+    atomic_add(&counters->escaped_world_count, escaped_count);
   }
 }

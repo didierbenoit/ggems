@@ -53,11 +53,11 @@ struct ParticleStateAlignmentProbe {
   ParticleState particle;
 };
 
-// 23 layout values followed by the catalog predicate of species codes 0..7.
-constexpr std::size_t k_layout_value_count{31U};
+// 21 layout values followed by the catalog predicate of species codes 0..7.
+constexpr std::size_t k_layout_value_count{29U};
 constexpr std::size_t k_particle_count{2U};
-constexpr std::uint64_t k_probe_track_id{7ULL};
-constexpr float k_probe_direction_w{0.5F};
+constexpr std::uint32_t k_probe_track_id{7U};
+constexpr float k_probe_position_x{-0.5F};
 constexpr std::uint64_t k_probe_energy_micro_ev{511'000'000'000ULL};
 
 // =============================================================================
@@ -127,25 +127,23 @@ TEST_F(GGEMSParticleStateKernelTest, HostAndKernelLayoutsMatch) {
   std::array<std::uint64_t, k_layout_value_count> const expected_layout{
     sizeof(ParticleState),
     offsetof(ParticleState, global_particle_id),
+    offsetof(ParticleState, time_ps),
+    offsetof(ParticleState, energy_micro_eV),
     offsetof(ParticleState, track_id),
     offsetof(ParticleState, parent_track_id),
-    offsetof(ParticleState, time_ps),
-    offsetof(ParticleState, position_x_pm),
-    offsetof(ParticleState, position_y_pm),
-    offsetof(ParticleState, position_z_pm),
-    offsetof(ParticleState, particle_type),
-    offsetof(ParticleState, status),
-    offsetof(ParticleState, generation),
-    offsetof(ParticleState, flags),
     offsetof(ParticleState, current_navigator_id),
     offsetof(ParticleState, current_volume_id),
     offsetof(ParticleState, material_id),
     offsetof(ParticleState, region_id),
+    offsetof(ParticleState, position_x_pm),
+    offsetof(ParticleState, position_y_pm),
+    offsetof(ParticleState, position_z_pm),
     offsetof(ParticleState, direction_x),
     offsetof(ParticleState, direction_y),
     offsetof(ParticleState, direction_z),
-    offsetof(ParticleState, direction_w),
-    offsetof(ParticleState, energy_micro_eV),
+    offsetof(ParticleState, particle_type),
+    offsetof(ParticleState, status),
+    offsetof(ParticleState, generation),
     sizeof(ParticleState),
     offsetof(ParticleStateAlignmentProbe, particle),
     // GGEMS_ParticleIsProcessFree for species codes 0..7: only Aionino (1).
@@ -167,7 +165,9 @@ TEST_F(GGEMSParticleStateKernelTest, HostAndKernelLayoutsMatch) {
 
   particles_buffer.Map(CL_MAP_READ);
   EXPECT_EQ(particles[1U].track_id, k_probe_track_id);
-  EXPECT_FLOAT_EQ(particles[1U].direction_w, k_probe_direction_w);
+  EXPECT_EQ(particles[1U].global_particle_id, 4294967297ULL);
+  EXPECT_EQ(particles[1U].generation, 255U);
+  EXPECT_FLOAT_EQ(particles[1U].position_x_pm, k_probe_position_x);
   EXPECT_EQ(particles[1U].energy_micro_eV, k_probe_energy_micro_ev);
   particles_buffer.Unmap();
 }

@@ -34,10 +34,6 @@
 /*! \brief Prevents repeated inclusion of Navigation declarations. */
 #define GGEMS_NAVIGATION_CLH
 
-#include "geometry/GGEMSBoxRecord.clh"
-#include "geometry/GGEMSWorldRecord.clh"
-#include "navigation/GGEMSWorldNavigation.clh"
-
 /*! \brief Query resolved: the witness describes the first physical boundary. */
 #define GGEMS_NAVIGATION_RESOLVED 0U
 
@@ -74,21 +70,14 @@
 /*!
  * \brief Selected physical event and its arrival owner.
  *
- * gap_pm, mantissa and exponent describe exact World movement only. Analytic
- * movement uses the separate FP32 parameter. faces is a World or local Box
- * crossing mask, and zero for Sphere.
+ * The FP32 parameter applies to World, Box, and Sphere movement. Faces is a
+ * World or local Box crossing mask, and zero for Sphere.
  */
 typedef struct GGEMSBoundaryWitness {
-  /*! \brief Forward integer gap to the limiting plane along its axis. */
-  ulong gap_pm;
+  /*! \brief Forward FP32 ray parameter in pm. */
+  float parameter;
 
-  /*! \brief Significand of the limiting direction component. */
-  uint mantissa;
-
-  /*! \brief Binary exponent of the limiting direction component. */
-  int exponent;
-
-  /*! \brief Exact simultaneous crossing planes of the limiting volume. */
+  /*! \brief Simultaneous FP32 crossing planes of the limiting volume. */
   uint faces;
 
   /*! \brief GGEMS_NAVIGATION_EVENT_* describing the boundary. */
@@ -106,44 +95,17 @@ typedef struct GGEMSBoundaryWitness {
 
 /*!
  * \brief Checks the FP32 exponent without finite-math compiler assumptions.
+ *
+ * The volatile integer round trip is a compiler barrier: Intel CPU OpenCL
+ * 2026.21 folds a plain exponent mask into an assumed-finite result under
+ * -cl-fast-relaxed-math, accepting NaN/Inf inputs and overflowing endpoints.
+ * A noinline float helper does not prevent that transformation.
  * \param[in] value Arithmetic result to inspect.
  * \return Nonzero for a finite FP32 value, including signed zero.
  */
 static inline uint GGEMS_NavigationIsFinite(float value) {
-  return (as_uint(value) & 0x7F800000U) != 0x7F800000U;
-}
-
-/*!
- * \brief Initializes the selected event with the exact World exit.
- *
- * Private pointer output preserves the established Intel compiler workaround:
- * nested structure-returning navigation queries corrupted Transport state on
- * Intel Graphics NEO 26.35 with -cl-opt-disable.
- * \param[in] world Immutable finite World.
- * \param[in] position Canonical global anchor in integer pm.
- * \param[in] direction Actual stored direction.
- * \param[out] witness Exact World evidence and exterior arrival owner.
- * \return Resolved, outside World, or unresolved.
- */
-static inline uint
-GGEMS_NavigationFindWorldBoundary(__global GGEMSWorldRecord const *world,
-                                  long3 position, float3 direction,
-                                  GGEMSBoundaryWitness *witness) {
-  GGEMSWorldBoundary world_exit =
-    GGEMS_WorldFindBoundary(world, position, direction);
-
-  witness->gap_pm = world_exit.gap_pm;
-  witness->mantissa = world_exit.direction.mantissa;
-  witness->exponent = world_exit.direction.exponent;
-  witness->faces = world_exit.faces;
-  witness->event = world_exit.status == GGEMS_WORLD_EXIT
-                     ? GGEMS_NAVIGATION_EVENT_WORLD_EXIT
-                     : GGEMS_NAVIGATION_EVENT_NONE;
-  witness->arrival_volume_id = GGEMS_VOLUME_ID_EXTERIOR;
-  witness->arrival_material_id = GGEMS_MATERIAL_ID_NONE;
-  witness->status = world_exit.status;
-
-  return world_exit.status;
+  volatile uint bits = as_uint(value);
+  return (bits & 0x7F800000U) != 0x7F800000U;
 }
 
 #endif

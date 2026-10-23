@@ -41,18 +41,17 @@ __kernel void particle_generate_dummy_primary(
   GGEMSParticleState particle;
 
   particle.global_particle_id = global_particle_id;
-  particle.track_id = global_particle_id;
-  particle.parent_track_id = GGEMS_INVALID_ID_U64;
+  particle.track_id = 0U;
+  particle.parent_track_id = GGEMS_INVALID_ID_U32;
   particle.time_ps = 0UL;
 
-  particle.position_x_pm = 0L;
-  particle.position_y_pm = 0L;
-  particle.position_z_pm = 0L;
+  particle.position_x_pm = 0.0f;
+  particle.position_y_pm = 0.0f;
+  particle.position_z_pm = 0.0f;
 
   particle.particle_type = particle_type;
   particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
   particle.generation = 0U;
-  particle.flags = 0U;
 
   particle.current_navigator_id = GGEMS_INVALID_ID_U32;
   particle.current_volume_id = GGEMS_INVALID_ID_U32;
@@ -62,7 +61,6 @@ __kernel void particle_generate_dummy_primary(
   particle.direction_x = 0.0f;
   particle.direction_y = 0.0f;
   particle.direction_z = 1.0f;
-  particle.direction_w = 0.0f;
 
   particle.energy_micro_eV = energy_micro_eV;
 

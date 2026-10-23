@@ -31,16 +31,16 @@
 /*! \brief Prevents repeated definition of the shared Box record. */
 #define GGEMS_BOX_POSE_RECORD_CLH
 
-/*! \brief Scalar 64-byte pose; mirrors GGEMSBoxPoseRecord.hh. */
+/*! \brief Scalar 48-byte pose; mirrors GGEMSBoxPoseRecord.hh. */
 typedef struct GGEMSBoxPoseRecord {
-  /*! \brief Global center X coordinate in integer pm. */
-  long center_x_pm;
+  /*! \brief Global center X coordinate in FP32 pm. */
+  float center_x_pm;
 
-  /*! \brief Global center Y coordinate in integer pm. */
-  long center_y_pm;
+  /*! \brief Global center Y coordinate in FP32 pm. */
+  float center_y_pm;
 
-  /*! \brief Global center Z coordinate in integer pm. */
-  long center_z_pm;
+  /*! \brief Global center Z coordinate in FP32 pm. */
+  float center_z_pm;
 
   /*! \brief World X component of local X. */
   float axis_x_x;
@@ -68,9 +68,6 @@ typedef struct GGEMSBoxPoseRecord {
 
   /*! \brief World Z component of local Z. */
   float axis_z_z;
-
-  /*! \brief Explicit alignment padding, initialized to zero by the host. */
-  uint padding;
 } GGEMSBoxPoseRecord;
 
 #endif

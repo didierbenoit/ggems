@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Checks integer endpoints for the one-meter diagnostic transport path.
+ * \brief Validates sources for the one-meter diagnostic transport path.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -36,49 +36,22 @@
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
 
 namespace ggems::core::transport {
-/*! \brief One-meter diagnostic projection length expressed in picometers. */
+/*! \brief One-meter diagnostic distance in canonical host picometers. */
 inline constexpr std::uint64_t k_diagnostic_projection_distance_pm{
   1'000'000'000'000ULL};
 
 /*!
- * \brief Scales one binary32 direction component by one meter.
+ * \brief Validates canonical source configurations with nonempty run ranges.
  *
- * Decomposes binary32 into an integer significand and a power of two, then
- * rounds the exact scaled value half away from zero.
- *
- * \param[in] component Finite direction component to scale.
- * \param[out] displacement_pm Rounded signed displacement in pm, unchanged on
- * failure.
- * \return True if the result fits int64.
- */
-[[nodiscard]] auto TryScaleDiagnosticProjectionComponent(
-  float component, std::int64_t &displacement_pm) noexcept -> bool;
-
-/*!
- * \brief Adds a signed displacement without overflowing a pm coordinate.
- *
- * \param[in] position_pm Signed starting coordinate in pm.
- * \param[in] displacement_pm Signed displacement in pm.
- * \param[out] endpoint_pm Sum in pm, unchanged on failure.
- * \return True if the sum fits int64.
- */
-[[nodiscard]] auto TryAddDiagnosticProjectionDisplacement(
-  std::int64_t position_pm, std::int64_t displacement_pm,
-  std::int64_t &endpoint_pm) noexcept -> bool;
-
-/*!
- * \brief Checks nonempty source inputs and the diagnostic endpoints of
- * sources that are not navigated by geometry.
- *
- * \param[in] source_records Analytic source records.
+ * Device movement remains FP32; integer output representability belongs to
+ * the Observer publication boundary.
+ * \param[in] source_records Canonical analytic source records.
  * \param[in] source_ranges Parallel run-primary ranges; zero-count sources are
  * skipped.
- * \throws GGEMSRecoverable If counts differ, an analytic record is invalid, or
- * a diagnostic endpoint/envelope is not representable.
- * \throws GGEMSInternal If the built-in normalized-direction bound cannot be
- * scaled.
+ * \throws GGEMSRecoverable If counts differ or an analytic record is invalid.
  */
 auto ValidateDiagnosticTransportSources(
   std::span<sources::GGEMSSourceRecord const> source_records,
   std::span<sources::GGEMSSourceRunRange const> source_ranges) -> void;
+
 } // namespace ggems::core::transport

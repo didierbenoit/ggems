@@ -2,15 +2,12 @@
 #include "transport/GGEMSTransportCounters.clh"
 #include "random/GGEMSRandom.clh"
 #include "sources/GGEMSSource.clh"
+#include "sources/GGEMSSourceRecord.clh"
 #include "sources/GGEMSSourceRunRange.clh"
 #include "observer/GGEMSObserverRecord.clh"
 
 #ifndef GGEMS_DUMMY_LOCAL_STACK_CAPACITY
 #define GGEMS_DUMMY_LOCAL_STACK_CAPACITY 16U
-#endif
-
-#ifndef GGEMS_DUMMY_TRACK_BRANCH_BITS
-#define GGEMS_DUMMY_TRACK_BRANCH_BITS 16U
 #endif
 
 #ifndef GGEMS_ENABLE_TRANSPORT_OBSERVER
@@ -24,18 +21,17 @@ static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
   GGEMSParticleState particle;
 
   particle.global_particle_id = GGEMS_INVALID_ID_U64;
-  particle.track_id = GGEMS_INVALID_ID_U64;
-  particle.parent_track_id = GGEMS_INVALID_ID_U64;
+  particle.track_id = GGEMS_INVALID_ID_U32;
+  particle.parent_track_id = GGEMS_INVALID_ID_U32;
   particle.time_ps = 0UL;
 
-  particle.position_x_pm = 0L;
-  particle.position_y_pm = 0L;
-  particle.position_z_pm = 0L;
+  particle.position_x_pm = 0.0F;
+  particle.position_y_pm = 0.0F;
+  particle.position_z_pm = 0.0F;
 
   particle.particle_type = GGEMS_PARTICLE_TYPE_AIONINO;
   particle.status = GGEMS_PARTICLE_STATUS_INACTIVE;
   particle.generation = 0U;
-  particle.flags = 0U;
 
   particle.current_navigator_id = GGEMS_INVALID_ID_U32;
   particle.current_volume_id = GGEMS_INVALID_ID_U32;
@@ -45,7 +41,6 @@ static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
   particle.direction_x = 0.0f;
   particle.direction_y = 0.0f;
   particle.direction_z = 1.0f;
-  particle.direction_w = 0.0f;
 
   particle.energy_micro_eV = 0UL;
 
@@ -58,23 +53,21 @@ static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
 static inline GGEMSParticleState
 GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
                                  ulong energy_micro_eV, uint generation,
-                                 uint local_track_index, ulong base_track_id) {
+                                 uint local_track_index) {
   GGEMSParticleState secondary = parent;
 
-  secondary.track_id = base_track_id + (ulong)(local_track_index);
-  secondary.global_particle_id = secondary.track_id;
+  secondary.track_id = local_track_index;
   secondary.parent_track_id = parent.track_id;
   secondary.particle_type = GGEMS_PARTICLE_TYPE_ELECTRON;
   secondary.status = GGEMS_PARTICLE_STATUS_ALIVE;
-  secondary.generation = generation;
-  secondary.flags = 0U;
+  // Repeated integer-energy halving bounds this synthetic chain to 64 levels.
+  secondary.generation = (uchar)generation;
 
   secondary.energy_micro_eV = energy_micro_eV;
 
   secondary.direction_x = 1.0f;
   secondary.direction_y = 0.0f;
   secondary.direction_z = 0.0f;
-  secondary.direction_w = 0.0f;
 
   return secondary;
 }
@@ -84,14 +77,13 @@ GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
 
 static inline void GGEMS_DummyMoveParticle(__private GGEMSParticleState *p) {
   if (p->particle_type == GGEMS_PARTICLE_TYPE_GAMMA) {
-    p->position_z_pm += 100000000000L;
+    p->position_z_pm += 100000000000.0f;
   } else if (p->particle_type == GGEMS_PARTICLE_TYPE_ELECTRON) {
-    p->position_x_pm += 50000000000L;
-    p->position_z_pm += 25000000000L;
+    p->position_x_pm += 50000000000.0f;
+    p->position_z_pm += 25000000000.0f;
   }
 
   p->time_ps += 10000UL;
-  p->flags += 1U;
 }
 
 // =============================================================================
@@ -99,9 +91,10 @@ static inline void GGEMS_DummyMoveParticle(__private GGEMSParticleState *p) {
 
 static inline void GGEMS_DummyKillIfFinished(__private GGEMSParticleState *p,
                                              ulong min_energy_micro_eV,
-                                             uint max_steps_per_track) {
+                                             uint max_steps_per_track,
+                                             uint step_count) {
   if (p->energy_micro_eV <= min_energy_micro_eV ||
-      p->flags >= max_steps_per_track) {
+      step_count >= max_steps_per_track) {
     p->status = GGEMS_PARTICLE_STATUS_KILLED;
   }
 }
@@ -137,6 +130,9 @@ __kernel void particle_dummy_stream_branching_transport(
   }
 
   GGEMSParticleState stack[GGEMS_DUMMY_LOCAL_STACK_CAPACITY];
+
+  // Step accounting belongs to this diagnostic algorithm, not particle state.
+  uint stack_step_counts[GGEMS_DUMMY_LOCAL_STACK_CAPACITY];
   uint stack_size = 0U;
   uint local_max_stack_depth = 0U;
   uint processed_any_primary = 0U;
@@ -206,7 +202,7 @@ __kernel void particle_dummy_stream_branching_transport(
     }
 #endif
 
-    ulong base_track_id = current.track_id;
+    uint step_count = 0U;
 
     if (current.particle_type == GGEMS_PARTICLE_TYPE_GAMMA) {
       atomic_inc(&counters->aionino_to_gamma_count);
@@ -219,6 +215,7 @@ __kernel void particle_dummy_stream_branching_transport(
     while (history_done == 0U) {
       if (current.status == GGEMS_PARTICLE_STATUS_ALIVE) {
         GGEMS_DummyMoveParticle(&current);
+        ++step_count;
         atomic_inc(&counters->total_fake_step_count);
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
@@ -231,12 +228,12 @@ __kernel void particle_dummy_stream_branching_transport(
 #endif
 
         GGEMS_DummyKillIfFinished(&current, min_energy_micro_eV,
-                                  max_steps_per_track);
+                                  max_steps_per_track, step_count);
 
         // Alive implies energy > min_energy, so subtraction is safe even
         // when twice the canonical energy threshold would overflow ulong.
-        if (current.status == GGEMS_PARTICLE_STATUS_ALIVE &&
-            current.flags == 1U && current.generation < max_generation &&
+        if (current.status == GGEMS_PARTICLE_STATUS_ALIVE && step_count == 1U &&
+            current.generation < max_generation &&
             current.energy_micro_eV - min_energy_micro_eV >
               min_energy_micro_eV) {
           float u = GGEMS_RndmUniform(random_states, worker_id);
@@ -247,6 +244,7 @@ __kernel void particle_dummy_stream_branching_transport(
 
             if (stack_size < GGEMS_DUMMY_LOCAL_STACK_CAPACITY) {
               stack[stack_size] = current;
+              stack_step_counts[stack_size] = step_count;
               stack_size += 1U;
 
               if (stack_size > local_max_stack_depth) {
@@ -255,7 +253,8 @@ __kernel void particle_dummy_stream_branching_transport(
 
               current = GGEMS_DummyMakeElectronSecondary(
                 current, secondary_energy, current.generation + 1U,
-                local_track_index, base_track_id);
+                local_track_index);
+              step_count = 0U;
 
               local_track_index += 1U;
 
@@ -281,6 +280,7 @@ __kernel void particle_dummy_stream_branching_transport(
 
             if (stack_size < GGEMS_DUMMY_LOCAL_STACK_CAPACITY) {
               stack[stack_size] = current;
+              stack_step_counts[stack_size] = step_count;
               stack_size += 1U;
 
               if (stack_size > local_max_stack_depth) {
@@ -289,7 +289,8 @@ __kernel void particle_dummy_stream_branching_transport(
 
               current = GGEMS_DummyMakeElectronSecondary(
                 current, secondary_energy, current.generation + 1U,
-                local_track_index, base_track_id);
+                local_track_index);
+              step_count = 0U;
 
               local_track_index += 1U;
 
@@ -329,6 +330,7 @@ __kernel void particle_dummy_stream_branching_transport(
         if (stack_size > 0U) {
           stack_size -= 1;
           current = stack[stack_size];
+          step_count = stack_step_counts[stack_size];
         } else {
           history_done = 1U;
           atomic_inc(&counters->completed_history_count);
