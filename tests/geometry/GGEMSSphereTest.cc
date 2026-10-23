@@ -168,20 +168,22 @@ TEST(GGEMSSphere, ContainmentDoesNotOverflowAtIntegerLimits) {
   large.SetSize(Length{2 * half}, Length{2 * half}, Length{2 * half})
     .SetMaterial(BuildBuiltInMaterial("Vacuum"));
   large.AddVolume(Sphere(Length{half - 1}));
-  EXPECT_NO_THROW(large.Validate());
+  // A one-pm clearance at this scale collapses after FP32 packing.
+  EXPECT_THROW(large.Validate(), GGEMSRecoverable);
 }
 
 TEST(GGEMSSphere, ScalarHostLayoutMatchesTheDocumentedDeviceABI) {
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSAnalyticVolumeRecord>);
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSAnalyticVolumeRecord>);
-  EXPECT_EQ(sizeof(GGEMSSphereRecord), 24U);
+  EXPECT_EQ(sizeof(GGEMSSphereRecord), 28U);
   EXPECT_EQ(offsetof(GGEMSSphereRecord, center_x_pm), 0U);
   EXPECT_EQ(offsetof(GGEMSSphereRecord, center_y_pm), 4U);
   EXPECT_EQ(offsetof(GGEMSSphereRecord, center_z_pm), 8U);
   EXPECT_EQ(offsetof(GGEMSSphereRecord, radius_pm), 12U);
   EXPECT_EQ(offsetof(GGEMSSphereRecord, volume_id), 16U);
   EXPECT_EQ(offsetof(GGEMSSphereRecord, material_id), 20U);
-  EXPECT_EQ(sizeof(GGEMSAnalyticVolumeRecord), 28U);
+  EXPECT_EQ(offsetof(GGEMSSphereRecord, tolerance_pm), 24U);
+  EXPECT_EQ(sizeof(GGEMSAnalyticVolumeRecord), 32U);
   EXPECT_EQ(offsetof(GGEMSAnalyticVolumeRecord, parameters), 4U);
 }
 

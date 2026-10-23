@@ -39,9 +39,9 @@
 /*!
  * \brief Validates the represented ray without computing a boundary parameter.
  *
- * Birth location and boundary queries share this validation. A nonzero stored
- * direction is required without a norm threshold. Raw exponent checks retain
- * nonfinite rejection under fast-math compiler assumptions.
+ * Birth location and boundary queries share the host-provided closed surface
+ * half-band. A nonzero stored direction is required without a norm threshold.
+ * Raw exponent checks reject nonfinite input.
  * \param[in] world Host-validated FP32 half extents, or zero if absent.
  * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.
@@ -64,8 +64,7 @@ GGEMS_WorldValidateRay(__global GGEMSWorldRecord const *world, float3 position,
       return GGEMS_NAVIGATION_UNRESOLVED;
     }
 
-    if (position[axis] < -half_extent[axis] ||
-        position[axis] > half_extent[axis]) {
+    if (fabs(position[axis]) > half_extent[axis] + world->tolerance_pm) {
       return GGEMS_NAVIGATION_OUTSIDE_WORLD;
     }
   }
@@ -78,9 +77,10 @@ GGEMS_WorldValidateRay(__global GGEMSWorldRecord const *world, float3 position,
 /*!
  * \brief Finds the first FP32 exit from the closed origin-centered World.
  *
- * Zero components are parallel. An outward boundary start exits at zero and
- * equal FP32 parameters combine crossing faces. No endpoint snapping or
- * displacement is applied. Private pointer output preserves the established
+ * Zero components are parallel. A start beyond a nominal face but within its
+ * closed half-band exits at zero when directed outward. Equal FP32 parameters
+ * combine crossing faces. No endpoint snapping or displacement is applied.
+ * Private pointer output preserves the established
  * Intel NEO 26.35 workaround for nested structure-returning navigation calls.
  * \param[in] world Host-validated FP32 half extents, or zero if absent.
  * \param[in] position Global FP32 position in pm.
@@ -115,7 +115,7 @@ GGEMS_WorldFindBoundary(__global GGEMSWorldRecord const *world, float3 position,
 
     uint positive = component > 0.0F;
     float plane = positive != 0U ? half_extent[axis] : -half_extent[axis];
-    float parameter = (plane - position[axis]) / component;
+    float parameter = fmax(0.0F, (plane - position[axis]) / component);
     uint face = 1U << (2U * axis + positive);
 
     if (parameter < witness->parameter) {

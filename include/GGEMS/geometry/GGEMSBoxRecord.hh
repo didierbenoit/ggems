@@ -40,7 +40,7 @@ inline constexpr std::uint32_t k_volume_id_world{0U};
 inline constexpr std::uint32_t k_volume_id_exterior{0xFFFFFFFFU};
 
 /*!
- * \brief Scalar 20-byte local Box half extents and snapshot identities.
+ * \brief Scalar 24-byte Box parameters, identities and navigation tolerance.
  *
  * Every Box uses positive FP32 half extents in pm and a separate FP32 pose,
  * including identity placement. The local Box is the physical OBB, never its
@@ -64,6 +64,9 @@ struct GGEMSBoxRecord {
 
   /*! \brief Dense snapshot-local Material identity of the Box medium. */
   std::uint32_t material_id{0U};
+
+  /*! \brief Half-width of the closed local Cartesian surface band in pm. */
+  float tolerance_pm{0.0F};
 };
 
 } // namespace ggems::geometry

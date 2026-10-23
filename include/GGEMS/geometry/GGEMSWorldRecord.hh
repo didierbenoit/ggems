@@ -41,5 +41,8 @@ struct GGEMSWorldRecord {
 
   /*! \brief Positive Z half extent in signed FP32 pm. */
   float half_extent_z_pm{0.0F};
+
+  /*! \brief Half-width of the closed navigation surface band in FP32 pm. */
+  float tolerance_pm{0.0F};
 };
 } // namespace ggems::geometry

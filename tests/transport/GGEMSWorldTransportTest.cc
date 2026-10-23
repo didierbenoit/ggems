@@ -327,13 +327,12 @@ constexpr std::array k_cases{
     .direction = {-0x1.c9f25c0000000p-1F, -0x1.c9f25c0000000p-2F, 0x0.0p+0F},
     .faces = 1U,
     .outcome = 0U},
-  WorldCase{
-    .name = "MeterScaleOffCenter",
-    .half = {1500000000000LL, 1250000000000LL, 1000000000000LL},
-    .start = {1100000000000LL, -900000000000LL, 100000000000LL},
-    .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-    .faces = 2U,
-    .outcome = 0U},
+  WorldCase{.name = "MeterScaleOffCenter",
+            .half = {1500000000000LL, 1250000000000LL, 1000000000000LL},
+            .start = {1100000000000LL, -900000000000LL, 100000000000LL},
+            .direction = {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
+            .faces = 2U,
+            .outcome = 0U},
   WorldCase{.name = "MedicalWorldAxis",
             .half = {1500000000000LL, 1000000000000LL, 750000000000LL},
             .start = {-1400000000000LL, 1000000000LL, 3000000000LL},
@@ -342,8 +341,7 @@ constexpr std::array k_cases{
             .outcome = 0U},
   WorldCase{.name = "MedicalWorldDiagonal",
             .half = {1500000000000LL, 1500000000000LL, 1500000000000LL},
-            .start = {-1000000000000LL, -1000000000000LL,
-                      -1000000000000LL},
+            .start = {-1000000000000LL, -1000000000000LL, -1000000000000LL},
             .direction = {0x1.279a740000000p-1F, 0x1.279a740000000p-1F,
                           0x1.279a740000000p-1F},
             .faces = 42U,
@@ -425,8 +423,8 @@ auto RepresentedEndpoint(WorldCase const &test)
                                 FromFloat(test.direction[face_axis]));
   std::array<Scalar, 3> endpoint{};
   for (std::size_t axis = 0; axis < 3; ++axis) {
-    endpoint[axis] = Add(start[axis], Multiply(parameter,
-                                              FromFloat(test.direction[axis])));
+    endpoint[axis] =
+      Add(start[axis], Multiply(parameter, FromFloat(test.direction[axis])));
   }
   return endpoint;
 }
@@ -566,12 +564,16 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
                          std::span<observer::GGEMSObserverRecord>{records});
       auto const &birth = records[0];
       ASSERT_EQ(birth.position_valid, 1U);
-      std::array const birth_position{birth.position_x_pm, birth.position_y_pm,
-                                     birth.position_z_pm,};
+      std::array const birth_position{
+        birth.position_x_pm,
+        birth.position_y_pm,
+        birth.position_z_pm,
+      };
       for (std::size_t axis = 0; axis < 3; ++axis) {
         ggems::test::fp32::ExpectWithin(
           static_cast<double>(birth_position[axis]),
-          ggems::test::fp32::FromFloat(static_cast<float>(test.start[axis])), 0.5);
+          ggems::test::fp32::FromFloat(static_cast<float>(test.start[axis])),
+          0.5);
       }
       EXPECT_EQ(birth.status, particles::ToKernelParticleStatus(
                                 particles::GGEMSParticleStatus::Alive));
@@ -581,11 +583,14 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       auto const &end = records[1];
       ASSERT_EQ(end.position_valid, 1U);
       auto const expected = RepresentedEndpoint(test);
-      std::array const endpoint{end.position_x_pm, end.position_y_pm,
-                               end.position_z_pm,};
+      std::array const endpoint{
+        end.position_x_pm,
+        end.position_y_pm,
+        end.position_z_pm,
+      };
       for (std::size_t axis = 0; axis < 3; ++axis) {
         ggems::test::fp32::ExpectWithin(static_cast<double>(endpoint[axis]),
-                                      expected[axis], 0.5);
+                                        expected[axis], 0.5);
       }
       EXPECT_EQ(end.status, particles::ToKernelParticleStatus(
                               particles::GGEMSParticleStatus::EscapedWorld));
@@ -750,9 +755,9 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
           // the measured displacement diagnostically; topology stays exact.
           SCOPED_TRACE(std::format("subnormal axis {} displacement = {} pm",
                                    axis, endpoint[axis]));
-          RecordProperty(std::format("subnormal_device_{}_axis_{}_pm",
-                                     current_device, axis),
-                         std::format("{}", endpoint[axis]));
+          RecordProperty(
+            std::format("subnormal_device_{}_axis_{}_pm", current_device, axis),
+            std::format("{}", endpoint[axis]));
           ASSERT_TRUE(std::isfinite(endpoint[axis]));
           EXPECT_GE(endpoint[axis], 0.0F);
           EXPECT_LE(static_cast<double>(endpoint[axis]),

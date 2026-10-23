@@ -38,15 +38,15 @@
 /*!
  * \brief Locates the forward owner of a FP32 birth in the closed World.
  *
- * FP32 center subtraction precedes direct squared-radius
- * classification uses inward radial motion at a represented surface; an
- * outward or tangent surface birth belongs to the World. No tolerance or
- * displacement is introduced.
+ * The host supplies a closed radial half-band. Strict interior points belong
+ * to the Sphere. A band point belongs to it only when its forward ray reaches
+ * the strict interior of the contracted sphere. Outward, tangent, and shallow
+ * grazing band starts belong to the World. No position is displaced.
  * \param[in] sphere Complete ball and owner identities.
  * \param[in] position FP32 point already validated against the World.
  * \param[in] direction Actual finite, nonzero stored direction.
  * \param[out] owner Packed forward VolumeID/MaterialID.
- * \return Resolved according to the FP32 radial classification.
+ * \return Resolved according to the tolerant radial classification.
  */
 static inline uint GGEMS_SphereLocate(__global GGEMSSphereRecord const *sphere,
                                       float3 position, float3 direction,
@@ -54,10 +54,21 @@ static inline uint GGEMS_SphereLocate(__global GGEMSSphereRecord const *sphere,
   float3 offset = position - (float3)(sphere->center_x_pm, sphere->center_y_pm,
                                       sphere->center_z_pm);
 
-  float radius = sphere->radius_pm;
-  float radial = dot(offset, offset) - radius * radius;
-  float motion = dot(offset, direction);
-  uint inside = radial < 0.0F || (radial == 0.0F && motion < 0.0F);
+  float inner_radius = sphere->radius_pm - sphere->tolerance_pm;
+  float outer_radius = sphere->radius_pm + sphere->tolerance_pm;
+  float radius_squared = dot(offset, offset);
+  float inner_squared = inner_radius * inner_radius;
+  uint inside = radius_squared < inner_squared;
+
+  if (inside == 0U && radius_squared <= outer_radius * outer_radius) {
+    float motion = dot(offset, direction);
+    if (motion < 0.0F) {
+      float inverse_a = 1.0F / dot(direction, direction);
+      float closest_parameter = -motion * inverse_a;
+      float3 closest = offset + closest_parameter * direction;
+      inside = dot(closest, closest) < inner_squared;
+    }
+  }
 
   *owner = inside != 0U
              ? ((ulong)sphere->volume_id << 32U) | sphere->material_id
@@ -66,15 +77,14 @@ static inline uint GGEMS_SphereLocate(__global GGEMSSphereRecord const *sphere,
 }
 
 /*!
- * \brief Selects a direct FP32 Sphere crossing against the resolved World exit.
+ * \brief Selects a tolerant FP32 Sphere crossing against the World exit.
  *
- * For q = P-C and stored D, a = D.D, b = q.D, c = q.q-R^2. The selected root
- * is (-b-sqrt(b*b-a*c))/a for entry and (-b+sqrt(b*b-a*c))/a for exit.
- * A nonpositive discriminant has no crossing for an outside owner. Accepted
- * arrival ownership selects the exit root without relocating the rounded
- * anchor. Analytic dispatch suppresses reentry after an accepted convex exit
- * while direction stays unchanged. Arithmetic failures remain unresolved; no
- * compensation, near-surface envelope, or endpoint repair is applied.
+ * Projecting to closest approach avoids subtracting two World-scale squared
+ * quantities in the quadratic discriminant. An outside ray must penetrate
+ * strictly beyond the radial half-band; tangent and shallow contacts retain
+ * the World witness. Accepted parameters still intersect the nominal radius.
+ * The accepted owner selects the exit root, so rounding the entry anchor does
+ * not require a push. Analytic dispatch suppresses convex reentry after exit.
  * \param[in] sphere Immutable full ball.
  * \param[in] position FP32 start in the closed World.
  * \param[in] direction Actual stored finite direction.
@@ -99,22 +109,23 @@ GGEMS_SphereFindBoundary(__global GGEMSSphereRecord const *sphere,
     return GGEMS_NAVIGATION_RESOLVED;
   }
 
-  float c = dot(offset, offset) - radius * radius;
-  float discriminant = b * b - a * c;
+  float inverse_a = 1.0F / a;
+  float closest_parameter = -b * inverse_a;
+  float3 closest = offset + closest_parameter * direction;
+  float closest_squared = dot(closest, closest);
+  float inner_radius = radius - sphere->tolerance_pm;
 
-  if (GGEMS_NavigationIsFinite(discriminant) == 0U) {
-    return GGEMS_NAVIGATION_UNRESOLVED;
+  if (inside == 0U && closest_squared >= inner_radius * inner_radius) {
+    return GGEMS_NAVIGATION_RESOLVED;
   }
 
-  if (discriminant <= 0.0F) {
-    return inside != 0U ? GGEMS_NAVIGATION_UNRESOLVED
-                        : GGEMS_NAVIGATION_RESOLVED;
-  }
+  float half_chord =
+    sqrt(fmax(0.0F, radius * radius - closest_squared) * inverse_a);
 
-  float root = sqrt(discriminant);
-  float candidate = (inside != 0U ? -b + root : -b - root) / a;
+  float candidate = fmax(0.0F, inside != 0U ? closest_parameter + half_chord
+                                            : closest_parameter - half_chord);
 
-  if (GGEMS_NavigationIsFinite(candidate) == 0U || candidate < 0.0F ||
+  if (GGEMS_NavigationIsFinite(candidate) == 0U ||
       candidate >= witness->parameter) {
     return GGEMS_NAVIGATION_UNRESOLVED;
   }

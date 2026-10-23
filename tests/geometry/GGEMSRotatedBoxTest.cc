@@ -262,12 +262,9 @@ TEST(GGEMSRotatedBox, WorldOwnsPoseAndPacksLocalHalfExtents) {
             ggems::geometry::GGEMSAnalyticKind::Box);
 }
 TEST(GGEMSRotatedBox, PackingRoundsAxesOnceAndPreservesCanonicalCenter) {
-  constexpr std::int64_t center = (1LL << 60) + 1;
+  constexpr std::int64_t center = 100'000'000'001LL;
   GGEMSWorld world;
-  world
-    .SetSize(Length{ggems::geometry::k_max_world_size_pm},
-             Length{ggems::geometry::k_max_world_size_pm},
-             Length{ggems::geometry::k_max_world_size_pm})
+  world.SetSize(3_m, 3_m, 3_m)
     .SetMaterial(
       ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum"));
   GGEMSBox box;

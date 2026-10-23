@@ -430,7 +430,7 @@ auto GGEMSImGuiIntegration::AttachVulkanBackend(VulkanBackendEpoch const &epoch)
       .pColorAttachmentFormats = &color_attachment_format_,
       .depthAttachmentFormat = static_cast<VkFormat>(epoch.depth_format),
       .stencilAttachmentFormat = static_cast<VkFormat>(epoch.stencil_format),
-    };
+  };
   init_info.CheckVkResultFn = &GGEMSImGuiIntegration::RecordBackendResult;
 
   if (!ImGui_ImplVulkan_Init(&init_info)) {

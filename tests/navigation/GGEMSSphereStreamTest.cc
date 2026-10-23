@@ -213,7 +213,8 @@ auto OrdinaryCases() -> std::vector<SphereCase> {
 
 /*! \brief Independent closest-point/chord reference in binary64.
  * All inputs are promoted from actual uploaded FP32 records. This geometric
- * construction differs from the production direct quadratic discriminant.
+ * construction describes the nominal continuum interval only for separated
+ * crossings; the surface-band topology has its own discrete tests.
  * Windows long double supplies no additional precision and is not used. */
 auto Roots(Vec const &point, Vec const &direction, double radius)
   -> std::array<double, 2> {
@@ -235,35 +236,44 @@ auto Roots(Vec const &point, Vec const &direction, double radius)
 
 /*! \brief Propagates operand-specific rounding through the implemented stages.
  * This supplies an error envelope, never the geometric expected value.
- * Three products/two additions per dot, center subtraction, radius square,
- * discriminant, sqrt, numerator and division are counted explicitly.
- * Shared Scalar operations admit standard OpenCL divide/sqrt accuracy and
- * separate operations or contraction. Conditioning enters at sqrt/division;
+ * Three products/two additions per dot, center subtraction, closest-approach
+ * projection, shared reciprocal, radius square, half-chord scaling, sqrt and
+ * root sum are
+ * counted. Shared Scalar operations admit standard OpenCL divide/sqrt accuracy
+ * and separate operations or contraction. Conditioning enters at sqrt/division;
  * an infinite/invalid envelope is rejected, not converted to a passing test. */
 auto RootBudget(std::array<fp::Scalar, 3> const &anchor, Vec const &center,
                 double radius, Vec const &direction, bool exit) -> fp::Scalar {
-  fp::Scalar a{0, 0};
-  fp::Scalar b{0, 0};
-  fp::Scalar square{0, 0};
+  fp::Scalar a{};
+  fp::Scalar b{};
+  std::array<fp::Scalar, 3> offset{};
   for (std::size_t axis = 0; axis < 3; ++axis) {
     auto const q =
       fp::Subtract(anchor[axis], {.value = center[axis], .error = 0});
     fp::Scalar const d{.value = direction[axis], .error = 0};
+    offset[axis] = q;
     a = axis == 0 ? fp::Multiply(d, d) : fp::Add(a, fp::Multiply(d, d));
     b = axis == 0 ? fp::Multiply(q, d) : fp::Add(b, fp::Multiply(q, d));
-    square =
-      axis == 0 ? fp::Multiply(q, q) : fp::Add(square, fp::Multiply(q, q));
   }
-  auto const c =
-    fp::Subtract(square, fp::Multiply({.value = radius, .error = 0},
-                                      {.value = radius, .error = 0}));
-  auto const discriminant =
-    fp::Subtract(fp::Multiply(b, b), fp::Multiply(a, c));
-  auto const root = fp::Sqrt(discriminant);
-  return fp::Divide(
-    exit ? fp::Add({.value = -b.value, .error = b.error}, root)
-         : fp::Subtract({.value = -b.value, .error = b.error}, root),
-    a);
+  auto const inverse_a = fp::Divide({.value = 1.0, .error = 0.0}, a);
+  auto const projection =
+    fp::Multiply({.value = -b.value, .error = b.error}, inverse_a);
+  fp::Scalar closest_squared{};
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    auto const closest =
+      fp::Add(offset[axis],
+              fp::Multiply(projection, {.value = direction[axis], .error = 0}));
+    auto const squared = fp::Multiply(closest, closest);
+    closest_squared = axis == 0 ? squared : fp::Add(closest_squared, squared);
+  }
+  auto const half_chord_squared =
+    fp::Multiply(fp::Subtract(fp::Multiply({.value = radius, .error = 0},
+                                           {.value = radius, .error = 0}),
+                              closest_squared),
+                 inverse_a);
+  auto const half_chord = fp::Sqrt(half_chord_squared);
+  return exit ? fp::Add(projection, half_chord)
+              : fp::Subtract(projection, half_chord);
 }
 
 struct Errors {
@@ -355,6 +365,12 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   EXPECT_TRUE(result.unchanged_rng);
   EXPECT_EQ(result.counts.overflow_count, 0U);
   EXPECT_EQ(result.counts.outside_world_count, 0U);
+  EXPECT_EQ(result.observer_counts.record_count, 2U);
+  EXPECT_EQ(result.observer_counts.overflow_count, 0U);
+  EXPECT_EQ(result.trace[test::k_initial_owner_index], test.initial_owner);
+  EXPECT_EQ(result.trace[test::k_initial_owner_index + 1U],
+            test.initial_owner == 0U ? 0U : material);
+  EXPECT_EQ(result.trace[test::k_initial_owner_index + 2U], 0U);
   // Print actual topology before a fatal count mismatch; other test cases and
   // device contexts still run because this assertion belongs to this helper.
   std::cout << std::format("Sphere case '{}' on {}: events {}, completed {}, "
@@ -563,6 +579,11 @@ __kernel void analytic_layout(__global ulong *layout) {
   layout[7] = __builtin_offsetof(GGEMSSphereRecord, volume_id);
   layout[8] = __builtin_offsetof(GGEMSSphereRecord, material_id);
   layout[9] = sizeof(GGEMSParticleState);
+  layout[10] = __builtin_offsetof(GGEMSSphereRecord, tolerance_pm);
+  layout[11] = sizeof(GGEMSWorldRecord);
+  layout[12] = __builtin_offsetof(GGEMSWorldRecord, tolerance_pm);
+  layout[13] = sizeof(GGEMSBoxRecord);
+  layout[14] = __builtin_offsetof(GGEMSBoxRecord, tolerance_pm);
 }
 )cl";
   for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
@@ -595,15 +616,16 @@ __kernel void analytic_layout(__global ulong *layout) {
                             std::string{production.GetBuildOptions()}.c_str()),
               CL_SUCCESS)
       << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-    std::array<std::uint64_t, 10> layout{};
+    std::array<std::uint64_t, 15> layout{};
     auto layout_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     ocl::GGEMSOpenCLKernel layout_kernel{
       context, cl::Kernel(program, "analytic_layout"), "analytic_layout"};
     layout_kernel.SetArgSVMPointer(0U, layout_buffer.GetData());
     layout_kernel.Run({1U}, {1U});
     ocl::ReadSVMToHost(layout_buffer, std::span{layout});
-    EXPECT_EQ(layout, (std::array<std::uint64_t, 10>{28, 4, 24, 0, 4, 8, 12, 16,
-                                                     20, 80}));
+    EXPECT_EQ(layout,
+              (std::array<std::uint64_t, 15>{32, 4, 28, 0, 4, 8, 12, 16, 20, 80,
+                                             24, 16, 12, 24, 20}));
     Errors errors;
     auto const run_case = [&](SphereCase const &test,
                               std::uint32_t material) -> void {
@@ -647,10 +669,11 @@ TEST_F(GGEMSNavigationDeviceTest, SphereProductionWorkerGeometryAndContinuity) {
   RunCases(OrdinaryCases(), true);
 }
 
-// These exact represented-boundary expectations intentionally remain strict.
-// Current extra crossings are an unresolved production/policy concern, not
-// input-quantization noise and not a reason to relax a coordinate tolerance.
-TEST_F(GGEMSNavigationDeviceTest, SphereExactTangentTopologyDiagnostic) {
+// The configured surface band treats tangency as touch, with no Sphere owner
+// or physical material interval. These discrete lifecycle assertions remain
+// exact even though sub-tolerance continuum geometry is intentionally
+// unresolved.
+TEST_F(GGEMSNavigationDeviceTest, SphereToleranceTangentRemainsInWorld) {
   RunCases({
     {
       .name = "exact tangent",
@@ -664,7 +687,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereExactTangentTopologyDiagnostic) {
   });
 }
 
-TEST_F(GGEMSNavigationDeviceTest, SphereExactSurfaceOutwardTopologyDiagnostic) {
+TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceOutwardRemainsInWorld) {
   RunCases({
     {
       .name = "surface outward",
@@ -678,7 +701,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereExactSurfaceOutwardTopologyDiagnostic) {
   });
 }
 
-TEST_F(GGEMSNavigationDeviceTest, SphereExactSurfaceTangentTopologyDiagnostic) {
+TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceTangentRemainsInWorld) {
   RunCases({
     {
       .name = "surface tangent",
@@ -692,7 +715,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereExactSurfaceTangentTopologyDiagnostic) {
   });
 }
 
-TEST_F(GGEMSNavigationDeviceTest, SphereExactSurfaceInwardTopologyDiagnostic) {
+TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceInwardUsesSphere) {
   RunCases({
     {
       .name = "surface inward",

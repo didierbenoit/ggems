@@ -38,7 +38,7 @@
 #define GGEMS_VOLUME_ID_EXTERIOR 0xFFFFFFFFU
 
 /*!
- * \brief Scalar 20-byte local Box half extents and snapshot identities.
+ * \brief Scalar 24-byte local Box half extents and snapshot identities.
  *
  * Every Box uses positive FP32 half extents in pm and a separate FP32 pose,
  * including identity placement. The local Box is the physical OBB, never its
@@ -61,6 +61,9 @@ typedef struct GGEMSBoxRecord {
 
   /*! \brief Dense snapshot-local Material identity of the Box medium. */
   uint material_id;
+
+  /*! \brief Closed Cartesian surface half-band in local pm. */
+  float tolerance_pm;
 } GGEMSBoxRecord;
 
 #endif

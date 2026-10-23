@@ -186,13 +186,14 @@ TEST(GGEMSBox, CompilesPositiveLocalHalfExtentsForEveryPlacement) {
   EXPECT_FALSE(
     Fits(MakeWorld(2_pm), PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, 0))));
 
-  // Smallest Box at an odd center: faces one picometer on each side.
+  // A resolved micrometer Box at an odd authored center.
   GGEMSBoxRecord const smallest =
     Compile(MakeWorld(200_mm),
-            PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(-11, -13, -17)));
-  EXPECT_EQ(smallest.half_extent_x_pm, static_cast<float>(1ULL));
-  EXPECT_EQ(smallest.half_extent_y_pm, static_cast<float>(1ULL));
-  EXPECT_EQ(smallest.half_extent_z_pm, static_cast<float>(1ULL));
+            PlaceBox(2_um, 2_um, 2_um,
+                     MakePositionPM(-11'000'001, -13'000'001, -17'000'001)));
+  EXPECT_EQ(smallest.half_extent_x_pm, 1'000'000.0F);
+  EXPECT_EQ(smallest.half_extent_y_pm, 1'000'000.0F);
+  EXPECT_EQ(smallest.half_extent_z_pm, 1'000'000.0F);
 }
 
 // =============================================================================
@@ -207,8 +208,9 @@ TEST(GGEMSBox, StrictContainmentRejectsCoincidentWorldFaces) {
   };
 
   EXPECT_TRUE(Fits(world, place(0, 0, 0)));
-  // Upper X face one picometer inside the World face is still strictly inside.
-  EXPECT_TRUE(Fits(world, place(80'000'000'000LL - 1, 0, 0)));
+  // A resolved clearance is admitted; a collapsed one-pm gap is rejected.
+  EXPECT_TRUE(Fits(world, place(80'000'000'000LL - 1'000'000LL, 0, 0)));
+  EXPECT_FALSE(Fits(world, place(80'000'000'000LL - 1, 0, 0)));
   // Coincident +X face.
   EXPECT_FALSE(Fits(world, place(80'000'000'000LL, 0, 0)));
   // Coincident -Y face.
@@ -231,14 +233,14 @@ TEST(GGEMSBox, PacksCanonicalHalfExtentsAtTheAdmittedBounds) {
   constexpr std::int64_t k_min = std::numeric_limits<std::int64_t>::min();
   constexpr std::int64_t k_max = std::numeric_limits<std::int64_t>::max();
 
-  // Smallest Box with one picometer of clearance from two World faces.
+  // A small resolved Box with ten-micrometer clearance from two World faces.
   GGEMSBoxRecord const edge = Compile(
-    largest,
-    PlaceBox(2_pm, 2_pm, 2_pm,
-             MakePositionPM(k_max_half_pm - 2, -(k_max_half_pm - 2), 0)));
-  EXPECT_EQ(edge.half_extent_x_pm, static_cast<float>(1ULL));
-  EXPECT_EQ(edge.half_extent_y_pm, static_cast<float>(1ULL));
-  EXPECT_EQ(edge.half_extent_z_pm, static_cast<float>(1ULL));
+    MakeWorld(3_m),
+    PlaceBox(20_um, 20_um, 20_um,
+             MakePositionPM(1'499'980'000'000LL, -1'499'980'000'000LL, 0)));
+  EXPECT_EQ(edge.half_extent_x_pm, 10'000'000.0F);
+  EXPECT_EQ(edge.half_extent_y_pm, 10'000'000.0F);
+  EXPECT_EQ(edge.half_extent_z_pm, 10'000'000.0F);
 
   // Extreme signed centers are rejected without forming any face sum.
   EXPECT_FALSE(
@@ -293,11 +295,12 @@ TEST(GGEMSBox, SettersApplyInAnyOrderAndValidateRequiresSizeAndMaterial) {
 TEST(GGEMSBox, ScalarHostLayoutMatchesTheDocumentedDeviceABI) {
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSBoxRecord>);
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSBoxRecord>);
-  EXPECT_EQ(sizeof(GGEMSBoxRecord), 20U);
+  EXPECT_EQ(sizeof(GGEMSBoxRecord), 24U);
   EXPECT_EQ(alignof(GGEMSBoxRecord), 4U);
   EXPECT_EQ(offsetof(GGEMSBoxRecord, half_extent_x_pm), 0U);
   EXPECT_EQ(offsetof(GGEMSBoxRecord, half_extent_y_pm), 4U);
   EXPECT_EQ(offsetof(GGEMSBoxRecord, half_extent_z_pm), 8U);
   EXPECT_EQ(offsetof(GGEMSBoxRecord, volume_id), 12U);
   EXPECT_EQ(offsetof(GGEMSBoxRecord, material_id), 16U);
+  EXPECT_EQ(offsetof(GGEMSBoxRecord, tolerance_pm), 20U);
 }

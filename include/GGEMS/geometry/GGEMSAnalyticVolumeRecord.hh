@@ -47,7 +47,7 @@ enum class GGEMSAnalyticKind : std::uint32_t {
   Sphere = 3,
 };
 
-/*! \brief Scalar 24-byte Sphere parameters and owner identities. */
+/*! \brief Scalar 28-byte Sphere parameters, identities and tolerance. */
 struct GGEMSSphereRecord {
   /*! \brief Global center X in pm. */
   float center_x_pm{0.0F};
@@ -66,6 +66,9 @@ struct GGEMSSphereRecord {
 
   /*! \brief Exact dense snapshot-local Material identity. */
   std::uint32_t material_id{0};
+
+  /*! \brief Half-width of the closed radial surface band in FP32 pm. */
+  float tolerance_pm{0.0F};
 };
 
 /*! \brief Stores only the shape payload selected by the enclosing tag. */
@@ -78,7 +81,7 @@ union GGEMSAnalyticParameters {
 };
 
 /*!
- * \brief Scalar 28-byte scene record, including the no-volume case.
+ * \brief Scalar 32-byte scene record, including the no-volume case.
  *
  * Mirrors GGEMSAnalyticVolumeRecord.clh. Every Box uses the separately
  * supplied GGEMSBoxPoseRecord. All programs receive this same scene layout.

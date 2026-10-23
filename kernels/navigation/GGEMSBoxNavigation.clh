@@ -65,7 +65,11 @@ static inline void GGEMS_BoxLocalRay(__global GGEMSBoxPoseRecord const *pose,
 }
 
 /*!
- * \brief Locates the forward owner with the local FP32 slab predicate.
+ * \brief Locates the forward owner with tolerant local FP32 slabs.
+ *
+ * A point in a closed face half-band belongs to the Box only when its forward
+ * ray reaches the strict contracted interior. Tangential and shallow grazing
+ * band motion belong outside, including roundoff in transformed directions.
  * \param[in] box Local half extents and owner identities.
  * \param[in] pose Center and axes for every Box, including identity.
  * \param[in] position FP32 start already validated against the World.
@@ -87,15 +91,40 @@ static inline uint GGEMS_BoxLocate(__global GGEMSBoxRecord const *box,
                                 box->half_extent_z_pm);
 
   *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+  uint surface = 0U;
 
   for (uint axis = 0U; axis < 3U; ++axis) {
     float coordinate = local_position[axis];
     float component = local_direction[axis];
     float half_length = half_extent[axis];
 
-    if (coordinate < -half_length || coordinate > half_length ||
-        (coordinate == -half_length && component <= 0.0F) ||
-        (coordinate == half_length && component >= 0.0F)) {
+    if (fabs(coordinate) > half_length + box->tolerance_pm ||
+        (coordinate <= -half_length + box->tolerance_pm && component <= 0.0F) ||
+        (coordinate >= half_length - box->tolerance_pm && component >= 0.0F)) {
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+    surface |= fabs(coordinate) >= half_length - box->tolerance_pm;
+  }
+
+  if (surface != 0U) {
+    float inner_near = -INFINITY;
+    float inner_far = INFINITY;
+    for (uint axis = 0U; axis < 3U; ++axis) {
+      float coordinate = local_position[axis];
+      float component = local_direction[axis];
+      float half_length = half_extent[axis] - box->tolerance_pm;
+      if (component == 0.0F) {
+        if (fabs(coordinate) >= half_length) {
+          return GGEMS_NAVIGATION_RESOLVED;
+        }
+        continue;
+      }
+      float near = (-half_length - coordinate) / component;
+      float far = (half_length - coordinate) / component;
+      inner_near = fmax(inner_near, fmin(near, far));
+      inner_far = fmin(inner_far, fmax(near, far));
+    }
+    if (inner_near >= inner_far || inner_far <= 0.0F) {
       return GGEMS_NAVIGATION_RESOLVED;
     }
   }
@@ -107,10 +136,11 @@ static inline uint GGEMS_BoxLocate(__global GGEMSBoxRecord const *box,
 /*!
  * \brief Selects a local slab crossing against the resolved World exit.
  *
- * Direct min/max slab parameters select entry or exit from the accepted
- * departure owner. Parallel face motion and tangent intervals do not enter.
- * Exact FP32 ties combine local faces. No epsilon, endpoint repair, or special
- * identity algorithm is used.
+ * Nominal min/max slab parameters select the physical entry or exit from the
+ * accepted departure owner. Outside entry additionally requires a positive
+ * interval in the Box contracted by its Cartesian half-band. Parallel band
+ * motion and shallow contacts do not enter. Exact FP32 ties combine local
+ * faces; accepted ownership provides continuation without a position push.
  * \param[in] box Local half extents and owner identities.
  * \param[in] pose Center and axes for every Box.
  * \param[in] position FP32 start in the closed World.
@@ -136,6 +166,8 @@ GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
   uint inside = current_owner == box->volume_id;
   float near_parameter = -INFINITY;
   float far_parameter = INFINITY;
+  float inner_near = -INFINITY;
+  float inner_far = INFINITY;
   uint near_faces = 0U;
   uint far_faces = 0U;
 
@@ -145,7 +177,7 @@ GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
     float half_length = half_extent[axis];
 
     if (component == 0.0F) {
-      if (inside == 0U && fabs(coordinate) >= half_length) {
+      if (inside == 0U && fabs(coordinate) >= half_length - box->tolerance_pm) {
         return GGEMS_NAVIGATION_RESOLVED;
       }
       continue;
@@ -153,17 +185,8 @@ GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
 
     uint negative = component < 0.0F;
     float signed_coordinate = negative != 0U ? -coordinate : coordinate;
-    float near = (-half_length - signed_coordinate) / fabs(component);
     float far = (half_length - signed_coordinate) / fabs(component);
-    uint near_face = 1U << (2U * axis + negative);
     uint far_face = 1U << (2U * axis + (1U - negative));
-
-    if (near > near_parameter) {
-      near_parameter = near;
-      near_faces = near_face;
-    } else if (near == near_parameter) {
-      near_faces |= near_face;
-    }
 
     if (far < far_parameter) {
       far_parameter = far;
@@ -171,15 +194,32 @@ GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
     } else if (far == far_parameter) {
       far_faces |= far_face;
     }
+
+    // Accepted interior ownership needs only the departure face.
+    if (inside != 0U) {
+      continue;
+    }
+
+    float near = (-half_length - signed_coordinate) / fabs(component);
+    uint near_face = 1U << (2U * axis + negative);
+    float band_parameter = box->tolerance_pm / fabs(component);
+    inner_near = fmax(inner_near, near + band_parameter);
+    inner_far = fmin(inner_far, far - band_parameter);
+
+    if (near > near_parameter) {
+      near_parameter = near;
+      near_faces = near_face;
+    } else if (near == near_parameter) {
+      near_faces |= near_face;
+    }
   }
 
-  if (inside == 0U &&
-      (near_parameter >= far_parameter || far_parameter <= 0.0F)) {
+  if (inside == 0U && (inner_near >= inner_far || inner_far <= 0.0F)) {
     return GGEMS_NAVIGATION_RESOLVED;
   }
 
-  float candidate = inside != 0U ? far_parameter : near_parameter;
-  if (GGEMS_NavigationIsFinite(candidate) == 0U || candidate < 0.0F ||
+  float candidate = fmax(0.0F, inside != 0U ? far_parameter : near_parameter);
+  if (GGEMS_NavigationIsFinite(candidate) == 0U ||
       candidate >= witness->parameter) {
     return GGEMS_NAVIGATION_UNRESOLVED;
   }

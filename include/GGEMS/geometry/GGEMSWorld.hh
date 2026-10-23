@@ -105,6 +105,18 @@ public:
   auto SetMaterial(core::materials::GGEMSMaterial material) -> GGEMSWorld &;
 
   /*!
+   * \brief Returns the effective World surface half-band in FP32 pm.
+   * \return Uploaded half-band, or zero before the World size is set.
+   */
+  [[nodiscard]] auto GetNavigationTolerancePM() const noexcept -> float;
+
+  /*!
+   * \brief Returns the effective single-volume surface half-band in FP32 pm.
+   * \return Uploaded Box/Sphere half-band, or zero for a World-only scene.
+   */
+  [[nodiscard]] auto GetVolumeNavigationTolerancePM() const noexcept -> float;
+
+  /*!
    * \brief Adds one complete physical volume owned by this World.
    *
    * The current slice admits at most one Box or one Sphere; a World without
@@ -154,7 +166,8 @@ public:
    * containment check.
    *
    * \throws GGEMSRecoverable If the World size or Material is not set, or if a
-   * volume is not strictly inside the World.
+   * volume is not strictly inside the World, or the requested FP32 tolerance
+   * cannot resolve the admitted feature and World-clearance bands.
    */
   auto Validate() const -> void;
 
@@ -211,7 +224,7 @@ public:
   /*!
    * \brief Packs immutable geometry parameters for the device.
    *
-   * \return Three FP32 half extents in pm; all zero before
+   * \return FP32 half extents and surface half-band in pm; all zero before
    * SetSize(), which the device treats as an unconfigured World.
    */
   [[nodiscard]] auto BuildRecord() const noexcept -> GGEMSWorldRecord;
@@ -255,6 +268,11 @@ private:
 
   /*! \brief Owned single physical volume, absent until AddVolume(). */
   std::variant<std::monostate, GGEMSBox, GGEMSSphere> volume_;
+
+  /*!
+   * \brief Explicit surface half-band; absent selects per-boundary defaults.
+   */
+  std::optional<units::Length> navigation_tolerance_;
 };
 
 } // namespace ggems::geometry

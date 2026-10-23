@@ -341,10 +341,12 @@ TEST_F(GGEMSSourceSamplingTransportTest,
       {rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()},
       k_counts));
 
-    auto const source_records = RecordsOfKind(report, ObserverRecordKind::Source);
+    auto const source_records =
+      RecordsOfKind(report, ObserverRecordKind::Source);
     ASSERT_EQ(source_records.size(), 768U);
 
-    std::array<std::set<std::tuple<std::int64_t, std::int64_t, std::int64_t>>, 3U>
+    std::array<std::set<std::tuple<std::int64_t, std::int64_t, std::int64_t>>,
+               3U>
       distinct_positions;
 
     std::array<SourceRecord, 3U> const configured_sources{
@@ -361,21 +363,30 @@ TEST_F(GGEMSSourceSamplingTransportTest,
       SourceRecord const &source = configured_sources[source_index];
 
       ASSERT_EQ(record.position_valid, 1U);
-      auto const uploaded = ggems::core::sources::BuildSourceDeviceRecord(source);
+      auto const uploaded =
+        ggems::core::sources::BuildSourceDeviceRecord(source);
       std::array<double, 3U> const center{
-      uploaded.position_x_pm, uploaded.position_y_pm, uploaded.position_z_pm,};
+        uploaded.position_x_pm,
+        uploaded.position_y_pm,
+        uploaded.position_z_pm,
+      };
       std::array<double, 3U> const authored_center{
         static_cast<double>(source.position_x_pm),
         static_cast<double>(source.position_y_pm),
-      static_cast<double>(source.position_z_pm),};
+        static_cast<double>(source.position_z_pm),
+      };
       std::array<double, 3U> const observed{
         static_cast<double>(record.position_x_pm),
         static_cast<double>(record.position_y_pm),
-      static_cast<double>(record.position_z_pm),};
-      std::array<std::array<double, 3U>, 3U> const axes{{
-        {uploaded.axis_x_x, uploaded.axis_x_y, uploaded.axis_x_z},
-        {uploaded.axis_y_x, uploaded.axis_y_y, uploaded.axis_y_z},
-      {uploaded.axis_z_x, uploaded.axis_z_y, uploaded.axis_z_z},},};
+        static_cast<double>(record.position_z_pm),
+      };
+      std::array<std::array<double, 3U>, 3U> const axes{
+        {
+          {uploaded.axis_x_x, uploaded.axis_x_y, uploaded.axis_x_z},
+          {uploaded.axis_y_x, uploaded.axis_y_y, uploaded.axis_y_z},
+          {uploaded.axis_z_x, uploaded.axis_z_y, uploaded.axis_z_z},
+        },
+      };
       double const half_x = 0.5 * uploaded.geometry_size_x_pm;
       double const half_y = 0.5 * uploaded.geometry_size_y_pm;
       std::array<double, 3U> local{};
@@ -383,15 +394,17 @@ TEST_F(GGEMSSourceSamplingTransportTest,
       double authored_plane = 0.0;
       double center_plane_shift = 0.0;
       for (std::size_t axis = 0U; axis < 3U; ++axis) {
-        double const displacement_bound =
-        (std::abs(axes[0U][axis]) * half_x) +
-        (std::abs(axes[1U][axis]) * half_y);
+        double const displacement_bound = (std::abs(axes[0U][axis]) * half_x) +
+                                          (std::abs(axes[1U][axis]) * half_y);
         // Two products and their sum precede center addition. A zero
         // displacement component is exactly the uploaded center; this matters
         // for the +X-normal rectangle and avoids a scale-only plane tolerance.
-        double const coordinate_error = displacement_bound == 0.0 ? 0.0 :
-          ggems::test::fp32::RoundoffBound(displacement_bound, 3U) +
-        (0.5 * ggems::test::fp32::Ulp(std::abs(center[axis]) + displacement_bound));
+        double const coordinate_error =
+          displacement_bound == 0.0
+            ? 0.0
+            : ggems::test::fp32::RoundoffBound(displacement_bound, 3U) +
+                (0.5 * ggems::test::fp32::Ulp(std::abs(center[axis]) +
+                                              displacement_bound));
         for (std::size_t basis = 0U; basis < 3U; ++basis) {
           local[basis] += (observed[axis] - center[axis]) * axes[basis][axis];
           local_error[basis] +=
@@ -428,8 +441,8 @@ TEST_F(GGEMSSourceSamplingTransportTest,
         // Preserve the existing 10 ppm sampler support contract separately
         // from coordinate-transform and observer rounding uncertainty.
         double const support_error =
-        2.0 * ((local_error[0U] / half_x) + (local_error[1U] / half_y));
-      EXPECT_LE((normalized_x * normalized_x) + (normalized_y * normalized_y),
+          2.0 * ((local_error[0U] / half_x) + (local_error[1U] / half_y));
+        EXPECT_LE((normalized_x * normalized_x) + (normalized_y * normalized_y),
                   1.00001 + support_error);
       }
 

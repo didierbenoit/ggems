@@ -196,8 +196,7 @@ auto ExpectMinimalCounters(TransportRunReport const &report,
 auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
                    std::uint64_t run_id, std::uint64_t global_primary_id,
                    std::uint32_t source_index,
-                   std::uint64_t source_local_primary_id)
-  -> void {
+                   std::uint64_t source_local_primary_id) -> void {
   auto records = FindHistoryRecords(report, global_primary_id);
 
   ASSERT_EQ(records.size(), 2U);
@@ -253,21 +252,27 @@ auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
   std::array<float, 3U> const start{
     static_cast<float>(source.position_x_pm),
     static_cast<float>(source.position_y_pm),
-    static_cast<float>(source.position_z_pm),};
+    static_cast<float>(source.position_z_pm),
+  };
   std::array<float, 3U> const direction{
-    source.axis_z_x, source.axis_z_y, source.axis_z_z,};
+    source.axis_z_x,
+    source.axis_z_y,
+    source.axis_z_z,
+  };
   std::array<std::int64_t, 3U> const terminal{
-    terminal_record.position_x_pm, terminal_record.position_y_pm,
-    terminal_record.position_z_pm,};
+    terminal_record.position_x_pm,
+    terminal_record.position_y_pm,
+    terminal_record.position_z_pm,
+  };
   // Independent binary64 p + t*d reference on uploaded binary32 operands.
   // Two rounded stages bound both separate multiply/add and contraction;
   // observer publication contributes at most another half picometer.
   using namespace ggems::test::fp32;
   for (std::size_t axis = 0U; axis < start.size(); ++axis) {
     SCOPED_TRACE(axis);
-    auto const expected = Add(FromFloat(start[axis]),
-                              Multiply(FromFloat(1.0e12F),
-                                       FromFloat(direction[axis])));
+    auto const expected =
+      Add(FromFloat(start[axis]),
+          Multiply(FromFloat(1.0e12F), FromFloat(direction[axis])));
     ExpectWithin(static_cast<double>(terminal[axis]), expected, 0.5);
   }
 }
@@ -656,8 +661,8 @@ TEST_F(GGEMSTransportWorkloadTest,
 
 TEST_F(GGEMSTransportWorkloadTest,
        IgnoresUnsupportedZeroPrimarySlotButRejectsItWhenNonZero) {
-  SourceRecord unsupported = MakeSourceRecord(
-    {100'000'000'000LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
+  SourceRecord unsupported =
+    MakeSourceRecord({100'000'000'000LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
   unsupported.source_type = ggems::core::sources::ToKernelSourceType(
     ggems::core::sources::GGEMSSourceType::Voxelized);
 

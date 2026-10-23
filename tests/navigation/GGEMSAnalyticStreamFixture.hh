@@ -68,7 +68,8 @@ namespace ggems::test {
 using namespace ggems::core;
 
 inline constexpr std::size_t k_trace_stride{9U};
-inline constexpr std::size_t k_trace_values{1U + (3U * k_trace_stride)};
+inline constexpr std::size_t k_initial_owner_index{1U + (3U * k_trace_stride)};
+inline constexpr std::size_t k_trace_values{k_initial_owner_index + 3U};
 
 /*! \brief Replaces one unique occurrence or throws. */
 inline auto ReplaceUnique(std::string &source, std::string const &before,
@@ -87,13 +88,24 @@ inline auto ReplaceUnique(std::string &source, std::string const &before,
  *
  * The geometry loop receives a trace pointer; after every accepted
  * transaction it records departure owner, arrival owner, crossed planes,
- * committed position, event and arrival Material. Analytic runs also repeat the
- * read-only query before the transaction to retain its unrounded parameter.
+ * committed position, event and arrival Material. The selected parameter is
+ * captured from the actual transaction witness, without repeating its query.
+ * Initial owner, Material and location status follow the three event slots.
  * Every instrumentation anchor must be unique. No production hook is added.
  */
 inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
   std::ifstream input{root / "transport/particle_stream_transport.cl"};
   std::string source{std::istreambuf_iterator<char>{input}, {}};
+  std::ifstream transaction_input{root / "transport/GGEMSTransport.clh"};
+  std::string transaction{std::istreambuf_iterator<char>{transaction_input},
+                          {}};
+  ReplaceUnique(transaction, "  uint *faces) {",
+                "  uint *faces, __global long *capture) {");
+  ReplaceUnique(transaction, "  if (status != GGEMS_NAVIGATION_RESOLVED) {",
+                "  capture[8] = (long)as_uint(witness.parameter);\n"
+                "  if (status != GGEMS_NAVIGATION_RESOLVED) {");
+  ReplaceUnique(source, "#include \"transport/GGEMSTransport.clh\"",
+                transaction);
 
   ReplaceUnique(source,
                 "  volatile __global GGEMSTransportCounters *counters) {",
@@ -101,19 +113,24 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
                 "  __global long *trace) {");
   ReplaceUnique(source, "  __global void const *box_pose) {",
                 "  __global void const *box_pose, __global long *trace) {");
-  ReplaceUnique(source, "counters) != 0U)",
-                "counters, trace + 28UL * global_primary_id) != 0U)");
+  ReplaceUnique(
+    source, "counters) != 0U)",
+    std::format("counters, trace + {}UL * global_primary_id) != 0U)",
+                k_trace_values));
+  ReplaceUnique(
+    source, "  if (locate_status != GGEMS_NAVIGATION_RESOLVED) {",
+    std::format("  trace[{}] = (uint)(owner >> 32U);\n"
+                "  trace[{}] = (uint)(owner & 0xFFFFFFFFUL);\n"
+                "  trace[{}] = locate_status;\n"
+                "  if (locate_status != GGEMS_NAVIGATION_RESOLVED) {{",
+                k_initial_owner_index, k_initial_owner_index + 1U,
+                k_initial_owner_index + 2U));
   ReplaceUnique(
     source, "    uint const status = GGEMS_TransportToNextBoundary(",
     "    uint const departure_owner = particle->current_volume_id;\n"
-    "    GGEMSBoundaryWitness selected;\n"
-    "    GGEMS_AnalyticFindBoundary(world, volume, box_pose,\n"
-    "      (float3)(particle->position_x_pm, particle->position_y_pm, "
-    "particle->position_z_pm),\n"
-    "      (float3)(particle->direction_x, particle->direction_y, "
-    "particle->direction_z),\n"
-    "      departure_owner, event, &selected);\n"
     "    uint const status = GGEMS_TransportToNextBoundary(");
+  ReplaceUnique(source, "particle, &event, &faces);",
+                "particle, &event, &faces, trace + 1U + 9U * event_index);");
   ReplaceUnique(
     source, "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {",
     "    if (status == GGEMS_NAVIGATION_RESOLVED) {\n"
@@ -127,7 +144,6 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
     "      trace[offset + 5U] = (long)as_uint(particle->position_z_pm);\n"
     "      trace[offset + 6U] = event;\n"
     "      trace[offset + 7U] = particle->material_id;\n"
-    "      trace[offset + 8U] = (long)as_uint(selected.parameter);\n"
     "    }\n\n"
     "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {");
   return source;
@@ -138,18 +154,21 @@ struct StreamResult {
   std::array<std::int64_t, k_trace_values> trace{};
   transport::GGEMSTransportCounters counts{};
   std::array<observer::GGEMSObserverRecord, 2> records{};
+  observer::GGEMSObserverCounters observer_counts{};
   bool unchanged_rng{false};
 };
 
-/*! \brief Launches the instrumented production worker for one configured birth.
+/*! \brief Launches a production worker for one configured birth.
+ *
+ * The optional trace argument is set only for the instrumented program.
  */
 inline auto RunStream(ocl::GGEMSOpenCLContext &context,
                       cl::Program const &program, random::GGEMSRandom &random,
                       geometry::GGEMSWorldRecord const &world,
                       geometry::GGEMSAnalyticVolumeRecord const &volume,
                       sources::GGEMSSourceRecord const &source,
-                      geometry::GGEMSBoxPoseRecord const *pose = nullptr)
-  -> StreamResult {
+                      geometry::GGEMSBoxPoseRecord const *pose = nullptr,
+                      bool capture_trace = true) -> StreamResult {
   auto buffer = [&context](auto const &value) -> ocl::GGEMSOpenCLSVMBuffer {
     auto result = context.CreateSVMBuffer(units::Bytes{sizeof(value)});
     ocl::WriteSVMFromHost(result, value);
@@ -166,7 +185,9 @@ inline auto RunStream(ocl::GGEMSOpenCLContext &context,
   auto world_buffer = buffer(world);
   auto source_buffer = buffer(sources::BuildSourceDeviceRecord(source));
   auto ranges = buffer(sources::GGEMSSourceRunRange{
-    .projection_primary_begin = 0ULL, .primary_count = 1U});
+    .projection_primary_begin = 0ULL,
+    .primary_count = 1U,
+  });
   auto populations = buffer(sources::GGEMSSourcePopulationRecord{});
   auto emissions = buffer(sources::GGEMSSourceEmissionRecord{});
   auto emission_ranges = buffer(sources::GGEMSSourceEmissionRange{});
@@ -223,7 +244,9 @@ inline auto RunStream(ocl::GGEMSOpenCLContext &context,
   // Match production: the pose argument is ignored outside Box.
   kernel.SetArgSVMPointer(22U, pose_buffer ? pose_buffer->GetData()
                                            : volume_buffer.GetData());
-  kernel.SetArgSVMPointer(23U, trace_buffer.GetData());
+  if (capture_trace) {
+    kernel.SetArgSVMPointer(23U, trace_buffer.GetData());
+  }
   kernel.Run({64U}, {64U});
 
   StreamResult result;
@@ -231,6 +254,8 @@ inline auto RunStream(ocl::GGEMSOpenCLContext &context,
   result.counts =
     ocl::ReadSVMToHost<transport::GGEMSTransportCounters>(counters_buffer);
   ocl::ReadSVMToHost(observations, std::span{result.records});
+  result.observer_counts =
+    ocl::ReadSVMToHost<observer::GGEMSObserverCounters>(observed_counts);
   std::vector<std::byte> rng_after(rng_before.size());
   ocl::ReadSVMToHost(rng, std::span{rng_after});
   result.unchanged_rng = rng_before == rng_after;

@@ -715,15 +715,9 @@ static std::array const k_box_cases{
     {80000000000LL, 10000000000LL, 10000000000LL},
     {40000000000LL, 0LL, 0LL},
     {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
-    {BoxEvent{
-       0U, 1U, 1U, {60000000000LL, 0LL, 0LL}, 20000000000.0L},
-     BoxEvent{
-       1U, 0U, 2U, {80000000000LL, 0LL, 0LL}, 20000000000.0L},
-     BoxEvent{0U,
-              4294967295U,
-              2U,
-              {100000000000LL, 0LL, 0LL},
-              20000000000.0L}},
+    {BoxEvent{0U, 1U, 1U, {60000000000LL, 0LL, 0LL}, 20000000000.0L},
+     BoxEvent{1U, 0U, 2U, {80000000000LL, 0LL, 0LL}, 20000000000.0L},
+     BoxEvent{0U, 4294967295U, 2U, {100000000000LL, 0LL, 0LL}, 20000000000.0L}},
     3U},
   // 2^30-pm grid, approximately 215 mm World. A 2^20-pm (1.048576 um)
   // separation survives packing and separates the two entry parameters.
@@ -735,11 +729,8 @@ static std::array const k_box_cases{
           {0x1.0000000000000p+0F, 0x1.0000000000000p+0F, 0x0.0p+0F},
           {BoxEvent{0U, 1U, 4U, {-10736369664LL, -10737418240LL, 0LL}, 0.0L},
            BoxEvent{1U, 0U, 2U, {10737418240LL, 10736369664LL, 0LL}, 0.0L},
-           BoxEvent{0U,
-                    4294967295U,
-                    2U,
-                    {107374182400LL, 107373133824LL, 0LL},
-                    0.0L}},
+           BoxEvent{
+             0U, 4294967295U, 2U, {107374182400LL, 107373133824LL, 0LL}, 0.0L}},
           3U},
   BoxCase{"WorldFaceZeroExit",
           {101LL, 127LL, 149LL},
