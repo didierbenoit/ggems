@@ -56,6 +56,7 @@
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
+#include "GGEMSFP32TestOracle.hh"
 
 namespace {
 
@@ -1407,8 +1408,19 @@ TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
   EXPECT_EQ(records[1U].parent_track_id,
             ggems::core::particles::k_invalid_id_u64);
 
-  EXPECT_EQ(records[0U].position_x_pm, -1'500'000'000'000LL);
-  EXPECT_EQ(records[1U].position_x_pm, -500'000'000'000LL);
+  // Source export is an exact float upload followed by observer conversion.
+  constexpr float uploaded_start{-1'500'000'000'000.0F};
+  EXPECT_EQ(records[0U].position_x_pm,
+            static_cast<std::int64_t>(uploaded_start));
+  // Diagnostic transport projects one represented meter along the stored axis.
+  // Budget one multiply and one add, then <= 0.5 pm observer rounding.
+  auto const endpoint = ggems::test::fp32::Add(
+    ggems::test::fp32::FromFloat(uploaded_start),
+    ggems::test::fp32::Multiply(
+      ggems::test::fp32::FromFloat(1'000'000'000'000.0F),
+      ggems::test::fp32::FromFloat(records[0U].direction_x)));
+  ggems::test::fp32::ExpectWithin(
+    static_cast<double>(records[1U].position_x_pm), endpoint, 0.5);
   EXPECT_EQ(records[0U].position_y_pm, 0LL);
   EXPECT_EQ(records[1U].position_y_pm, 0LL);
   EXPECT_EQ(records[0U].position_z_pm, 0LL);
@@ -1426,7 +1438,7 @@ TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
 // =============================================================================
 
 TEST_F(GGEMSRunTest,
-       EndpointOverflowPreservesLastCommitAndDoesNotReservePrimaryId) {
+       InvalidCapturePreservesLastCommitAndDoesNotReservePrimaryId) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(1ULL);
   source->SetPositionPicoMeter(0LL, 0LL, 0LL).SetDirection(1.0, 0.0, 0.0);
@@ -1449,8 +1461,8 @@ TEST_F(GGEMSRunTest,
   ASSERT_TRUE(successful_snapshot.has_value());
   ASSERT_FALSE(observer->GetRecords().empty());
 
-  source->SetPositionPicoMeter(std::numeric_limits<std::int64_t>::max(), 0LL,
-                               0LL);
+  // A reachable finite error: this source has only primary index zero.
+  observer->CapturePrimary(0U, 1ULL);
 
   EXPECT_THROW(run.Run(), ggems::core::GGEMSRecoverable);
 
@@ -1463,7 +1475,7 @@ TEST_F(GGEMSRunTest,
   EXPECT_EQ(snapshot_after_failure->GetRecords()[0U].position_x_pm,
             successful_snapshot->GetRecords()[0U].position_x_pm);
 
-  source->SetPositionPicoMeter(0LL, 0LL, 0LL);
+  observer->CapturePrimary(0U, 0ULL);
 
   ASSERT_NO_THROW(run.Run());
 

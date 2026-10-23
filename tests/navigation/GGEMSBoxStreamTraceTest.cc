@@ -69,6 +69,8 @@
 
 #include "GGEMSAnalyticStreamFixture.hh"
 #include "GGEMSBoxFixtures.hh"
+#include "GGEMSBoxFP32Oracle.hh"
+#include "GGEMSFP32TestOracle.hh"
 #include "GGEMSNavigationTestDevices.hh"
 
 namespace {
@@ -115,7 +117,8 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
   geometry::GGEMSWorldRecord const world{
     .half_extent_x_pm = static_cast<float>(test.half[0]),
     .half_extent_y_pm = static_cast<float>(test.half[1]),
-    .half_extent_z_pm = static_cast<float>(test.half[2])};
+    .half_extent_z_pm = static_cast<float>(test.half[2]),
+  };
   sources::GGEMSSourceRecord source{};
   source.emitted_particle_type =
     particles::ToKernelParticleType(particles::GGEMSParticleType::Aionino);
@@ -138,7 +141,8 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
     .half_extent_z_pm = static_cast<float>(
       static_cast<std::uint64_t>((test.upper[2] - test.lower[2]) / 2)),
     .volume_id = k_box,
-    .material_id = box_material};
+    .material_id = box_material,
+  };
   geometry::GGEMSBoxPoseRecord const identity_pose{
     .center_x_pm =
       static_cast<float>(test.lower[0] + ((test.upper[0] - test.lower[0]) / 2)),
@@ -148,7 +152,8 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
       static_cast<float>(test.lower[2] + ((test.upper[2] - test.lower[2]) / 2)),
     .axis_x_x = 1.0F,
     .axis_y_y = 1.0F,
-    .axis_z_z = 1.0F};
+    .axis_z_z = 1.0F,
+  };
   geometry::GGEMSAnalyticVolumeRecord volume{};
   volume.kind = geometry::GGEMSAnalyticKind::Box;
   volume.parameters.box = box;
@@ -156,6 +161,9 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
     ggems::test::RunStream(context, program, random, world, volume, source,
                            pose != nullptr ? pose : &identity_pose);
   auto const &trace = result.trace;
+  auto const &placement = pose != nullptr ? *pose : identity_pose;
+  auto reference = ggems::test::box_oracle::PackedPoint(test.start);
+  std::array<float, 3> final_position{};
   for (std::size_t history = 0; history < 1U; ++history) {
     auto const base = k_trace_values * history;
     ASSERT_EQ(trace[base], test.count);
@@ -166,15 +174,16 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
       EXPECT_EQ(trace[offset], expected.departure);
       EXPECT_EQ(trace[offset + 1U], expected.arrival);
       EXPECT_EQ(trace[offset + 2U], expected.faces);
-      EXPECT_EQ(static_cast<long double>(std::bit_cast<float>(
-                  static_cast<std::uint32_t>(trace[offset + 3U]))),
-                static_cast<long double>(expected.endpoint[0]));
-      EXPECT_EQ(static_cast<long double>(std::bit_cast<float>(
-                  static_cast<std::uint32_t>(trace[offset + 4U]))),
-                static_cast<long double>(expected.endpoint[1]));
-      EXPECT_EQ(static_cast<long double>(std::bit_cast<float>(
-                  static_cast<std::uint32_t>(trace[offset + 5U]))),
-                static_cast<long double>(expected.endpoint[2]));
+      auto const parameter = ggems::test::box_oracle::Parameter(
+        world, box, placement, reference, test.direction, expected.faces,
+        expected.arrival == k_exterior);
+      reference =
+        ggems::test::box_oracle::Advance(reference, test.direction, parameter);
+      for (std::size_t axis = 0; axis < 3; ++axis) {
+        final_position[axis] = std::bit_cast<float>(
+          static_cast<std::uint32_t>(trace[offset + 3U + axis]));
+        ggems::test::fp32::ExpectWithin(final_position[axis], reference[axis]);
+      }
       EXPECT_EQ(trace[offset + 6U], ExpectedEvent(expected));
       EXPECT_EQ(trace[offset + 7U],
                 ExpectedMaterial(expected.arrival, box_material));
@@ -190,9 +199,11 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
   EXPECT_EQ(counts.unresolved_geometry_count, 0U);
   EXPECT_EQ(counts.overflow_count, 0U);
   auto const &records = result.records;
-  EXPECT_EQ(records[1].position_x_pm, test.events[test.count - 1].endpoint[0]);
-  EXPECT_EQ(records[1].position_y_pm, test.events[test.count - 1].endpoint[1]);
-  EXPECT_EQ(records[1].position_z_pm, test.events[test.count - 1].endpoint[2]);
+  // Test observer projection separately and exactly against the last actual
+  // FP32 state, after the independent geometry assertions above.
+  EXPECT_EQ(records[1].position_x_pm, std::llround(final_position[0]));
+  EXPECT_EQ(records[1].position_y_pm, std::llround(final_position[1]));
+  EXPECT_EQ(records[1].position_z_pm, std::llround(final_position[2]));
   EXPECT_EQ(records[1].status, particles::ToKernelParticleStatus(
                                  particles::GGEMSParticleStatus::EscapedWorld));
   EXPECT_EQ(records[1].energy_micro_eV, source.energy_micro_eV);
@@ -299,23 +310,34 @@ TEST_F(GGEMSNavigationDeviceTest, RotatedBoxTracedWorker) {
     .upper = {20'000'000'000LL, 30'000'000'000LL, 40'000'000'000LL},
     .start = {-80'000'000'000LL, 0, 0},
     .direction = {1.0F, 0.0F, 0.0F},
-    .events = {BoxEvent{.departure = 0,
-                        .arrival = 1,
-                        .faces = 1,
-                        .endpoint = {-intercept, 0, 0},
-                        .parameter = 0},
-               BoxEvent{.departure = 1,
-                        .arrival = 0,
-                        .faces = 2,
-                        .endpoint = {intercept, 0, 0},
-                        .parameter = 0},
-               BoxEvent{.departure = 0,
-                        .arrival = k_exterior,
-                        .faces = 2,
-                        .endpoint = {100'000'000'000LL, 0, 0},
-                        .parameter = 0}},
-    .count = 3};
+    .events =
+      {
+        BoxEvent{
+          .departure = 0,
+          .arrival = 1,
+          .faces = 1,
+          .endpoint = {-intercept, 0, 0},
+          .parameter = 0,
+        },
+        BoxEvent{
+          .departure = 1,
+          .arrival = 0,
+          .faces = 2,
+          .endpoint = {intercept, 0, 0},
+          .parameter = 0,
+        },
+        BoxEvent{
+          .departure = 0,
+          .arrival = k_exterior,
+          .faces = 2,
+          .endpoint = {100'000'000'000LL, 0, 0},
+          .parameter = 0,
+        },
+      },
+    .count = 3,
+  };
   for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+    SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231ULL);
     auto const options =
@@ -330,6 +352,79 @@ TEST_F(GGEMSNavigationDeviceTest, RotatedBoxTracedWorker) {
               CL_SUCCESS)
       << strict_program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
     RunTracedHistory(context, strict_program, random, test, 1, &pose);
-    ASSERT_FALSE(HasFailure());
+  }
+}
+
+TEST_F(GGEMSNavigationDeviceTest, BoxBirthHistoriesPreserveOwnerSequences) {
+  // Companion of the five-history unmodified-workload test. In particular,
+  // the authored edge in history 3 is 1024 pm outside the packed lower Y face.
+  std::array<std::array<std::int64_t, 3>, 5> const starts{
+    {
+      {0, -20000000000LL, 0},
+      {-20000000000LL, -20000000000LL, 5000000000LL},
+      {-20000000000LL, -20000000000LL, 5000000000LL},
+      {-20000000000LL, -30000000000LL, 0},
+      {0, -20000000000LL, 5000000000LL},
+    },
+  };
+  std::array<std::array<float, 3>, 5> const directions{
+    {
+      {0, 0, -1},
+      {1, 0, 0},
+      {-1, 0, 0},
+      {0x1.6a09e6p-1F, 0x1.6a09e6p-1F, 0},
+      {0, -1, 0},
+    },
+  };
+  auto event = [](std::uint32_t departure, std::uint32_t arrival,
+                  std::uint32_t faces) -> BoxEvent {
+    return {
+      .departure = departure,
+      .arrival = arrival,
+      .faces = faces,
+      .endpoint = {},
+      .parameter = 0,
+    };
+  };
+  std::array<std::array<BoxEvent, 3>, 5> const transitions{
+    {
+      {event(1, 0, 16), event(0, k_exterior, 16), {}},
+      {event(1, 0, 2), event(0, k_exterior, 2), {}},
+      {event(0, k_exterior, 1), {}, {}},
+      {event(0, 1, 4), event(1, 0, 8), event(0, k_exterior, 2)},
+      {event(1, 0, 4), event(0, k_exterior, 4), {}},
+    },
+  };
+  std::array<std::uint32_t, 5> const counts{2, 2, 1, 3, 2};
+  std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
+  auto const instrumented = InstrumentStream(root);
+  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+    SCOPED_TRACE(context.GetDevice().GetName());
+    random::GGEMSRandom random;
+    random.SetEngine("philox").SetSeed(41ULL);
+    auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
+      context, root / "transport", "particle_stream_transport",
+      std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
+                  root.generic_string(), random.GetKernelBuildDefinition()));
+    cl::Program program(context.GetContextNative(), instrumented);
+    auto const device = context.GetDevice().GetDeviceNative();
+    ASSERT_EQ(program.build({device},
+                            std::string{production.GetBuildOptions()}.c_str()),
+              CL_SUCCESS)
+      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    for (std::size_t index = 0; index < starts.size(); ++index) {
+      SCOPED_TRACE(index);
+      BoxCase const test{
+        .name = "coherent five-history birth scene",
+        .half = {100000000000LL, 100000000000LL, 100000000000LL},
+        .lower = {-20000000000LL, -30000000000LL, -10000000000LL},
+        .upper = {40000000000LL, -10000000000LL, 20000000000LL},
+        .start = starts[index],
+        .direction = directions[index],
+        .events = transitions[index],
+        .count = counts[index],
+      };
+      RunTracedHistory(context, program, random, test, 1);
+    }
   }
 }

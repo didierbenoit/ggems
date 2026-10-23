@@ -30,7 +30,6 @@
 #include <vector>
 #include <cstdint>
 #include <span>
-#include <limits>
 
 #include <gtest/gtest.h>
 
@@ -185,20 +184,20 @@ TEST(GGEMSParticleTrace, ConsecutiveRecordsInSameTrackProduceSegments) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSParticleTrace, PreservesMaximumGlobalPrimaryIdentity) {
-  constexpr auto maximum = std::numeric_limits<std::uint64_t>::max();
+TEST(GGEMSParticleTrace, PreservesFiniteGlobalPrimaryIdentityAboveUint32) {
+  constexpr std::uint64_t primary_id{4'294'967'337ULL};
   std::array<GGEMSObserverRecord, 3U> records{{
     GGEMSObserverRecord{},
-    MakeRecord(0ULL, maximum, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
+    MakeRecord(0ULL, primary_id, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
                GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
-    MakeRecord(0ULL, maximum, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
+    MakeRecord(0ULL, primary_id, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
                GGEMSParticleType::Gamma, 1'000'000'000'000LL, 0LL, 0LL),
   }};
-  records[1U].global_particle_id = maximum;
-  records[2U].global_particle_id = maximum;
+  records[1U].global_particle_id = primary_id;
+  records[2U].global_particle_id = primary_id;
   auto const segments = ggems::render::BuildParticleTraceSegments(records);
   ASSERT_EQ(segments.size(), 1U);
-  EXPECT_EQ(segments[0U].global_primary_id, maximum);
+  EXPECT_EQ(segments[0U].global_primary_id, primary_id);
   EXPECT_EQ(segments[0U].track_id, 0ULL);
   EXPECT_FLOAT_EQ(segments[0U].begin.x_m, 0.0F);
   EXPECT_FLOAT_EQ(segments[0U].end.x_m, 1.0F);

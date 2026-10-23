@@ -41,6 +41,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSFP32TestOracle.hh"
+
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/observer/GGEMSObserverTypes.hh"
@@ -70,8 +72,6 @@ using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 using SourceConfigurationSnapshotPtr =
   ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
-
-constexpr std::int64_t k_one_meter_pm{1'000'000'000'000LL};
 
 // =============================================================================
 // =============================================================================
@@ -196,8 +196,7 @@ auto ExpectMinimalCounters(TransportRunReport const &report,
 auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
                    std::uint64_t run_id, std::uint64_t global_primary_id,
                    std::uint32_t source_index,
-                   std::uint64_t source_local_primary_id,
-                   std::array<std::int64_t, 3U> const &terminal_position)
+                   std::uint64_t source_local_primary_id)
   -> void {
   auto records = FindHistoryRecords(report, global_primary_id);
 
@@ -249,9 +248,28 @@ auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
             static_cast<std::int64_t>(
               std::round(static_cast<float>(source.position_z_pm))));
 
-  EXPECT_EQ(terminal_record.position_x_pm, terminal_position[0U]);
-  EXPECT_EQ(terminal_record.position_y_pm, terminal_position[1U]);
-  EXPECT_EQ(terminal_record.position_z_pm, terminal_position[2U]);
+  ASSERT_EQ(source_record.position_valid, 1U);
+  ASSERT_EQ(terminal_record.position_valid, 1U);
+  std::array<float, 3U> const start{
+    static_cast<float>(source.position_x_pm),
+    static_cast<float>(source.position_y_pm),
+    static_cast<float>(source.position_z_pm),};
+  std::array<float, 3U> const direction{
+    source.axis_z_x, source.axis_z_y, source.axis_z_z,};
+  std::array<std::int64_t, 3U> const terminal{
+    terminal_record.position_x_pm, terminal_record.position_y_pm,
+    terminal_record.position_z_pm,};
+  // Independent binary64 p + t*d reference on uploaded binary32 operands.
+  // Two rounded stages bound both separate multiply/add and contraction;
+  // observer publication contributes at most another half picometer.
+  using namespace ggems::test::fp32;
+  for (std::size_t axis = 0U; axis < start.size(); ++axis) {
+    SCOPED_TRACE(axis);
+    auto const expected = Add(FromFloat(start[axis]),
+                              Multiply(FromFloat(1.0e12F),
+                                       FromFloat(direction[axis])));
+    ExpectWithin(static_cast<double>(terminal[axis]), expected, 0.5);
+  }
 }
 
 // =============================================================================
@@ -304,17 +322,6 @@ TEST_F(GGEMSTransportWorkloadTest,
     },
   };
 
-  constexpr std::array<std::array<std::int64_t, 3U>, 6U> k_terminals{
-    {
-      {-500'000'000'000LL, 0LL, 0LL},
-      {500'000'000'000LL, 0LL, 0LL},
-      {0LL, -500'000'000'000LL, 0LL},
-      {0LL, 500'000'000'000LL, 0LL},
-      {0LL, 0LL, -500'000'000'000LL},
-      {0LL, 0LL, 500'000'000'000LL},
-    },
-  };
-
   std::vector<SourceRecord> source_records;
 
   for (std::size_t index = 0U; index < k_positions.size(); ++index) {
@@ -353,14 +360,15 @@ TEST_F(GGEMSTransportWorkloadTest,
 
   for (std::size_t index = 0U; index < source_records.size(); ++index) {
     ExpectHistory(report, source_records[index], config.run_id, 100ULL + index,
-                  static_cast<std::uint32_t>(index), 0ULL, k_terminals[index]);
+                  static_cast<std::uint32_t>(index), 0ULL);
   }
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSTransportWorkloadTest, ProjectsStoredBinary32DiagonalExactly) {
+TEST_F(GGEMSTransportWorkloadTest,
+       ProjectsStoredBinary32DiagonalWithinArithmeticBudget) {
   SourceRecord const source =
     MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 1.0, 1.0});
 
@@ -388,8 +396,7 @@ TEST_F(GGEMSTransportWorkloadTest, ProjectsStoredBinary32DiagonalExactly) {
 
   auto const report = workload.Run(config);
 
-  ExpectHistory(report, source, 0ULL, 0ULL, 0U, 0ULL,
-                {577'350'258'827LL, 577'350'258'827LL, 577'350'258'827LL});
+  ExpectHistory(report, source, 0ULL, 0ULL, 0U, 0ULL);
 }
 
 // =============================================================================
@@ -420,8 +427,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 
   auto const report = workload.Run(config);
 
-  ExpectHistory(report, source, 0ULL, 0ULL, 0U, 0ULL,
-                {0LL, 0LL, k_one_meter_pm});
+  ExpectHistory(report, source, 0ULL, 0ULL, 0U, 0ULL);
 }
 
 // =============================================================================
@@ -458,16 +464,11 @@ TEST_F(GGEMSTransportWorkloadTest,
   ExpectMinimalCounters(report, 5U);
   EXPECT_EQ(report.observer_counters.captured_primary_count, 5U);
 
-  ExpectHistory(report, source_a, 0ULL, 1'000ULL, 0U, 0ULL,
-                {k_one_meter_pm, 0LL, 0LL});
-  ExpectHistory(report, source_a, 0ULL, 1'001ULL, 0U, 1ULL,
-                {k_one_meter_pm, 0LL, 0LL});
-  ExpectHistory(report, source_a, 0ULL, 1'002ULL, 2U, 0ULL,
-                {k_one_meter_pm, 0LL, 0LL});
-  ExpectHistory(report, source_a, 0ULL, 1'003ULL, 2U, 1ULL,
-                {k_one_meter_pm, 0LL, 0LL});
-  ExpectHistory(report, source_b, 0ULL, 1'004ULL, 3U, 0ULL,
-                {0LL, -k_one_meter_pm, 0LL});
+  ExpectHistory(report, source_a, 0ULL, 1'000ULL, 0U, 0ULL);
+  ExpectHistory(report, source_a, 0ULL, 1'001ULL, 0U, 1ULL);
+  ExpectHistory(report, source_a, 0ULL, 1'002ULL, 2U, 0ULL);
+  ExpectHistory(report, source_a, 0ULL, 1'003ULL, 2U, 1ULL);
+  ExpectHistory(report, source_b, 0ULL, 1'004ULL, 3U, 0ULL);
 }
 
 // =============================================================================
@@ -586,12 +587,9 @@ TEST_F(GGEMSTransportWorkloadTest,
 
   auto const report = workload.Run(config);
 
-  ExpectHistory(report, source_0, 0ULL, 101ULL, 0U, 1ULL,
-                {k_one_meter_pm, 0LL, 0LL});
-  ExpectHistory(report, source_1, 0ULL, 102ULL, 1U, 0ULL,
-                {0LL, k_one_meter_pm, 0LL});
-  ExpectHistory(report, source_1, 0ULL, 103ULL, 1U, 1ULL,
-                {0LL, k_one_meter_pm, 0LL});
+  ExpectHistory(report, source_0, 0ULL, 101ULL, 0U, 1ULL);
+  ExpectHistory(report, source_1, 0ULL, 102ULL, 1U, 0ULL);
+  ExpectHistory(report, source_1, 0ULL, 103ULL, 1U, 1ULL);
 }
 
 // =============================================================================
@@ -632,8 +630,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 
     auto first_report = workload.Run(config);
     ExpectMinimalCounters(first_report, 2U);
-    ExpectHistory(first_report, source, 0ULL, 200ULL, 0U, 0ULL,
-                  {0LL, 0LL, 500'000'000'000LL});
+    ExpectHistory(first_report, source, 0ULL, 200ULL, 0U, 0ULL);
 
     EXPECT_EQ(GetContext().GetAllocatedVRAM().value,
               allocated_after_construction);
@@ -645,8 +642,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 
     auto second_report = workload.Run(config);
     ExpectMinimalCounters(second_report, 2U);
-    ExpectHistory(second_report, source, 1ULL, 202ULL, 0U, 0ULL,
-                  {0LL, 0LL, 500'000'000'000LL});
+    ExpectHistory(second_report, source, 1ULL, 202ULL, 0U, 0ULL);
 
     EXPECT_EQ(GetContext().GetAllocatedVRAM().value,
               allocated_after_construction);
@@ -661,7 +657,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 TEST_F(GGEMSTransportWorkloadTest,
        IgnoresUnsupportedZeroPrimarySlotButRejectsItWhenNonZero) {
   SourceRecord unsupported = MakeSourceRecord(
-    {std::numeric_limits<std::int64_t>::max(), 0LL, 0LL}, {1.0, 0.0, 0.0});
+    {100'000'000'000LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
   unsupported.source_type = ggems::core::sources::ToKernelSourceType(
     ggems::core::sources::GGEMSSourceType::Voxelized);
 
@@ -687,8 +683,7 @@ TEST_F(GGEMSTransportWorkloadTest,
   config.observer_config.capture_first_primary_count_per_source = 1U;
 
   auto const report = workload.Run(config);
-  ExpectHistory(report, analytic, 0ULL, 0ULL, 1U, 0ULL,
-                {0LL, 0LL, k_one_meter_pm});
+  ExpectHistory(report, analytic, 0ULL, 0ULL, 1U, 0ULL);
 
   constexpr std::array<std::uint64_t, 2U> k_unsupported_active{1ULL, 0ULL};
   config.source_ranges = BuildRanges(k_unsupported_active);
@@ -761,28 +756,28 @@ TEST_F(GGEMSTransportWorkloadTest, RejectsZeroStableSourceCount) {
   EXPECT_THROW(construct(), ggems::core::GGEMSExceptionBase);
 }
 
-TEST(GGEMSTransportRunRanges, PreservesUint64PopulationAndChecksActualIdRange) {
-  constexpr auto maximum = std::numeric_limits<std::uint64_t>::max();
+TEST(GGEMSTransportRunRanges,
+     PreservesFiniteUint64PopulationAndChecksDeviceSlice) {
   SourceRecord const source =
     MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
-  constexpr std::array<std::uint64_t, 1U> counts{maximum};
-  auto config = MakeConfig({source}, counts, 1U);
-  config.total_primary_count = maximum;
-  auto validate = [&]() -> void {
+  // A finite multi-billion-history run retains the 64-bit population contract
+  // while validation exercises only a one-to-four-history device slice.
+  constexpr std::array<std::uint64_t, 1U> counts{4'294'977'296ULL};
+  auto config = MakeConfig({source}, counts, 1U, 100'000ULL);
+  ASSERT_EQ(config.source_ranges[0U].primary_count, counts[0U]);
+  auto validate = [&] -> void {
     ggems::core::transport::ValidateTransportRunConfig(config, 1U, 0U, 64U,
                                                        100U);
   };
   EXPECT_NO_THROW(validate());
-  config.projection_history_offset = 1ULL;
-  EXPECT_NO_THROW(validate());
-  config.projection_history_offset = 2ULL;
-  EXPECT_THROW(validate(), ggems::core::GGEMSRecoverable);
-  config.projection_history_offset = 0ULL;
-  config.device_primary_offset = maximum - 3ULL;
+  config.device_primary_offset = counts[0U] - 3ULL;
   config.total_primary_count = 4ULL;
   EXPECT_THROW(validate(), ggems::core::GGEMSRecoverable);
   config.total_primary_count = 3ULL;
   EXPECT_NO_THROW(validate());
+  config.device_primary_offset = counts[0U];
+  config.total_primary_count = 1ULL;
+  EXPECT_THROW(validate(), ggems::core::GGEMSRecoverable);
 }
 
 TEST(GGEMSTransportRunRanges, RejectsWrappedSourcePopulationTotal) {

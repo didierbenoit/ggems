@@ -25,8 +25,10 @@
  *
  * 191 cases (63 explicit adversarial fixtures and 128 fixed-seed rational
  * fixtures) generated independently with Python Fraction arithmetic on the
- * exact stored binary32 directions; owners, crossing masks and canonical
- * endpoints are exact, the unrounded parameter is informative only.
+ * exact stored binary32 directions. Owners and crossing masks are the frozen
+ * discrete requirements. Legacy integer endpoints/parameters are descriptive;
+ * current spatial assertions independently intersect the uploaded FP32 planes.
+ * The former maximum-range cases are replaced by distinguishable finite scenes.
  * Positional aggregate notation is kept for the generated vectors.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
@@ -707,35 +709,37 @@ static std::array const k_box_cases{
      BoxEvent{}, BoxEvent{}},
     1U},
   BoxCase{
-    "LargePmDifference",
-    {4611686018427387903LL, 4611686018427387903LL, 4611686018427387903LL},
-    {4611686018427387830LL, -13LL, -17LL},
-    {4611686018427387891LL, 14LL, 18LL},
-    {4611686018427387802LL, 0LL, 0LL},
+    "RepresentedTranslatedBox",
+    {100000000000LL, 100000000000LL, 100000000000LL},
+    {60000000000LL, -10000000000LL, -10000000000LL},
+    {80000000000LL, 10000000000LL, 10000000000LL},
+    {40000000000LL, 0LL, 0LL},
     {0x1.0000000000000p+0F, 0x0.0p+0F, 0x0.0p+0F},
     {BoxEvent{
-       0U, 1U, 1U, {4611686018427387830LL, 0LL, 0LL}, 0x1.c000000000000p+4L},
+       0U, 1U, 1U, {60000000000LL, 0LL, 0LL}, 20000000000.0L},
      BoxEvent{
-       1U, 0U, 2U, {4611686018427387891LL, 0LL, 0LL}, 0x1.e800000000000p+5L},
+       1U, 0U, 2U, {80000000000LL, 0LL, 0LL}, 20000000000.0L},
      BoxEvent{0U,
               4294967295U,
               2U,
-              {4611686018427387903LL, 0LL, 0LL},
-              0x1.8000000000000p+3L}},
+              {100000000000LL, 0LL, 0LL},
+              20000000000.0L}},
     3U},
-  BoxCase{"LargeNearTie",
-          {4611686018427387903LL, 4611686018427387903LL, 4611686018427387903LL},
-          {-10LL, -10LL, -10LL},
-          {10LL, 10LL, 10LL},
-          {-4611686018427387901LL, -4611686018427387902LL, 0LL},
+  // 2^30-pm grid, approximately 215 mm World. A 2^20-pm (1.048576 um)
+  // separation survives packing and separates the two entry parameters.
+  BoxCase{"RepresentedNearTie",
+          {107374182400LL, 107374182400LL, 107374182400LL},
+          {-10737418240LL, -10737418240LL, -10737418240LL},
+          {10737418240LL, 10737418240LL, 10737418240LL},
+          {-96636764160LL, -96637812736LL, 0LL},
           {0x1.0000000000000p+0F, 0x1.0000000000000p+0F, 0x0.0p+0F},
-          {BoxEvent{0U, 1U, 4U, {-9LL, -10LL, 0LL}, 0x1.0000000000000p+62L},
-           BoxEvent{1U, 0U, 2U, {10LL, 9LL, 0LL}, 0x1.3000000000000p+4L},
+          {BoxEvent{0U, 1U, 4U, {-10736369664LL, -10737418240LL, 0LL}, 0.0L},
+           BoxEvent{1U, 0U, 2U, {10737418240LL, 10736369664LL, 0LL}, 0.0L},
            BoxEvent{0U,
                     4294967295U,
                     2U,
-                    {4611686018427387903LL, 4611686018427387902LL, 0LL},
-                    0x1.0000000000000p+62L}},
+                    {107374182400LL, 107373133824LL, 0LL},
+                    0.0L}},
           3U},
   BoxCase{"WorldFaceZeroExit",
           {101LL, 127LL, 149LL},
