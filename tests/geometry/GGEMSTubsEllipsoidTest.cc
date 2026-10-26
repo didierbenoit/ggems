@@ -254,12 +254,12 @@ TEST(N1TubsEllipsoid, CentralUnitsConvertDimensionsBeforeAuthoring) {
     1'250'000'000U);
 }
 
-TEST(N1TubsEllipsoid, SharedRecordsKeepTheExistingAnalyticStride) {
+TEST(N1TubsEllipsoid, SharedRecordsPreserveTheirPayloadOffsets) {
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSTubsRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSTubsRecord>);
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSEllipsoidRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSEllipsoidRecord>);
-  EXPECT_EQ(sizeof(GGEMSAnalyticVolumeRecord), 32U);
+  EXPECT_EQ(sizeof(GGEMSAnalyticVolumeRecord), 84U);
   EXPECT_EQ(offsetof(GGEMSAnalyticVolumeRecord, parameters), 4U);
   EXPECT_EQ(sizeof(GGEMSTubsRecord), 24U);
   EXPECT_EQ(offsetof(GGEMSTubsRecord, outer_radius_pm), 0U);

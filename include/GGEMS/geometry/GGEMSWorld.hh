@@ -38,6 +38,8 @@
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
+#include "GGEMS/geometry/GGEMSTrd.hh"
+#include "GGEMS/geometry/GGEMSTrap.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
@@ -121,7 +123,7 @@ public:
   /*!
    * \brief Adds one complete physical volume owned by this World.
    *
-   * The current slice admits at most one Box, Sphere, Tubs or Ellipsoid; a
+   * The current slice admits one Box, Sphere, Tubs, Ellipsoid, Trd or Trap; a
    * World without volumes remains valid. Strict containment is checked by
    * Validate(), so the World size may still be set afterwards. Later edits of
    * the caller's Box do not reach the owned copy.
@@ -160,6 +162,22 @@ public:
   auto AddVolume(GGEMSEllipsoid ellipsoid) -> GGEMSWorld &;
 
   /*!
+   * \brief Copies one complete Trd into the single-volume World.
+   * \param[in] trd Complete solid, copied independently of the caller.
+   * \return This World for chained configuration.
+   * \throws GGEMSRecoverable If a volume exists or the solid is incomplete.
+   */
+  auto AddVolume(GGEMSTrd trd) -> GGEMSWorld &;
+
+  /*!
+   * \brief Copies one complete planar Trap into the single-volume World.
+   * \param[in] trap Complete solid, copied independently of the caller.
+   * \return This World for chained configuration.
+   * \throws GGEMSRecoverable If a volume exists or Trap admission fails.
+   */
+  auto AddVolume(GGEMSTrap trap) -> GGEMSWorld &;
+
+  /*!
    * \brief Packs the single volume, or a None tag for a World-only scene.
    * \param[in] material_id Dense Material identity from the scene compiler.
    * \return Tagged scalar device record with physical VolumeID 1 when present.
@@ -182,8 +200,8 @@ public:
    * Every volume must lie strictly inside the World: no surface may touch
    * or cross a World face. Sphere containment is exact in integer pm. Rotated
    * Box bounds include FP64 roundoff; identity Box bounds retain the exact
-   * integer containment check. Tubs/Ellipsoid use their uploaded posed surface
-   * bounds with separated FP32 feature and World bands.
+   * integer containment check. Tubs/Ellipsoid/Trd/Trap use their uploaded
+   * posed surface bounds with separated FP32 feature and World bands.
    *
    * \throws GGEMSRecoverable If the World size or Material is not set, or if a
    * volume is not strictly inside the World, or the requested FP32 tolerance
@@ -209,7 +227,7 @@ public:
     -> std::vector<GGEMSBoxRecord>;
 
   /*!
-   * \brief Packs the shared center and FP32 pose for Box, Tubs or Ellipsoid.
+   * \brief Packs the shared FP32 pose for every analytic shape except Sphere.
    *
    * \return The posed shape's record, including identity; none for Sphere or
    * World-only. The established Box record and upload argument are reused.
@@ -287,7 +305,8 @@ private:
   std::optional<core::materials::GGEMSMaterial> material_;
 
   /*! \brief Owned single physical volume, absent until AddVolume(). */
-  std::variant<std::monostate, GGEMSBox, GGEMSSphere, GGEMSTubs, GGEMSEllipsoid>
+  std::variant<std::monostate, GGEMSBox, GGEMSSphere, GGEMSTubs, GGEMSEllipsoid,
+               GGEMSTrd, GGEMSTrap>
     volume_;
 
   /*!

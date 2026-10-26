@@ -33,6 +33,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <format>
@@ -434,7 +435,8 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ocl::GGEMSOpenCL::GetInstance();
     if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"all"});
+      char const *selected = std::getenv("GGEMS_TEST_DEVICE");
+      opencl.SelectDevices({selected != nullptr ? selected : "all"});
       opencl.Initialize();
     }
     ASSERT_FALSE(opencl.GetContext().empty());

@@ -1,0 +1,216 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Resolves Trd and Trap rays against six local FP32 half-spaces.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_PLANAR_NAVIGATION_CLH
+#define GGEMS_PLANAR_NAVIGATION_CLH
+
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "geometry/GGEMSBoxPoseRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "navigation/GGEMSBoxNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*!
+ * \brief Loads a side plane or constructs one of the two implicit Z caps.
+ * \param[in] planar Prepared local side planes and cap distance.
+ * \param[in] face Side index 0..3, negative Z cap 4, or positive Z cap 5.
+ * \return Unit outward normal in xyz and the pm-valued offset in w.
+ */
+static inline float4 GGEMS_PlanarFace(__global GGEMSPlanarRecord const *planar,
+                                      uint face) {
+  if (face < 4U) {
+    __global GGEMSPlaneRecord const *side = &planar->sides[face];
+    return (float4)(side->normal_x, side->normal_y, side->normal_z,
+                    side->offset_pm);
+  }
+
+  return (float4)(0.0F, 0.0F, face == 4U ? -1.0F : 1.0F,
+                  planar->half_length_pm);
+}
+
+/*!
+ * \brief Locates the forward owner using closed perpendicular surface bands.
+ *
+ * Band points enter only when all half-spaces admit a positive forward
+ * interval in the strict contracted interior. Parallel and shallow grazing
+ * contacts remain in World; no normalization or numerical push is performed.
+ * \param[in] planar Local planes, automatic band, and ownership.
+ * \param[in] pose Shared rigid pose.
+ * \param[in] position World-validated global position in pm.
+ * \param[in] direction Actual stored finite, nonzero direction.
+ * \param[out] owner Packed forward VolumeID/MaterialID.
+ * \return Resolved according to the FP32 half-space classification.
+ */
+static inline uint GGEMS_PlanarLocate(__global GGEMSPlanarRecord const *planar,
+                                      __global GGEMSBoxPoseRecord const *pose,
+                                      float3 position, float3 direction,
+                                      ulong *owner) {
+  float3 local_position;
+  float3 local_direction;
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+  float inner_near = -INFINITY;
+  float inner_far = INFINITY;
+
+  for (uint face = 0U; face < 6U; ++face) {
+    float4 plane = GGEMS_PlanarFace(planar, face);
+    float distance = dot(plane.xyz, local_position) - plane.w;
+    float component = dot(plane.xyz, local_direction);
+
+    if (distance > planar->tolerance_pm ||
+        (distance >= -planar->tolerance_pm && component >= 0.0F)) {
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+
+    if (component == 0.0F) {
+      continue;
+    }
+
+    float inner = (-planar->tolerance_pm - distance) / component;
+
+    if (component < 0.0F) {
+      inner_near = fmax(inner_near, inner);
+    } else {
+      inner_far = fmin(inner_far, inner);
+    }
+  }
+
+  if (inner_near < inner_far && inner_far > 0.0F) {
+    *owner = ((ulong)planar->volume_id << 32U) | planar->material_id;
+  }
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Clips a local ray and selects a nominal planar entry or exit.
+ *
+ * Outside entry additionally requires a positive contracted-interior interval.
+ * Accepted interior ownership needs only the first outward nominal crossing.
+ * Exact FP32 ties combine face bits; common analytic continuation suppresses
+ * reentry after the exit of this convex solid while direction is unchanged.
+ * \param[in] planar Local planes, automatic band, and ownership.
+ * \param[in] pose Shared rigid pose.
+ * \param[in] position Global FP32 anchor in pm.
+ * \param[in] direction Actual stored finite, nonzero direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in,out] witness World exit on entry; selected crossing on success.
+ * \return Resolved or unresolved for nonfinite or misordered movement.
+ */
+static inline uint
+GGEMS_PlanarFindBoundary(__global GGEMSPlanarRecord const *planar,
+                         __global GGEMSBoxPoseRecord const *pose,
+                         float3 position, float3 direction, uint current_owner,
+                         GGEMSBoundaryWitness *witness) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  uint inside = current_owner == planar->volume_id;
+  float near_parameter = -INFINITY;
+  float far_parameter = INFINITY;
+  float inner_near = -INFINITY;
+  float inner_far = INFINITY;
+  uint near_faces = 0U;
+  uint far_faces = 0U;
+
+  for (uint face = 0U; face < 6U; ++face) {
+    float4 plane = GGEMS_PlanarFace(planar, face);
+    float component = dot(plane.xyz, local_direction);
+
+    if (inside != 0U && component <= 0.0F) {
+      continue;
+    }
+
+    float distance = dot(plane.xyz, local_position) - plane.w;
+
+    if (component == 0.0F) {
+      if (distance >= -planar->tolerance_pm) {
+        return GGEMS_NAVIGATION_RESOLVED;
+      }
+      continue;
+    }
+
+    float parameter = -distance / component;
+    uint face_mask = 1U << face;
+
+    if (component > 0.0F) {
+      if (parameter < far_parameter) {
+        far_parameter = parameter;
+        far_faces = face_mask;
+      } else if (parameter == far_parameter) {
+        far_faces |= face_mask;
+      }
+    } else {
+      if (parameter > near_parameter) {
+        near_parameter = parameter;
+        near_faces = face_mask;
+      } else if (parameter == near_parameter) {
+        near_faces |= face_mask;
+      }
+    }
+
+    if (inside == 0U) {
+      float inner = (-planar->tolerance_pm - distance) / component;
+      if (component < 0.0F) {
+        inner_near = fmax(inner_near, inner);
+      } else {
+        inner_far = fmin(inner_far, inner);
+      }
+    }
+  }
+
+  if (inside == 0U && (inner_near >= inner_far || inner_far <= 0.0F)) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  float candidate = fmax(0.0F, inside != 0U ? far_parameter : near_parameter);
+
+  if (GGEMS_NavigationIsFinite(candidate) == 0U ||
+      candidate >= witness->parameter) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  witness->parameter = candidate;
+  witness->faces = inside != 0U ? far_faces : near_faces;
+  witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id =
+    inside != 0U ? GGEMS_VOLUME_ID_WORLD : planar->volume_id;
+  witness->arrival_material_id =
+    inside != 0U ? GGEMS_MATERIAL_ID_WORLD : planar->material_id;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

@@ -53,6 +53,12 @@ enum class GGEMSAnalyticKind : std::uint32_t {
 
   /*! \brief Complete ellipsoid with local semi-axes and shared pose. */
   Ellipsoid = 4,
+
+  /*! \brief Tapered solid with rectangular end faces. */
+  Trd = 5,
+
+  /*! \brief General planar-faced trapezoid. */
+  Trap = 6,
 };
 
 /*! \brief Scalar 28-byte Sphere parameters, identities and tolerance. */
@@ -121,6 +127,41 @@ struct GGEMSEllipsoidRecord {
   float tolerance_pm{0.0F};
 };
 
+/*! \brief Outward unit normal and offset for n dot p <= offset in local pm. */
+struct GGEMSPlaneRecord {
+  /*! \brief Dimensionless outward normal X. */
+  float normal_x{0.0F};
+
+  /*! \brief Dimensionless outward normal Y. */
+  float normal_y{0.0F};
+
+  /*! \brief Dimensionless outward normal Z. */
+  float normal_z{0.0F};
+
+  /*! \brief Signed plane offset in local pm. */
+  float offset_pm{0.0F};
+};
+
+/*!
+ * \brief Scalar 80-byte Trd/Trap payload with four sides and implicit Z caps.
+ */
+struct GGEMSPlanarRecord {
+  /*! \brief Outward normalized sides in -Y, +Y, -X, +X order. */
+  GGEMSPlaneRecord sides[4]{};
+
+  /*! \brief Positive center-to-cap Z length in pm. */
+  float half_length_pm{0.0F};
+
+  /*! \brief Snapshot-local physical owner. */
+  std::uint32_t volume_id{1};
+
+  /*! \brief Exact dense snapshot-local Material identity. */
+  std::uint32_t material_id{0};
+
+  /*! \brief Closed normal-distance surface half-band in FP32 pm. */
+  float tolerance_pm{0.0F};
+};
+
 /*! \brief Stores only the shape payload selected by the enclosing tag. */
 union GGEMSAnalyticParameters {
   /*! \brief Local Box half extents and owner identities. */
@@ -134,12 +175,15 @@ union GGEMSAnalyticParameters {
 
   /*! \brief Complete solid ellipsoid. */
   GGEMSEllipsoidRecord ellipsoid;
+
+  /*! \brief Trd or Trap with normalized outward side planes. */
+  GGEMSPlanarRecord planar;
 };
 
 /*!
- * \brief Scalar 32-byte scene record, including the no-volume case.
+ * \brief Scalar 84-byte scene record, including the no-volume case.
  *
- * Mirrors GGEMSAnalyticVolumeRecord.clh. Box, Tubs and Ellipsoid reuse the
+ * Mirrors GGEMSAnalyticVolumeRecord.clh. All shapes except Sphere reuse the
  * separately supplied GGEMSBoxPoseRecord. All programs share this scene layout.
  */
 struct GGEMSAnalyticVolumeRecord {

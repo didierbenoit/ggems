@@ -87,15 +87,18 @@ static inline uint GGEMS_BoxLocate(__global GGEMSBoxRecord const *box,
   GGEMS_BoxLocalRay(pose, position, direction, &local_position,
                     &local_direction);
 
-  float3 half_extent = (float3)(box->half_extent_x_pm, box->half_extent_y_pm,
-                                box->half_extent_z_pm);
+  float half_extent[3] = {box->half_extent_x_pm, box->half_extent_y_pm,
+                          box->half_extent_z_pm};
+  float coordinates[3] = {local_position.x, local_position.y, local_position.z};
+  float components[3] = {local_direction.x, local_direction.y,
+                         local_direction.z};
 
   *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
   uint surface = 0U;
 
   for (uint axis = 0U; axis < 3U; ++axis) {
-    float coordinate = local_position[axis];
-    float component = local_direction[axis];
+    float coordinate = coordinates[axis];
+    float component = components[axis];
     float half_length = half_extent[axis];
 
     if (fabs(coordinate) > half_length + box->tolerance_pm ||
@@ -110,9 +113,10 @@ static inline uint GGEMS_BoxLocate(__global GGEMSBoxRecord const *box,
     float inner_near = -INFINITY;
     float inner_far = INFINITY;
     for (uint axis = 0U; axis < 3U; ++axis) {
-      float coordinate = local_position[axis];
-      float component = local_direction[axis];
+      float coordinate = coordinates[axis];
+      float component = components[axis];
       float half_length = half_extent[axis] - box->tolerance_pm;
+
       if (component == 0.0F) {
         if (fabs(coordinate) >= half_length) {
           return GGEMS_NAVIGATION_RESOLVED;
@@ -160,8 +164,11 @@ GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
   GGEMS_BoxLocalRay(pose, position, direction, &local_position,
                     &local_direction);
 
-  float3 half_extent = (float3)(box->half_extent_x_pm, box->half_extent_y_pm,
-                                box->half_extent_z_pm);
+  float half_extent[3] = {box->half_extent_x_pm, box->half_extent_y_pm,
+                          box->half_extent_z_pm};
+  float coordinates[3] = {local_position.x, local_position.y, local_position.z};
+  float components[3] = {local_direction.x, local_direction.y,
+                         local_direction.z};
 
   uint inside = current_owner == box->volume_id;
   float near_parameter = -INFINITY;
@@ -172,8 +179,8 @@ GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
   uint far_faces = 0U;
 
   for (uint axis = 0U; axis < 3U; ++axis) {
-    float coordinate = local_position[axis];
-    float component = local_direction[axis];
+    float coordinate = coordinates[axis];
+    float component = components[axis];
     float half_length = half_extent[axis];
 
     if (component == 0.0F) {

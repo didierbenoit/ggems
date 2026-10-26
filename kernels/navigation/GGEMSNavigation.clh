@@ -70,8 +70,8 @@
 /*!
  * \brief Selected physical event and its arrival owner.
  *
- * The FP32 parameter applies to World, Box, and Sphere movement. Faces is a
- * World or local Box crossing mask, and zero for Sphere.
+ * The FP32 parameter applies to World and analytic-solid movement. Faces is a
+ * World or local planar-solid crossing mask, and zero for curved solids.
  */
 typedef struct GGEMSBoundaryWitness {
   /*! \brief Forward FP32 ray parameter in pm. */

@@ -45,6 +45,8 @@
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
+#include "GGEMS/geometry/GGEMSTrd.hh"
+#include "GGEMS/geometry/GGEMSTrap.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 
@@ -53,6 +55,7 @@
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/detail/GGEMSPlanarGeometry.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/detail/GGEMSGeometrySize.hh"
@@ -281,6 +284,145 @@ BuildSurfaceScale(ggems::geometry::GGEMSEllipsoid const &ellipsoid) noexcept
                                    static_cast<float>(axes.z),
                                  },
                                  false);
+}
+
+/*!
+ * \brief Bounds the actual packed trapezoid and its normal-band expansion.
+ * \param[in] center Canonical global frame origin.
+ * \param[in] rotation Shared proper local-to-global pose.
+ * \param[in] record Four admitted side planes and implicit Z caps.
+ * \return Posed corner envelope, band projection and narrowest normal feature.
+ */
+[[nodiscard]] auto BuildPlanarSurfaceScale(
+  ggems::geometry::Position3PM center,
+  ggems::geometry::GGEMSRotation3D const &rotation,
+  ggems::geometry::GGEMSPlanarRecord const &record) noexcept -> SurfaceScale {
+  std::array const position{
+    static_cast<float>(center.x),
+    static_cast<float>(center.y),
+    static_cast<float>(center.z),
+  };
+
+  std::array const rows{
+    std::array{
+      static_cast<float>(rotation.axis_x.x),
+      static_cast<float>(rotation.axis_y.x),
+      static_cast<float>(rotation.axis_z.x),
+    },
+    std::array{
+      static_cast<float>(rotation.axis_x.y),
+      static_cast<float>(rotation.axis_y.y),
+      static_cast<float>(rotation.axis_z.y),
+    },
+    std::array{
+      static_cast<float>(rotation.axis_x.z),
+      static_cast<float>(rotation.axis_y.z),
+      static_cast<float>(rotation.axis_z.z),
+    },
+  };
+
+  SurfaceScale scale{
+    .band_projection = {},
+    .minimum_half_extent_pm = record.half_length_pm,
+    .local_scale_pm = record.half_length_pm,
+  };
+
+  for (auto const sign_z : {-1.0F, 1.0F}) {
+    auto const z = sign_z * record.half_length_pm;
+    auto const &lower_y = record.sides[0];
+    auto const &upper_y = record.sides[1];
+    auto const center_y =
+      (((lower_y.offset_pm - (lower_y.normal_z * z)) / lower_y.normal_y) +
+       ((upper_y.offset_pm - (upper_y.normal_z * z)) / upper_y.normal_y)) *
+      0.5F;
+
+    auto const &lower_x = record.sides[2];
+    auto const &upper_x = record.sides[3];
+    auto const center_x = (((lower_x.offset_pm - (lower_x.normal_y * center_y) -
+                             (lower_x.normal_z * z)) /
+                            lower_x.normal_x) +
+                           ((upper_x.offset_pm - (upper_x.normal_y * center_y) -
+                             (upper_x.normal_z * z)) /
+                            upper_x.normal_x)) *
+                          0.5F;
+
+    for (auto const &plane : record.sides) {
+      auto const margin = plane.offset_pm - (plane.normal_x * center_x) -
+                          (plane.normal_y * center_y) - (plane.normal_z * z);
+      scale.minimum_half_extent_pm =
+        std::min(scale.minimum_half_extent_pm, static_cast<double>(margin));
+    }
+
+    for (std::size_t side_y = 0U; side_y < 2U; ++side_y) {
+      auto const &plane_y = record.sides[side_y];
+      auto const y =
+        (plane_y.offset_pm - (plane_y.normal_z * z)) / plane_y.normal_y;
+      auto const band_y =
+        (1.0F - (plane_y.normal_z * sign_z)) / plane_y.normal_y;
+      auto const edge_left =
+        (lower_x.offset_pm - (lower_x.normal_y * y) - (lower_x.normal_z * z)) /
+        lower_x.normal_x;
+      auto const edge_right =
+        (upper_x.offset_pm - (upper_x.normal_y * y) - (upper_x.normal_z * z)) /
+        upper_x.normal_x;
+      auto const edge_margin =
+        (edge_right - edge_left) * 0.5F *
+        std::min(std::abs(lower_x.normal_x), std::abs(upper_x.normal_x));
+      scale.minimum_half_extent_pm = std::min(scale.minimum_half_extent_pm,
+                                              static_cast<double>(edge_margin));
+      for (std::size_t side_x = 2U; side_x < 4U; ++side_x) {
+        auto const &plane_x = record.sides[side_x];
+        auto const x = (plane_x.offset_pm - (plane_x.normal_y * y) -
+                        (plane_x.normal_z * z)) /
+                       plane_x.normal_x;
+        auto const band_x =
+          (1.0F - (plane_x.normal_y * band_y) - (plane_x.normal_z * sign_z)) /
+          plane_x.normal_x;
+        scale.local_scale_pm =
+          std::max({scale.local_scale_pm, std::abs(x), std::abs(y)});
+
+        for (std::size_t axis = 0U; axis < 3U; ++axis) {
+          auto const &row = rows[axis];
+          auto const coordinate =
+            position[axis] + (row[0] * x) + (row[1] * y) + (row[2] * z);
+          auto const expansion =
+            (row[0] * band_x) + (row[1] * band_y) + (row[2] * sign_z);
+          scale.envelope_pm[axis] = std::max(
+            scale.envelope_pm[axis], static_cast<double>(std::abs(coordinate)));
+          scale.band_projection[axis] =
+            std::max(scale.band_projection[axis],
+                     static_cast<double>(std::abs(expansion)));
+        }
+      }
+    }
+  }
+  return scale;
+}
+
+/*!
+ * \brief Bounds an authored Trd through its packed planar half-spaces.
+ * \param[in] trd Complete positive-size solid.
+ * \return FP32 surface envelope and normal-band feature margins.
+ */
+[[nodiscard]] auto
+BuildSurfaceScale(ggems::geometry::GGEMSTrd const &trd) noexcept
+  -> SurfaceScale {
+  return BuildPlanarSurfaceScale(
+    trd.GetPositionPM(), trd.GetRotation(),
+    ggems::geometry::detail::BuildPlanarRecord(trd));
+}
+
+/*!
+ * \brief Bounds an authored Trap through its admitted packed half-spaces.
+ * \param[in] trap Complete planar solid.
+ * \return FP32 surface envelope and normal-band feature margins.
+ */
+[[nodiscard]] auto
+BuildSurfaceScale(ggems::geometry::GGEMSTrap const &trap) noexcept
+  -> SurfaceScale {
+  return BuildPlanarSurfaceScale(
+    trap.GetPositionPM(), trap.GetRotation(),
+    ggems::geometry::detail::BuildPlanarRecord(trap));
 }
 
 /*!
@@ -553,6 +695,16 @@ auto GGEMSWorld::GetVolumeNavigationTolerancePM() const noexcept -> float {
                                WorldSpacingPM(half_extent_pm_));
   }
 
+  if (auto const *trd = std::get_if<GGEMSTrd>(&volume_)) {
+    return RequiredTolerancePM(BuildSurfaceScale(*trd),
+                               WorldSpacingPM(half_extent_pm_));
+  }
+
+  if (auto const *trap = std::get_if<GGEMSTrap>(&volume_)) {
+    return RequiredTolerancePM(BuildSurfaceScale(*trap),
+                               WorldSpacingPM(half_extent_pm_));
+  }
+
   return 0.0F;
 }
 
@@ -616,6 +768,34 @@ auto GGEMSWorld::AddVolume(GGEMSEllipsoid ellipsoid) -> GGEMSWorld & {
 
   ellipsoid.Validate();
   volume_ = std::move(ellipsoid);
+
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AddVolume(GGEMSTrd trd) -> GGEMSWorld & {
+  if (!std::holds_alternative<std::monostate>(volume_)) {
+    throw core::GGEMSRecoverable(
+      "The current slice admits at most one analytic volume.");
+  }
+
+  trd.Validate();
+  volume_ = std::move(trd);
+
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AddVolume(GGEMSTrap trap) -> GGEMSWorld & {
+  if (!std::holds_alternative<std::monostate>(volume_)) {
+    throw core::GGEMSRecoverable(
+      "The current slice admits at most one analytic volume.");
+  }
+
+  trap.Validate();
+  volume_ = std::move(trap);
 
   return *this;
 }
@@ -698,6 +878,16 @@ auto GGEMSWorld::Validate() const -> void {
     RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*ellipsoid),
                           world_tolerance, GetVolumeNavigationTolerancePM());
   }
+
+  if (auto const *trd = std::get_if<GGEMSTrd>(&volume_)) {
+    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*trd),
+                          world_tolerance, GetVolumeNavigationTolerancePM());
+  }
+
+  if (auto const *trap = std::get_if<GGEMSTrap>(&volume_)) {
+    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*trap),
+                          world_tolerance, GetVolumeNavigationTolerancePM());
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -733,9 +923,12 @@ auto GGEMSWorld::BuildBoxPoseRecord() const
       using Volume = std::decay_t<decltype(volume)>;
       if constexpr (std::is_same_v<Volume, GGEMSBox> ||
                     std::is_same_v<Volume, GGEMSTubs> ||
-                    std::is_same_v<Volume, GGEMSEllipsoid>) {
+                    std::is_same_v<Volume, GGEMSEllipsoid> ||
+                    std::is_same_v<Volume, GGEMSTrd> ||
+                    std::is_same_v<Volume, GGEMSTrap>) {
         auto const center = volume.GetPositionPM();
         auto const &rotation = volume.GetRotation();
+
         return GGEMSBoxPoseRecord{
           .center_x_pm = static_cast<float>(center.x),
           .center_y_pm = static_cast<float>(center.y),
@@ -843,6 +1036,14 @@ auto GGEMSWorld::GetVolumeMaterial() const
     return &ellipsoid->GetMaterial();
   }
 
+  if (auto const *trd = std::get_if<GGEMSTrd>(&volume_)) {
+    return &trd->GetMaterial();
+  }
+
+  if (auto const *trap = std::get_if<GGEMSTrap>(&volume_)) {
+    return &trap->GetMaterial();
+  }
+
   return nullptr;
 }
 
@@ -913,6 +1114,20 @@ auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id) const
             },
         },
     };
+  }
+
+  if (auto const *trd = std::get_if<GGEMSTrd>(&volume_)) {
+    auto record = detail::BuildPlanarRecord(*trd);
+    record.material_id = material_id;
+    record.tolerance_pm = GetVolumeNavigationTolerancePM();
+    return {.kind = GGEMSAnalyticKind::Trd, .parameters = {.planar = record}};
+  }
+
+  if (auto const *trap = std::get_if<GGEMSTrap>(&volume_)) {
+    auto record = detail::BuildPlanarRecord(*trap);
+    record.material_id = material_id;
+    record.tolerance_pm = GetVolumeNavigationTolerancePM();
+    return {.kind = GGEMSAnalyticKind::Trap, .parameters = {.planar = record}};
   }
 
   return {};

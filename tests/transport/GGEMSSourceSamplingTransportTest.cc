@@ -30,6 +30,7 @@
 #include <cmath>
 #include <limits>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <set>
 #include <span>
@@ -221,7 +222,8 @@ protected:
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
     if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"all"});
+      char const *selected = std::getenv("GGEMS_TEST_DEVICE");
+      opencl.SelectDevices({selected != nullptr ? selected : "all"});
       opencl.Initialize();
     }
 

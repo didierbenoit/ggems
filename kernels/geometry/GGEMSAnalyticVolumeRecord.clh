@@ -49,6 +49,46 @@
 /*! \brief Complete solid Ellipsoid with a separate FP32 pose. */
 #define GGEMS_ANALYTIC_ELLIPSOID 4U
 
+/*! \brief Rectangular-ended trapezoid with independently tapered X and Y. */
+#define GGEMS_ANALYTIC_TRD 5U
+
+/*! \brief General planar trapezoid with inclined and skewed end faces. */
+#define GGEMS_ANALYTIC_TRAP 6U
+
+/*! \brief Scalar 16-byte outward plane, with interior dot(normal,p) <= offset.
+ */
+typedef struct GGEMSPlaneRecord {
+  /*! \brief Unit outward normal X component. */
+  float normal_x;
+
+  /*! \brief Unit outward normal Y component. */
+  float normal_y;
+
+  /*! \brief Unit outward normal Z component. */
+  float normal_z;
+
+  /*! \brief Local signed plane offset in pm. */
+  float offset_pm;
+} GGEMSPlaneRecord;
+
+/*! \brief Scalar 80-byte planar Trd/Trap payload with implicit Z caps. */
+typedef struct GGEMSPlanarRecord {
+  /*! \brief Four outward side planes in the local frame. */
+  GGEMSPlaneRecord sides[4];
+
+  /*! \brief Positive distance to either local Z cap in pm. */
+  float half_length_pm;
+
+  /*! \brief Physical owner identity. */
+  uint volume_id;
+
+  /*! \brief Dense exact Material identity. */
+  uint material_id;
+
+  /*! \brief Closed perpendicular surface half-band in pm. */
+  float tolerance_pm;
+} GGEMSPlanarRecord;
+
 /*! \brief Scalar 24-byte local cylinder and ownership record. */
 typedef struct GGEMSTubsRecord {
   /*! \brief Outer radius in pm. */
@@ -128,9 +168,12 @@ typedef union GGEMSAnalyticParameters {
 
   /*! \brief Ellipsoid semi-axes and identities. */
   GGEMSEllipsoidRecord ellipsoid;
+
+  /*! \brief Trd or Trap side planes, cap length, and identities. */
+  GGEMSPlanarRecord planar;
 } GGEMSAnalyticParameters;
 
-/*! \brief One 32-byte scene record shared by every transport program. */
+/*! \brief One 84-byte scene record shared by every transport program. */
 typedef struct GGEMSAnalyticVolumeRecord {
   /*! \brief GGEMS_ANALYTIC_* predicate selection. */
   uint kind;

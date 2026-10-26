@@ -107,11 +107,11 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
  *
  * \param[in] world Immutable World record.
  * \param[in] volume Immutable tagged volume, or None.
- * \param[in] box_pose Shared rigid pose for Box, Tubs, and Ellipsoid.
+ * \param[in] box_pose Shared rigid pose for every nonspherical solid.
  * \param[in,out] particle Private state with a valid current owner.
  * \param[in,out] event Last accepted event on entry (NONE at birth), updated
  * on success. Retained only while the straight flight direction is unchanged.
- * \param[out] faces World or local Box crossing mask; zero for curved solids.
+ * \param[out] faces World or local planar-solid mask; zero for curved solids.
  * \return GGEMS_NAVIGATION_RESOLVED after an accepted move; otherwise the
  * failed status and the particle is unchanged.
  */

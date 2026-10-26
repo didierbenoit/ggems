@@ -37,6 +37,8 @@
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
+#include "GGEMS/geometry/GGEMSTrd.hh"
+#include "GGEMS/geometry/GGEMSTrap.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -83,6 +85,8 @@ auto BindGeometry(py::module_ &module) -> void {
   using ggems::geometry::GGEMSBox;
   using ggems::geometry::GGEMSEllipsoid;
   using ggems::geometry::GGEMSSphere;
+  using ggems::geometry::GGEMSTrap;
+  using ggems::geometry::GGEMSTrd;
   using ggems::geometry::GGEMSTubs;
   using ggems::geometry::GGEMSWorld;
 
@@ -419,6 +423,220 @@ The material becomes registered as used by the scene. Return this ellipsoid.
       py::arg("name"), py::return_value_policy::reference_internal);
 
   // === === ===
+  py::class_<GGEMSTrd>(
+    module, "GGEMSTrd",
+    R"doc(Configure a solid with independently sized rectangular Z end faces.
+
+All dimensions are full sizes, positive and even in pm after Units conversion.
+Sides connect corresponding end edges; Trd has no end skew or inclination.
+Rigid XYZ rotation is separate. World owns a copy; setters return this object.
+)doc")
+    .def(py::init<>(), "Create a Trd without dimensions or material.")
+
+    .def(
+      "set_negative_z_face",
+      [](GGEMSTrd &self, double size_x, double size_y,
+         std::string const &unit) -> GGEMSTrd & {
+        return self.SetNegativeZFace(
+          MakeQuantityOrThrow<ggems::units::Length>(size_x, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(size_y, unit));
+      },
+      "Set full X/Y sizes at the negative-Z end and return this solid.",
+      py::arg("size_x"), py::arg("size_y"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_positive_z_face",
+      [](GGEMSTrd &self, double size_x, double size_y,
+         std::string const &unit) -> GGEMSTrd & {
+        return self.SetPositiveZFace(
+          MakeQuantityOrThrow<ggems::units::Length>(size_x, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(size_y, unit));
+      },
+      "Set full X/Y sizes at the positive-Z end and return this solid.",
+      py::arg("size_x"), py::arg("size_y"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_length",
+      [](GGEMSTrd &self, double length, std::string const &unit) -> GGEMSTrd & {
+        return self.SetLength(
+          MakeQuantityOrThrow<ggems::units::Length>(length, unit));
+      },
+      "Set the full Z cap-to-cap length and return this solid.",
+      py::arg("length"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_position",
+      [](GGEMSTrd &self, double x, double y, double z,
+         std::string const &unit) -> GGEMSTrd & {
+        return self.SetPosition(ggems::geometry::MakePositionPM(
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
+            .value));
+      },
+      "Set the global position of the local frame origin and return this "
+      "solid.",
+      py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_rotation",
+      [](GGEMSTrd &self, double rx, double ry, double rz,
+         std::string const &unit) -> GGEMSTrd & {
+        return self.SetRotation(
+          MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
+      },
+      R"doc(Replace the absolute right-handed fixed-axis rotation Rz * Ry * Rx.
+
+Return this solid. Rotation acts about the local frame origin.
+)doc",
+      py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_material",
+      [](GGEMSTrd &self, std::string const &name) -> GGEMSTrd & {
+        return self.SetMaterial(ResolveMaterial(name));
+      },
+      R"doc(Set an owned medium by exact registered, built-in or custom name.
+
+The Material becomes registered as used by the scene. Return this solid.
+)doc",
+      py::arg("name"), py::return_value_policy::reference_internal);
+
+  // === === ===
+  py::class_<GGEMSTrap>(module, "GGEMSTrap",
+                        R"doc(Configure a general planar-faced trapezoid.
+
+All dimensions are full sizes, positive and even in pm after Units conversion.
+End-face height and two X widths follow the G4Trap geometric convention.
+Inclination shifts the end centers; skew shifts X within each end face.
+The side faces must be planar within the automatic local FP32 surface band:
+incompatible end skews or width gradients fail when added to World.
+Rigid XYZ rotation is separate. World owns a copy; setters return this object.
+)doc")
+    .def(py::init<>(), "Create a Trap without dimensions or material.")
+
+    .def(
+      "set_negative_z_face",
+      [](GGEMSTrap &self, double height_y, double width_at_negative_y,
+         double width_at_positive_y, double skew, std::string const &unit,
+         std::string const &angle_unit) -> GGEMSTrap & {
+        return self.SetNegativeZFace(
+          MakeQuantityOrThrow<ggems::units::Length>(height_y, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(width_at_negative_y, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(width_at_positive_y, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(skew, angle_unit));
+      },
+      R"doc(Set full Y height, negative-Y X width, positive-Y X width and end skew.
+
+The face lies at -half the Z length. Its X center at local Y offset v is
+v * tan(skew). Skew must lie strictly between -90 and +90 degrees.
+eturn this solid; side planarity is checked when copied into World.
+)doc",
+      py::arg("height_y"), py::arg("width_at_negative_y"),
+      py::arg("width_at_positive_y"), py::arg("skew") = 0.0,
+      py::arg("unit") = "mm", py::arg("angle_unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_positive_z_face",
+      [](GGEMSTrap &self, double height_y, double width_at_negative_y,
+         double width_at_positive_y, double skew, std::string const &unit,
+         std::string const &angle_unit) -> GGEMSTrap & {
+        return self.SetPositiveZFace(
+          MakeQuantityOrThrow<ggems::units::Length>(height_y, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(width_at_negative_y, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(width_at_positive_y, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(skew, angle_unit));
+      },
+      R"doc(Set full Y height, negative-Y X width, positive-Y X width and end skew.
+
+The face lies at +half the Z length. Its X center at local Y offset v is
+v * tan(skew). Skew must lie strictly between -90 and +90 degrees.
+Return this solid; side planarity is checked when copied into World.
+)doc",
+      py::arg("height_y"), py::arg("width_at_negative_y"),
+      py::arg("width_at_positive_y"), py::arg("skew") = 0.0,
+      py::arg("unit") = "mm", py::arg("angle_unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_length",
+      [](GGEMSTrap &self, double length,
+         std::string const &unit) -> GGEMSTrap & {
+        return self.SetLength(
+          MakeQuantityOrThrow<ggems::units::Length>(length, unit));
+      },
+      "Set the full Z cap-to-cap length and return this solid.",
+      py::arg("length"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_inclination",
+      [](GGEMSTrap &self, double theta, double phi,
+         std::string const &unit) -> GGEMSTrap & {
+        return self.SetInclination(
+          MakeQuantityOrThrow<ggems::units::Angle>(theta, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(phi, unit));
+      },
+      R"doc(Set the center-line inclination separately from rigid rotation.
+
+The face center at local z is z * tan(theta) * (cos(phi), sin(phi)).
+Theta must lie strictly between -90 and +90 degrees; phi is azimuth from +X
+toward +Y. Return this solid.
+)doc",
+      py::arg("theta"), py::arg("phi"), py::arg("unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_position",
+      [](GGEMSTrap &self, double x, double y, double z,
+         std::string const &unit) -> GGEMSTrap & {
+        return self.SetPosition(ggems::geometry::MakePositionPM(
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
+            .value));
+      },
+      "Set the global position of the local frame origin and return this "
+      "solid.",
+      py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_rotation",
+      [](GGEMSTrap &self, double rx, double ry, double rz,
+         std::string const &unit) -> GGEMSTrap & {
+        return self.SetRotation(
+          MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
+      },
+      R"doc(Replace the absolute right-handed fixed-axis rotation Rz * Ry * Rx.
+
+Return this solid. Rotation acts about the local frame origin.
+)doc",
+      py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_material",
+      [](GGEMSTrap &self, std::string const &name) -> GGEMSTrap & {
+        return self.SetMaterial(ResolveMaterial(name));
+      },
+      R"doc(Set an owned medium by exact registered, built-in or custom name.
+
+The Material becomes registered as used by the scene. Return this solid.
+)doc",
+      py::arg("name"), py::return_value_policy::reference_internal);
+
+  // === === ===
   py::class_<GGEMSWorld>(module, "GGEMSWorld",
                          R"doc(Configure the finite World of a GGEMS scene.
 
@@ -494,7 +712,7 @@ Example:
 
 The volume must be complete (size and material set) and is copied into the
 World; later edits of the caller's object do not reach the copy. The current
-implementation admits at most one Box, Sphere, Tubs, or Ellipsoid in total.
+implementation admits at most one Box, Sphere, Tubs, Ellipsoid, Trd, or Trap.
 Strict containment in the World is
 checked when the World is attached with GGEMSRun.set_world().
 
@@ -536,6 +754,24 @@ Return this World for chaining.
 Semi-axes and material must be set. A second volume of any shape is rejected.
 Strict containment and FP32 band admission are checked by set_world().
 Return this World for chaining.
+)doc",
+         py::arg("volume"), py::return_value_policy::reference_internal)
+
+    .def("add_volume", py::overload_cast<GGEMSTrd>(&GGEMSWorld::AddVolume),
+         R"doc(Copy a complete Trd into the single-volume World.
+
+Both end sizes, full length and material must be set. A second volume is
+rejected. Strict containment and FP32 bands are checked by set_world().
+Return this World for chaining.
+)doc",
+         py::arg("volume"), py::return_value_policy::reference_internal)
+
+    .def("add_volume", py::overload_cast<GGEMSTrap>(&GGEMSWorld::AddVolume),
+         R"doc(Copy a complete planar Trap into the single-volume World.
+
+Both end dimensions, full length and material must be set. Incompatible
+nonplanar sides and a second volume are rejected. Strict containment and
+FP32 bands are checked by set_world(). Return this World for chaining.
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal);
 }
