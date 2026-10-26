@@ -40,8 +40,56 @@
 /*! \brief Local Box with a separate FP32 pose. */
 #define GGEMS_ANALYTIC_BOX 1U
 
+/*! \brief Full-azimuth finite cylinder with an optional bore. */
+#define GGEMS_ANALYTIC_TUBS 2U
+
 /*! \brief Full solid Sphere. */
 #define GGEMS_ANALYTIC_SPHERE 3U
+
+/*! \brief Complete solid Ellipsoid with a separate FP32 pose. */
+#define GGEMS_ANALYTIC_ELLIPSOID 4U
+
+/*! \brief Scalar 24-byte local cylinder and ownership record. */
+typedef struct GGEMSTubsRecord {
+  /*! \brief Outer radius in pm. */
+  float outer_radius_pm;
+
+  /*! \brief Bore radius in pm; zero means a filled cylinder. */
+  float inner_radius_pm;
+
+  /*! \brief Half of the full local Z length in pm. */
+  float half_length_pm;
+
+  /*! \brief Physical owner identity. */
+  uint volume_id;
+
+  /*! \brief Dense exact Material identity. */
+  uint material_id;
+
+  /*! \brief Closed radial and cap surface half-band in pm. */
+  float tolerance_pm;
+} GGEMSTubsRecord;
+
+/*! \brief Scalar 24-byte local ellipsoid and ownership record. */
+typedef struct GGEMSEllipsoidRecord {
+  /*! \brief Positive local X semi-axis in pm. */
+  float semi_axis_x_pm;
+
+  /*! \brief Positive local Y semi-axis in pm. */
+  float semi_axis_y_pm;
+
+  /*! \brief Positive local Z semi-axis in pm. */
+  float semi_axis_z_pm;
+
+  /*! \brief Physical owner identity. */
+  uint volume_id;
+
+  /*! \brief Dense exact Material identity. */
+  uint material_id;
+
+  /*! \brief Closed semi-axis surface half-band in pm. */
+  float tolerance_pm;
+} GGEMSEllipsoidRecord;
 
 /*! \brief Scalar 28-byte ball and ownership record, matching the host. */
 typedef struct GGEMSSphereRecord {
@@ -74,6 +122,12 @@ typedef union GGEMSAnalyticParameters {
 
   /*! \brief Sphere center, radius, and identities. */
   GGEMSSphereRecord sphere;
+
+  /*! \brief Cylinder radii, half length, and identities. */
+  GGEMSTubsRecord tubs;
+
+  /*! \brief Ellipsoid semi-axes and identities. */
+  GGEMSEllipsoidRecord ellipsoid;
 } GGEMSAnalyticParameters;
 
 /*! \brief One 32-byte scene record shared by every transport program. */

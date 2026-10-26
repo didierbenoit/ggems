@@ -1,0 +1,290 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Resolves full-azimuth finite cylinder and bore crossings in FP32.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_TUBS_NAVIGATION_CLH
+#define GGEMS_TUBS_NAVIGATION_CLH
+
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "geometry/GGEMSBoxPoseRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "navigation/GGEMSBoxNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*!
+ * \brief Prepares the radial quadratic without assuming a unit direction.
+ * \param[in] position Local position in pm.
+ * \param[in] direction Actual local direction.
+ * \return Inverse transverse speed, closest parameter, and radius squared.
+ */
+static inline float3 GGEMS_TubsRadialRay(float3 position, float3 direction) {
+  float a = dot(direction.xy, direction.xy);
+
+  if (a == 0.0F) {
+    return (float3)(0.0F, 0.0F, dot(position.xy, position.xy));
+  }
+
+  float closest_parameter = -dot(position.xy, direction.xy) / a;
+  float2 closest = position.xy + closest_parameter * direction.xy;
+
+  return (float3)(1.0F / sqrt(a), closest_parameter, dot(closest, closest));
+}
+
+/*!
+ * \brief Clips an outer radial interval by the caps and subtracts an optional
+ * bore.
+ *
+ * The two ordered material intervals occupy xy and zw. An absent interval is
+ * represented by (+infinity, -infinity). Filled cylinders never acquire an
+ * inner surface. Tangencies have no positive-length interval.
+ * \param[in] radial Prepared radial ray.
+ * \param[in] position_z Local Z coordinate in pm.
+ * \param[in] direction_z Local Z direction.
+ * \param[in] outer_radius Outer radius in pm.
+ * \param[in] inner_radius Bore radius in pm; zero disables the bore.
+ * \param[in] half_length Local Z half length in pm.
+ * \return Up to two ordered ray intervals in pm.
+ */
+static inline float4 GGEMS_TubsIntervals(float3 radial, float position_z,
+                                         float direction_z, float outer_radius,
+                                         float inner_radius,
+                                         float half_length) {
+  float4 intervals = (float4)(INFINITY, -INFINITY, INFINITY, -INFINITY);
+
+  if (radial.z >= outer_radius * outer_radius) {
+    return intervals;
+  }
+
+  float near = -INFINITY;
+  float far = INFINITY;
+
+  if (radial.x != 0.0F) {
+    float half_chord = sqrt(outer_radius * outer_radius - radial.z) * radial.x;
+    near = radial.y - half_chord;
+    far = radial.y + half_chord;
+  }
+
+  if (direction_z == 0.0F) {
+    if (fabs(position_z) >= half_length) {
+      return intervals;
+    }
+  } else {
+    float first = (-half_length - position_z) / direction_z;
+    float second = (half_length - position_z) / direction_z;
+    near = fmax(near, fmin(first, second));
+    far = fmin(far, fmax(first, second));
+  }
+
+  if (near >= far) {
+    return intervals;
+  }
+  intervals.xy = (float2)(near, far);
+
+  if (inner_radius == 0.0F || radial.z >= inner_radius * inner_radius) {
+    return intervals;
+  }
+
+  if (radial.x == 0.0F) {
+    return (float4)(INFINITY, -INFINITY, INFINITY, -INFINITY);
+  }
+
+  float half_chord = sqrt(inner_radius * inner_radius - radial.z) * radial.x;
+  float first_end = fmin(far, radial.y - half_chord);
+  float second_begin = fmax(near, radial.y + half_chord);
+  intervals.xy = near < first_end ? (float2)(near, first_end)
+                                  : (float2)(INFINITY, -INFINITY);
+  intervals.zw = second_begin < far ? (float2)(second_begin, far)
+                                    : (float2)(INFINITY, -INFINITY);
+
+  return intervals;
+}
+
+/*!
+ * \brief Locates a birth in the forward medium of the radial and cap bands.
+ * \param[in] tubs Local dimensions, automatic band, and ownership.
+ * \param[in] pose Shared rigid pose.
+ * \param[in] position World-validated global position in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed forward VolumeID/MaterialID.
+ * \return Resolved according to the closed FP32 surface bands.
+ */
+static inline uint GGEMS_TubsLocate(__global GGEMSTubsRecord const *tubs,
+                                    __global GGEMSBoxPoseRecord const *pose,
+                                    float3 position, float3 direction,
+                                    ulong *owner) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+  float tolerance = tubs->tolerance_pm;
+  float outer_inner = tubs->outer_radius_pm - tolerance;
+  float outer_outer = tubs->outer_radius_pm + tolerance;
+  float bore_inner =
+    tubs->inner_radius_pm == 0.0F ? 0.0F : tubs->inner_radius_pm - tolerance;
+  float bore_outer =
+    tubs->inner_radius_pm == 0.0F ? 0.0F : tubs->inner_radius_pm + tolerance;
+  float radius_squared = dot(local_position.xy, local_position.xy);
+  uint inside =
+    fabs(local_position.z) < tubs->half_length_pm - tolerance &&
+    radius_squared < outer_inner * outer_inner &&
+    (bore_outer == 0.0F || radius_squared > bore_outer * bore_outer);
+
+  if (inside == 0U &&
+      fabs(local_position.z) <= tubs->half_length_pm + tolerance &&
+      radius_squared <= outer_outer * outer_outer &&
+      (bore_inner == 0.0F || radius_squared >= bore_inner * bore_inner)) {
+    float3 radial = GGEMS_TubsRadialRay(local_position, local_direction);
+
+    float4 expanded = GGEMS_TubsIntervals(
+      radial, local_position.z, local_direction.z, outer_outer, bore_inner,
+      tubs->half_length_pm + tolerance);
+
+    float4 contracted = GGEMS_TubsIntervals(
+      radial, local_position.z, local_direction.z, outer_inner, bore_outer,
+      tubs->half_length_pm - tolerance);
+
+    for (uint segment = 0U; segment < 2U; ++segment) {
+      float begin = expanded[2U * segment];
+      float end = expanded[2U * segment + 1U];
+
+      if (begin <= 0.0F && end >= 0.0F) {
+        inside |= fmax(0.0F, contracted.x) < fmin(end, contracted.y) ||
+                  fmax(0.0F, contracted.z) < fmin(end, contracted.w);
+      }
+    }
+  }
+
+  *owner = inside != 0U
+             ? ((ulong)tubs->volume_id << 32U) | tubs->material_id
+             : ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects the next material interval, including reentry beyond a bore.
+ *
+ * Only contacts reaching the contracted material or contracted bore resolve a
+ * transition. Nominal surfaces determine accepted movement. After an exit,
+ * the just-left interval is skipped while a later wall remains eligible.
+ * \param[in] tubs Local dimensions, automatic band, and ownership.
+ * \param[in] pose Shared rigid pose.
+ * \param[in] position Global FP32 anchor in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] last_event Previously accepted event for this straight direction.
+ * \param[in,out] witness World exit on entry; selected crossing on success.
+ * \return Resolved or unresolved for missing, nonfinite, or misordered
+ * movement.
+ */
+static inline uint
+GGEMS_TubsFindBoundary(__global GGEMSTubsRecord const *tubs,
+                       __global GGEMSBoxPoseRecord const *pose, float3 position,
+                       float3 direction, uint current_owner, uint last_event,
+                       GGEMSBoundaryWitness *witness) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  float3 radial = GGEMS_TubsRadialRay(local_position, local_direction);
+  float bore = tubs->inner_radius_pm;
+  float contracted_bore = bore - tubs->tolerance_pm;
+
+  if (bore != 0.0F && radial.x != 0.0F &&
+      radial.z >= contracted_bore * contracted_bore) {
+    bore = 0.0F;
+  }
+
+  float4 nominal =
+    GGEMS_TubsIntervals(radial, local_position.z, local_direction.z,
+                        tubs->outer_radius_pm, bore, tubs->half_length_pm);
+  uint inside = current_owner == tubs->volume_id;
+  float4 contracted;
+
+  if (inside == 0U) {
+    contracted =
+      GGEMS_TubsIntervals(radial, local_position.z, local_direction.z,
+                          tubs->outer_radius_pm - tubs->tolerance_pm,
+                          tubs->inner_radius_pm == 0.0F
+                            ? 0.0F
+                            : tubs->inner_radius_pm + tubs->tolerance_pm,
+                          tubs->half_length_pm - tubs->tolerance_pm);
+  }
+
+  float candidate = INFINITY;
+  for (uint segment = 0U; segment < 2U; ++segment) {
+    float begin = nominal[2U * segment];
+    float end = nominal[2U * segment + 1U];
+
+    if (end <= 0.0F || begin >= end) {
+      continue;
+    }
+
+    if (inside != 0U) {
+      candidate = end;
+      break;
+    }
+
+    if (last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT && begin <= 0.0F) {
+      continue;
+    }
+
+    float forward = fmax(0.0F, begin);
+
+    if (fmax(forward, contracted.x) < fmin(end, contracted.y) ||
+        fmax(forward, contracted.z) < fmin(end, contracted.w)) {
+      candidate = forward;
+      break;
+    }
+  }
+
+  if (candidate == INFINITY && inside == 0U) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  if (GGEMS_NavigationIsFinite(candidate) == 0U ||
+      candidate >= witness->parameter) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  witness->parameter = candidate;
+  witness->faces = 0U;
+  witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id =
+    inside != 0U ? GGEMS_VOLUME_ID_WORLD : tubs->volume_id;
+  witness->arrival_material_id =
+    inside != 0U ? GGEMS_MATERIAL_ID_WORLD : tubs->material_id;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

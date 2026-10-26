@@ -35,6 +35,8 @@
 
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
+#include "GGEMS/geometry/GGEMSTubs.hh"
+#include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -72,14 +74,16 @@ using ggems::python::detail::MakeQuantityOrThrow;
 /*!
  * \brief Registers GGEMS geometry authoring bindings in a Python module.
  *
- * Box and Sphere are registered before World so that add_volume() exposes the
+ * Analytic volumes are registered before World so that add_volume() exposes the
  * Python type of its argument.
  *
  * \param[in,out] module Python module receiving the bindings.
  */
 auto BindGeometry(py::module_ &module) -> void {
   using ggems::geometry::GGEMSBox;
+  using ggems::geometry::GGEMSEllipsoid;
   using ggems::geometry::GGEMSSphere;
+  using ggems::geometry::GGEMSTubs;
   using ggems::geometry::GGEMSWorld;
 
   // === === ===
@@ -217,6 +221,7 @@ Odd picometer radii are allowed. The default center is the global origin.
 Configuration methods return this Sphere for chaining.
 )doc")
     .def(py::init<>(), "Create a Sphere without radius or material.")
+
     .def(
       "set_radius",
       [](GGEMSSphere &self, double radius,
@@ -259,6 +264,157 @@ The material becomes registered as used by the scene.
 
 Returns:
     GGEMSSphere: This Sphere, allowing chained configuration.
+)doc",
+      py::arg("name"), py::return_value_policy::reference_internal);
+
+  // === === ===
+  py::class_<GGEMSTubs>(
+    module, "GGEMSTubs",
+    R"doc(Configure a finite full-azimuth circular cylinder or hollow tube along local +Z.
+
+The default pose is centered at the global origin with identity rotation.
+Configuration methods return the same object for chaining. World owns a copy.
+)doc")
+    .def(py::init<>(), "Create a tube without dimensions or material.")
+
+    .def(
+      "set_radii",
+      [](GGEMSTubs &self, double outer_radius, double inner_radius,
+         std::string const &unit) -> GGEMSTubs & {
+        return self.SetRadii(
+          MakeQuantityOrThrow<ggems::units::Length>(outer_radius, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(inner_radius, unit));
+      },
+      R"doc(Set radii, not diameters, satisfying 0 <= inner_radius < outer_radius.
+
+Zero inner radius gives a filled cylinder with no inner wall. Return this tube.
+)doc",
+      py::arg("outer_radius"), py::arg("inner_radius") = 0.0,
+      py::arg("unit") = "mm", py::return_value_policy::reference_internal)
+
+    .def(
+      "set_length",
+      [](GGEMSTubs &self, double length,
+         std::string const &unit) -> GGEMSTubs & {
+        return self.SetLength(
+          MakeQuantityOrThrow<ggems::units::Length>(length, unit));
+      },
+      R"doc(Set the full cap-to-cap length along local Z and return this tube.
+
+The length must convert to a positive even number of picometers. Caps are at
++/- half length. The azimuth is always the full 360 degrees.
+)doc",
+      py::arg("length"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_position",
+      [](GGEMSTubs &self, double x, double y, double z,
+         std::string const &unit) -> GGEMSTubs & {
+        return self.SetPosition(ggems::geometry::MakePositionPM(
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
+            .value));
+      },
+      "Set the global geometric center and return this tube.", py::arg("x"),
+      py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_rotation",
+      [](GGEMSTubs &self, double rx, double ry, double rz,
+         std::string const &unit) -> GGEMSTubs & {
+        return self.SetRotation(
+          MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
+      },
+      R"doc(Assign the absolute active rotation Rz * Ry * Rx about the center.
+
+Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
+Calls replace the previous rotation and return this tube.
+)doc",
+      py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_material",
+      [](GGEMSTubs &self, std::string const &name) -> GGEMSTubs & {
+        return self.SetMaterial(ResolveMaterial(name));
+      },
+      R"doc(Set the medium by exact registered, built-in, or custom material name.
+
+The material becomes registered as used by the scene. Return this tube.
+)doc",
+      py::arg("name"), py::return_value_policy::reference_internal);
+
+  // === === ===
+  py::class_<GGEMSEllipsoid>(
+    module, "GGEMSEllipsoid",
+    R"doc(Configure a complete solid ellipsoid with local X/Y/Z semi-axes and a rigid pose.
+
+The default pose is centered at the global origin with identity rotation.
+Configuration methods return the same object for chaining. World owns a copy.
+)doc")
+    .def(py::init<>(), "Create an ellipsoid without dimensions or material.")
+
+    .def(
+      "set_semi_axes",
+      [](GGEMSEllipsoid &self, double x, double y, double z,
+         std::string const &unit) -> GGEMSEllipsoid & {
+        return self.SetSemiAxes(
+          MakeQuantityOrThrow<ggems::units::Length>(x, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(y, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(z, unit));
+      },
+      R"doc(Set the strictly positive local X/Y/Z semi-axes and return this ellipsoid.
+
+These are radii, not full dimensions. Odd picometer values are allowed. The
+complete local surface is (x/a)^2 + (y/b)^2 + (z/c)^2 = 1, without cut planes.
+)doc",
+      py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_position",
+      [](GGEMSEllipsoid &self, double x, double y, double z,
+         std::string const &unit) -> GGEMSEllipsoid & {
+        return self.SetPosition(ggems::geometry::MakePositionPM(
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
+            .value));
+      },
+      "Set the global geometric center and return this ellipsoid.",
+      py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_rotation",
+      [](GGEMSEllipsoid &self, double rx, double ry, double rz,
+         std::string const &unit) -> GGEMSEllipsoid & {
+        return self.SetRotation(
+          MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
+      },
+      R"doc(Assign the absolute active rotation Rz * Ry * Rx about the center.
+
+Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
+Calls replace the previous rotation and return this ellipsoid.
+)doc",
+      py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_material",
+      [](GGEMSEllipsoid &self, std::string const &name) -> GGEMSEllipsoid & {
+        return self.SetMaterial(ResolveMaterial(name));
+      },
+      R"doc(Set the medium by exact registered, built-in, or custom material name.
+
+The material becomes registered as used by the scene. Return this ellipsoid.
 )doc",
       py::arg("name"), py::return_value_policy::reference_internal);
 
@@ -338,7 +494,8 @@ Example:
 
 The volume must be complete (size and material set) and is copied into the
 World; later edits of the caller's object do not reach the copy. The current
-implementation admits at most one GGEMSBox or one GGEMSSphere in total. Strict containment in the World is
+implementation admits at most one Box, Sphere, Tubs, or Ellipsoid in total.
+Strict containment in the World is
 checked when the World is attached with GGEMSRun.set_world().
 
 Args:
@@ -351,14 +508,34 @@ Example:
     world.add_volume(box)
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal)
+
     .def("add_volume", py::overload_cast<GGEMSSphere>(&GGEMSWorld::AddVolume),
          R"doc(Copy a complete Sphere into the single-volume World.
 
-Radius and material must be set. A second volume is rejected, including a Box.
+Radius and material must be set. A second volume of any shape is rejected.
 Strict World containment is checked by GGEMSRun.set_world().
 
 Returns:
     GGEMSWorld: This World, allowing chained configuration.
+)doc",
+         py::arg("volume"), py::return_value_policy::reference_internal)
+
+    .def("add_volume", py::overload_cast<GGEMSTubs>(&GGEMSWorld::AddVolume),
+         R"doc(Copy a complete Tubs into the single-volume World.
+
+Radii, full length, and material must be set. A second volume of any shape is
+rejected. Strict containment and FP32 band admission are checked by set_world().
+Return this World for chaining.
+)doc",
+         py::arg("volume"), py::return_value_policy::reference_internal)
+
+    .def("add_volume",
+         py::overload_cast<GGEMSEllipsoid>(&GGEMSWorld::AddVolume),
+         R"doc(Copy a complete Ellipsoid into the single-volume World.
+
+Semi-axes and material must be set. A second volume of any shape is rejected.
+Strict containment and FP32 band admission are checked by set_world().
+Return this World for chaining.
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal);
 }

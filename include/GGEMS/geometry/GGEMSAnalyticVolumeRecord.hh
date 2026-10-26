@@ -43,8 +43,16 @@ enum class GGEMSAnalyticKind : std::uint32_t {
   /*! \brief Local Box with a separate FP32 pose. */
   Box = 1,
 
+  /*!
+   * \brief Full-azimuth finite cylinder with an optional bore and shared pose.
+   */
+  Tubs = 2,
+
   /*! \brief Full ball with FP32 center and radius. */
   Sphere = 3,
+
+  /*! \brief Complete ellipsoid with local semi-axes and shared pose. */
+  Ellipsoid = 4,
 };
 
 /*! \brief Scalar 28-byte Sphere parameters, identities and tolerance. */
@@ -71,6 +79,48 @@ struct GGEMSSphereRecord {
   float tolerance_pm{0.0F};
 };
 
+/*! \brief Scalar 24-byte full-azimuth tube parameters in its local frame. */
+struct GGEMSTubsRecord {
+  /*! \brief Positive outer radius in pm. */
+  float outer_radius_pm{0.0F};
+
+  /*! \brief Bore radius in pm; zero means no inner wall. */
+  float inner_radius_pm{0.0F};
+
+  /*! \brief Positive center-to-cap length along local Z in pm. */
+  float half_length_pm{0.0F};
+
+  /*! \brief Snapshot-local physical owner. */
+  std::uint32_t volume_id{1};
+
+  /*! \brief Exact dense snapshot-local Material identity. */
+  std::uint32_t material_id{0};
+
+  /*! \brief Closed radial and cap surface half-band in FP32 pm. */
+  float tolerance_pm{0.0F};
+};
+
+/*! \brief Scalar 24-byte complete ellipsoid parameters in its local frame. */
+struct GGEMSEllipsoidRecord {
+  /*! \brief Positive local X semi-axis in pm. */
+  float semi_axis_x_pm{0.0F};
+
+  /*! \brief Positive local Y semi-axis in pm. */
+  float semi_axis_y_pm{0.0F};
+
+  /*! \brief Positive local Z semi-axis in pm. */
+  float semi_axis_z_pm{0.0F};
+
+  /*! \brief Snapshot-local physical owner. */
+  std::uint32_t volume_id{1};
+
+  /*! \brief Exact dense snapshot-local Material identity. */
+  std::uint32_t material_id{0};
+
+  /*! \brief Closed surface half-band applied to the semi-axes in FP32 pm. */
+  float tolerance_pm{0.0F};
+};
+
 /*! \brief Stores only the shape payload selected by the enclosing tag. */
 union GGEMSAnalyticParameters {
   /*! \brief Local Box half extents and owner identities. */
@@ -78,13 +128,19 @@ union GGEMSAnalyticParameters {
 
   /*! \brief Full Sphere; no rotation is stored or allocated. */
   GGEMSSphereRecord sphere;
+
+  /*! \brief Full-azimuth finite cylinder or hollow tube. */
+  GGEMSTubsRecord tubs;
+
+  /*! \brief Complete solid ellipsoid. */
+  GGEMSEllipsoidRecord ellipsoid;
 };
 
 /*!
  * \brief Scalar 32-byte scene record, including the no-volume case.
  *
- * Mirrors GGEMSAnalyticVolumeRecord.clh. Every Box uses the separately
- * supplied GGEMSBoxPoseRecord. All programs receive this same scene layout.
+ * Mirrors GGEMSAnalyticVolumeRecord.clh. Box, Tubs and Ellipsoid reuse the
+ * separately supplied GGEMSBoxPoseRecord. All programs share this scene layout.
  */
 struct GGEMSAnalyticVolumeRecord {
   /*! \brief Predicate and active union member. */

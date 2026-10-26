@@ -68,7 +68,7 @@ namespace ggems::test {
 using namespace ggems::core;
 
 inline constexpr std::size_t k_trace_stride{9U};
-inline constexpr std::size_t k_initial_owner_index{1U + (3U * k_trace_stride)};
+inline constexpr std::size_t k_initial_owner_index{1U + (5U * k_trace_stride)};
 inline constexpr std::size_t k_trace_values{k_initial_owner_index + 3U};
 
 /*! \brief Replaces one unique occurrence or throws. */
@@ -90,7 +90,7 @@ inline auto ReplaceUnique(std::string &source, std::string const &before,
  * transaction it records departure owner, arrival owner, crossed planes,
  * committed position, event and arrival Material. The selected parameter is
  * captured from the actual transaction witness, without repeating its query.
- * Initial owner, Material and location status follow the three event slots.
+ * Initial owner, Material and location status follow the five event slots.
  * Every instrumentation anchor must be unique. No production hook is added.
  */
 inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
@@ -241,7 +241,7 @@ inline auto RunStream(ocl::GGEMSOpenCLContext &context,
   kernel.SetArgSVMPointer(19U, emission_ranges.GetData());
   kernel.SetArgSVMPointer(20U, world_buffer.GetData());
   kernel.SetArgSVMPointer(21U, volume_buffer.GetData());
-  // Match production: the pose argument is ignored outside Box.
+  // Match production: every oriented analytic family shares the pose argument.
   kernel.SetArgSVMPointer(22U, pose_buffer ? pose_buffer->GetData()
                                            : volume_buffer.GetData());
   if (capture_trace) {

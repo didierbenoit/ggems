@@ -36,6 +36,8 @@
 #include <variant>
 
 #include "GGEMS/geometry/GGEMSSphere.hh"
+#include "GGEMS/geometry/GGEMSTubs.hh"
+#include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
@@ -112,17 +114,17 @@ public:
 
   /*!
    * \brief Returns the effective single-volume surface half-band in FP32 pm.
-   * \return Uploaded Box/Sphere half-band, or zero for a World-only scene.
+   * \return Uploaded analytic half-band, or zero for a World-only scene.
    */
   [[nodiscard]] auto GetVolumeNavigationTolerancePM() const noexcept -> float;
 
   /*!
    * \brief Adds one complete physical volume owned by this World.
    *
-   * The current slice admits at most one Box or one Sphere; a World without
-   * volumes remains valid. Strict containment is checked by Validate(), so the
-   * World size may still be set afterwards. Later edits of the caller's Box do
-   * not reach the owned copy.
+   * The current slice admits at most one Box, Sphere, Tubs or Ellipsoid; a
+   * World without volumes remains valid. Strict containment is checked by
+   * Validate(), so the World size may still be set afterwards. Later edits of
+   * the caller's Box do not reach the owned copy.
    *
    * \param[in] box Complete Box authoring value copied into the World.
    * \return This World for chained configuration.
@@ -139,6 +141,23 @@ public:
    * incomplete.
    */
   auto AddVolume(GGEMSSphere sphere) -> GGEMSWorld &;
+
+  /*!
+   * \brief Copies one complete Tubs into the single-volume World.
+   * \param[in] tubs Complete tube, independent of the caller after copying.
+   * \return This World for chained configuration.
+   * \throws GGEMSRecoverable If a volume is present or the tube is incomplete.
+   */
+  auto AddVolume(GGEMSTubs tubs) -> GGEMSWorld &;
+
+  /*!
+   * \brief Copies one complete Ellipsoid into the single-volume World.
+   * \param[in] ellipsoid Complete ellipsoid, copied into the World.
+   * \return This World for chained configuration.
+   * \throws GGEMSRecoverable If a volume is present or the ellipsoid is
+   * incomplete.
+   */
+  auto AddVolume(GGEMSEllipsoid ellipsoid) -> GGEMSWorld &;
 
   /*!
    * \brief Packs the single volume, or a None tag for a World-only scene.
@@ -162,8 +181,9 @@ public:
    *
    * Every volume must lie strictly inside the World: no surface may touch
    * or cross a World face. Sphere containment is exact in integer pm. Rotated
-   * bounds include FP64 roundoff; identity bounds retain the exact integer
-   * containment check.
+   * Box bounds include FP64 roundoff; identity Box bounds retain the exact
+   * integer containment check. Tubs/Ellipsoid use their uploaded posed surface
+   * bounds with separated FP32 feature and World bands.
    *
    * \throws GGEMSRecoverable If the World size or Material is not set, or if a
    * volume is not strictly inside the World, or the requested FP32 tolerance
@@ -172,8 +192,7 @@ public:
   auto Validate() const -> void;
 
   /*!
-   * \brief Packs the owned Box into device records; empty for Sphere or
-   * World-only.
+   * \brief Packs the owned Box into device records; empty for other shapes.
    *
    * Admission belongs to Validate(); this method only packs. Volume
    * identity is 1 after the World (identity 0). Every Box stores local half
@@ -181,7 +200,7 @@ public:
    *
    * \param[in] material_ids Dense snapshot-local Material identity of each
    * Box, supplied by the scene compiler in GetBoxes() order.
-   * \return One record for Box; empty for Sphere or World-only.
+   * \return One record for Box; empty for other shapes or World-only.
    * \pre Validate() has succeeded and the World has not been modified since.
    * \pre material_ids has exactly one entry per owned Box.
    */
@@ -190,9 +209,10 @@ public:
     -> std::vector<GGEMSBoxRecord>;
 
   /*!
-   * \brief Packs the center and FP32 pose for the single Box.
-   * \return A pose for every Box, including identity; none for Sphere or
-   * World-only.
+   * \brief Packs the shared center and FP32 pose for Box, Tubs or Ellipsoid.
+   *
+   * \return The posed shape's record, including identity; none for Sphere or
+   * World-only. The established Box record and upload argument are reused.
    * \pre Validate() has succeeded since the last scene edit.
    */
   [[nodiscard]] auto BuildBoxPoseRecord() const
@@ -253,7 +273,7 @@ public:
     -> core::materials::GGEMSMaterial const &;
 
   /*!
-   * \brief Returns the owned Box view; empty for Sphere or World-only.
+   * \brief Returns the owned Box view; empty for other shapes or World-only.
    *
    * \return A borrowed view; AddVolume() invalidates it.
    */
@@ -267,7 +287,8 @@ private:
   std::optional<core::materials::GGEMSMaterial> material_;
 
   /*! \brief Owned single physical volume, absent until AddVolume(). */
-  std::variant<std::monostate, GGEMSBox, GGEMSSphere> volume_;
+  std::variant<std::monostate, GGEMSBox, GGEMSSphere, GGEMSTubs, GGEMSEllipsoid>
+    volume_;
 
   /*!
    * \brief Explicit surface half-band; absent selects per-boundary defaults.

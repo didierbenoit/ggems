@@ -533,7 +533,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                                                 : geometry::GGEMSWorldRecord{});
 
   kernel_->SetArgSVMPointer(argument_index++, volume_buffer_.GetData());
-  // The pose is read for every Box. Keep every kernel argument bound
+  // Box, Tubs and Ellipsoid share this pose. Keep every kernel argument bound
   // to live SVM storage: a null pointer can leave it unset on OpenCL drivers.
   kernel_->SetArgSVMPointer(argument_index++, box_pose_buffer_
                                                 ? box_pose_buffer_->GetData()

@@ -48,20 +48,34 @@ world = ggems.geometry.GGEMSWorld()
 world.set_size(3.0, 3.0, 3.0, "m")
 world.set_material("Air")
 
-box = ggems.geometry.GGEMSBox()
-box.set_size(0.2, 0.1, 0.1, "m")
-box.set_position(0.0, 0.0, 0.0, "m")
-box.set_rotation(0.0, 0.0, 45.0, "deg")
-box.set_material("Water")
-
-world.add_volume(box)
+# box = ggems.geometry.GGEMSBox()
+# box.set_size(0.2, 0.1, 0.1, "m")
+# box.set_position(0.0, 0.0, 0.0, "m")
+# box.set_rotation(0.0, 0.0, 45.0, "deg")
+# box.set_material("Water")
 
 # sphere = ggems.geometry.GGEMSSphere()
 # sphere.set_radius(0.25, "m")
 # sphere.set_position(0.0, 0.0, 0.0, "m")
 # sphere.set_material("Water")
 
+# tubs = ggems.geometry.GGEMSTubs()
+# tubs.set_radii(0.20, 0.08, "m")
+# tubs.set_length(0.40, "m")
+# tubs.set_position(0.0, 0.0, 0.0, "m")
+# tubs.set_rotation(0.0, 45.0, 0.0, "deg")
+# tubs.set_material("Water")
+
+ellipsoid = ggems.geometry.GGEMSEllipsoid()
+ellipsoid.set_semi_axes(0.25, 0.15, 0.10, "m")
+ellipsoid.set_position(0.0, 0.0, 0.0, "m")
+ellipsoid.set_rotation(20.0, 35.0, 45.0, "deg")
+ellipsoid.set_material("Water")
+
+# world.add_volume(box)
 # world.add_volume(sphere)
+# world.add_volume(tubs)
+world.add_volume(ellipsoid)
 
 # ---------------------------------------------------------------------------
 

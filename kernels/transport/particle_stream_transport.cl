@@ -67,8 +67,9 @@
  * The birth owner is located first. Each iteration performs one accepted
  * Transport transaction from the current owner (query, canonical move, owner
  * update); a World exit completes the history with EscapedWorld. For the
- * admitted one-convex-volume profile at most three boundaries are accepted
- * (entry, exit, World exit); exhausting the bound without escaping is reported
+ * admitted one-volume profile at most five boundaries are accepted for a hollow
+ * Tubs (two material intervals and World exit), or three for a convex solid;
+ * exhausting the bound without escaping is reported
  * as unresolved, never as a silent completion. The loop is species-agnostic and
  * carries no shape algorithm.
  *
@@ -83,7 +84,7 @@
  *
  * \param[in] world Immutable device World parameters.
  * \param[in] volume Single tagged analytic volume or None.
- * \param[in] box_pose Separate pose for every Box; unused for other kinds.
+ * \param[in] box_pose Shared rigid pose for Box, Tubs, and Ellipsoid.
  * \param[in,out] particle Private state; moved to the World boundary on
  * success, owner identities updated at every accepted boundary.
  * \param[in,out] counters Transport counters receiving the outcome.
@@ -118,7 +119,11 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
   particle->material_id = (uint)(owner & 0xFFFFFFFFUL);
 
   uint const max_boundary_events =
-    volume->kind == GGEMS_ANALYTIC_NONE ? 1U : 3U;
+    volume->kind == GGEMS_ANALYTIC_NONE ? 1U
+    : volume->kind == GGEMS_ANALYTIC_TUBS &&
+        volume->parameters.tubs.inner_radius_pm > 0.0F
+      ? 5U
+      : 3U;
 
   uint event = GGEMS_NAVIGATION_EVENT_NONE;
   uint faces = 0U;
@@ -225,7 +230,7 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
  * \param[in] world Immutable World parameters; required for navigated
  * species.
  * \param[in] volume Single analytic record, including None.
- * \param[in] box_pose Optional immutable pose in rotated scene programs.
+ * \param[in] box_pose Immutable pose for Box, Tubs, and Ellipsoid.
  */
 __kernel void particle_stream_transport(
   __global GGEMSRandomState *random_states,

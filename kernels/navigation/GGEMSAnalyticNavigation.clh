@@ -39,12 +39,14 @@
 #include "navigation/GGEMSNavigation.clh"
 #include "navigation/GGEMSBoxNavigation.clh"
 #include "navigation/GGEMSSphereNavigation.clh"
+#include "navigation/GGEMSTubsNavigation.clh"
+#include "navigation/GGEMSEllipsoidNavigation.clh"
 
 /*!
  * \brief Locates the forward owner through the selected analytic predicate.
  * \param[in] world FP32 finite World.
  * \param[in] volume Single volume or None.
- * \param[in] box_pose Separate pose for every Box; unused for other kinds.
+ * \param[in] box_pose Shared rigid pose for Box, Tubs, and Ellipsoid.
  * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.
  * \param[out] owner Packed VolumeID/MaterialID on success.
@@ -72,6 +74,18 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
                               owner);
   }
 
+  if (volume->kind == GGEMS_ANALYTIC_TUBS) {
+    return GGEMS_TubsLocate(&volume->parameters.tubs,
+                            (__global GGEMSBoxPoseRecord const *)box_pose,
+                            position, direction, owner);
+  }
+
+  if (volume->kind == GGEMS_ANALYTIC_ELLIPSOID) {
+    return GGEMS_EllipsoidLocate(&volume->parameters.ellipsoid,
+                                 (__global GGEMSBoxPoseRecord const *)box_pose,
+                                 position, direction, owner);
+  }
+
   *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
 
   return GGEMS_NAVIGATION_RESOLVED;
@@ -81,11 +95,12 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
  * \brief Selects the next analytic crossing or FP32 World exit.
  *
  * One convex volume and an unchanged straight-flight direction cannot reenter
- * after an accepted exit. Accepted ownership therefore selects the next root
- * without relocating the FP32 endpoint.
+ * after an accepted exit. Tubs can cross a bore and reenter the opposite wall;
+ * its interval predicate retains that later entry. Accepted ownership selects
+ * the next root without relocating the FP32 endpoint.
  * \param[in] world FP32 World exit authority.
  * \param[in] volume Single volume or None.
- * \param[in] box_pose Separate pose for every Box; unused for other kinds.
+ * \param[in] box_pose Shared rigid pose for Box, Tubs, and Ellipsoid.
  * \param[in] position Global FP32 anchor in pm.
  * \param[in] direction Actual stored direction.
  * \param[in] current_owner Known physical departure VolumeID.
@@ -105,7 +120,8 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
   if (status != GGEMS_NAVIGATION_RESOLVED ||
       volume->kind == GGEMS_ANALYTIC_NONE ||
       (current_owner == GGEMS_VOLUME_ID_WORLD &&
-       last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT)) {
+       last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
+       volume->kind != GGEMS_ANALYTIC_TUBS)) {
     return status;
   }
 
@@ -113,6 +129,19 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
     return GGEMS_BoxFindBoundary(&volume->parameters.box,
                                  (__global GGEMSBoxPoseRecord const *)box_pose,
                                  position, direction, current_owner, result);
+  }
+
+  if (volume->kind == GGEMS_ANALYTIC_TUBS) {
+    return GGEMS_TubsFindBoundary(
+      &volume->parameters.tubs, (__global GGEMSBoxPoseRecord const *)box_pose,
+      position, direction, current_owner, last_event, result);
+  }
+
+  if (volume->kind == GGEMS_ANALYTIC_ELLIPSOID) {
+    return GGEMS_EllipsoidFindBoundary(
+      &volume->parameters.ellipsoid,
+      (__global GGEMSBoxPoseRecord const *)box_pose, position, direction,
+      current_owner, result);
   }
 
   return GGEMS_SphereFindBoundary(&volume->parameters.sphere, position,

@@ -1,0 +1,188 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Resolves full Ellipsoid ownership and intersections in local FP32.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_ELLIPSOID_NAVIGATION_CLH
+#define GGEMS_ELLIPSOID_NAVIGATION_CLH
+
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "geometry/GGEMSBoxPoseRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "navigation/GGEMSBoxNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*!
+ * \brief Intersects a local ray with a complete ellipsoid.
+ *
+ * Scaling to the smallest semi-axis retains pm-valued coordinates and avoids
+ * an assumed unit direction. Closest approach avoids subtracting World-scale
+ * squared quantities in the discriminant. Tangent intervals are empty.
+ * \param[in] position Local position in pm.
+ * \param[in] direction Local stored direction.
+ * \param[in] axes Positive semi-axes in pm.
+ * \param[out] interval Nominal ordered entry and exit ray parameters in pm.
+ * \return Nonzero for a positive-length intersection.
+ */
+static inline uint GGEMS_EllipsoidInterval(float3 position, float3 direction,
+                                           float3 axes, float2 *interval) {
+  float radius = fmin(axes.x, fmin(axes.y, axes.z));
+  float3 scale = radius / axes;
+  float3 offset = position * scale;
+  float3 velocity = direction * scale;
+  float inverse_a = 1.0F / dot(velocity, velocity);
+  float closest_parameter = -dot(offset, velocity) * inverse_a;
+  float3 closest = offset + closest_parameter * velocity;
+  float chord_squared = radius * radius - dot(closest, closest);
+
+  if (chord_squared <= 0.0F) {
+    return 0U;
+  }
+
+  float half_chord = sqrt(chord_squared) * sqrt(inverse_a);
+  *interval =
+    (float2)(closest_parameter - half_chord, closest_parameter + half_chord);
+
+  return 1U;
+}
+
+/*!
+ * \brief Locates the forward owner using the prepared semi-axis half-band.
+ * \param[in] ellipsoid Local axes and ownership.
+ * \param[in] pose Shared rigid pose.
+ * \param[in] position World-validated global position in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed forward VolumeID/MaterialID.
+ * \return Resolved according to the closed FP32 band.
+ */
+static inline uint
+GGEMS_EllipsoidLocate(__global GGEMSEllipsoidRecord const *ellipsoid,
+                      __global GGEMSBoxPoseRecord const *pose, float3 position,
+                      float3 direction, ulong *owner) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  float3 axes = (float3)(ellipsoid->semi_axis_x_pm, ellipsoid->semi_axis_y_pm,
+                         ellipsoid->semi_axis_z_pm);
+  float3 contracted_axes = axes - ellipsoid->tolerance_pm;
+  *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+
+  if (any((fabs(local_position) >= contracted_axes) &
+          (local_position * local_direction >= 0.0F))) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  float3 inner = local_position / contracted_axes;
+  uint inside = dot(inner, inner) < 1.0F;
+
+  if (inside == 0U) {
+    float3 outer = local_position / (axes + ellipsoid->tolerance_pm);
+
+    if (dot(outer, outer) <= 1.0F) {
+      float2 interval;
+      inside = GGEMS_EllipsoidInterval(local_position, local_direction,
+                                       contracted_axes, &interval) != 0U &&
+               interval.y > 0.0F;
+    }
+  }
+
+  *owner = inside != 0U
+             ? ((ulong)ellipsoid->volume_id << 32U) | ellipsoid->material_id
+             : ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects a nominal Ellipsoid crossing after contracted-interior
+ * admission.
+ * \param[in] ellipsoid Local axes, automatic band, and ownership.
+ * \param[in] pose Shared rigid pose.
+ * \param[in] position Global FP32 anchor in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in,out] witness World exit on entry; selected crossing on success.
+ * \return Resolved or unresolved for nonfinite or misordered movement.
+ */
+static inline uint
+GGEMS_EllipsoidFindBoundary(__global GGEMSEllipsoidRecord const *ellipsoid,
+                            __global GGEMSBoxPoseRecord const *pose,
+                            float3 position, float3 direction,
+                            uint current_owner, GGEMSBoundaryWitness *witness) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  float3 axes = (float3)(ellipsoid->semi_axis_x_pm, ellipsoid->semi_axis_y_pm,
+                         ellipsoid->semi_axis_z_pm);
+  uint inside = current_owner == ellipsoid->volume_id;
+  float3 contracted_axes = axes - ellipsoid->tolerance_pm;
+
+  if (inside == 0U && any((fabs(local_position) >= contracted_axes) &
+                          (local_position * local_direction >= 0.0F))) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  float2 interval;
+
+  if (inside == 0U &&
+      (GGEMS_EllipsoidInterval(local_position, local_direction, contracted_axes,
+                               &interval) == 0U ||
+       interval.y <= 0.0F)) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  if (GGEMS_EllipsoidInterval(local_position, local_direction, axes,
+                              &interval) == 0U) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  float candidate = fmax(0.0F, inside != 0U ? interval.y : interval.x);
+
+  if (GGEMS_NavigationIsFinite(candidate) == 0U ||
+      candidate >= witness->parameter) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  witness->parameter = candidate;
+  witness->faces = 0U;
+  witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id =
+    inside != 0U ? GGEMS_VOLUME_ID_WORLD : ellipsoid->volume_id;
+  witness->arrival_material_id =
+    inside != 0U ? GGEMS_MATERIAL_ID_WORLD : ellipsoid->material_id;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

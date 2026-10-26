@@ -40,8 +40,12 @@
 #include <utility>
 #include <vector>
 #include <variant>
+#include <type_traits>
 
 #include "GGEMS/geometry/GGEMSSphere.hh"
+#include "GGEMS/geometry/GGEMSTubs.hh"
+#include "GGEMS/geometry/GGEMSEllipsoid.hh"
+#include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 
 #include "GGEMS/GGEMSException.hh"
@@ -171,6 +175,112 @@ BuildSurfaceScale(ggems::geometry::GGEMSSphere const &sphere) noexcept
     .minimum_half_extent_pm = radius,
     .local_scale_pm = radius,
   };
+}
+
+/*!
+ * \brief Bounds the two new curved solids using uploaded dimensions and pose.
+ * \param[in] center Canonical global geometric center.
+ * \param[in] rotation Shared proper local-to-global rotation.
+ * \param[in] extent Uploaded local radii/half-length or semi-axes in pm.
+ * \param[in] cylinder True for Tubs; false for a complete ellipsoid.
+ * \return Surface envelope and projected band expansion for host admission.
+ */
+[[nodiscard]] auto
+BuildCurvedSurfaceScale(ggems::geometry::Position3PM center,
+                        ggems::geometry::GGEMSRotation3D const &rotation,
+                        std::array<double, 3U> extent, bool cylinder) noexcept
+  -> SurfaceScale {
+  std::array<double, 3U> const position{
+    static_cast<float>(center.x),
+    static_cast<float>(center.y),
+    static_cast<float>(center.z),
+  };
+
+  std::array const rows{
+    std::array{
+      static_cast<float>(rotation.axis_x.x),
+      static_cast<float>(rotation.axis_y.x),
+      static_cast<float>(rotation.axis_z.x),
+    },
+    std::array{
+      static_cast<float>(rotation.axis_x.y),
+      static_cast<float>(rotation.axis_y.y),
+      static_cast<float>(rotation.axis_z.y),
+    },
+    std::array{
+      static_cast<float>(rotation.axis_x.z),
+      static_cast<float>(rotation.axis_y.z),
+      static_cast<float>(rotation.axis_z.z),
+    },
+  };
+
+  SurfaceScale scale{
+    .minimum_half_extent_pm = std::min({extent[0], extent[1], extent[2]}),
+    .local_scale_pm =
+      static_cast<float>(std::max({extent[0], extent[1], extent[2]})),
+  };
+
+  for (std::size_t axis = 0U; axis < 3U; ++axis) {
+    auto const x = static_cast<double>(rows[axis][0]);
+    auto const y = static_cast<double>(rows[axis][1]);
+    auto const z = static_cast<double>(rows[axis][2]);
+    auto const radius =
+      cylinder
+        ? (extent[0] * std::sqrt((x * x) + (y * y))) + (extent[2] * std::abs(z))
+        : std::sqrt(((x * extent[0]) * (x * extent[0])) +
+                    ((y * extent[1]) * (y * extent[1])) +
+                    ((z * extent[2]) * (z * extent[2])));
+    scale.envelope_pm[axis] = std::abs(position[axis]) + radius;
+    scale.band_projection[axis] = cylinder
+                                    ? std::sqrt((x * x) + (y * y)) + std::abs(z)
+                                    : std::abs(x) + std::abs(y) + std::abs(z);
+  }
+
+  return scale;
+}
+
+/*!
+ * \brief Bounds a Tubs and its bore/material feature widths after FP32 packing.
+ * \param[in] tubs Complete authored tube.
+ * \return Global surface envelope and narrowest resolvable half-width.
+ */
+[[nodiscard]] auto
+BuildSurfaceScale(ggems::geometry::GGEMSTubs const &tubs) noexcept
+  -> SurfaceScale {
+  auto const outer = static_cast<float>(tubs.GetOuterRadiusPM());
+  auto const inner = static_cast<float>(tubs.GetInnerRadiusPM());
+  auto scale = BuildCurvedSurfaceScale(
+    tubs.GetPositionPM(), tubs.GetRotation(),
+    {outer, outer, static_cast<float>(tubs.GetHalfLengthPM())}, true);
+
+  if (inner > 0.0F) {
+    scale.minimum_half_extent_pm = std::min({
+      scale.minimum_half_extent_pm,
+      static_cast<double>(inner),
+      (static_cast<double>(outer) - inner) * 0.5,
+    });
+  }
+
+  return scale;
+}
+
+/*!
+ * \brief Bounds an Ellipsoid using its uploaded semi-axes and rigid pose.
+ * \param[in] ellipsoid Complete authored ellipsoid.
+ * \return Global surface envelope and smallest semi-axis in pm.
+ */
+[[nodiscard]] auto
+BuildSurfaceScale(ggems::geometry::GGEMSEllipsoid const &ellipsoid) noexcept
+  -> SurfaceScale {
+  auto const axes = ellipsoid.GetSemiAxesPM();
+  return BuildCurvedSurfaceScale(ellipsoid.GetPositionPM(),
+                                 ellipsoid.GetRotation(),
+                                 {
+                                   static_cast<float>(axes.x),
+                                   static_cast<float>(axes.y),
+                                   static_cast<float>(axes.z),
+                                 },
+                                 false);
 }
 
 /*!
@@ -432,6 +542,17 @@ auto GGEMSWorld::GetVolumeNavigationTolerancePM() const noexcept -> float {
              : RequiredTolerancePM(BuildSurfaceScale(*sphere),
                                    WorldSpacingPM(half_extent_pm_));
   }
+
+  if (auto const *tubs = std::get_if<GGEMSTubs>(&volume_)) {
+    return RequiredTolerancePM(BuildSurfaceScale(*tubs),
+                               WorldSpacingPM(half_extent_pm_));
+  }
+
+  if (auto const *ellipsoid = std::get_if<GGEMSEllipsoid>(&volume_)) {
+    return RequiredTolerancePM(BuildSurfaceScale(*ellipsoid),
+                               WorldSpacingPM(half_extent_pm_));
+  }
+
   return 0.0F;
 }
 
@@ -448,11 +569,12 @@ auto GGEMSWorld::SetMaterial(core::materials::GGEMSMaterial material)
 auto GGEMSWorld::AddVolume(GGEMSBox box) -> GGEMSWorld & {
   if (!std::holds_alternative<std::monostate>(volume_)) {
     throw core::GGEMSRecoverable(
-      "The current slice admits at most one Box or one Sphere.");
+      "The current slice admits at most one analytic volume.");
   }
 
   box.Validate();
   volume_ = std::move(box);
+
   return *this;
 }
 
@@ -461,10 +583,40 @@ auto GGEMSWorld::AddVolume(GGEMSBox box) -> GGEMSWorld & {
 auto GGEMSWorld::AddVolume(GGEMSSphere sphere) -> GGEMSWorld & {
   if (!std::holds_alternative<std::monostate>(volume_)) {
     throw core::GGEMSRecoverable(
-      "The current slice admits at most one Box or one Sphere.");
+      "The current slice admits at most one analytic volume.");
   }
+
   sphere.Validate();
   volume_ = std::move(sphere);
+
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AddVolume(GGEMSTubs tubs) -> GGEMSWorld & {
+  if (!std::holds_alternative<std::monostate>(volume_)) {
+    throw core::GGEMSRecoverable(
+      "The current slice admits at most one analytic volume.");
+  }
+
+  tubs.Validate();
+  volume_ = std::move(tubs);
+
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AddVolume(GGEMSEllipsoid ellipsoid) -> GGEMSWorld & {
+  if (!std::holds_alternative<std::monostate>(volume_)) {
+    throw core::GGEMSRecoverable(
+      "The current slice admits at most one analytic volume.");
+  }
+
+  ellipsoid.Validate();
+  volume_ = std::move(ellipsoid);
+
   return *this;
 }
 
@@ -482,6 +634,7 @@ auto GGEMSWorld::Validate() const -> void {
   auto const world_spacing = WorldSpacingPM(half_extent_pm_);
   auto const world_tolerance = GetNavigationTolerancePM();
   RequireTolerance(world_tolerance, 8.0F * world_spacing, "World");
+
   if (!(static_cast<float>(
           std::min({half_extent_pm_.x, half_extent_pm_.y, half_extent_pm_.z})) >
         world_tolerance + world_spacing)) {
@@ -535,6 +688,16 @@ auto GGEMSWorld::Validate() const -> void {
         "Sphere must lie strictly inside the World.");
     }
   }
+
+  if (auto const *tubs = std::get_if<GGEMSTubs>(&volume_)) {
+    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*tubs),
+                          world_tolerance, GetVolumeNavigationTolerancePM());
+  }
+
+  if (auto const *ellipsoid = std::get_if<GGEMSEllipsoid>(&volume_)) {
+    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*ellipsoid),
+                          world_tolerance, GetVolumeNavigationTolerancePM());
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -565,28 +728,33 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
 
 auto GGEMSWorld::BuildBoxPoseRecord() const
   -> std::optional<GGEMSBoxPoseRecord> {
-  auto const boxes = GetBoxes();
-  if (boxes.empty()) {
-    return std::nullopt;
-  }
-
-  auto const center = boxes.front().GetPositionPM();
-  auto const &rotation = boxes.front().GetRotation();
-
-  return GGEMSBoxPoseRecord{
-    .center_x_pm = static_cast<float>(center.x),
-    .center_y_pm = static_cast<float>(center.y),
-    .center_z_pm = static_cast<float>(center.z),
-    .axis_x_x = static_cast<float>(rotation.axis_x.x),
-    .axis_x_y = static_cast<float>(rotation.axis_x.y),
-    .axis_x_z = static_cast<float>(rotation.axis_x.z),
-    .axis_y_x = static_cast<float>(rotation.axis_y.x),
-    .axis_y_y = static_cast<float>(rotation.axis_y.y),
-    .axis_y_z = static_cast<float>(rotation.axis_y.z),
-    .axis_z_x = static_cast<float>(rotation.axis_z.x),
-    .axis_z_y = static_cast<float>(rotation.axis_z.y),
-    .axis_z_z = static_cast<float>(rotation.axis_z.z),
-  };
+  return std::visit(
+    [](auto const &volume) -> std::optional<GGEMSBoxPoseRecord> {
+      using Volume = std::decay_t<decltype(volume)>;
+      if constexpr (std::is_same_v<Volume, GGEMSBox> ||
+                    std::is_same_v<Volume, GGEMSTubs> ||
+                    std::is_same_v<Volume, GGEMSEllipsoid>) {
+        auto const center = volume.GetPositionPM();
+        auto const &rotation = volume.GetRotation();
+        return GGEMSBoxPoseRecord{
+          .center_x_pm = static_cast<float>(center.x),
+          .center_y_pm = static_cast<float>(center.y),
+          .center_z_pm = static_cast<float>(center.z),
+          .axis_x_x = static_cast<float>(rotation.axis_x.x),
+          .axis_x_y = static_cast<float>(rotation.axis_x.y),
+          .axis_x_z = static_cast<float>(rotation.axis_x.z),
+          .axis_y_x = static_cast<float>(rotation.axis_y.x),
+          .axis_y_y = static_cast<float>(rotation.axis_y.y),
+          .axis_y_z = static_cast<float>(rotation.axis_y.z),
+          .axis_z_x = static_cast<float>(rotation.axis_z.x),
+          .axis_z_y = static_cast<float>(rotation.axis_z.y),
+          .axis_z_z = static_cast<float>(rotation.axis_z.z),
+        };
+      } else {
+        return std::nullopt;
+      }
+    },
+    volume_);
 }
 
 // -----------------------------------------------------------------------------
@@ -667,6 +835,14 @@ auto GGEMSWorld::GetVolumeMaterial() const
     return &sphere->GetMaterial();
   }
 
+  if (auto const *tubs = std::get_if<GGEMSTubs>(&volume_)) {
+    return &tubs->GetMaterial();
+  }
+
+  if (auto const *ellipsoid = std::get_if<GGEMSEllipsoid>(&volume_)) {
+    return &ellipsoid->GetMaterial();
+  }
+
   return nullptr;
 }
 
@@ -694,6 +870,43 @@ auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id) const
               .center_y_pm = static_cast<float>(center.y),
               .center_z_pm = static_cast<float>(center.z),
               .radius_pm = static_cast<float>(sphere->GetRadiusPM()),
+              .volume_id = 1U,
+              .material_id = material_id,
+              .tolerance_pm = GetVolumeNavigationTolerancePM(),
+            },
+        },
+    };
+  }
+
+  if (auto const *tubs = std::get_if<GGEMSTubs>(&volume_)) {
+    return {
+      .kind = GGEMSAnalyticKind::Tubs,
+      .parameters =
+        {
+          .tubs =
+            {
+              .outer_radius_pm = static_cast<float>(tubs->GetOuterRadiusPM()),
+              .inner_radius_pm = static_cast<float>(tubs->GetInnerRadiusPM()),
+              .half_length_pm = static_cast<float>(tubs->GetHalfLengthPM()),
+              .volume_id = 1U,
+              .material_id = material_id,
+              .tolerance_pm = GetVolumeNavigationTolerancePM(),
+            },
+        },
+    };
+  }
+
+  if (auto const *ellipsoid = std::get_if<GGEMSEllipsoid>(&volume_)) {
+    auto const axes = ellipsoid->GetSemiAxesPM();
+    return {
+      .kind = GGEMSAnalyticKind::Ellipsoid,
+      .parameters =
+        {
+          .ellipsoid =
+            {
+              .semi_axis_x_pm = static_cast<float>(axes.x),
+              .semi_axis_y_pm = static_cast<float>(axes.y),
+              .semi_axis_z_pm = static_cast<float>(axes.z),
               .volume_id = 1U,
               .material_id = material_id,
               .tolerance_pm = GetVolumeNavigationTolerancePM(),

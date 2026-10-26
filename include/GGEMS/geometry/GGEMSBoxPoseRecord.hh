@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines the FP32 rigid pose accompanying every Box.
+ * \brief Defines the shared FP32 rigid pose for Box, Tubs and Ellipsoid.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
