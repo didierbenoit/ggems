@@ -9,6 +9,16 @@ find_program(PYBIND11_STUBGEN_EXECUTABLE NAMES pybind11-stubgen REQUIRED)
 # Define the Python extension module
 pybind11_add_module(ggems MODULE ${GGEMS_PYBIND_SOURCES})
 
+# On macOS, use the installation RPATH directly to avoid
+# unnecessary install_name_tool adjustments during installation.
+if(APPLE)
+  set_target_properties(
+    ggems
+    PROPERTIES
+      BUILD_WITH_INSTALL_RPATH TRUE
+  )
+endif()
+
 install(
   TARGETS ggems
   LIBRARY DESTINATION ggems
