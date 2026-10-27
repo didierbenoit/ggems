@@ -24,7 +24,7 @@
  * \brief Samples primary birth states from host-prepared source records.
  *
  * Global and local positions use binary32 picometers, times use unsigned
- * integer picoseconds, and energies use unsigned integer microelectronvolts
+ * integer picoseconds, and energies use unsigned integer microelectronvolts.
  * Geometry and direction calculations use binary32. The host validates source
  * tags, geometry, frames, focus, table ranges, and array capacities; these
  * helpers do not repeat that validation.

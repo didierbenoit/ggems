@@ -49,7 +49,9 @@
  * \brief Locates the forward owner through the selected analytic predicate.
  * \param[in] world FP32 finite World.
  * \param[in] volume Single volume or None.
- * \param[in] box_pose Shared rigid pose for every nonspherical solid.
+ * \param[in] box_pose Immutable auxiliary buffer: a shared rigid pose for
+ * nonspherical solids, followed by side and section arrays for Polyhedra.
+ * Unused for Sphere and a World-only scene.
  * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.
  * \param[out] owner Packed VolumeID/MaterialID on success.
@@ -116,12 +118,15 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
  * \brief Selects the next analytic crossing or FP32 World exit.
  *
  * One convex volume and an unchanged straight-flight direction cannot reenter
- * after an accepted exit. Tubs can cross a bore and reenter the opposite wall;
- * its interval predicate retains that later entry. Accepted ownership selects
+ * after an accepted exit. Tubs and Cons can reenter beyond a bore, while
+ * Polyhedra can contain multiple material intervals through its bore or concave
+ * axial profile. Their interval predicates retain later entries. Ownership selects
  * the next root without relocating the FP32 endpoint.
  * \param[in] world FP32 World exit authority.
  * \param[in] volume Single volume or None.
- * \param[in] box_pose Shared rigid pose for every nonspherical solid.
+ * \param[in] box_pose Immutable auxiliary buffer: a shared rigid pose for
+ * nonspherical solids, followed by side and section arrays for Polyhedra.
+ * Unused for Sphere and a World-only scene.
  * \param[in] position Global FP32 anchor in pm.
  * \param[in] direction Actual stored direction.
  * \param[in] current_owner Known physical departure VolumeID.

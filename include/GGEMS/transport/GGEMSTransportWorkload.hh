@@ -312,6 +312,7 @@ public:
     geometry::GGEMSWorld const *world = nullptr,
     geometry::GGEMSAnalyticVolumeRecord volume = {});
 
+  /*! \brief Releases the bound kernel and all workload-owned SVM storage. */
   ~GGEMSTransportWorkload() = default;
 
   /*! \brief Disallows copy construction of owned execution state. */

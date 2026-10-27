@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks Observer record layout, capture configuration, and coordinate
+ * export.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

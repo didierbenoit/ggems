@@ -275,6 +275,7 @@ public:
          std::vector<random::GGEMSHostRandomStream> candidate_streams)
     -> GGEMSSourcePopulationCandidate;
 
+  /*! \brief Releases the owned population plan and retained RNG state. */
   ~GGEMSSourcePopulationCandidate() = default;
 
   /*! \brief Disallows copy construction of owned execution state. */
@@ -398,6 +399,7 @@ public:
   GGEMSSourcePopulationPlanner(
     std::span<std::shared_ptr<GGEMSSource> const> sources,
     random::GGEMSRandom const &random);
+  /*! \brief Releases the planner's persistent host random streams. */
   ~GGEMSSourcePopulationPlanner() = default;
 
   /*! \brief Disallows copy construction of owned execution state. */

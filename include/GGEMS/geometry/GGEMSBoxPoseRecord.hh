@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines the shared FP32 rigid pose for Box, Tubs and Ellipsoid.
+ * \brief Defines the shared FP32 rigid pose for analytic shapes except Sphere.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -31,15 +31,24 @@
 
 namespace ggems::geometry {
 
-/*! \brief Scalar 48-byte pose; mirrors GGEMSBoxPoseRecord.clh. */
+/*!
+ * \brief Stores a scalar 48-byte pose matching GGEMSBoxPoseRecord.clh.
+ *
+ * The translation locates the local origin in World coordinates; for
+ * Polyhedra it is not necessarily the geometric center. The axes are
+ * local-to-World matrix columns. Device code subtracts the translation
+ * and projects onto those columns to obtain local coordinates in FP32.
+ * Box, Tubs, Ellipsoid, Trd, Trap, Cons, and Polyhedra share this layout;
+ * Sphere stores its center directly in its scalar shape record.
+ */
 struct GGEMSBoxPoseRecord {
-  /*! \brief Global center X coordinate in FP32 pm. */
+  /*! \brief World X coordinate of the local origin in FP32 pm. */
   float center_x_pm{0.0F};
 
-  /*! \brief Global center Y coordinate in FP32 pm. */
+  /*! \brief World Y coordinate of the local origin in FP32 pm. */
   float center_y_pm{0.0F};
 
-  /*! \brief Global center Z coordinate in FP32 pm. */
+  /*! \brief World Z coordinate of the local origin in FP32 pm. */
   float center_z_pm{0.0F};
 
   /*! \brief World X component of local X. */

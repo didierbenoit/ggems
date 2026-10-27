@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+/*!
+ * \file
+ * \brief Dispatches legacy synthetic branching using owned SVM buffers.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -28,18 +55,44 @@
 
 namespace {
 
+/*!
+ * \brief Shared particle state stored in each synthetic worker's final slot.
+ */
 using ParticleState = ggems::core::particles::GGEMSParticleState;
+/*!
+ * \brief Shared diagnostic counts produced by the synthetic transport kernel.
+ */
 using TransportCounters = ggems::core::transport::GGEMSTransportCounters;
+/*! \brief Philox worker-state layout available to the legacy workload. */
 using PhiloxState = ggems::core::random::GGEMSPhiloxState;
+/*!
+ * \brief Shared diagnostic primary-selection controls uploaded per dispatch.
+ */
 using ObserverConfigRecord = ggems::core::observer::GGEMSObserverConfigRecord;
+/*! \brief Shared device counts for captured and dropped diagnostics. */
 using ObserverCounters = ggems::core::observer::GGEMSObserverCounters;
+/*!
+ * \brief Shared diagnostic particle snapshot copied after kernel completion.
+ */
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
+/*! \brief FP32 birth descriptor prepared from integer-pm source authoring. */
 using SourceDeviceRecord = ggems::core::sources::GGEMSSourceDeviceRecord;
+/*! \brief Source interval within the run's concatenated primary population. */
 using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Validates a worker stream range and computes its SVM storage size.
+ *
+ * \param[in] random Selected random-engine configuration.
+ * \param[in] worker_count Positive number of worker states.
+ * \param[in] first_stream_id First stream ID assigned to the workload.
+ * \return Required RNG storage in bytes.
+ * \throws GGEMSRecoverable If worker_count is zero or the engine rejects the
+ * range.
+ */
 ggems::units::Bytes
 ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
                         std::uint32_t worker_count,
@@ -58,6 +111,13 @@ ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Computes storage for the synthetic final particle of each worker.
+ *
+ * \param[in] worker_count Positive number of worker slots.
+ * \return Required particle-state storage in bytes.
+ * \throws GGEMSRecoverable If worker_count is zero.
+ */
 ggems::units::Bytes ComputeWorkerFinalStatesSize(std::uint32_t worker_count) {
   if (!(worker_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
@@ -71,6 +131,14 @@ ggems::units::Bytes ComputeWorkerFinalStatesSize(std::uint32_t worker_count) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Computes storage for a positive diagnostic capture capacity.
+ *
+ * \param[in] observer_record_capacity Positive maximum number of device
+ * records.
+ * \return Required capture storage in bytes.
+ * \throws GGEMSRecoverable If the capacity is zero.
+ */
 ggems::units::Bytes
 ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
   if (!(observer_record_capacity > 0U)) {
@@ -86,6 +154,14 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Rejects an empty source configuration before allocating source
+ * arrays.
+ *
+ * \param[in] source_count Requested stable source-slot count.
+ * \return The supplied positive count.
+ * \throws GGEMSRecoverable If source_count is zero.
+ */
 std::uint32_t CheckedSourceCount(std::uint32_t source_count) {
   if (!(source_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(

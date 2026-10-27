@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Generates synthetic primary states for particle-buffer tests.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

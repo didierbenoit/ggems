@@ -117,7 +117,17 @@ typedef struct GGEMSTubsRecord {
   float tolerance_pm;
 } GGEMSTubsRecord;
 
-/*! \brief Scalar 40-byte local conical frustum and ownership record. */
+/*!
+ * \brief Stores the 40-byte local conical-frustum and ownership payload.
+ *
+ * The host converts negative-Z and positive-Z endpoint radii into midplane
+ * radii and dimensionless slopes: r(z) = radius_pm + slope * z. End caps are
+ * at +/-half_length_pm, so the full axial length is twice this value. A zero
+ * midplane inner radius denotes a solid frustum. Host validation admits apex
+ * cases and ensures packed features remain meaningful within the automatic
+ * surface bands. Normal scales convert the perpendicular band to a radial
+ * offset; the shared rigid pose is stored separately.
+ */
 typedef struct GGEMSConsRecord {
   /*! \brief Midplane outer radius in pm. */
   float outer_radius_pm;

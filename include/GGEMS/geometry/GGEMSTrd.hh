@@ -125,17 +125,27 @@ public:
   [[nodiscard]] auto GetPositiveZHalfSizePM() const noexcept
     -> std::array<DistancePM, 2U>;
 
-  /*! \brief Returns the canonical distance to either end plane in pm. */
+  /*!
+   * \brief Returns the distance from the local origin to either end plane.
+   * \return Half length in integer pm; zero before SetLength().
+   */
   [[nodiscard]] auto GetHalfLengthPM() const noexcept -> DistancePM;
 
-  /*! \brief Returns the canonical global frame-origin position in pm. */
+  /*!
+   * \brief Returns the local frame origin in the World.
+   * \return Signed integer-pm World position; the origin by default.
+   */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
-  /*! \brief Borrows the owned local-to-global proper rotation. */
+  /*!
+   * \brief Borrows the owned local-to-World proper rotation.
+   * \return Proper rotation, initially identity; it must not outlive this solid.
+   */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
 
   /*!
-   * \brief Borrows the owned medium for this solid's lifetime.
+   * \brief Borrows the owned medium.
+   * \return Material reference; it must not outlive this solid.
    * \throws core::GGEMSRecoverable If no Material is configured.
    */
   [[nodiscard]] auto GetMaterial() const

@@ -21,25 +21,32 @@
 
 /*!
  * \file
- * \brief Defines the FP32 rigid pose accompanying every Box.
+ * \brief Defines the FP32 rigid pose shared by all nonspherical solids.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #ifndef GGEMS_BOX_POSE_RECORD_CLH
-/*! \brief Prevents repeated definition of the shared Box record. */
+/*! \brief Prevents repeated definition of the shared rigid pose. */
 #define GGEMS_BOX_POSE_RECORD_CLH
 
-/*! \brief Scalar 48-byte pose; mirrors GGEMSBoxPoseRecord.hh. */
+/*!
+ * \brief Stores the scalar 48-byte rigid pose shared with the host.
+ *
+ * Local basis vectors are stored as columns in global coordinates, with
+ * dimensionless FP32 components. Navigation subtracts the global frame origin
+ * and applies the transpose to positions and stored directions. The pose
+ * uses 4-byte natural alignment and also prefixes Polyhedra auxiliary data.
+ */
 typedef struct GGEMSBoxPoseRecord {
-  /*! \brief Global center X coordinate in FP32 pm. */
+  /*! \brief Global X of the local frame origin in FP32 pm. */
   float center_x_pm;
 
-  /*! \brief Global center Y coordinate in FP32 pm. */
+  /*! \brief Global Y of the local frame origin in FP32 pm. */
   float center_y_pm;
 
-  /*! \brief Global center Z coordinate in FP32 pm. */
+  /*! \brief Global Z of the local frame origin in FP32 pm. */
   float center_z_pm;
 
   /*! \brief World X component of local X. */

@@ -44,6 +44,12 @@
 
 namespace {
 
+/*!
+ * \brief Checks one end's radial ordering before authoring state changes.
+ * \param[in] inner Canonical bore radius in pm.
+ * \param[in] outer Canonical outer radius in pm.
+ * \throws ggems::core::GGEMSRecoverable Unless inner < outer or both are zero.
+ */
 auto RequireRadii(ggems::units::Length inner, ggems::units::Length outer)
   -> void {
   if ((outer.value == 0ULL && inner.value != 0ULL) ||

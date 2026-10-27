@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks population, emission, and emission-range device layouts and
+ * transfer.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

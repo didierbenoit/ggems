@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Samples Philox uniform vectors with one block consumed per vector.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

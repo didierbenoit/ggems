@@ -35,6 +35,7 @@
  */
 
 #ifndef GGEMS_RANDOM_GGEMS_RANDOM_TYPES_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_RANDOM_GGEMS_RANDOM_TYPES_CLH
 
 /*!

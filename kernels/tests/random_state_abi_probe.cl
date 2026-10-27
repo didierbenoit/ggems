@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks JKISS, PCG32, and Philox device state layouts and field
+ * transfer.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

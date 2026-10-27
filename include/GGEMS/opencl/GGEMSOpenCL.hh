@@ -97,8 +97,8 @@ public:
    * \return Matching cached or newly created OpenCL program.
    *
    * Memory-cache matching uses context/device handles, source path, kernel
-   * name, strict-math request, and user options; it does not reread source
-   * contents. Program construction retains native handles and does not borrow
+   * name, and exact user-option text; it does not reread source contents.
+   * Program construction retains native handles and does not borrow
    * the GGEMS context wrapper. Build and source-loading failures propagate from
    * GGEMSOpenCLProgram.
    */

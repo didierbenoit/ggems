@@ -63,8 +63,7 @@ using GGEMSSourceConfigurationSnapshotPtr =
  *
  * \param[in] source Source whose current configuration is copied.
  * \return Shared ownership of an immutable packed configuration.
- * \throws GGEMSRecoverable If a source is null or its configuration cannot be
- * packed.
+ * \throws GGEMSRecoverable If the source configuration cannot be packed.
  */
 [[nodiscard]] auto BuildSourceConfigurationSnapshot(GGEMSSource const &source)
   -> GGEMSSourceConfigurationSnapshotPtr;
@@ -89,10 +88,8 @@ using GGEMSSourceConfigurationSnapshotPtr =
  *
  * \param[in] source Source whose current configuration is copied.
  * \return Owning run snapshot with retained immutable configuration.
- * \throws GGEMSRecoverable If time order, source pointers, population mode, or
- * analytic records are invalid.
- * \throws GGEMSInternal If the retained configuration is null or its slot count
- * disagrees.
+ * \throws GGEMSRecoverable If time order, population mode, or the analytic
+ * source record is invalid.
  */
 [[nodiscard]] auto BuildSourceRunSnapshot(GGEMSSource const &source)
   -> GGEMSSourceRunSnapshot;
@@ -106,10 +103,8 @@ using GGEMSSourceConfigurationSnapshotPtr =
  * \param[in] source Source whose current configuration is copied.
  * \param[in] time_window Ordered half-open absolute source interval in ps.
  * \return Owning run snapshot with retained immutable configuration.
- * \throws GGEMSRecoverable If time order, source pointers, population mode, or
- * analytic records are invalid.
- * \throws GGEMSInternal If the retained configuration is null or its slot count
- * disagrees.
+ * \throws GGEMSRecoverable If time order, population mode, or the analytic
+ * source record is invalid.
  */
 [[nodiscard]] auto BuildSourceRunSnapshot(GGEMSSource const &source,
                                           GGEMSTimeWindow time_window)
@@ -232,8 +227,7 @@ public:
    *
    * \param[in] source Source whose current configuration is copied.
    * \return Shared immutable configuration.
-   * \throws GGEMSRecoverable If a source is null or its configuration cannot be
-   * packed.
+   * \throws GGEMSRecoverable If the source configuration cannot be packed.
    */
   [[nodiscard]] static auto Create(GGEMSSource const &source)
     -> GGEMSSourceConfigurationSnapshotPtr;
@@ -420,10 +414,8 @@ public:
    * \param[in] source Source whose current configuration is copied.
    * \param[in] time_window Ordered half-open absolute source interval in ps.
    * \return Owning run snapshot.
-   * \throws GGEMSRecoverable If time order, source pointers, population mode,
-   * or analytic records are invalid.
-   * \throws GGEMSInternal If the retained configuration is null or its slot
-   * count disagrees.
+   * \throws GGEMSRecoverable If the time order, population mode, or analytic
+   * source record is invalid.
    */
   [[nodiscard]] static auto Create(GGEMSSource const &source,
                                    GGEMSTimeWindow time_window)
@@ -471,6 +463,7 @@ public:
          GGEMSSourcePopulationPlan const &population_plan)
     -> GGEMSSourceRunSnapshot;
 
+  /*! \brief Releases run-specific arrays and shared configuration ownership. */
   ~GGEMSSourceRunSnapshot() = default;
 
   /*! \brief Copies value storage while retaining shared references. */

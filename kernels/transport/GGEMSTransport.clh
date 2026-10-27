@@ -33,6 +33,7 @@
  */
 
 #ifndef GGEMS_TRANSPORT_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_TRANSPORT_CLH
 
 #include "navigation/GGEMSNavigation.clh"
@@ -54,7 +55,7 @@
  * \param[in,out] particle Private state; unchanged on failure.
  * \return Nonzero on success; zero for nonfinite input or endpoint.
  */
-static __attribute__((noinline)) uint
+static /*! \cond */__attribute__((noinline))/*! \endcond */ uint
 GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
   float3 position = (float3)(particle->position_x_pm, particle->position_y_pm,
                              particle->position_z_pm);
@@ -62,7 +63,7 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
   float3 direction = (float3)(particle->direction_x, particle->direction_y,
                               particle->direction_z);
 
-  // Inspect raw inputs before fast-math can fold nonfinite arithmetic away.
+  // Reject nonfinite raw inputs before forming the physical endpoint.
   if (GGEMS_NavigationIsFinite(parameter) == 0U || parameter < 0.0F ||
       GGEMS_NavigationIsFinite(position.x) == 0U ||
       GGEMS_NavigationIsFinite(position.y) == 0U ||
@@ -99,15 +100,18 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
  * exact ties.
  *
  * This transaction and GGEMS_TransportMoveToBoundary are deliberately kept
- * out of line. When the query and the move are inlined into a kernel loop,
- * the Intel CPU OpenCL compiler with -cl-fast-relaxed-math mixes the private
+ * out of line. In the former -cl-fast-relaxed-math profile, inlining the
+ * query and move into a kernel loop let the Intel CPU OpenCL compiler mix private
  * states of neighboring work-items (multi-source histories receive each
  * other's positions or end unresolved). The attributes are a documented
- * device-compiler boundary, not a performance choice.
+ * device-compiler boundary. Current production kernels do not enable
+ * -cl-fast-relaxed-math.
  *
  * \param[in] world Immutable World record.
  * \param[in] volume Immutable tagged volume, or None.
- * \param[in] box_pose Shared rigid pose for every nonspherical solid.
+ * \param[in] box_pose Immutable auxiliary buffer: a shared rigid pose for
+ * nonspherical solids, followed by side and section arrays for Polyhedra.
+ * Unused for Sphere and a World-only scene.
  * \param[in,out] particle Private state with a valid current owner.
  * \param[in,out] event Last accepted event on entry (NONE at birth), updated
  * on success. Retained only while the straight flight direction is unchanged.
@@ -115,7 +119,7 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
  * \return GGEMS_NAVIGATION_RESOLVED after an accepted move; otherwise the
  * failed status and the particle is unchanged.
  */
-static __attribute__((noinline)) uint GGEMS_TransportToNextBoundary(
+static /*! \cond */__attribute__((noinline))/*! \endcond */ uint GGEMS_TransportToNextBoundary(
   __global GGEMSWorldRecord const *world,
   __global GGEMSAnalyticVolumeRecord const *volume,
   __global void const *box_pose, GGEMSParticleState *particle, uint *event,

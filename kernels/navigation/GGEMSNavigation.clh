@@ -21,10 +21,11 @@
 
 /*!
  * \file
- * \brief Shared Navigation events and exact World boundary evidence.
+ * \brief Defines Navigation events and transient FP32 boundary evidence.
  *
- * Analytic Box and Sphere predicates use transient FP32 parameters. World
- * navigation keeps its exact integer witness; Transport owns every movement.
+ * World and all analytic predicates return FP32 ray parameters in picometers.
+ * The actual stored direction determines the ray; predicates do not assume
+ * exact unit length. Transport owns accepted movement and owner updates.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -37,7 +38,7 @@
 /*! \brief Query resolved: the witness describes the first physical boundary. */
 #define GGEMS_NAVIGATION_RESOLVED 0U
 
-/*! \brief The start lies outside the closed World. */
+/*! \brief The start lies beyond the World's closed surface half-band. */
 #define GGEMS_NAVIGATION_OUTSIDE_WORLD 1U
 
 /*! \brief The ray, record, or analytic arithmetic cannot be resolved. */
@@ -99,7 +100,9 @@ typedef struct GGEMSBoundaryWitness {
  * The volatile integer round trip is a compiler barrier: Intel CPU OpenCL
  * 2026.21 folds a plain exponent mask into an assumed-finite result under
  * -cl-fast-relaxed-math, accepting NaN/Inf inputs and overflowing endpoints.
- * A noinline float helper does not prevent that transformation.
+ * A noinline float helper does not prevent that transformation. Current
+ * production kernels use standard optimized math without that relaxed option;
+ * the integer check retains explicit nonfinite detection.
  * \param[in] value Arithmetic result to inspect.
  * \return Nonzero for a finite FP32 value, including signed zero.
  */

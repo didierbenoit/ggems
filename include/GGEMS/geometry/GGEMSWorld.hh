@@ -66,8 +66,7 @@ namespace ggems::geometry {
 inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
 
 /*!
- * \brief Finite explicit World: an axis-aligned box centered on the global
- * origin that owns the authored physical volumes of the scene.
+ * \brief Owns a finite axis-aligned World and at most one analytic volume.
  *
  * The World frame is the canonical global frame of Position3PM and Direction3:
  * right-handed with X x Y = Z and default direction +Z. Faces lie at exactly
@@ -112,14 +111,22 @@ public:
   auto SetMaterial(core::materials::GGEMSMaterial material) -> GGEMSWorld &;
 
   /*!
-   * \brief Returns the effective World surface half-band in FP32 pm.
-   * \return Uploaded half-band, or zero before the World size is set.
+   * \brief Returns the automatically derived World surface half-band.
+   *
+   * The value is eight upward FP32 spacings at the largest uploaded World
+   * half extent. It is half the full closed surface-band width, with no fixed
+   * physical-distance floor or public tolerance setter.
+   * \return Effective half-band in pm, or zero before the World size is set.
    */
   [[nodiscard]] auto GetNavigationTolerancePM() const noexcept -> float;
 
   /*!
-   * \brief Returns the effective single-volume surface half-band in FP32 pm.
-   * \return Uploaded analytic half-band, or zero for a World-only scene.
+   * \brief Returns the automatically derived analytic surface half-band.
+   *
+   * The value is the larger of eight World spacings and sixteen spacings at
+   * the solid's uploaded local/global surface envelope. Validate() checks
+   * that each required feature and the World gap accommodate the bands.
+   * \return Effective half-band in FP32 pm, or zero for a World-only scene.
    */
   [[nodiscard]] auto GetVolumeNavigationTolerancePM() const noexcept -> float;
 
@@ -180,10 +187,19 @@ public:
    */
   auto AddVolume(GGEMSTrap trap) -> GGEMSWorld &;
 
-  /*! \brief Copies one complete full-azimuth Cons into this World. */
+  /*!
+   * \brief Copies one complete full-azimuth Cons into this World.
+   * \param[in] cons Complete frustum, independent of the caller after copying.
+   * \return This World for chained configuration.
+   * \throws GGEMSRecoverable If a volume is present or Cons admission fails.
+   */
   auto AddVolume(GGEMSCons cons) -> GGEMSWorld &;
 
-  /*! \brief Copies one complete continuous-profile Polyhedra into this World.
+  /*!
+   * \brief Copies one complete continuous-profile Polyhedra into this World.
+   * \param[in] polyhedra Complete polygonal profile, copied into the World.
+   * \return This World for chained configuration.
+   * \throws GGEMSRecoverable If a volume is present or profile admission fails.
    */
   auto AddVolume(GGEMSPolyhedra polyhedra) -> GGEMSWorld &;
 
@@ -217,14 +233,14 @@ public:
    * \brief Checks that the authored scene is complete and consistent.
    *
    * Every volume must lie strictly inside the World: no surface may touch
-   * or cross a World face. Sphere containment is exact in integer pm. Rotated
+   * or cross a World face. Sphere retains integer-pm containment checks. Rotated
    * Box bounds include FP64 roundoff; identity Box bounds retain the exact
-   * integer containment check. Tubs/Ellipsoid/Trd/Trap use their uploaded
+   * integer containment check. All other supported families use uploaded
    * posed surface bounds with separated FP32 feature and World bands.
    *
    * \throws GGEMSRecoverable If the World size or Material is not set, or if a
-   * volume is not strictly inside the World, or the requested FP32 tolerance
-   * cannot resolve the admitted feature and World-clearance bands.
+   * volume is not strictly inside the World, or the automatically derived
+   * FP32 half-bands cannot resolve the required features and World clearance.
    */
   auto Validate() const -> void;
 
@@ -329,7 +345,10 @@ private:
     volume_;
 
   /*!
-   * \brief Explicit surface half-band; absent selects per-boundary defaults.
+   * \brief Unset optional retained by World/Box/Sphere tolerance selection.
+   *
+   * No public setter populates this member; authored scenes use automatic
+   * per-boundary half-bands.
    */
   std::optional<units::Length> navigation_tolerance_;
 };

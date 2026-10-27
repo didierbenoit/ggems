@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Exercises diagnostic particle termination and active-count reset.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

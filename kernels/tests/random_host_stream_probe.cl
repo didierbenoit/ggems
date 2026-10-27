@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Exports device RNG words and uniforms for comparison with host stream
+ * progression.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

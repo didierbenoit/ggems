@@ -115,7 +115,7 @@ public:
    * completeness and strict containment) and then owned by the Run as its
    * scene snapshot; later edits of the caller's World do not reach the Run.
    * Initialize compiles the snapshot into the device World and volume records.
-   * \param[in] world Authored World including its explicit Material and
+   * \param[in] box Authored World including its explicit Material and
    * volumes.
    * \throws GGEMSRecoverable If Initialize has already succeeded, or if the
    * World is incomplete or inconsistent.

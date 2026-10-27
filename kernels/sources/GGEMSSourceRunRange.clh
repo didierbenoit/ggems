@@ -28,6 +28,7 @@
  */
 
 #ifndef GGEMS_SOURCES_GGEMS_SOURCE_RUN_RANGE_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_SOURCES_GGEMS_SOURCE_RUN_RANGE_CLH
 
 /*!

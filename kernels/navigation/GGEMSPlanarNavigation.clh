@@ -28,6 +28,7 @@
  */
 
 #ifndef GGEMS_PLANAR_NAVIGATION_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_PLANAR_NAVIGATION_CLH
 
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"

@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Samples per-stream scalar PCG32 uniforms into a test output buffer.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

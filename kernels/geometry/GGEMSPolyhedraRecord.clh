@@ -28,8 +28,17 @@
  */
 
 #ifndef GGEMS_POLYHEDRA_RECORD_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_POLYHEDRA_RECORD_CLH
 
+/*!
+ * \brief Stores 20 bytes of host-prepared polygon counts and owner metadata.
+ *
+ * The companion auxiliary buffer contains one 48-byte GGEMSBoxPoseRecord,
+ * side_count 8-byte GGEMSPolyhedraSideRecord entries, then section_count
+ * 32-byte GGEMSPolyhedraSectionRecord entries. All records use scalar fields
+ * with 4-byte natural alignment; no float3 alignment or padding is implied.
+ */
 typedef struct GGEMSPolyhedraRecord {
   /*! \brief Number of regular polygon sides. */
   uint side_count;
@@ -47,6 +56,14 @@ typedef struct GGEMSPolyhedraRecord {
   float tolerance_pm;
 } GGEMSPolyhedraRecord;
 
+/*!
+ * \brief Stores one 8-byte outward XY normal for the regular polygon.
+ *
+ * The authored start angle locates the first vertex. The host places side
+ * normals at start_angle + (2*i + 1)*pi/side_count for side i.
+ * Dotting this dimensionless unit normal with local XY coordinates is
+ * compared with an apothem, not a circumradius.
+ */
 typedef struct GGEMSPolyhedraSideRecord {
   /*! \brief Local XY outward unit-normal X component. */
   float normal_x;
@@ -55,6 +72,15 @@ typedef struct GGEMSPolyhedraSideRecord {
   float normal_y;
 } GGEMSPolyhedraSideRecord;
 
+/*!
+ * \brief Stores 32 bytes of continuous linear outer and bore profile coefficients.
+ *
+ * Each positive-height section spans strictly increasing local Z endpoints.
+ * Apothems vary as radius + slope * (z - z_lower_pm). The outer and inner
+ * profiles may change slope between sections; internal section joins are
+ * computational partitions, not material boundaries. Zero inner radius and
+ * slope denote an absent bore in this section.
+ */
 typedef struct GGEMSPolyhedraSectionRecord {
   /*! \brief Lower local Z coordinate in pm. */
   float z_lower_pm;

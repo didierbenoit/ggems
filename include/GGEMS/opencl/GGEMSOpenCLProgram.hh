@@ -169,8 +169,8 @@ public:
    * \return True if this program matches the requested build identity.
    *
    * Compares native context/device identities, the normalized source path,
-   * kernel name, strict-math request, and exact user-option text. It does not
-   * reread sources or recompute the content hash, so edits on disk do not
+   * kernel name, and exact user-option text. It does not reread sources or
+   * recompute the content hash, so edits on disk do not
    * invalidate an existing in-memory match.
    */
   [[nodiscard]] auto Matches(GGEMSOpenCLContext const &context,

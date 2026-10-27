@@ -36,6 +36,7 @@
  */
 
 #ifndef GGEMS_RANDOM_GGEMS_PCG32_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_RANDOM_GGEMS_PCG32_CLH
 
 #include "random/GGEMSRandomCommon.clh"

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Probes the World, counter, and accepted-interval device layouts.
+ * \brief Probes World, Transport-counter, and Observer device layouts.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>

@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks activity-driven birth values and RNG draw order against
+ * explicit draws.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

@@ -36,11 +36,12 @@
 #include "navigation/GGEMSNavigation.clh"
 
 /*!
- * \brief Transforms a canonical global ray into the Box frame once.
+ * \brief Transforms a global ray into the shared local solid frame.
  *
- * FP32 center subtraction and packed column axes apply R^T to the position
- * and stored direction, including identity poses.
- * \param[in] pose Immutable center and local axes in global coordinates.
+ * FP32 frame-origin subtraction and packed column axes apply R^T to position
+ * and stored direction, including identity poses. All nonspherical
+ * analytical families share this transform; directions are not renormalized.
+ * \param[in] pose Immutable frame origin and local axes in global coordinates.
  * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.
  * \param[out] local_position FP32 local position in pm.

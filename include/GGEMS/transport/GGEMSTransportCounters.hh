@@ -38,9 +38,10 @@ namespace ggems::core::transport {
  *
  * Counters reset before each chunk. The atomic claim cursor includes
  * terminating out-of-range claims and must not be interpreted as a
- * completed-history count. Process-free species exit the World; other
- * species keep the one-meter diagnostic projection; legacy synthetic branching
- * and stack counters remain zero.
+ * completed-history count. In the common stream, Process-free species exit
+ * the World and other species keep the one-meter diagnostic projection;
+ * synthetic branching and stack counters remain zero. The legacy dummy
+ * workload reuses this record and populates its synthetic-event counters.
  */
 struct GGEMSTransportCounters {
   /*!
@@ -67,33 +68,32 @@ struct GGEMSTransportCounters {
    */
   std::uint32_t terminal_particle_count{0U};
 
-  /*!
-   * \brief Created secondary particles; zero in the current diagnostic kernel.
-   */
+  /*! \brief Created secondary particles; zero in the common stream. */
   std::uint32_t created_secondary_count{0U};
 
-  /*! \brief Synthetic Aionino-to-Gamma events; zero in the current kernel. */
+  /*! \brief Synthetic Aionino-to-Gamma events; zero in the common stream. */
   std::uint32_t aionino_to_gamma_count{0U};
 
-  /*! \brief Synthetic Gamma-to-Electron events; zero in the current kernel. */
+  /*! \brief Synthetic Gamma-to-Electron events; zero in the common stream. */
   std::uint32_t gamma_to_electron_count{0U};
 
-  /*! \brief Synthetic Electron branching events; zero in the current kernel. */
+  /*! \brief Synthetic Electron branching events; zero in the common stream. */
   std::uint32_t electron_to_electron_count{0U};
 
   /*!
-   * \brief Nonfinite diagnostic endpoints; no terminal publication or
-   * completion.
+   * \brief Invalid diagnostic source/endpoint state or synthetic overflow.
+   *
+   * The common stream does not publish a terminal record or completion for
+   * an unrepresentable endpoint. The legacy dummy workload also uses this
+   * field when no source range owns a claimed primary or its bounded
+   * synthetic descendant stack is exhausted.
    */
   std::uint32_t overflow_count{0U};
 
-  /*!
-   * \brief Largest synthetic stack depth; zero in the current diagnostic
-   * kernel.
-   */
+  /*! \brief Largest synthetic stack depth; zero in the common stream. */
   std::uint32_t max_stack_depth{0U};
 
-  /*! \brief Synthetic step count; zero in the current diagnostic kernel. */
+  /*! \brief Synthetic step count; zero in the common stream. */
   std::uint32_t total_fake_step_count{0U};
 
   /*! \brief Navigated births outside the closed World; no completion. */

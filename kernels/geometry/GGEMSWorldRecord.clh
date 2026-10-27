@@ -28,6 +28,7 @@
  */
 
 #ifndef GGEMS_WORLD_RECORD_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_WORLD_RECORD_CLH
 
 /*! \brief Host-mirrored box parameters in signed FP32 pm (16 bytes). */

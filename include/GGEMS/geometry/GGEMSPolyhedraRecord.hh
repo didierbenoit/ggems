@@ -34,7 +34,15 @@
 
 namespace ggems::geometry {
 
-/*! \brief Scalar 20-byte metadata; profile data follows the shared pose. */
+/*!
+ * \brief Stores scalar 20-byte metadata for an immutable polygonal profile.
+ *
+ * The separate auxiliary byte buffer contains one 48-byte
+ * GGEMSBoxPoseRecord, side_count consecutive 8-byte side records, then
+ * section_count consecutive 32-byte section records. All fields are
+ * 32-bit scalars; host and OpenCL field order and alignment must match.
+ * Counts describe one physical volume and one Material across all sections.
+ */
 struct GGEMSPolyhedraRecord {
   /*! \brief Number of regular polygon sides. */
   std::uint32_t side_count{0};
@@ -61,7 +69,15 @@ struct GGEMSPolyhedraSideRecord {
   float normal_y{0.0F};
 };
 
-/*! \brief Scalar 32-byte continuous tapered section in local pm. */
+/*!
+ * \brief Stores scalar 32-byte coefficients for one continuous axial section.
+ *
+ * The outer apothem at local z is outer_radius_pm + outer_slope *
+ * (z - z_lower_pm); the inner apothem follows the corresponding formula.
+ * Slopes are dimensionless. Normal lengths convert a perpendicular
+ * surface half-band in pm into a side-plane offset. Adjacent sections
+ * meet at their shared Z plane without an authored radial step.
+ */
 struct GGEMSPolyhedraSectionRecord {
   /*! \brief Lower local Z coordinate in pm. */
   float z_lower_pm{0.0F};

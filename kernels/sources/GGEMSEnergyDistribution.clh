@@ -33,6 +33,7 @@
  */
 
 #ifndef GGEMS_SOURCES_GGEMS_ENERGY_DISTRIBUTION_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_SOURCES_GGEMS_ENERGY_DISTRIBUTION_CLH
 
 #include "random/GGEMSRandom.clh"

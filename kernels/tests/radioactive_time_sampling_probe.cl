@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Exercises radioactive-time transforms with supplied words and window
+ * inputs.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

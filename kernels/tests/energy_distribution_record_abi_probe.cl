@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks device energy-descriptor layout and host/device field transfer.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

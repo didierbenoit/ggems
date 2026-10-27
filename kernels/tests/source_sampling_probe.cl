@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Exercises imposed source variates, initialized births, and RNG draw
+ * counts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

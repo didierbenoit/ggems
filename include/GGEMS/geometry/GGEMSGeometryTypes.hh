@@ -37,7 +37,7 @@
 
 /*!
  * \namespace ggems::geometry
- * \brief Provides signed picometer geometry and dimensionless directions.
+ * \brief Provides host geometry authoring, device records, and directions.
  */
 namespace ggems::geometry {
 
@@ -312,7 +312,7 @@ constexpr auto operator-(Displacement3PM displacement) noexcept
 
 /*!
  * \namespace ggems::geometry::detail
- * \brief Provides internal direction-normalization helpers.
+ * \brief Provides internal direction and static geometry preparation helpers.
  */
 namespace detail {
 /*!
@@ -340,9 +340,8 @@ struct NormalizedVector3D {
  * \param[in] x_val X component of the input vector.
  * \param[in] y_val Y component of the input vector.
  * \param[in] z_val Z component of the input vector.
- * \return The normalized vector, or std::nullopt if an input component,
- *         the computed length, or a result component is nonfinite,
- *         or if the computed length is zero.
+ * \return The normalized vector, or std::nullopt when the computed length
+ * is zero or nonfinite, including a nonfinite input component.
  */
 [[nodiscard]] inline auto TryNormalizeVector3D(double x_val, double y_val,
                                                double z_val) noexcept
@@ -395,8 +394,8 @@ struct NormalizedVector3D {
  * \param[in] dir_x X component of the input vector.
  * \param[in] dir_y Y component of the input vector.
  * \param[in] dir_z Z component of the input vector.
- * \return The normalized direction, or std::nullopt if normalization fails
- *         or conversion does not produce a finite, nonzero direction.
+ * \return The normalized direction after conversion to FP32, or std::nullopt
+ * if the input's double-precision length is zero or nonfinite.
  */
 [[nodiscard]] inline auto TryMakeDirection3(double dir_x, double dir_y,
                                             double dir_z) noexcept

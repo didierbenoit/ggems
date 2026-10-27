@@ -28,6 +28,7 @@
  */
 
 #ifndef GGEMS_TRANSPORT_GGEMS_TRANSPORT_COUNTERS_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_TRANSPORT_GGEMS_TRANSPORT_COUNTERS_CLH
 
 /*!
@@ -51,13 +52,13 @@ typedef struct GGEMSTransportCounters {
   uint consumed_primary_count;
 
   /*!
-   *\brief Actual successful histories, accumulated privately and published
-   *per worker.
+   * \brief Actual successful histories, accumulated privately and published
+   * per worker.
    */
   uint completed_history_count;
 
   /*!
-   *\brief Zero in the stream kernel; host derives terminals from actual
+   * \brief Zero in the stream kernel; host derives terminals from actual
    * completions.
    */
   uint terminal_particle_count;
@@ -81,7 +82,7 @@ typedef struct GGEMSTransportCounters {
   uint electron_to_electron_count;
 
   /*!
-   *\brief Nonfinite diagnostic endpoints; no terminal publication or
+   * \brief Nonfinite diagnostic endpoints; no terminal publication or
    * completion.
    */
   uint overflow_count;
@@ -98,6 +99,7 @@ typedef struct GGEMSTransportCounters {
   /*! \brief Navigation queries without a resolvable boundary; no completion. */
   uint unresolved_geometry_count;
 
+  /*! \brief Successful geometric World exits accumulated by stream workers. */
   uint escaped_world_count;
 } GGEMSTransportCounters;
 

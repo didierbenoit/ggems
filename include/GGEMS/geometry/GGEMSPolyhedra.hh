@@ -61,8 +61,22 @@ struct GGEMSPolyhedraProfile {
  * Radii measure distance to polygon sides, not vertices. The start angle points
  * to the first vertex; side normals lie halfway between neighboring vertices.
  * Z coordinates are absolute local coordinates and need not be centered.
- * Adjacent planes interpolate both apothems linearly. Repeated Z, partial phi,
- * zero outer radius, and arbitrary RZ polygons are not admitted.
+ * Adjacent planes interpolate both apothems linearly, with no radial jump
+ * at a shared plane. Axial profiles may be concave: one ray can cross multiple
+ * disjoint material intervals, all with the same physical volume and Material.
+ * Zero inner apothems throughout give a filled solid; positive values form a
+ * polygonal bore that may close where the inner profile reaches zero.
+ *
+ * At least three sides and two strictly increasing local Z planes are needed.
+ * Repeated-Z steps, partial-azimuth sectors, zero outer apothems, arbitrary RZ
+ * polygons, and arbitrary meshes are unsupported. This API is a continuous
+ * regular-polygon profile and does not provide full G4Polyhedra equivalence.
+ *
+ * Validate() checks section and wall survival after FP32 packing. GGEMSWorld
+ * additionally checks the automatically derived surface half-band against
+ * section height, side width, nonzero bore, wall thickness, and World clearance.
+ * Pose, side normals, and axial coefficients are uploaded once as immutable
+ * auxiliary data; all per-particle queries execute in OpenCL.
  */
 class GGEMSPolyhedra {
 public:
@@ -85,14 +99,16 @@ public:
   auto SetStartAngle(units::Angle angle) -> GGEMSPolyhedra &;
 
   /*!
-   * \brief Copies the continuous axial profile after central Units conversion.
+   * \brief Copies a continuous axial profile from canonical typed quantities.
    * \param[in] z_planes Strictly increasing absolute local Z coordinates.
    * \param[in] inner_radii Nonnegative inner apothems; zero closes the bore.
    * \param[in] outer_radii Positive outer apothems, each greater than the
    * inner.
    * \return This solid for chained configuration.
    * \throws core::GGEMSRecoverable If array sizes differ, fewer than two planes
-   * are supplied, Z is not strictly increasing, or radii are invalid.
+   * are supplied, Z is not strictly increasing, radii are invalid, or the
+   * section count exceeds the transport event-index range. The old profile
+   * remains unchanged on rejection.
    */
   auto SetZProfile(std::span<units::PositionCoordinate const> z_planes,
                    std::span<units::Length const> inner_radii,
@@ -125,25 +141,43 @@ public:
   auto SetMaterial(core::materials::GGEMSMaterial material) -> GGEMSPolyhedra &;
 
   /*!
-   * \brief Requires complete dimensions, side count, and Material.
-   * \throws core::GGEMSRecoverable If required authoring state is absent.
+   * \brief Checks complete authoring state and noncollapsed FP32 sections.
+   * \throws core::GGEMSRecoverable If side count, profile, or Material is
+   * absent, or FP32 conversion collapses a section height or radial wall.
+   * World-clearance and surface-band admission belongs to GGEMSWorld.
    */
   auto Validate() const -> void;
 
-  /*! \brief Returns the configured polygon side count, or zero if unset. */
+  /*!
+   * \brief Returns the configured regular-polygon side count.
+   * \return At least three after SetSideCount(), or zero before configuration.
+   */
   [[nodiscard]] auto GetSideCount() const noexcept -> std::uint32_t;
 
-  /*! \brief Returns the authored first-vertex angle. */
+  /*!
+   * \brief Returns the authored first-vertex angle.
+   * \return Angle in integer picoradians, measured from local +X toward +Y.
+   */
   [[nodiscard]] auto GetStartAngle() const noexcept -> units::Angle;
 
-  /*! \brief Borrows the authored axial profile until the next mutation. */
+  /*!
+   * \brief Borrows the authored axial profile.
+   * \return Increasing local-Z planes in integer pm; SetZProfile() or destruction
+   * invalidates the view.
+   */
   [[nodiscard]] auto GetZProfilePM() const noexcept
     -> std::span<GGEMSPolyhedraProfile const>;
 
-  /*! \brief Returns the local frame's global origin in integer pm. */
+  /*!
+   * \brief Returns the local frame origin in the World.
+   * \return Signed integer-pm position, which need not be the profile midpoint.
+   */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
-  /*! \brief Borrows the proper local-to-global rotation. */
+  /*!
+   * \brief Borrows the proper local-to-World rotation.
+   * \return Owned rotation, initially identity; it must not outlive this solid.
+   */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
 
   /*!

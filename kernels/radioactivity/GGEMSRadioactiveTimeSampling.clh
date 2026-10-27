@@ -33,6 +33,7 @@
  */
 
 #ifndef GGEMS_RADIOACTIVITY_GGEMS_RADIOACTIVE_TIME_SAMPLING_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_RADIOACTIVITY_GGEMS_RADIOACTIVE_TIME_SAMPLING_CLH
 
 #include "random/GGEMSRandomCommon.clh"

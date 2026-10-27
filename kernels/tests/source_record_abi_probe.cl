@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks source and run-range device layouts and host/device field
+ * transfer.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

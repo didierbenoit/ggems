@@ -44,8 +44,8 @@ inline constexpr std::uint32_t k_volume_id_exterior{0xFFFFFFFFU};
  *
  * Every Box uses positive FP32 half extents in pm and a separate FP32 pose,
  * including identity placement. The local Box is the physical OBB, never its
- * global AABB. The authored host scene is strictly contained in the World
- * before conversion to these FP32 records.
+ * global AABB. World admission checks both authored containment and separated
+ * surface bands using the uploaded FP32 geometry.
  * Mirrors the corresponding host/device record field for field.
  */
 struct GGEMSBoxRecord {

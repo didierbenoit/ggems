@@ -75,9 +75,13 @@ using ggems::geometry::DistancePM;
 
 /*! \brief Immutable FP32 surface envelope used only during host admission. */
 struct SurfaceScale {
+  /*! \brief Absolute posed surface envelope along World X/Y/Z, in pm. */
   std::array<double, 3U> envelope_pm{};
+  /*! \brief World-axis envelope expansion per unit local surface half-band. */
   std::array<double, 3U> band_projection{1.0, 1.0, 1.0};
+  /*! \brief Smallest required interior, bore, or wall half-width in pm. */
   double minimum_half_extent_pm{0.0};
+  /*! \brief Largest local coordinate scale used for FP32 spacing, in pm. */
   float local_scale_pm{0.0F};
 };
 
@@ -187,11 +191,11 @@ BuildSurfaceScale(ggems::geometry::GGEMSSphere const &sphere) noexcept
 }
 
 /*!
- * \brief Bounds the two new curved solids using uploaded dimensions and pose.
- * \param[in] center Canonical global geometric center.
+ * \brief Bounds a posed cylinder or ellipsoid from uploaded dimensions.
+ * \param[in] center World position of the local frame origin in pm.
  * \param[in] rotation Shared proper local-to-global rotation.
- * \param[in] extent Uploaded local radii/half-length or semi-axes in pm.
- * \param[in] cylinder True for Tubs; false for a complete ellipsoid.
+ * \param[in] extent Uploaded local enclosing radii/half-length or semi-axes in pm.
+ * \param[in] cylinder True for a cylindrical bound; false for an ellipsoid.
  * \return Surface envelope and projected band expansion for host admission.
  */
 [[nodiscard]] auto
@@ -273,7 +277,11 @@ BuildSurfaceScale(ggems::geometry::GGEMSTubs const &tubs) noexcept
   return scale;
 }
 
-/*! \brief Bounds a frustum and its nonzero normal feature widths. */
+/*!
+ * \brief Bounds a frustum and its nonzero normal feature widths.
+ * \param[in] cons Complete authored solid or hollow frustum.
+ * \return Posed envelope, band projection, and required feature half-width.
+ */
 [[nodiscard]] auto
 BuildSurfaceScale(ggems::geometry::GGEMSCons const &cons) noexcept
   -> SurfaceScale {
@@ -320,7 +328,11 @@ BuildSurfaceScale(ggems::geometry::GGEMSCons const &cons) noexcept
   return scale;
 }
 
-/*! \brief Bounds a continuous polygonal profile and all admitted features. */
+/*!
+ * \brief Bounds a continuous polygonal profile and its required features.
+ * \param[in] solid Complete profile with noncollapsed FP32 sections.
+ * \return Posed envelope and section, side, bore, and wall feature margins.
+ */
 [[nodiscard]] auto
 BuildSurfaceScale(ggems::geometry::GGEMSPolyhedra const &solid) noexcept
   -> SurfaceScale {
@@ -543,7 +555,7 @@ BuildSurfaceScale(ggems::geometry::GGEMSTrap const &trap) noexcept
 
 /*!
  * \brief Derives a dimensionless-margin FP32 surface half-band on the host.
-+ * \param[in] scale Uploaded geometry's static envelope.
+ * \param[in] scale Uploaded geometry's static envelope.
  * \param[in] world_spacing Largest World coordinate spacing in pm.
  * \return Half-band in pm, without a fixed physical-distance floor.
  */
@@ -557,7 +569,7 @@ BuildSurfaceScale(ggems::geometry::GGEMSTrap const &trap) noexcept
 }
 
 /*!
- * \brief Rejects an explicit half-band below the admitted FP32 floor.
+ * \brief Rejects an unusable half-band below the derived FP32 requirement.
  * \param[in] tolerance Selected half-band in pm.
  * \param[in] required Minimum admitted half-band in pm.
  * \param[in] boundary Boundary label for the user diagnostic.
@@ -691,7 +703,7 @@ IsRotatedStrictlyInside(ggems::geometry::HalfExtent3PM world_half,
       radius = std::nextafter(radius + term, infinity);
     }
 
-    // Includes binary64 transpose/query roundoff, never a physical gap.
+    // Includes roundoff from the binary64 basis, never a physical gap.
     radius = std::nextafter(
       radius * (1.0L + (16.0L * std::numeric_limits<double>::epsilon())),
       infinity);

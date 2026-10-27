@@ -28,6 +28,7 @@
  */
 
 #ifndef GGEMS_CONS_NAVIGATION_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_CONS_NAVIGATION_CLH
 
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
@@ -210,7 +211,7 @@ static inline float4 GGEMS_ConsIntervals(__global GGEMSConsRecord const *cons,
  * \return Resolved according to the automatic surface-band policy.
  */
 // Outlining the larger birth predicate limits shared-kernel working-set growth.
-static __attribute__((noinline)) uint GGEMS_ConsLocate(
+static /*! \cond */__attribute__((noinline))/*! \endcond */ uint GGEMS_ConsLocate(
   __global GGEMSConsRecord const *cons, __global GGEMSBoxPoseRecord const *pose,
   float3 position, float3 direction, ulong *owner) {
   float3 local_position;

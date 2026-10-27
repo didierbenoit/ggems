@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Samples scalar Philox uniforms with one block consumed per output.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

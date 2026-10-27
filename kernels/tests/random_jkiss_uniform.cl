@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Samples per-stream scalar JKISS uniforms into a test output buffer.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

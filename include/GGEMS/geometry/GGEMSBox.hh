@@ -42,16 +42,15 @@
 namespace ggems::geometry {
 
 /*!
- * \brief Finite axis-aligned analytic Box: one physical volume with its own
- * explicit Material, placed by its geometric center in the World frame.
+ * \brief Owns a finite analytic Box with a rigid pose and explicit Material.
  *
  * The object is a host authoring value. A default-constructed Box is centered
  * on the global origin with no size and no Material; SetSize(), SetPosition()
  * and SetMaterial() may be called in any order. Validate() checks that the
  * Box is complete and is called by GGEMSWorld::AddVolume, which copies the
  * Box. Every full size is an even number of picometers, at least 2 pm, so the
- * local faces are exact lattice coordinates. Identity rotation keeps the exact
- * global axis-aligned path. The owning World checks strict containment and
+ * local faces are exact lattice coordinates. Identity rotation permits exact
+ * integer host containment checks. The owning World checks containment and
  * compiles the pose and face records. Per-particle location, intersection and
  * boundary selection are computed by OpenCL Navigation.
  */

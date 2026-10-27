@@ -1,66 +1,166 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+/*!
+ * \file
+ * \brief Captures bounded diagnostic particle records in global memory.
+ *
+ * Observer capture does not change Transport state or consume RNG draws.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
 #ifndef GGEMS_OBSERVER_GGEMS_OBSERVER_RECORD_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_OBSERVER_GGEMS_OBSERVER_RECORD_CLH
 
 #include "particles/GGEMSParticleState.clh"
 
+/*! \brief Unspecified diagnostic event kind. */
 #define GGEMS_OBSERVER_RECORD_KIND_UNKNOWN 0U
+/*! \brief Particle state immediately after primary initialization. */
 #define GGEMS_OBSERVER_RECORD_KIND_SOURCE 1U
+/*! \brief Diagnostic primary or continued-track step event. */
 #define GGEMS_OBSERVER_RECORD_KIND_STEP 2U
+/*! \brief Synthetic secondary creation event in the branching workload. */
 #define GGEMS_OBSERVER_RECORD_KIND_SECONDARY_STEP 3U
+/*! \brief Particle state at diagnostic or geometric completion. */
 #define GGEMS_OBSERVER_RECORD_KIND_TERMINAL 4U
+/*! \brief Reserved diagnostic anomaly event code. */
 #define GGEMS_OBSERVER_RECORD_KIND_ANOMALY 5U
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Selects source histories for optional diagnostic capture.
+ *
+ * Host-mirrored 24-byte record, naturally aligned to 8 bytes. A nonzero
+ * enabled flag admits the union of the first-N rule and optional exact
+ * source-slot/local-primary selection. It does not select by global ID.
+ */
 typedef struct GGEMSObserverConfigRecord {
+  /*! \brief Nonzero enables evaluation of the capture rules. */
   uint enabled;
+  /*! \brief Captures source-local indices strictly below this count. */
   uint capture_first_primary_count_per_source;
+  /*! \brief Nonzero enables the exact source/local-primary rule. */
   uint capture_specific_primary_enabled;
+  /*! \brief Source-array slot for the exact selection rule. */
   uint capture_source_index;
+  /*! \brief Source-local primary index for the exact selection rule. */
   ulong capture_source_local_primary_id;
 } GGEMSObserverConfigRecord;
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Tracks bounded record reservations and selected primary histories.
+ *
+ * Host-mirrored 16-byte record, naturally aligned to 4 bytes. The host
+ * initializes the counters before dispatch and reads them after completion.
+ * A reserved slot is not yet a fully written record during kernel execution.
+ */
 typedef struct GGEMSObserverCounters {
+  /*! \brief Atomic reserved-slot count, capped at record capacity. */
   uint record_count;
+  /*! \brief Atomic count of record reservations rejected at capacity. */
   uint overflow_count;
+  /*! \brief Atomic count of primaries selected by the stream kernel. */
   uint captured_primary_count;
+  /*! \brief Reserved layout word; not modified by capture helpers. */
   uint reserved_0;
 } GGEMSObserverCounters;
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Exports one diagnostic event in the 136-byte host-mirrored layout.
+ *
+ * The scalar record has 8-byte natural alignment. Position is a diagnostic
+ * integer-pm export of FP32 Transport state, rounded halfway away from zero.
+ * If any coordinate is unrepresentable, all three are zero and position_valid
+ * is zero. No scientific particle state is repaired or changed.
+ *
+ * Record reservation order depends on device scheduling; it is not physical
+ * chronology. The host consumes records only after the launch completes.
+ */
 typedef struct GGEMSObserverRecord {
+  /*! \brief Run identity supplied by the dispatching host. */
   ulong run_id;
+  /*! \brief Global identity of the primary owning this history. */
   ulong global_primary_id;
 
+  /*! \brief Primary index within the selected source population. */
   ulong source_local_primary_id;
+  /*!
+   * \brief Copied particle identity; synthetic descendants share the primary
+   * ID.
+   */
   ulong global_particle_id;
+  /*! \brief History-local track ID widened to 64 bits; all ones if invalid. */
   ulong track_id;
+  /*! \brief History-local parent ID widened to 64 bits; all ones if invalid. */
   ulong parent_track_id;
+  /*! \brief Particle simulation time in unsigned integer picoseconds. */
   ulong time_ps;
 
+  /*!
+   * \brief Exported global X in integer pm; zero when position_valid is zero.
+   */
   long position_x_pm;
+  /*!
+   * \brief Exported global Y in integer pm; zero when position_valid is zero.
+   */
   long position_y_pm;
+  /*!
+   * \brief Exported global Z in integer pm; zero when position_valid is zero.
+   */
   long position_z_pm;
 
+  /*! \brief GGEMS_OBSERVER_RECORD_KIND_* event selected by the caller. */
   uint record_kind;
+  /*! \brief Particle species code widened from the particle record. */
   uint particle_type;
+  /*! \brief Particle lifecycle status at capture. */
   uint status;
+  /*! \brief Descendant generation, with zero for a source primary. */
   uint generation;
 
+  /*! \brief Stored dimensionless global X direction component. */
   float direction_x;
+  /*! \brief Stored dimensionless global Y direction component. */
   float direction_y;
+  /*! \brief Stored dimensionless global Z direction component. */
   float direction_z;
+  /*! \brief Reserved fourth direction component, written as zero. */
   float direction_w;
 
+  /*! \brief Particle kinetic energy in unsigned integer micro-eV. */
   ulong energy_micro_eV;
+  /*! \brief Caller-supplied event deposit in unsigned integer micro-eV. */
   ulong deposited_energy_micro_eV;
 
+  /*! \brief Source-array slot; distinct from the authored source identity. */
   uint source_index;
 
   /*! \brief Nonzero if all legacy integer position coordinates are
@@ -71,6 +171,14 @@ typedef struct GGEMSObserverRecord {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Tests the union of configured primary-history capture rules.
+ *
+ * \param[in] config Immutable global selection record.
+ * \param[in] source_index Source-array slot of the primary.
+ * \param[in] source_local_primary_id Index within that source population.
+ * \return Nonzero if enabled and either capture rule matches.
+ */
 static inline uint GGEMS_ObserverShouldCapturePrimary(
   __global GGEMSObserverConfigRecord const *config, uint source_index,
   ulong source_local_primary_id) {
@@ -95,6 +203,17 @@ static inline uint GGEMS_ObserverShouldCapturePrimary(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Atomically reserves one slot without exceeding the record capacity.
+ *
+ * The successful caller exclusively owns its slot. Capacity exhaustion
+ * increments overflow_count and leaves record_count capped. No particle
+ * state or scientific completion counter is affected.
+ *
+ * \param[in,out] counters Global host-initialized capture counters.
+ * \param[in] record_capacity Writable record count, not bytes.
+ * \return Reserved slot index, or GGEMS_INVALID_ID_U32 when full.
+ */
 static inline uint
 GGEMS_ObserverReserveRecord(volatile __global GGEMSObserverCounters *counters,
                             uint record_capacity) {
@@ -137,6 +256,24 @@ static inline uint GGEMS_ObserverPositionRepresentable(float coordinate) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Reserves and writes one diagnostic copy of a particle event.
+ *
+ * A full buffer records overflow without publishing an event. Coordinate
+ * conversion is diagnostic only; invalid coordinates produce one explicit
+ * position_valid failure and zero coordinates, not a Transport correction.
+ *
+ * \param[in,out] counters Global atomic reservation and overflow counters.
+ * \param[out] records Global buffer writable for record_capacity entries.
+ * \param[in] record_capacity Number of available record slots.
+ * \param[in] record_kind Diagnostic event kind.
+ * \param[in] run_id Host-supplied Run identity.
+ * \param[in] global_primary_id Global primary-history identity.
+ * \param[in] source_local_primary_id Primary index within its source.
+ * \param[in] source_index Source-array slot.
+ * \param[in] particle Private state copied without mutation.
+ * \param[in] deposited_energy_micro_eV Event deposit in integer micro-eV.
+ */
 static inline void GGEMS_ObserverRecordParticle(
   volatile __global GGEMSObserverCounters *counters,
   __global GGEMSObserverRecord *records, uint record_capacity, uint record_kind,

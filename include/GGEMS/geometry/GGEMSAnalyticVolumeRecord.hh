@@ -229,8 +229,11 @@ union GGEMSAnalyticParameters {
 /*!
  * \brief Scalar 84-byte scene record, including the no-volume case.
  *
- * Mirrors GGEMSAnalyticVolumeRecord.clh. All shapes except Sphere reuse the
- * separately supplied GGEMSBoxPoseRecord. All programs share this scene layout.
+ * Mirrors GGEMSAnalyticVolumeRecord.clh with 4-byte scalar alignment. The
+ * 32-bit tag selects the active member of the 80-byte union. All present
+ * shapes except Sphere use the separate GGEMSBoxPoseRecord; Polyhedra appends
+ * side and section arrays in the auxiliary buffer. All programs share this
+ * scene layout. A None tag carries no physical volume.
  */
 struct GGEMSAnalyticVolumeRecord {
   /*! \brief Predicate and active union member. */

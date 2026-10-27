@@ -34,10 +34,7 @@
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
-/*!
- * \namespace ggems::geometry::detail
- * \brief Provides internal geometry authoring helpers.
- */
+/* GeometryTypes.hh documents the shared internal geometry namespace. */
 namespace ggems::geometry::detail {
 
 /*!

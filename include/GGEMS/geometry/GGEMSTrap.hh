@@ -147,29 +147,51 @@ public:
   [[nodiscard]] auto GetPositiveZHalfSizePM() const noexcept
     -> std::array<DistancePM, 3U>;
 
-  /*! \brief Returns the authored negative-Z skew angle. */
+  /*!
+   * \brief Returns the authored negative-Z skew angle.
+   * \return Signed skew of the negative-Z face in integer picoradians.
+   */
   [[nodiscard]] auto GetNegativeZSkew() const noexcept -> units::Angle;
 
-  /*! \brief Returns the authored positive-Z skew angle. */
+  /*!
+   * \brief Returns the authored positive-Z skew angle.
+   * \return Signed skew of the positive-Z face in integer picoradians.
+   */
   [[nodiscard]] auto GetPositiveZSkew() const noexcept -> units::Angle;
 
-  /*! \brief Returns the authored inclination polar angle. */
+  /*!
+   * \brief Returns the authored inclination polar angle.
+   * \return Signed center-line tilt in integer picoradians.
+   */
   [[nodiscard]] auto GetInclinationTheta() const noexcept -> units::Angle;
 
-  /*! \brief Returns the authored inclination azimuth. */
+  /*!
+   * \brief Returns the authored inclination azimuth.
+   * \return Center-line azimuth from local +X toward +Y in integer picoradians.
+   */
   [[nodiscard]] auto GetInclinationPhi() const noexcept -> units::Angle;
 
-  /*! \brief Returns the canonical distance to either end plane in pm. */
+  /*!
+   * \brief Returns the distance from the local origin to either end plane.
+   * \return Half length in integer pm; zero before SetLength().
+   */
   [[nodiscard]] auto GetHalfLengthPM() const noexcept -> DistancePM;
 
-  /*! \brief Returns the canonical global frame-origin position in pm. */
+  /*!
+   * \brief Returns the local frame origin in the World.
+   * \return Signed integer-pm World position; the origin by default.
+   */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
-  /*! \brief Borrows the owned local-to-global proper rotation. */
+  /*!
+   * \brief Borrows the owned local-to-World proper rotation.
+   * \return Proper rotation, initially identity; it must not outlive this solid.
+   */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
 
   /*!
-   * \brief Borrows the owned medium for this solid's lifetime.
+   * \brief Borrows the owned medium.
+   * \return Material reference; it must not outlive this solid.
    * \throws core::GGEMSRecoverable If no Material is configured.
    */
   [[nodiscard]] auto GetMaterial() const
@@ -185,16 +207,16 @@ private:
   /*! \brief Canonical distance to either end plane in pm. */
   DistancePM half_length_pm_{0};
 
-  /*! \brief Canonical authored angle; zero by default. */
+  /*! \brief Negative-Z face skew in integer picoradians; zero by default. */
   units::Angle negative_z_skew_{};
 
-  /*! \brief Canonical authored angle; zero by default. */
+  /*! \brief Positive-Z face skew in integer picoradians; zero by default. */
   units::Angle positive_z_skew_{};
 
-  /*! \brief Canonical authored angle; zero by default. */
+  /*! \brief Signed center-line tilt in integer picoradians; zero by default. */
   units::Angle inclination_theta_{};
 
-  /*! \brief Canonical authored angle; zero by default. */
+  /*! \brief Local center-line azimuth in integer picoradians; zero by default. */
   units::Angle inclination_phi_{};
 
   /*! \brief Global local-frame origin in canonical pm. */

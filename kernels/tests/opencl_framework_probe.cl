@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Exercises kernel dispatch and global-buffer mutation for OpenCL setup
+ * tests.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

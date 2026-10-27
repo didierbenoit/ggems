@@ -24,8 +24,8 @@
  * \brief Claims source primaries and executes the selected transport path.
  *
  * Process-free species traverse the host-authored finite World and its
- * analytic volumes and exit geometrically. Other species keep the diagnostic
- * one-meter projection and Killed status until their Processes exist.
+ * single optional analytic volume and exit geometrically. Other species keep
+ * the diagnostic one-meter projection and Killed status until their Processes exist.
  * No interaction, energy loss, time-of-flight update, or secondary is modeled.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
@@ -62,25 +62,26 @@
 
 /*!
  * \brief Out-of-line geometry-only history: generic Navigation through the
- * World and its analytic volumes, boundary by boundary, until the World exit.
+ * World and its optional analytic volume until the World exit.
  *
  * The birth owner is located first. Each iteration performs one accepted
  * Transport transaction from the current owner (query, canonical move, owner
- * update); a World exit completes the history with EscapedWorld. For the
- * admitted one-volume profile accepts at most five boundaries for Tubs or Cons
- * with a bore, and three for a convex solid. Polyhedra allows two material
+ * update); a World exit completes the history with EscapedWorld. In the
+ * admitted one-volume profile, the iteration bound is five for any Cons
+ * or a hollow Tubs, and three for the other nonempty families. Polyhedra allows two material
  * intervals per axial section, hence at most 4*S+1 boundaries including the
  * World exit. Exhausting the bound without escaping is reported as unresolved,
  * never as a silent completion. The loop carries no shape intersection code.
  *
  * This function and the Transport transaction it calls are deliberately kept
  * out of line. When the geometry loop is inlined into the claim/initialize/
- * complete loop below, the Intel CPU OpenCL compiler with
- * -cl-fast-relaxed-math mixes the private particle states of neighboring
+ * complete loop below, the former -cl-fast-relaxed-math profile exposed
+ * Intel CPU OpenCL compiler mixing of private particle states of neighboring
  * work-items: multi-source histories receive each other's positions or end
  * unresolved, including Gamma histories that never enter this branch. This
  * is a documented device-compiler boundary, not a performance choice; the
- * multi-source tests in tests/navigation guard it.
+ * multi-source tests in tests/navigation guard it. Current production
+ * kernels use standard optimized math without -cl-fast-relaxed-math.
  *
  * \param[in] world Immutable device World parameters.
  * \param[in] volume Single tagged analytic volume or None.
@@ -92,7 +93,7 @@
  * \return Zero when the history completed at the World boundary; nonzero when
  * the birth was outside the World or a transaction was unresolved.
  */
-static __attribute__((noinline)) uint GGEMS_TransportGeometry(
+static /*! \cond */__attribute__((noinline))/*! \endcond */ uint GGEMS_TransportGeometry(
   __global GGEMSWorldRecord const *world,
   __global GGEMSAnalyticVolumeRecord const *volume,
   __global void const *box_pose, GGEMSParticleState *particle,

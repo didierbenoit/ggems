@@ -22,7 +22,7 @@
 /*!
  * \file
  * \brief Test probe running one production Transport transaction per ray
- * over the World and its Box occurrences, outside the stream kernel.
+ * over the World and its single Box, outside the stream kernel.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -48,7 +48,7 @@ typedef struct BoxAlignmentProbe {
  * both directions.
  *
  * \param[in,out] boxes Two records: the second one is read back field by
- * field, the first one receives every field of the second one transformed.
+ * field, the first one receives transformed extents and owner IDs.
  * \param[out] layout Size, the five field offsets, alignment, stride and the
  * five values of the second record.
  */

@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Samples scalar uniforms through the selected generic RNG backend.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

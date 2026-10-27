@@ -28,6 +28,7 @@
  */
 
 #ifndef GGEMS_POLYHEDRA_NAVIGATION_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_POLYHEDRA_NAVIGATION_CLH
 
 #include "geometry/GGEMSPolyhedraRecord.clh"
@@ -38,17 +39,30 @@
 
 /*! \brief Constant-size cursor over one offset radial profile. */
 typedef struct GGEMSPolyhedraProfileCursor {
+  /*!
+   * \brief Next section index in ray order, meaningful while remaining is
+   * nonzero.
+   */
   uint section;
+  /*! \brief Number of axial sections not yet visited. */
   uint remaining;
+  /*!
+   * \brief Lookahead profile interval in pm; (+infinity, -infinity) if empty.
+   */
   float2 pending;
 } GGEMSPolyhedraProfileCursor;
 
 /*! \brief Streams the outer-profile union minus the bore-profile union. */
 typedef struct GGEMSPolyhedraCursor {
+  /*! \brief Streaming cursor for the offset outer profile. */
   GGEMSPolyhedraProfileCursor outer_cursor;
+  /*! \brief Streaming cursor for the complementary bore profile. */
   GGEMSPolyhedraProfileCursor inner_cursor;
+  /*! \brief Current outer-union interval in ray-parameter pm. */
   float2 outer;
+  /*! \brief Current bore-union interval in ray-parameter pm. */
   float2 inner;
+  /*! \brief Nonzero after both profile unions have been primed. */
   uint initialized;
 } GGEMSPolyhedraCursor;
 
@@ -77,7 +91,12 @@ static inline uint GGEMS_PolyhedraClip(float numerator, float component,
   return interval->x < interval->y;
 }
 
-/*! \brief Reports whether an axial section has a genuine bore surface. */
+/*!
+ * \brief Reports whether an axial section has a genuine bore surface.
+ *
+ * \param[in] section Host-prepared local profile coefficients.
+ * \return Nonzero when the inner apothem or its slope is nonzero.
+ */
 static inline uint GGEMS_PolyhedraHasBore(GGEMSPolyhedraSectionRecord section) {
   return section.inner_radius_pm != 0.0F || section.inner_slope != 0.0F;
 }
@@ -195,7 +214,13 @@ static inline float2 GGEMS_PolyhedraProfileInterval(
   return interval.x < interval.y ? interval : absent;
 }
 
-/*! \brief Initializes both profile cursors in ascending ray order. */
+/*!
+ * \brief Initializes both profile cursors in ascending ray-parameter order.
+ *
+ * \param[in] section_count Positive number of axial sections.
+ * \param[in] direction_z Stored dimensionless local Z direction component.
+ * \return Empty private cursors visiting Z sections in the ray direction.
+ */
 static inline GGEMSPolyhedraCursor
 GGEMS_PolyhedraCursorBegin(uint section_count, float direction_z) {
   GGEMSPolyhedraCursor cursor;
@@ -209,7 +234,20 @@ GGEMS_PolyhedraCursorBegin(uint section_count, float direction_z) {
   return cursor;
 }
 
-/*! \brief Returns the next positive-length interval of one offset profile. */
+/*!
+ * \brief Returns the next positive-length interval of one offset profile.
+ *
+ * \param[in] polyhedra Host-prepared side and section counts and ownership.
+ * \param[in] sides Local outward XY normals stored in global memory.
+ * \param[in] sections Local continuous axial profiles stored in global memory.
+ * \param[in] position Local FP32 anchor in pm.
+ * \param[in] direction Stored dimensionless local direction; not renormalized.
+ * \param[in] band Material offset in pm; positive expands, negative contracts.
+ * \param[in] bore Nonzero selects the complementary inner profile.
+ * \param[in,out] cursor Private section cursor advanced past visited sections.
+ * \return Ray-parameter interval in pm, or (+infinity, -infinity). Run
+ * GGEMS_PolyhedraNextProfileUnion to merge adjacent sections.
+ */
 static inline float2 GGEMS_PolyhedraNextProfileRaw(
   __global GGEMSPolyhedraRecord const *polyhedra,
   __global GGEMSPolyhedraSideRecord const *sides,
@@ -230,7 +268,19 @@ static inline float2 GGEMS_PolyhedraNextProfileRaw(
   return (float2)(INFINITY, -INFINITY);
 }
 
-/*! \brief Unions one offset profile across all computational section joins. */
+/*!
+ * \brief Unions one offset profile across computational section joins.
+ *
+ * \param[in] polyhedra Host-prepared side and section counts and ownership.
+ * \param[in] sides Local outward XY normals stored in global memory.
+ * \param[in] sections Local continuous axial profiles stored in global memory.
+ * \param[in] position Local FP32 anchor in pm.
+ * \param[in] direction Stored dimensionless local direction; not renormalized.
+ * \param[in] band Material offset in pm; positive expands, negative contracts.
+ * \param[in] bore Nonzero selects the complementary inner profile.
+ * \param[in,out] cursor Private cursor retaining one lookahead interval.
+ * \return Next connected profile interval in pm, or the empty sentinel.
+ */
 static inline float2 GGEMS_PolyhedraNextProfileUnion(
   __global GGEMSPolyhedraRecord const *polyhedra,
   __global GGEMSPolyhedraSideRecord const *sides,
@@ -262,8 +312,24 @@ static inline float2 GGEMS_PolyhedraNextProfileUnion(
   }
 }
 
-/*! \brief Subtracts the bore union from the outer union without interval
- * arrays. */
+/*!
+ * \brief Subtracts the bore union from the outer union without interval arrays.
+ *
+ * Successive calls retain all disconnected material intervals, including
+ * those produced by concave profiles and hollow sections. Cursor storage
+ * does not grow with section count. Zero-length contacts are discarded;
+ * physical crossings require profile unions and subsequent core/band
+ * qualification. Closed expanded profiles can retain a ray on a band face.
+ *
+ * \param[in] polyhedra Host-prepared side and section counts and ownership.
+ * \param[in] sides Local outward XY normals stored in global memory.
+ * \param[in] sections Local continuous axial profiles stored in global memory.
+ * \param[in] position Local FP32 anchor in pm.
+ * \param[in] direction Stored dimensionless local direction; not renormalized.
+ * \param[in] band Material offset in pm; positive expands, negative contracts.
+ * \param[in,out] cursor Private material-stream state advanced by this call.
+ * \return Next material interval in pm, or (+infinity, -infinity).
+ */
 static inline float2
 GGEMS_PolyhedraNextUnion(__global GGEMSPolyhedraRecord const *polyhedra,
                          __global GGEMSPolyhedraSideRecord const *sides,
@@ -333,7 +399,7 @@ GGEMS_PolyhedraNextUnion(__global GGEMSPolyhedraRecord const *polyhedra,
  * \param[out] owner Packed VolumeID/MaterialID.
  * \return Resolved under the automatic closed surface band.
  */
-static __attribute__((noinline)) uint
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
 GGEMS_PolyhedraLocate(__global GGEMSPolyhedraRecord const *polyhedra,
                       __global void const *auxiliary, float3 position,
                       float3 direction, ulong *owner) {
@@ -399,10 +465,11 @@ GGEMS_PolyhedraLocate(__global GGEMSPolyhedraRecord const *polyhedra,
  * \param[in,out] witness World exit, replaced by an earlier solid crossing.
  * \return Resolved, or unresolved if a required exit cannot be represented.
  */
-static __attribute__((noinline)) uint GGEMS_PolyhedraFindBoundary(
-  __global GGEMSPolyhedraRecord const *polyhedra,
-  __global void const *auxiliary, float3 position, float3 direction,
-  uint current_owner, uint last_event, GGEMSBoundaryWitness *witness) {
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
+GGEMS_PolyhedraFindBoundary(__global GGEMSPolyhedraRecord const *polyhedra,
+                            __global void const *auxiliary, float3 position,
+                            float3 direction, uint current_owner,
+                            uint last_event, GGEMSBoundaryWitness *witness) {
   __global GGEMSBoxPoseRecord const *pose =
     (__global GGEMSBoxPoseRecord const *)auxiliary;
   __global GGEMSPolyhedraSideRecord const *sides =
