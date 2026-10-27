@@ -30,6 +30,8 @@
 #include <array>
 #include <algorithm>
 #include <cmath>
+#include <cstring>
+#include <numbers>
 #include <limits>
 #include <optional>
 #include <cstddef>
@@ -44,6 +46,10 @@
 
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
+#include "GGEMS/geometry/GGEMSCons.hh"
+#include "GGEMS/geometry/GGEMSPolyhedra.hh"
+#include "GGEMS/geometry/detail/GGEMSPolyhedraGeometry.hh"
+#include "GGEMS/geometry/detail/GGEMSConsGeometry.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/geometry/GGEMSTrd.hh"
 #include "GGEMS/geometry/GGEMSTrap.hh"
@@ -264,6 +270,103 @@ BuildSurfaceScale(ggems::geometry::GGEMSTubs const &tubs) noexcept
     });
   }
 
+  return scale;
+}
+
+/*! \brief Bounds a frustum and its nonzero normal feature widths. */
+[[nodiscard]] auto
+BuildSurfaceScale(ggems::geometry::GGEMSCons const &cons) noexcept
+  -> SurfaceScale {
+  auto const record = ggems::geometry::detail::BuildConsRecord(cons);
+  auto const outer = static_cast<float>(std::max(
+    cons.GetNegativeZOuterRadiusPM(), cons.GetPositiveZOuterRadiusPM()));
+  auto scale =
+    BuildCurvedSurfaceScale(cons.GetPositionPM(), cons.GetRotation(),
+                            {outer, outer, record.half_length_pm}, true);
+  scale.minimum_half_extent_pm = std::min(
+    scale.minimum_half_extent_pm,
+    static_cast<double>(record.outer_radius_pm / record.outer_normal_scale));
+  // A true tip has no finite-width feature at the cap. Its surface band is
+  // resolved directionally; every nonzero end feature must remain separated.
+  for (auto const radii : {
+         std::array{
+           cons.GetNegativeZInnerRadiusPM(),
+           cons.GetNegativeZOuterRadiusPM(),
+         },
+         std::array{
+           cons.GetPositiveZInnerRadiusPM(),
+           cons.GetPositiveZOuterRadiusPM(),
+         },
+       }) {
+    auto const inner = static_cast<float>(radii[0]);
+    auto const radius = static_cast<float>(radii[1]);
+    if (radius > 0.0F) {
+      scale.minimum_half_extent_pm =
+        std::min(scale.minimum_half_extent_pm,
+                 static_cast<double>(radius / record.outer_normal_scale));
+    }
+    if (inner > 0.0F) {
+      scale.minimum_half_extent_pm = std::min({
+        scale.minimum_half_extent_pm,
+        static_cast<double>(inner / record.inner_normal_scale),
+        static_cast<double>((radius - inner) / (record.outer_normal_scale +
+                                                record.inner_normal_scale)),
+      });
+    }
+  }
+  for (auto &projection : scale.band_projection) {
+    projection *= record.outer_normal_scale + std::abs(record.outer_slope);
+  }
+  return scale;
+}
+
+/*! \brief Bounds a continuous polygonal profile and all admitted features. */
+[[nodiscard]] auto
+BuildSurfaceScale(ggems::geometry::GGEMSPolyhedra const &solid) noexcept
+  -> SurfaceScale {
+  auto const profile = solid.GetZProfilePM();
+  auto const cosine = std::cos(std::numbers::pi / solid.GetSideCount());
+  double outer = 0.0;
+  double axial = 0.0;
+  for (auto const &plane : profile) {
+    outer = std::max(
+      outer,
+      static_cast<double>(static_cast<float>(plane.outer_radius_pm)) / cosine);
+    axial = std::max(
+      axial, std::abs(static_cast<double>(static_cast<float>(plane.z_pm))));
+  }
+  auto scale = BuildCurvedSurfaceScale(
+    solid.GetPositionPM(), solid.GetRotation(), {outer, outer, axial}, true);
+  double expansion = 1.0;
+  for (std::size_t index = 0; index + 1U < profile.size(); ++index) {
+    auto const section = ggems::geometry::detail::BuildPolyhedraSection(
+      profile[index], profile[index + 1U]);
+    scale.minimum_half_extent_pm = std::min(
+      scale.minimum_half_extent_pm,
+      0.5 * (static_cast<double>(section.z_upper_pm) - section.z_lower_pm));
+    for (auto const endpoint : {index, index + 1U}) {
+      auto const radius = static_cast<float>(profile[endpoint].outer_radius_pm);
+      auto const inner = static_cast<float>(profile[endpoint].inner_radius_pm);
+      scale.minimum_half_extent_pm = std::min({
+        scale.minimum_half_extent_pm,
+        static_cast<double>(radius / section.outer_normal_length),
+        static_cast<double>((radius - inner) / (section.outer_normal_length +
+                                                section.inner_normal_length)),
+        radius * std::tan(std::numbers::pi / solid.GetSideCount()),
+      });
+      if (inner > 0.0F) {
+        scale.minimum_half_extent_pm =
+          std::min(scale.minimum_half_extent_pm,
+                   static_cast<double>(inner / section.inner_normal_length));
+      }
+    }
+    expansion = std::max(
+      expansion,
+      (section.outer_normal_length + std::abs(section.outer_slope)) / cosine);
+  }
+  for (auto &projection : scale.band_projection) {
+    projection *= expansion;
+  }
   return scale;
 }
 
@@ -685,6 +788,16 @@ auto GGEMSWorld::GetVolumeNavigationTolerancePM() const noexcept -> float {
                                    WorldSpacingPM(half_extent_pm_));
   }
 
+  if (auto const *solid = std::get_if<GGEMSPolyhedra>(&volume_)) {
+    return RequiredTolerancePM(BuildSurfaceScale(*solid),
+                               WorldSpacingPM(half_extent_pm_));
+  }
+
+  if (auto const *cons = std::get_if<GGEMSCons>(&volume_)) {
+    return RequiredTolerancePM(BuildSurfaceScale(*cons),
+                               WorldSpacingPM(half_extent_pm_));
+  }
+
   if (auto const *tubs = std::get_if<GGEMSTubs>(&volume_)) {
     return RequiredTolerancePM(BuildSurfaceScale(*tubs),
                                WorldSpacingPM(half_extent_pm_));
@@ -802,6 +915,30 @@ auto GGEMSWorld::AddVolume(GGEMSTrap trap) -> GGEMSWorld & {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSWorld::AddVolume(GGEMSCons cons) -> GGEMSWorld & {
+  if (!std::holds_alternative<std::monostate>(volume_)) {
+    throw core::GGEMSRecoverable(
+      "The current slice admits at most one analytic volume.");
+  }
+  cons.Validate();
+  volume_ = std::move(cons);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AddVolume(GGEMSPolyhedra polyhedra) -> GGEMSWorld & {
+  if (!std::holds_alternative<std::monostate>(volume_)) {
+    throw core::GGEMSRecoverable(
+      "The current slice admits at most one analytic volume.");
+  }
+  polyhedra.Validate();
+  volume_ = std::move(polyhedra);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSWorld::Validate() const -> void {
   if (half_extent_pm_.x == 0ULL) {
     throw core::GGEMSRecoverable("World size is not set.");
@@ -869,6 +1006,16 @@ auto GGEMSWorld::Validate() const -> void {
     }
   }
 
+  if (auto const *solid = std::get_if<GGEMSPolyhedra>(&volume_)) {
+    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*solid),
+                          world_tolerance, GetVolumeNavigationTolerancePM());
+  }
+
+  if (auto const *cons = std::get_if<GGEMSCons>(&volume_)) {
+    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*cons),
+                          world_tolerance, GetVolumeNavigationTolerancePM());
+  }
+
   if (auto const *tubs = std::get_if<GGEMSTubs>(&volume_)) {
     RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*tubs),
                           world_tolerance, GetVolumeNavigationTolerancePM());
@@ -925,7 +1072,9 @@ auto GGEMSWorld::BuildBoxPoseRecord() const
                     std::is_same_v<Volume, GGEMSTubs> ||
                     std::is_same_v<Volume, GGEMSEllipsoid> ||
                     std::is_same_v<Volume, GGEMSTrd> ||
-                    std::is_same_v<Volume, GGEMSTrap>) {
+                    std::is_same_v<Volume, GGEMSTrap> ||
+                    std::is_same_v<Volume, GGEMSCons> ||
+                    std::is_same_v<Volume, GGEMSPolyhedra>) {
         auto const center = volume.GetPositionPM();
         auto const &rotation = volume.GetRotation();
 
@@ -948,6 +1097,21 @@ auto GGEMSWorld::BuildBoxPoseRecord() const
       }
     },
     volume_);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::BuildAnalyticAuxiliaryData() const -> std::vector<std::byte> {
+  if (auto const *solid = std::get_if<GGEMSPolyhedra>(&volume_)) {
+    return detail::BuildPolyhedraData(*solid);
+  }
+  auto const pose = BuildBoxPoseRecord();
+  if (!pose) {
+    return {};
+  }
+  std::vector<std::byte> data(sizeof(GGEMSBoxPoseRecord));
+  std::memcpy(data.data(), &*pose, sizeof(GGEMSBoxPoseRecord));
+  return data;
 }
 
 // -----------------------------------------------------------------------------
@@ -1026,6 +1190,14 @@ auto GGEMSWorld::GetVolumeMaterial() const
 
   if (auto const *sphere = std::get_if<GGEMSSphere>(&volume_)) {
     return &sphere->GetMaterial();
+  }
+
+  if (auto const *solid = std::get_if<GGEMSPolyhedra>(&volume_)) {
+    return &solid->GetMaterial();
+  }
+
+  if (auto const *cons = std::get_if<GGEMSCons>(&volume_)) {
+    return &cons->GetMaterial();
   }
 
   if (auto const *tubs = std::get_if<GGEMSTubs>(&volume_)) {
@@ -1114,6 +1286,32 @@ auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id) const
             },
         },
     };
+  }
+
+  if (auto const *solid = std::get_if<GGEMSPolyhedra>(&volume_)) {
+    return {
+      .kind = GGEMSAnalyticKind::Polyhedra,
+      .parameters =
+        {
+          .polyhedra =
+            {
+              .side_count = solid->GetSideCount(),
+              .section_count =
+                static_cast<std::uint32_t>(solid->GetZProfilePM().size() - 1U),
+              .volume_id = 1U,
+              .material_id = material_id,
+              .tolerance_pm = GetVolumeNavigationTolerancePM(),
+            },
+        },
+    };
+  }
+
+  if (auto const *cons = std::get_if<GGEMSCons>(&volume_)) {
+    auto record = detail::BuildConsRecord(*cons);
+    record.volume_id = 1U;
+    record.material_id = material_id;
+    record.tolerance_pm = GetVolumeNavigationTolerancePM();
+    return {.kind = GGEMSAnalyticKind::Cons, .parameters = {.cons = record}};
   }
 
   if (auto const *trd = std::get_if<GGEMSTrd>(&volume_)) {

@@ -28,7 +28,9 @@
  */
 
 #include <string>
+#include <vector>
 
+#include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
 
 #include "detail/GGEMSPythonQuantityConversion.hh"
@@ -36,6 +38,8 @@
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
+#include "GGEMS/geometry/GGEMSCons.hh"
+#include "GGEMS/geometry/GGEMSPolyhedra.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/geometry/GGEMSTrd.hh"
 #include "GGEMS/geometry/GGEMSTrap.hh"
@@ -83,7 +87,9 @@ using ggems::python::detail::MakeQuantityOrThrow;
  */
 auto BindGeometry(py::module_ &module) -> void {
   using ggems::geometry::GGEMSBox;
+  using ggems::geometry::GGEMSCons;
   using ggems::geometry::GGEMSEllipsoid;
+  using ggems::geometry::GGEMSPolyhedra;
   using ggems::geometry::GGEMSSphere;
   using ggems::geometry::GGEMSTrap;
   using ggems::geometry::GGEMSTrd;
@@ -637,6 +643,208 @@ The Material becomes registered as used by the scene. Return this solid.
       py::arg("name"), py::return_value_policy::reference_internal);
 
   // === === ===
+  py::class_<GGEMSCons>(
+    module, "GGEMSCons",
+    R"doc(Configure a full-azimuth solid or hollow conical frustum along local +Z.
+
+Radii interpolate linearly between caps at +/- half length. A solid cone tip
+is admitted; hollow outer tips are rejected. The default pose is centered at the global origin with identity rotation.
+Configuration methods return the same object for chaining. World owns a copy.
+)doc")
+    .def(py::init<>(), "Create a frustum without dimensions or material.")
+
+    .def(
+      "set_negative_z_radii",
+      [](GGEMSCons &self, double inner_radius, double outer_radius,
+         std::string const &unit) -> GGEMSCons & {
+        return self.SetNegativeZRadii(
+          MakeQuantityOrThrow<ggems::units::Length>(inner_radius, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(outer_radius, unit));
+      },
+      "Set inner and outer radii at the negative-Z cap and return this "
+      "frustum.",
+      py::arg("inner_radius"), py::arg("outer_radius"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_positive_z_radii",
+      [](GGEMSCons &self, double inner_radius, double outer_radius,
+         std::string const &unit) -> GGEMSCons & {
+        return self.SetPositiveZRadii(
+          MakeQuantityOrThrow<ggems::units::Length>(inner_radius, unit),
+          MakeQuantityOrThrow<ggems::units::Length>(outer_radius, unit));
+      },
+      "Set inner and outer radii at the positive-Z cap and return this "
+      "frustum.",
+      py::arg("inner_radius"), py::arg("outer_radius"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_length",
+      [](GGEMSCons &self, double length,
+         std::string const &unit) -> GGEMSCons & {
+        return self.SetLength(
+          MakeQuantityOrThrow<ggems::units::Length>(length, unit));
+      },
+      R"doc(Set the full cap-to-cap length along local Z and return this frustum.
+
+The length must convert to a positive even number of picometers. Caps are at
++/- half length. The azimuth is always the full 360 degrees.
+)doc",
+      py::arg("length"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_position",
+      [](GGEMSCons &self, double x, double y, double z,
+         std::string const &unit) -> GGEMSCons & {
+        return self.SetPosition(ggems::geometry::MakePositionPM(
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
+            .value));
+      },
+      "Set the global geometric center and return this frustum.", py::arg("x"),
+      py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_rotation",
+      [](GGEMSCons &self, double rx, double ry, double rz,
+         std::string const &unit) -> GGEMSCons & {
+        return self.SetRotation(
+          MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
+      },
+      R"doc(Assign the absolute active rotation Rz * Ry * Rx about the center.
+
+Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
+Calls replace the previous rotation and return this frustum.
+)doc",
+      py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_material",
+      [](GGEMSCons &self, std::string const &name) -> GGEMSCons & {
+        return self.SetMaterial(ResolveMaterial(name));
+      },
+      R"doc(Set the medium by exact registered, built-in, or custom material name.
+
+The material becomes registered as used by the scene. Return this frustum.
+)doc",
+      py::arg("name"), py::return_value_policy::reference_internal);
+
+  // === === ===
+  py::class_<GGEMSPolyhedra>(
+    module, "GGEMSPolyhedra",
+    R"doc(Configure a full-azimuth regular polygon with continuous axial profiles.
+
+Authoring radii are apothems (distances to sides). The first vertex is at
+start_angle. Signed Z coordinates locate planes in the local frame; position
+places that frame's origin, and rotation acts about it. Convex and concave
+profiles, solid sections, and tapered bores share one material and VolumeID.
+Repeated Z steps and zero outer radii are rejected. Setters return this object.
+)doc")
+    .def(py::init<>(),
+         "Create a Polyhedra without side count, profiles or material.")
+
+    .def(
+      "set_side_count", &GGEMSPolyhedra::SetSideCount,
+      "Set the regular polygon side count (at least three). Return this solid.",
+      py::arg("side_count"), py::return_value_policy::reference_internal)
+
+    .def(
+      "set_start_angle",
+      [](GGEMSPolyhedra &self, double angle,
+         std::string const &unit) -> GGEMSPolyhedra & {
+        return self.SetStartAngle(
+          MakeQuantityOrThrow<ggems::units::Angle>(angle, unit));
+      },
+      "Set the first vertex angle, from local +X toward +Y. Return this solid.",
+      py::arg("angle"), py::arg("unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_z_profile",
+      [](GGEMSPolyhedra &self, std::vector<double> const &z,
+         std::vector<double> const &inner, std::vector<double> const &outer,
+         std::string const &unit) -> GGEMSPolyhedra & {
+        std::vector<ggems::units::PositionCoordinate> planes;
+        std::vector<ggems::units::Length> inner_radii;
+        std::vector<ggems::units::Length> outer_radii;
+        planes.reserve(z.size());
+        inner_radii.reserve(inner.size());
+        outer_radii.reserve(outer.size());
+        for (auto value : z) {
+          planes.push_back(
+            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(value, unit));
+        }
+        for (auto value : inner) {
+          inner_radii.push_back(
+            MakeQuantityOrThrow<ggems::units::Length>(value, unit));
+        }
+        for (auto value : outer) {
+          outer_radii.push_back(
+            MakeQuantityOrThrow<ggems::units::Length>(value, unit));
+        }
+        return self.SetZProfile(planes, inner_radii, outer_radii);
+      },
+      R"doc(Set equally sized Z, inner-apothem and outer-apothem sequences.
+
+Z coordinates are absolute local coordinates and must strictly increase.
+Radii are distances to polygon sides, linearly interpolated between planes.
+Inner radius zero closes the bore; outer radius must remain strictly positive.
+Repeated Z planes and steps are rejected. Return this solid.
+)doc",
+      py::arg("z"), py::arg("inner"), py::arg("outer"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_position",
+      [](GGEMSPolyhedra &self, double x, double y, double z,
+         std::string const &unit) -> GGEMSPolyhedra & {
+        return self.SetPosition(ggems::geometry::MakePositionPM(
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
+            .value));
+      },
+      "Set the global position of the local frame origin and return this "
+      "solid.",
+      py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_rotation",
+      [](GGEMSPolyhedra &self, double rx, double ry, double rz,
+         std::string const &unit) -> GGEMSPolyhedra & {
+        return self.SetRotation(
+          MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
+      },
+      R"doc(Assign the absolute active rotation Rz * Ry * Rx about the local frame origin.
+
+Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
+Calls replace the previous rotation and return this solid.
+)doc",
+      py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_material",
+      [](GGEMSPolyhedra &self, std::string const &name) -> GGEMSPolyhedra & {
+        return self.SetMaterial(ResolveMaterial(name));
+      },
+      R"doc(Set the medium by exact registered, built-in, or custom material name.
+
+The material becomes registered as used by the scene. Return this solid.
+)doc",
+      py::arg("name"), py::return_value_policy::reference_internal);
+
+  // === === ===
   py::class_<GGEMSWorld>(module, "GGEMSWorld",
                          R"doc(Configure the finite World of a GGEMS scene.
 
@@ -712,8 +920,8 @@ Example:
 
 The volume must be complete (size and material set) and is copied into the
 World; later edits of the caller's object do not reach the copy. The current
-implementation admits at most one Box, Sphere, Tubs, Ellipsoid, Trd, or Trap.
-Strict containment in the World is
+implementation admits at most one Box, Sphere, Tubs, Ellipsoid, Trd, Trap, Cons,
+or Polyhedra. Strict containment in the World is
 checked when the World is attached with GGEMSRun.set_world().
 
 Args:
@@ -765,6 +973,17 @@ rejected. Strict containment and FP32 bands are checked by set_world().
 Return this World for chaining.
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal)
+
+    .def("add_volume",
+         py::overload_cast<GGEMSPolyhedra>(&GGEMSWorld::AddVolume),
+         "Copy a complete Polyhedra into the single-volume World. Return this "
+         "World.",
+         py::arg("volume"), py::return_value_policy::reference_internal)
+
+    .def(
+      "add_volume", py::overload_cast<GGEMSCons>(&GGEMSWorld::AddVolume),
+      "Copy a complete Cons into the single-volume World. Return this World.",
+      py::arg("volume"), py::return_value_policy::reference_internal)
 
     .def("add_volume", py::overload_cast<GGEMSTrap>(&GGEMSWorld::AddVolume),
          R"doc(Copy a complete planar Trap into the single-volume World.

@@ -30,6 +30,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <optional>
 #include <span>
 #include <vector>
@@ -37,6 +38,8 @@
 
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
+#include "GGEMS/geometry/GGEMSCons.hh"
+#include "GGEMS/geometry/GGEMSPolyhedra.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/geometry/GGEMSTrd.hh"
 #include "GGEMS/geometry/GGEMSTrap.hh"
@@ -123,10 +126,10 @@ public:
   /*!
    * \brief Adds one complete physical volume owned by this World.
    *
-   * The current slice admits one Box, Sphere, Tubs, Ellipsoid, Trd or Trap; a
-   * World without volumes remains valid. Strict containment is checked by
-   * Validate(), so the World size may still be set afterwards. Later edits of
-   * the caller's Box do not reach the owned copy.
+   * The current slice admits one Box, Sphere, Tubs, Ellipsoid, Trd, Trap, Cons
+   * or Polyhedra; a World without volumes remains valid. Strict containment is
+   * checked by Validate(), so the World size may still be set afterwards. Later
+   * edits of the caller's Box do not reach the owned copy.
    *
    * \param[in] box Complete Box authoring value copied into the World.
    * \return This World for chained configuration.
@@ -176,6 +179,22 @@ public:
    * \throws GGEMSRecoverable If a volume exists or Trap admission fails.
    */
   auto AddVolume(GGEMSTrap trap) -> GGEMSWorld &;
+
+  /*! \brief Copies one complete full-azimuth Cons into this World. */
+  auto AddVolume(GGEMSCons cons) -> GGEMSWorld &;
+
+  /*! \brief Copies one complete continuous-profile Polyhedra into this World.
+   */
+  auto AddVolume(GGEMSPolyhedra polyhedra) -> GGEMSWorld &;
+
+  /*!
+   * \brief Packs the shared pose and any variable immutable shape data.
+   * \return Empty for None/Sphere, pose bytes for simple solids, or the pose
+   * followed by Polyhedra side normals and axial sections.
+   * \pre Validate() has succeeded since the last scene edit.
+   */
+  [[nodiscard]] auto BuildAnalyticAuxiliaryData() const
+    -> std::vector<std::byte>;
 
   /*!
    * \brief Packs the single volume, or a None tag for a World-only scene.
@@ -306,7 +325,7 @@ private:
 
   /*! \brief Owned single physical volume, absent until AddVolume(). */
   std::variant<std::monostate, GGEMSBox, GGEMSSphere, GGEMSTubs, GGEMSEllipsoid,
-               GGEMSTrd, GGEMSTrap>
+               GGEMSTrd, GGEMSTrap, GGEMSCons, GGEMSPolyhedra>
     volume_;
 
   /*!

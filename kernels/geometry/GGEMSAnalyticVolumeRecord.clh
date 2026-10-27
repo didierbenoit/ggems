@@ -33,6 +33,7 @@
 #define GGEMS_ANALYTIC_VOLUME_RECORD_CLH
 
 #include "geometry/GGEMSBoxRecord.clh"
+#include "geometry/GGEMSPolyhedraRecord.clh"
 
 /*! \brief World-only scene. */
 #define GGEMS_ANALYTIC_NONE 0U
@@ -54,6 +55,12 @@
 
 /*! \brief General planar trapezoid with inclined and skewed end faces. */
 #define GGEMS_ANALYTIC_TRAP 6U
+
+/*! \brief Full-azimuth solid or hollow conical frustum. */
+#define GGEMS_ANALYTIC_CONS 7U
+
+/*! \brief Regular polygon with continuous axial profiles. */
+#define GGEMS_ANALYTIC_POLYHEDRA 8U
 
 /*! \brief Scalar 16-byte outward plane, with interior dot(normal,p) <= offset.
  */
@@ -110,6 +117,39 @@ typedef struct GGEMSTubsRecord {
   float tolerance_pm;
 } GGEMSTubsRecord;
 
+/*! \brief Scalar 40-byte local conical frustum and ownership record. */
+typedef struct GGEMSConsRecord {
+  /*! \brief Midplane outer radius in pm. */
+  float outer_radius_pm;
+
+  /*! \brief Midplane bore radius in pm; zero disables the bore. */
+  float inner_radius_pm;
+
+  /*! \brief Outer dr/dz in the local frame. */
+  float outer_slope;
+
+  /*! \brief Inner dr/dz in the local frame. */
+  float inner_slope;
+
+  /*! \brief Center-to-cap length in pm. */
+  float half_length_pm;
+
+  /*! \brief sqrt(1 + outer_slope squared). */
+  float outer_normal_scale;
+
+  /*! \brief sqrt(1 + inner_slope squared). */
+  float inner_normal_scale;
+
+  /*! \brief Physical owner identity. */
+  uint volume_id;
+
+  /*! \brief Dense exact Material identity. */
+  uint material_id;
+
+  /*! \brief Closed perpendicular surface half-band in pm. */
+  float tolerance_pm;
+} GGEMSConsRecord;
+
 /*! \brief Scalar 24-byte local ellipsoid and ownership record. */
 typedef struct GGEMSEllipsoidRecord {
   /*! \brief Positive local X semi-axis in pm. */
@@ -157,6 +197,9 @@ typedef struct GGEMSSphereRecord {
 
 /*! \brief Payload selected by the enclosing analytic tag. */
 typedef union GGEMSAnalyticParameters {
+  /*! \brief Compact counts and identities for auxiliary polygon profiles. */
+  GGEMSPolyhedraRecord polyhedra;
+
   /*! \brief Local Box half extents and identities. */
   GGEMSBoxRecord box;
 
@@ -165,6 +208,9 @@ typedef union GGEMSAnalyticParameters {
 
   /*! \brief Cylinder radii, half length, and identities. */
   GGEMSTubsRecord tubs;
+
+  /*! \brief Conical end profiles, cap length, and identities. */
+  GGEMSConsRecord cons;
 
   /*! \brief Ellipsoid semi-axes and identities. */
   GGEMSEllipsoidRecord ellipsoid;

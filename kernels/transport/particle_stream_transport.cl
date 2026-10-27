@@ -67,11 +67,11 @@
  * The birth owner is located first. Each iteration performs one accepted
  * Transport transaction from the current owner (query, canonical move, owner
  * update); a World exit completes the history with EscapedWorld. For the
- * admitted one-volume profile at most five boundaries are accepted for a hollow
- * Tubs (two material intervals and World exit), or three for a convex solid;
- * exhausting the bound without escaping is reported
- * as unresolved, never as a silent completion. The loop is species-agnostic and
- * carries no shape algorithm.
+ * admitted one-volume profile accepts at most five boundaries for Tubs or Cons
+ * with a bore, and three for a convex solid. Polyhedra allows two material
+ * intervals per axial section, hence at most 4*S+1 boundaries including the
+ * World exit. Exhausting the bound without escaping is reported as unresolved,
+ * never as a silent completion. The loop carries no shape intersection code.
  *
  * This function and the Transport transaction it calls are deliberately kept
  * out of line. When the geometry loop is inlined into the claim/initialize/
@@ -84,7 +84,8 @@
  *
  * \param[in] world Immutable device World parameters.
  * \param[in] volume Single tagged analytic volume or None.
- * \param[in] box_pose Shared rigid pose for Box, Tubs, and Ellipsoid.
+ * \param[in] box_pose Shared rigid pose, followed by immutable data for
+ * Polyhedra.
  * \param[in,out] particle Private state; moved to the World boundary on
  * success, owner identities updated at every accepted boundary.
  * \param[in,out] counters Transport counters receiving the outcome.
@@ -119,7 +120,10 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
   particle->material_id = (uint)(owner & 0xFFFFFFFFUL);
 
   uint const max_boundary_events =
-    volume->kind == GGEMS_ANALYTIC_NONE ? 1U
+    volume->kind == GGEMS_ANALYTIC_NONE   ? 1U
+    : volume->kind == GGEMS_ANALYTIC_CONS ? 5U
+    : volume->kind == GGEMS_ANALYTIC_POLYHEDRA
+      ? 4U * volume->parameters.polyhedra.section_count + 1U
     : volume->kind == GGEMS_ANALYTIC_TUBS &&
         volume->parameters.tubs.inner_radius_pm > 0.0F
       ? 5U
@@ -230,7 +234,7 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
  * \param[in] world Immutable World parameters; required for navigated
  * species.
  * \param[in] volume Single analytic record, including None.
- * \param[in] box_pose Immutable pose for Box, Tubs, and Ellipsoid.
+ * \param[in] box_pose Immutable pose and optional Polyhedra profile data.
  */
 __kernel void particle_stream_transport(
   __global GGEMSRandomState *random_states,

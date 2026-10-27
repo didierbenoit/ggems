@@ -469,7 +469,8 @@ private:
   ggems::ocl::GGEMSOpenCLSVMBuffer volume_buffer_;
 
   /*!
-   * \brief Immutable FP32 pose for any Box; absent for Sphere or World-only.
+   * \brief Immutable FP32 pose and optional Polyhedra data; absent for
+   * Sphere/None.
    */
   std::optional<ggems::ocl::GGEMSOpenCLSVMBuffer> box_pose_buffer_;
 

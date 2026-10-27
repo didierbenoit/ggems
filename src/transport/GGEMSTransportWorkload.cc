@@ -59,7 +59,6 @@
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
-#include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
@@ -475,13 +474,13 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   std::filesystem::path const kernel_transport_root = kernel_root / "transport";
 
-  auto const pose =
-    world != nullptr ? world->BuildBoxPoseRecord() : std::nullopt;
-
-  if (pose.has_value()) {
-    box_pose_buffer_.emplace(context.CreateSVMBuffer(
-      ggems::units::Bytes{sizeof(geometry::GGEMSBoxPoseRecord)}));
-    ggems::ocl::WriteSVMFromHost(*box_pose_buffer_, *pose);
+  auto const auxiliary = world != nullptr ? world->BuildAnalyticAuxiliaryData()
+                                          : std::vector<std::byte>{};
+  if (!auxiliary.empty()) {
+    box_pose_buffer_.emplace(
+      context.CreateSVMBuffer(ggems::units::Bytes{auxiliary.size()}));
+    ggems::ocl::WriteSVMFromHost(*box_pose_buffer_,
+                                 std::span<std::byte const>{auxiliary});
   }
 
   std::string const build_options = std::format(
@@ -533,7 +532,8 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                                                 : geometry::GGEMSWorldRecord{});
 
   kernel_->SetArgSVMPointer(argument_index++, volume_buffer_.GetData());
-  // Box, Tubs and Ellipsoid share this pose. Keep every kernel argument bound
+  // Posed shapes share this argument; Polyhedra appends its flat profile.
+  // Keep every kernel argument bound
   // to live SVM storage: a null pointer can leave it unset on OpenCL drivers.
   kernel_->SetArgSVMPointer(argument_index++, box_pose_buffer_
                                                 ? box_pose_buffer_->GetData()

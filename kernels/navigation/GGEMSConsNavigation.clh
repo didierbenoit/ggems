@@ -1,0 +1,325 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Resolves full-azimuth conical frustum material intervals in FP32.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_CONS_NAVIGATION_CLH
+#define GGEMS_CONS_NAVIGATION_CLH
+
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "geometry/GGEMSBoxPoseRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "navigation/GGEMSBoxNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*!
+ * \brief Intersects a positive-radius cone branch and a finite axial slab.
+ *
+ * Position, radius, caps and the returned parameter share one length scale.
+ * The quadratic uses the actual stored direction, including the linear
+ * generatrix case. Clipping radius > 0 rejects the reflected cone branch.
+ * \param[in] position Scaled local anchor.
+ * \param[in] direction Actual local direction.
+ * \param[in] radius Scaled radius at Z = 0, possibly negative after
+ * contraction.
+ * \param[in] slope Radius derivative with respect to Z.
+ * \param[in] half_length Scaled positive cap half length.
+ * \return Strict interior interval, or (+infinity, -infinity).
+ */
+static inline float2 GGEMS_ConsConeInterval(float3 position, float3 direction,
+                                            float radius, float slope,
+                                            float half_length) {
+  float2 empty = (float2)(INFINITY, -INFINITY);
+  float near = -INFINITY;
+  float far = INFINITY;
+
+  if (direction.z == 0.0F) {
+    if (fabs(position.z) >= half_length) {
+      return empty;
+    }
+  } else {
+    float first = (-half_length - position.z) / direction.z;
+    float second = (half_length - position.z) / direction.z;
+    near = fmin(first, second);
+    far = fmax(first, second);
+  }
+
+  float local_radius = fma(slope, position.z, radius);
+  float radial_direction = slope * direction.z;
+
+  if (radial_direction == 0.0F) {
+    if (local_radius <= 0.0F) {
+      return empty;
+    }
+  } else if (radial_direction > 0.0F) {
+    near = fmax(near, -local_radius / radial_direction);
+  } else {
+    far = fmin(far, -local_radius / radial_direction);
+  }
+
+  if (near >= far) {
+    return empty;
+  }
+
+  float a =
+    dot(direction.xy, direction.xy) - radial_direction * radial_direction;
+  float b = dot(position.xy, direction.xy) - local_radius * radial_direction;
+  float c = dot(position.xy, position.xy) - local_radius * local_radius;
+
+  if (a == 0.0F) {
+    if (b == 0.0F) {
+      return c < 0.0F ? (float2)(near, far) : empty;
+    }
+    float crossing = -0.5F * c / b;
+    if (b > 0.0F) {
+      far = fmin(far, crossing);
+    } else {
+      near = fmax(near, crossing);
+    }
+  } else {
+    float discriminant = fma(-a, c, b * b);
+    if (discriminant <= 0.0F) {
+      return a < 0.0F ? (float2)(near, far) : empty;
+    }
+    float root = -b - copysign(sqrt(discriminant), b);
+    float first = root / a;
+    float second = c / root;
+    float lower = fmin(first, second);
+    float upper = fmax(first, second);
+    if (a > 0.0F) {
+      near = fmax(near, lower);
+      far = fmin(far, upper);
+    } else if (radial_direction < 0.0F) {
+      far = fmin(far, lower);
+    } else {
+      near = fmax(near, upper);
+    }
+  }
+  return near < far ? (float2)(near, far) : empty;
+}
+
+/*!
+ * \brief Subtracts one convex bore interval from the convex outer interval.
+ * \param[in] outer Outer interval.
+ * \param[in] bore Bore interval, including the empty sentinel.
+ * \return Up to two ordered material intervals in xy and zw.
+ */
+static inline float4 GGEMS_ConsSubtract(float2 outer, float2 bore) {
+  float4 result = (float4)(INFINITY, -INFINITY, INFINITY, -INFINITY);
+
+  if (outer.x >= outer.y) {
+    return result;
+  }
+
+  if (bore.x >= bore.y || bore.y <= outer.x || bore.x >= outer.y) {
+    result.xy = outer;
+    return result;
+  }
+
+  float first_end = fmin(outer.y, bore.x);
+  float second_begin = fmax(outer.x, bore.y);
+
+  if (outer.x < first_end) {
+    result.xy = (float2)(outer.x, first_end);
+  }
+
+  if (second_begin < outer.y) {
+    result.zw = (float2)(second_begin, outer.y);
+  }
+
+  return result;
+}
+
+/*!
+ * \brief Builds expanded, nominal or contracted material intervals.
+ * \param[in] cons Immutable frustum and band.
+ * \param[in] position Local pm anchor.
+ * \param[in] direction Actual local direction.
+ * \param[in] band Positive expands material, negative contracts it, in pm.
+ * \param[in] suppress_grazing_bore Nonzero merges a bore-band-only contact.
+ * \return Up to two ordered physical ray-parameter intervals in pm.
+ */
+static inline float4 GGEMS_ConsIntervals(__global GGEMSConsRecord const *cons,
+                                         float3 position, float3 direction,
+                                         float band,
+                                         uint suppress_grazing_bore) {
+  float scale = fmax(cons->half_length_pm, cons->outer_radius_pm);
+  float inverse_scale = 1.0F / scale;
+  float3 scaled_position = position * inverse_scale;
+  float half_length = (cons->half_length_pm + band) * inverse_scale;
+  float2 outer = GGEMS_ConsConeInterval(
+    scaled_position, direction,
+    (cons->outer_radius_pm + band * cons->outer_normal_scale) * inverse_scale,
+    cons->outer_slope, half_length);
+  float2 bore = (float2)(INFINITY, -INFINITY);
+
+  if (cons->inner_radius_pm > 0.0F) {
+    bore = GGEMS_ConsConeInterval(
+      scaled_position, direction,
+      (cons->inner_radius_pm - band * cons->inner_normal_scale) * inverse_scale,
+      cons->inner_slope, half_length);
+
+    if (suppress_grazing_bore != 0U && bore.x < bore.y) {
+      float2 inner =
+        GGEMS_ConsConeInterval(scaled_position, direction,
+                               (cons->inner_radius_pm -
+                                cons->tolerance_pm * cons->inner_normal_scale) *
+                                 inverse_scale,
+                               cons->inner_slope, half_length);
+
+      if (fmax(inner.x, outer.x) >= fmin(inner.y, outer.y)) {
+        bore = (float2)(INFINITY, -INFINITY);
+      }
+    }
+  }
+
+  return GGEMS_ConsSubtract(outer, bore) * scale;
+}
+
+/*!
+ * \brief Locates the forward owner through closed conical and cap bands.
+ * \param[in] cons Immutable frustum and ownership.
+ * \param[in] pose Shared rigid pose.
+ * \param[in] position World-validated global anchor in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed VolumeID and MaterialID.
+ * \return Resolved according to the automatic surface-band policy.
+ */
+// Outlining the larger birth predicate limits shared-kernel working-set growth.
+static __attribute__((noinline)) uint GGEMS_ConsLocate(
+  __global GGEMSConsRecord const *cons, __global GGEMSBoxPoseRecord const *pose,
+  float3 position, float3 direction, ulong *owner) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  float4 expanded = GGEMS_ConsIntervals(cons, local_position, local_direction,
+                                        cons->tolerance_pm, 0U);
+
+  float4 contracted = GGEMS_ConsIntervals(cons, local_position, local_direction,
+                                          -cons->tolerance_pm, 0U);
+  uint inside = 0U;
+  for (uint segment = 0U; segment < 2U; ++segment) {
+    float begin = expanded[2U * segment];
+    float end = expanded[2U * segment + 1U];
+    if (begin <= 0.0F && end >= 0.0F) {
+      inside |= fmax(0.0F, contracted.x) < fmin(end, contracted.y) ||
+                fmax(0.0F, contracted.z) < fmin(end, contracted.w);
+    }
+  }
+
+  *owner = inside != 0U
+             ? ((ulong)cons->volume_id << 32U) | cons->material_id
+             : ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects the next true crossing, retaining reentry beyond a bore.
+ * \param[in] cons Immutable frustum and ownership.
+ * \param[in] pose Shared rigid pose.
+ * \param[in] position Global physical anchor in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] last_event Accepted previous event for this straight direction.
+ * \param[in,out] witness World exit on input; selected crossing on output.
+ * \return Resolved, or unresolved for missing or invalid movement.
+ */
+static inline uint
+GGEMS_ConsFindBoundary(__global GGEMSConsRecord const *cons,
+                       __global GGEMSBoxPoseRecord const *pose, float3 position,
+                       float3 direction, uint current_owner, uint last_event,
+                       GGEMSBoundaryWitness *witness) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  float4 nominal =
+    GGEMS_ConsIntervals(cons, local_position, local_direction, 0.0F, 1U);
+
+  uint inside = current_owner == cons->volume_id;
+  float4 contracted;
+
+  if (inside == 0U) {
+    contracted = GGEMS_ConsIntervals(cons, local_position, local_direction,
+                                     -cons->tolerance_pm, 0U);
+  }
+
+  float candidate = INFINITY;
+
+  for (uint segment = 0U; segment < 2U; ++segment) {
+    float begin = nominal[2U * segment];
+    float end = nominal[2U * segment + 1U];
+    if (end <= 0.0F || begin >= end) {
+      continue;
+    }
+
+    if (inside != 0U) {
+      candidate = end;
+      break;
+    }
+
+    if (last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT && begin <= 0.0F) {
+      continue;
+    }
+
+    float forward = fmax(0.0F, begin);
+
+    if (fmax(forward, contracted.x) < fmin(end, contracted.y) ||
+        fmax(forward, contracted.z) < fmin(end, contracted.w)) {
+      candidate = forward;
+      break;
+    }
+  }
+
+  if (candidate == INFINITY && inside == 0U) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  if (GGEMS_NavigationIsFinite(candidate) == 0U ||
+      candidate >= witness->parameter) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  witness->parameter = candidate;
+  witness->faces = 0U;
+  witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id =
+    inside != 0U ? GGEMS_VOLUME_ID_WORLD : cons->volume_id;
+  witness->arrival_material_id =
+    inside != 0U ? GGEMS_MATERIAL_ID_WORLD : cons->material_id;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

@@ -40,6 +40,8 @@
 #include "navigation/GGEMSBoxNavigation.clh"
 #include "navigation/GGEMSSphereNavigation.clh"
 #include "navigation/GGEMSTubsNavigation.clh"
+#include "navigation/GGEMSConsNavigation.clh"
+#include "navigation/GGEMSPolyhedraNavigation.clh"
 #include "navigation/GGEMSEllipsoidNavigation.clh"
 #include "navigation/GGEMSPlanarNavigation.clh"
 
@@ -94,6 +96,17 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
                               position, direction, owner);
   }
 
+  if (volume->kind == GGEMS_ANALYTIC_POLYHEDRA) {
+    return GGEMS_PolyhedraLocate(&volume->parameters.polyhedra, box_pose,
+                                 position, direction, owner);
+  }
+
+  if (volume->kind == GGEMS_ANALYTIC_CONS) {
+    return GGEMS_ConsLocate(&volume->parameters.cons,
+                            (__global GGEMSBoxPoseRecord const *)box_pose,
+                            position, direction, owner);
+  }
+
   *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
 
   return GGEMS_NAVIGATION_RESOLVED;
@@ -129,7 +142,8 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
       volume->kind == GGEMS_ANALYTIC_NONE ||
       (current_owner == GGEMS_VOLUME_ID_WORLD &&
        last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
-       volume->kind != GGEMS_ANALYTIC_TUBS)) {
+       volume->kind != GGEMS_ANALYTIC_TUBS &&
+       volume->kind <= GGEMS_ANALYTIC_TRAP)) {
     return status;
   }
 
@@ -159,8 +173,24 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
       position, direction, current_owner, result);
   }
 
-  return GGEMS_SphereFindBoundary(&volume->parameters.sphere, position,
-                                  direction, current_owner, result);
+  if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
+    return GGEMS_SphereFindBoundary(&volume->parameters.sphere, position,
+                                    direction, current_owner, result);
+  }
+
+  if (volume->kind == GGEMS_ANALYTIC_POLYHEDRA) {
+    return GGEMS_PolyhedraFindBoundary(&volume->parameters.polyhedra, box_pose,
+                                       position, direction, current_owner,
+                                       last_event, result);
+  }
+
+  if (volume->kind == GGEMS_ANALYTIC_CONS) {
+    return GGEMS_ConsFindBoundary(
+      &volume->parameters.cons, (__global GGEMSBoxPoseRecord const *)box_pose,
+      position, direction, current_owner, last_event, result);
+  }
+
+  return GGEMS_NAVIGATION_RESOLVED;
 }
 
 #endif

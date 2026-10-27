@@ -1,0 +1,506 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Streams tapered polygon sections into physical material intervals.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_POLYHEDRA_NAVIGATION_CLH
+#define GGEMS_POLYHEDRA_NAVIGATION_CLH
+
+#include "geometry/GGEMSPolyhedraRecord.clh"
+#include "geometry/GGEMSBoxPoseRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "navigation/GGEMSBoxNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*! \brief Constant-size cursor over one offset radial profile. */
+typedef struct GGEMSPolyhedraProfileCursor {
+  uint section;
+  uint remaining;
+  float2 pending;
+} GGEMSPolyhedraProfileCursor;
+
+/*! \brief Streams the outer-profile union minus the bore-profile union. */
+typedef struct GGEMSPolyhedraCursor {
+  GGEMSPolyhedraProfileCursor outer_cursor;
+  GGEMSPolyhedraProfileCursor inner_cursor;
+  float2 outer;
+  float2 inner;
+  uint initialized;
+} GGEMSPolyhedraCursor;
+
+/*!
+ * \brief Clips one profile half-space without normalizing the stored direction.
+ * \param[in] numerator Signed inward plane distance before normalization.
+ * \param[in] component Ray component along the outward plane normal.
+ * \param[in] closed Nonzero for the closed expanded profile.
+ * \param[in,out] interval Ordered candidate interval in ray-parameter pm.
+ * \return Nonzero when a positive-length interval remains.
+ */
+static inline uint GGEMS_PolyhedraClip(float numerator, float component,
+                                       uint closed, float2 *interval) {
+  if (component == 0.0F) {
+    return closed != 0U ? numerator >= 0.0F : numerator > 0.0F;
+  }
+
+  float parameter = numerator / component;
+
+  if (component > 0.0F) {
+    interval->y = fmin(interval->y, parameter);
+  } else {
+    interval->x = fmax(interval->x, parameter);
+  }
+
+  return interval->x < interval->y;
+}
+
+/*! \brief Reports whether an axial section has a genuine bore surface. */
+static inline uint GGEMS_PolyhedraHasBore(GGEMSPolyhedraSectionRecord section) {
+  return section.inner_radius_pm != 0.0F || section.inner_slope != 0.0F;
+}
+
+/*!
+ * \brief Moves an internal partition to the intersection of offset faces.
+ *
+ * The rationalized expression avoids subtracting nearly equal normal lengths.
+ * Its displacement is at most the half-band. Convex joins intersect shifted
+ * faces; concave joins retain their union. No nominal surface moves.
+ * \param[in] lower Section before the join.
+ * \param[in] upper Section after the join.
+ * \param[in] band Signed offset of this radial profile in pm.
+ * \param[in] bore Nonzero selects the inner radial profile.
+ * \return Local Z coordinate of the continuous offset-profile join in pm.
+ */
+static inline float GGEMS_PolyhedraOffsetJoin(GGEMSPolyhedraSectionRecord lower,
+                                              GGEMSPolyhedraSectionRecord upper,
+                                              float band, uint bore) {
+  float slope_sum = bore != 0U ? lower.inner_slope + upper.inner_slope
+                               : lower.outer_slope + upper.outer_slope;
+
+  float normal_sum = bore != 0U
+                       ? lower.inner_normal_length + upper.inner_normal_length
+                       : lower.outer_normal_length + upper.outer_normal_length;
+
+  return upper.z_lower_pm - band * (slope_sum / normal_sum);
+}
+
+/*!
+ * \brief Clips a ray against one section of the offset outer or bore profile.
+ *
+ * Outer and bore joins move independently when their slopes differ. Their
+ * interval unions are subtracted later, so internal sections never become
+ * physical boundaries. Empty bore sections stay empty; adjacent bore tips
+ * expand or contract by the same automatic band without inventing a bore
+ * through an otherwise solid axial region.
+ * \param[in] polyhedra Counts, identities, and automatic half-band.
+ * \param[in] sides Precomputed side normals after the auxiliary pose.
+ * \param[in] sections Axial coefficients following the side normals.
+ * \param[in] index Section to evaluate.
+ * \param[in] position Local FP32 ray origin in pm.
+ * \param[in] direction Actual stored local direction, not assumed unit.
+ * \param[in] material_band Positive expands material; negative contracts it.
+ * \param[in] bore Nonzero clips the complementary bore profile.
+ * \return One ordered profile interval, or (+infinity,-infinity).
+ */
+static inline float2 GGEMS_PolyhedraProfileInterval(
+  __global GGEMSPolyhedraRecord const *polyhedra,
+  __global GGEMSPolyhedraSideRecord const *sides,
+  __global GGEMSPolyhedraSectionRecord const *sections, uint index,
+  float3 position, float3 direction, float material_band, uint bore) {
+  GGEMSPolyhedraSectionRecord section = sections[index];
+
+  float2 absent = (float2)(INFINITY, -INFINITY);
+
+  if (bore != 0U && GGEMS_PolyhedraHasBore(section) == 0U) {
+    return absent;
+  }
+
+  float band = bore != 0U ? -material_band : material_band;
+  float lower = section.z_lower_pm - material_band;
+  float upper = section.z_upper_pm + material_band;
+  uint lower_cap = index == 0U;
+  uint upper_cap = index + 1U == polyhedra->section_count;
+
+  if (lower_cap == 0U) {
+    GGEMSPolyhedraSectionRecord previous = sections[index - 1U];
+    lower_cap = bore != 0U && GGEMS_PolyhedraHasBore(previous) == 0U;
+    lower = lower_cap != 0U
+              ? section.z_lower_pm - band
+              : GGEMS_PolyhedraOffsetJoin(previous, section, band, bore);
+  }
+
+  if (upper_cap == 0U) {
+    GGEMSPolyhedraSectionRecord next = sections[index + 1U];
+    upper_cap = bore != 0U && GGEMS_PolyhedraHasBore(next) == 0U;
+    upper = upper_cap != 0U
+              ? section.z_upper_pm + band
+              : GGEMS_PolyhedraOffsetJoin(section, next, band, bore);
+  }
+
+  float2 interval = (float2)(-INFINITY, INFINITY);
+
+  if (direction.z == 0.0F) {
+    if (position.z < lower || position.z > upper ||
+        (position.z == upper && upper_cap == 0U) ||
+        (band <= 0.0F && ((position.z == lower && lower_cap != 0U) ||
+                          (position.z == upper && upper_cap != 0U)))) {
+      return absent;
+    }
+  } else {
+    float first = (lower - position.z) / direction.z;
+    float second = (upper - position.z) / direction.z;
+    interval = (float2)(fmin(first, second), fmax(first, second));
+  }
+
+  float slope = bore != 0U ? section.inner_slope : section.outer_slope;
+  float radius = bore != 0U ? section.inner_radius_pm : section.outer_radius_pm;
+  float normal_length =
+    bore != 0U ? section.inner_normal_length : section.outer_normal_length;
+  float at_position =
+    radius + slope * (position.z - section.z_lower_pm) + band * normal_length;
+
+  for (uint side = 0U; side < polyhedra->side_count; ++side) {
+    float2 normal = (float2)(sides[side].normal_x, sides[side].normal_y);
+
+    if (GGEMS_PolyhedraClip(at_position - dot(normal, position.xy),
+                            dot(normal, direction.xy) - slope * direction.z,
+                            band > 0.0F, &interval) == 0U) {
+      return absent;
+    }
+  }
+
+  return interval.x < interval.y ? interval : absent;
+}
+
+/*! \brief Initializes both profile cursors in ascending ray order. */
+static inline GGEMSPolyhedraCursor
+GGEMS_PolyhedraCursorBegin(uint section_count, float direction_z) {
+  GGEMSPolyhedraCursor cursor;
+  cursor.outer_cursor.section = direction_z < 0.0F ? section_count - 1U : 0U;
+  cursor.outer_cursor.remaining = section_count;
+  cursor.outer_cursor.pending = (float2)(INFINITY, -INFINITY);
+  cursor.inner_cursor = cursor.outer_cursor;
+  cursor.outer = (float2)(INFINITY, -INFINITY);
+  cursor.inner = (float2)(INFINITY, -INFINITY);
+  cursor.initialized = 0U;
+  return cursor;
+}
+
+/*! \brief Returns the next positive-length interval of one offset profile. */
+static inline float2 GGEMS_PolyhedraNextProfileRaw(
+  __global GGEMSPolyhedraRecord const *polyhedra,
+  __global GGEMSPolyhedraSideRecord const *sides,
+  __global GGEMSPolyhedraSectionRecord const *sections, float3 position,
+  float3 direction, float band, uint bore,
+  GGEMSPolyhedraProfileCursor *cursor) {
+  while (cursor->remaining != 0U) {
+    float2 interval = GGEMS_PolyhedraProfileInterval(polyhedra, sides, sections,
+                                                     cursor->section, position,
+                                                     direction, band, bore);
+    cursor->section += direction.z < 0.0F ? (uint)-1 : 1U;
+    --cursor->remaining;
+    if (interval.x < interval.y) {
+      return interval;
+    }
+  }
+
+  return (float2)(INFINITY, -INFINITY);
+}
+
+/*! \brief Unions one offset profile across all computational section joins. */
+static inline float2 GGEMS_PolyhedraNextProfileUnion(
+  __global GGEMSPolyhedraRecord const *polyhedra,
+  __global GGEMSPolyhedraSideRecord const *sides,
+  __global GGEMSPolyhedraSectionRecord const *sections, float3 position,
+  float3 direction, float band, uint bore,
+  GGEMSPolyhedraProfileCursor *cursor) {
+  float2 interval = cursor->pending;
+
+  if (interval.x >= interval.y) {
+    interval = GGEMS_PolyhedraNextProfileRaw(
+      polyhedra, sides, sections, position, direction, band, bore, cursor);
+  }
+
+  cursor->pending = (float2)(INFINITY, -INFINITY);
+
+  if (interval.x >= interval.y) {
+    return interval;
+  }
+
+  while (1) {
+    float2 next = GGEMS_PolyhedraNextProfileRaw(
+      polyhedra, sides, sections, position, direction, band, bore, cursor);
+    if (next.x > interval.y || next.x >= next.y) {
+      cursor->pending = next;
+      return interval;
+    }
+    interval.x = fmin(interval.x, next.x);
+    interval.y = fmax(interval.y, next.y);
+  }
+}
+
+/*! \brief Subtracts the bore union from the outer union without interval
+ * arrays. */
+static inline float2
+GGEMS_PolyhedraNextUnion(__global GGEMSPolyhedraRecord const *polyhedra,
+                         __global GGEMSPolyhedraSideRecord const *sides,
+                         __global GGEMSPolyhedraSectionRecord const *sections,
+                         float3 position, float3 direction, float band,
+                         GGEMSPolyhedraCursor *cursor) {
+  if (cursor->initialized == 0U) {
+    cursor->outer = GGEMS_PolyhedraNextProfileUnion(polyhedra, sides, sections,
+                                                    position, direction, band,
+                                                    0U, &cursor->outer_cursor);
+    cursor->inner = GGEMS_PolyhedraNextProfileUnion(polyhedra, sides, sections,
+                                                    position, direction, band,
+                                                    1U, &cursor->inner_cursor);
+    cursor->initialized = 1U;
+  }
+
+  while (cursor->outer.x < cursor->outer.y) {
+    while (cursor->inner.x < cursor->inner.y &&
+           cursor->inner.y <= cursor->outer.x) {
+      cursor->inner = GGEMS_PolyhedraNextProfileUnion(
+        polyhedra, sides, sections, position, direction, band, 1U,
+        &cursor->inner_cursor);
+    }
+
+    if (cursor->inner.x >= cursor->inner.y ||
+        cursor->inner.x >= cursor->outer.y) {
+      float2 interval = cursor->outer;
+      cursor->outer = GGEMS_PolyhedraNextProfileUnion(
+        polyhedra, sides, sections, position, direction, band, 0U,
+        &cursor->outer_cursor);
+      return interval;
+    }
+
+    if (cursor->inner.x > cursor->outer.x) {
+      float2 interval = (float2)(cursor->outer.x, cursor->inner.x);
+      cursor->outer.x = cursor->inner.y;
+      if (cursor->outer.x >= cursor->outer.y) {
+        cursor->outer = GGEMS_PolyhedraNextProfileUnion(
+          polyhedra, sides, sections, position, direction, band, 0U,
+          &cursor->outer_cursor);
+      }
+
+      return interval;
+    }
+
+    cursor->outer.x = fmax(cursor->outer.x, cursor->inner.y);
+
+    if (cursor->outer.x >= cursor->outer.y) {
+      cursor->outer = GGEMS_PolyhedraNextProfileUnion(
+        polyhedra, sides, sections, position, direction, band, 0U,
+        &cursor->outer_cursor);
+    }
+  }
+
+  return (float2)(INFINITY, -INFINITY);
+}
+
+/*!
+ * \brief Resolves forward birth ownership through expanded and strict cores.
+ *
+ * Kept out of line to isolate the generic profile working set from simpler
+ * analytical predicates; qualified with same-workload kernel/host timings.
+ * \param[in] polyhedra Compact metadata and exact identities.
+ * \param[in] auxiliary Pose followed by immutable side and section arrays.
+ * \param[in] position World-validated global origin in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed VolumeID/MaterialID.
+ * \return Resolved under the automatic closed surface band.
+ */
+static __attribute__((noinline)) uint
+GGEMS_PolyhedraLocate(__global GGEMSPolyhedraRecord const *polyhedra,
+                      __global void const *auxiliary, float3 position,
+                      float3 direction, ulong *owner) {
+  __global GGEMSBoxPoseRecord const *pose =
+    (__global GGEMSBoxPoseRecord const *)auxiliary;
+  __global GGEMSPolyhedraSideRecord const *sides =
+    (__global GGEMSPolyhedraSideRecord const *)(pose + 1);
+  __global GGEMSPolyhedraSectionRecord const *sections =
+    (__global GGEMSPolyhedraSectionRecord const *)(sides +
+                                                   polyhedra->side_count);
+  float3 local_position;
+  float3 local_direction;
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+
+  GGEMSPolyhedraCursor expanded_cursor =
+    GGEMS_PolyhedraCursorBegin(polyhedra->section_count, local_direction.z);
+
+  float2 expanded;
+  do {
+    expanded = GGEMS_PolyhedraNextUnion(
+      polyhedra, sides, sections, local_position, local_direction,
+      polyhedra->tolerance_pm, &expanded_cursor);
+  } while (expanded.x < expanded.y && expanded.y < 0.0F);
+
+  if (expanded.x > 0.0F || expanded.y <= 0.0F) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  GGEMSPolyhedraCursor contracted_cursor =
+    GGEMS_PolyhedraCursorBegin(polyhedra->section_count, local_direction.z);
+
+  while (1) {
+    float2 core = GGEMS_PolyhedraNextUnion(
+      polyhedra, sides, sections, local_position, local_direction,
+      -polyhedra->tolerance_pm, &contracted_cursor);
+
+    if (core.x >= core.y || core.x >= expanded.y) {
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+
+    if (fmax(0.0F, core.x) < fmin(expanded.y, core.y)) {
+      *owner = ((ulong)polyhedra->volume_id << 32U) | polyhedra->material_id;
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+  }
+}
+
+/*!
+ * \brief Selects a physical nominal crossing after core/band qualification.
+ *
+ * Expanded connected components merge void gaps with no resolvable interior.
+ * Nominal intersections supply the movement; the accepted owner skips the
+ * just-left component without changing the particle position.
+ * \param[in] polyhedra Compact metadata and exact identities.
+ * \param[in] auxiliary Shared pose followed by side and section arrays.
+ * \param[in] position Global FP32 anchor in pm.
+ * \param[in] direction Actual stored ray direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] last_event Previous event with unchanged straight direction.
+ * \param[in,out] witness World exit, replaced by an earlier solid crossing.
+ * \return Resolved, or unresolved if a required exit cannot be represented.
+ */
+static __attribute__((noinline)) uint GGEMS_PolyhedraFindBoundary(
+  __global GGEMSPolyhedraRecord const *polyhedra,
+  __global void const *auxiliary, float3 position, float3 direction,
+  uint current_owner, uint last_event, GGEMSBoundaryWitness *witness) {
+  __global GGEMSBoxPoseRecord const *pose =
+    (__global GGEMSBoxPoseRecord const *)auxiliary;
+  __global GGEMSPolyhedraSideRecord const *sides =
+    (__global GGEMSPolyhedraSideRecord const *)(pose + 1);
+  __global GGEMSPolyhedraSectionRecord const *sections =
+    (__global GGEMSPolyhedraSectionRecord const *)(sides +
+                                                   polyhedra->side_count);
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  uint inside = current_owner == polyhedra->volume_id;
+
+  GGEMSPolyhedraCursor expanded_cursor =
+    GGEMS_PolyhedraCursorBegin(polyhedra->section_count, local_direction.z);
+
+  GGEMSPolyhedraCursor nominal_cursor = expanded_cursor;
+  GGEMSPolyhedraCursor contracted_cursor = expanded_cursor;
+
+  float2 nominal =
+    GGEMS_PolyhedraNextUnion(polyhedra, sides, sections, local_position,
+                             local_direction, 0.0F, &nominal_cursor);
+  float2 core = (float2)(INFINITY, -INFINITY);
+
+  if (inside == 0U) {
+    core = GGEMS_PolyhedraNextUnion(polyhedra, sides, sections, local_position,
+                                    local_direction, -polyhedra->tolerance_pm,
+                                    &contracted_cursor);
+  }
+
+  float candidate = INFINITY;
+  while (1) {
+    float2 expanded = GGEMS_PolyhedraNextUnion(
+      polyhedra, sides, sections, local_position, local_direction,
+      polyhedra->tolerance_pm, &expanded_cursor);
+
+    if (expanded.x >= expanded.y) {
+      break;
+    }
+
+    float2 material = (float2)(INFINITY, -INFINITY);
+    while (nominal.x < nominal.y && nominal.x < expanded.y) {
+      if (nominal.y > expanded.x) {
+        material.x = fmin(material.x, nominal.x);
+        material.y = fmax(material.y, nominal.y);
+      }
+      nominal =
+        GGEMS_PolyhedraNextUnion(polyhedra, sides, sections, local_position,
+                                 local_direction, 0.0F, &nominal_cursor);
+    }
+
+    if (material.x >= material.y || material.y <= 0.0F) {
+      continue;
+    }
+
+    if (inside != 0U) {
+      candidate = material.y;
+      break;
+    }
+
+    if (last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
+        expanded.x <= 0.0F) {
+      continue;
+    }
+
+    while (core.x < core.y && core.y <= fmax(0.0F, expanded.x)) {
+      core = GGEMS_PolyhedraNextUnion(
+        polyhedra, sides, sections, local_position, local_direction,
+        -polyhedra->tolerance_pm, &contracted_cursor);
+    }
+
+    if (fmax(0.0F, core.x) < fmin(expanded.y, core.y)) {
+      candidate = fmax(0.0F, material.x);
+      break;
+    }
+  }
+
+  if (candidate == INFINITY && inside == 0U) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  if (GGEMS_NavigationIsFinite(candidate) == 0U ||
+      candidate >= witness->parameter) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  witness->parameter = candidate;
+  witness->faces = 0U;
+  witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id =
+    inside != 0U ? GGEMS_VOLUME_ID_WORLD : polyhedra->volume_id;
+  witness->arrival_material_id =
+    inside != 0U ? GGEMS_MATERIAL_ID_WORLD : polyhedra->material_id;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

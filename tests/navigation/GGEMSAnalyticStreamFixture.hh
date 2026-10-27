@@ -68,7 +68,7 @@ namespace ggems::test {
 using namespace ggems::core;
 
 inline constexpr std::size_t k_trace_stride{9U};
-inline constexpr std::size_t k_initial_owner_index{1U + (5U * k_trace_stride)};
+inline constexpr std::size_t k_initial_owner_index{1U + (33U * k_trace_stride)};
 inline constexpr std::size_t k_trace_values{k_initial_owner_index + 3U};
 
 /*! \brief Replaces one unique occurrence or throws. */
@@ -90,7 +90,7 @@ inline auto ReplaceUnique(std::string &source, std::string const &before,
  * transaction it records departure owner, arrival owner, crossed planes,
  * committed position, event and arrival Material. The selected parameter is
  * captured from the actual transaction witness, without repeating its query.
- * Initial owner, Material and location status follow the five event slots.
+ * Initial owner, Material and location status follow the 33 event slots.
  * Every instrumentation anchor must be unique. No production hook is added.
  */
 inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
@@ -162,13 +162,14 @@ struct StreamResult {
  *
  * The optional trace argument is set only for the instrumented program.
  */
-inline auto RunStream(ocl::GGEMSOpenCLContext &context,
-                      cl::Program const &program, random::GGEMSRandom &random,
-                      geometry::GGEMSWorldRecord const &world,
-                      geometry::GGEMSAnalyticVolumeRecord const &volume,
-                      sources::GGEMSSourceRecord const &source,
-                      geometry::GGEMSBoxPoseRecord const *pose = nullptr,
-                      bool capture_trace = true) -> StreamResult {
+inline auto
+RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
+          random::GGEMSRandom &random, geometry::GGEMSWorldRecord const &world,
+          geometry::GGEMSAnalyticVolumeRecord const &volume,
+          sources::GGEMSSourceRecord const &source,
+          geometry::GGEMSBoxPoseRecord const *pose = nullptr,
+          bool capture_trace = true, std::span<std::byte const> auxiliary = {})
+  -> StreamResult {
   auto buffer = [&context](auto const &value) -> ocl::GGEMSOpenCLSVMBuffer {
     auto result = context.CreateSVMBuffer(units::Bytes{sizeof(value)});
     ocl::WriteSVMFromHost(result, value);
@@ -212,7 +213,11 @@ inline auto RunStream(ocl::GGEMSOpenCLContext &context,
     context.CreateSVMBuffer(units::Bytes{sizeof(std::int64_t) * trace.size()});
   ocl::WriteSVMFromHost(trace_buffer, std::span<std::int64_t const>{trace});
   std::optional<ocl::GGEMSOpenCLSVMBuffer> pose_buffer;
-  if (pose != nullptr) {
+  if (!auxiliary.empty()) {
+    pose_buffer.emplace(
+      context.CreateSVMBuffer(units::Bytes{auxiliary.size()}));
+    ocl::WriteSVMFromHost(*pose_buffer, auxiliary);
+  } else if (pose != nullptr) {
     pose_buffer.emplace(buffer(*pose));
   }
 

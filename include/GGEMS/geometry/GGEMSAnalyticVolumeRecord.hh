@@ -32,6 +32,7 @@
 #include <cstdint>
 
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSPolyhedraRecord.hh"
 
 namespace ggems::geometry {
 
@@ -59,6 +60,12 @@ enum class GGEMSAnalyticKind : std::uint32_t {
 
   /*! \brief General planar-faced trapezoid. */
   Trap = 6,
+
+  /*! \brief Full-azimuth solid or hollow conical frustum. */
+  Cons = 7,
+
+  /*! \brief Regular polygon with continuous piecewise-linear axial profiles. */
+  Polyhedra = 8,
 };
 
 /*! \brief Scalar 28-byte Sphere parameters, identities and tolerance. */
@@ -103,6 +110,39 @@ struct GGEMSTubsRecord {
   std::uint32_t material_id{0};
 
   /*! \brief Closed radial and cap surface half-band in FP32 pm. */
+  float tolerance_pm{0.0F};
+};
+
+/*! \brief Scalar 40-byte local conical frustum and ownership record. */
+struct GGEMSConsRecord {
+  /*! \brief Midplane outer radius in pm. */
+  float outer_radius_pm{0.0F};
+
+  /*! \brief Midplane bore radius in pm; zero disables the bore. */
+  float inner_radius_pm{0.0F};
+
+  /*! \brief Outer dr/dz in the local frame. */
+  float outer_slope{0.0F};
+
+  /*! \brief Inner dr/dz in the local frame. */
+  float inner_slope{0.0F};
+
+  /*! \brief Center-to-cap length in pm. */
+  float half_length_pm{0.0F};
+
+  /*! \brief sqrt(1 + outer_slope squared). */
+  float outer_normal_scale{0.0F};
+
+  /*! \brief sqrt(1 + inner_slope squared). */
+  float inner_normal_scale{0.0F};
+
+  /*! \brief Physical owner identity. */
+  std::uint32_t volume_id{1};
+
+  /*! \brief Dense exact Material identity. */
+  std::uint32_t material_id{0};
+
+  /*! \brief Closed perpendicular surface half-band in pm. */
   float tolerance_pm{0.0F};
 };
 
@@ -164,6 +204,9 @@ struct GGEMSPlanarRecord {
 
 /*! \brief Stores only the shape payload selected by the enclosing tag. */
 union GGEMSAnalyticParameters {
+  /*! \brief Compact counts and identities for auxiliary polygon profiles. */
+  GGEMSPolyhedraRecord polyhedra;
+
   /*! \brief Local Box half extents and owner identities. */
   GGEMSBoxRecord box{};
 
@@ -172,6 +215,9 @@ union GGEMSAnalyticParameters {
 
   /*! \brief Full-azimuth finite cylinder or hollow tube. */
   GGEMSTubsRecord tubs;
+
+  /*! \brief Conical end profiles, cap length, and identities. */
+  GGEMSConsRecord cons;
 
   /*! \brief Complete solid ellipsoid. */
   GGEMSEllipsoidRecord ellipsoid;
