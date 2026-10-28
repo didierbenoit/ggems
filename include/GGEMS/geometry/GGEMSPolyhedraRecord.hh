@@ -35,13 +35,14 @@
 namespace ggems::geometry {
 
 /*!
- * \brief Stores scalar 20-byte metadata for an immutable polygonal profile.
+ * \brief Stores scalar 24-byte metadata for an immutable polygonal profile.
  *
- * The separate auxiliary byte buffer contains one 48-byte
- * GGEMSBoxPoseRecord, side_count consecutive 8-byte side records, then
- * section_count consecutive 32-byte section records. All fields are
- * 32-bit scalars; host and OpenCL field order and alignment must match.
- * Counts describe one physical volume and one Material across all sections.
+ * The occurrence auxiliary pointer addresses its 48-byte GGEMSBoxPoseRecord.
+ * profile_offset_bytes locates the immutable side records relative to that
+ * pointer. The profile stores side_count 8-byte side records followed by
+ * section_count 32-byte section records. Several occurrences may share these
+ * profiles while retaining distinct poses, owners, Materials and tolerances.
+ * All fields use 32-bit scalars with matching host and OpenCL alignment.
  */
 struct GGEMSPolyhedraRecord {
   /*! \brief Number of regular polygon sides. */
@@ -58,6 +59,10 @@ struct GGEMSPolyhedraRecord {
 
   /*! \brief Automatic normal-distance surface half-band in pm. */
   float tolerance_pm{0.0F};
+
+  /*! \brief Byte offset from this occurrence pose to its shared side records.
+   */
+  std::uint32_t profile_offset_bytes{48};
 };
 
 /*! \brief Scalar 8-byte precomputed polygon side normal. */

@@ -38,14 +38,10 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
-#include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
-#include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
-#include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTrap.hh"
 #include "GGEMS/geometry/GGEMSTrd.hh"
-#include "GGEMS/geometry/GGEMSTubs.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
@@ -227,35 +223,6 @@ TEST(N1TrdTrap, OwnsValuesMaterialsAndCopiedWorldSnapshots) {
   };
   check(Trd(), GGEMSAnalyticKind::Trd);
   check(Trap(), GGEMSAnalyticKind::Trap);
-}
-
-TEST(N1TrdTrap, EveryNewOverloadPreservesTheOneVolumeWorld) {
-  GGEMSBox box;
-  box.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Water"));
-  GGEMSSphere sphere;
-  sphere.SetRadius(1_mm).SetMaterial(BuildBuiltInMaterial("Water"));
-  GGEMSTubs tubs;
-  tubs.SetRadii(1_mm).SetLength(2_mm).SetMaterial(
-    BuildBuiltInMaterial("Water"));
-  GGEMSEllipsoid ellipsoid;
-  ellipsoid.SetSemiAxes(1_mm, 2_mm, 3_mm)
-    .SetMaterial(BuildBuiltInMaterial("Water"));
-  auto first = World();
-  first.AddVolume(Trd());
-  EXPECT_THROW(first.AddVolume(Trd()), GGEMSRecoverable);
-  EXPECT_THROW(first.AddVolume(Trap()), GGEMSRecoverable);
-  EXPECT_THROW(first.AddVolume(box), GGEMSRecoverable);
-  EXPECT_THROW(first.AddVolume(sphere), GGEMSRecoverable);
-  EXPECT_THROW(first.AddVolume(tubs), GGEMSRecoverable);
-  EXPECT_THROW(first.AddVolume(ellipsoid), GGEMSRecoverable);
-  auto second = World();
-  second.AddVolume(Trap());
-  EXPECT_THROW(second.AddVolume(Trd()), GGEMSRecoverable);
-  EXPECT_THROW(second.AddVolume(Trap()), GGEMSRecoverable);
-  auto third = World();
-  third.AddVolume(box);
-  EXPECT_THROW(third.AddVolume(Trd()), GGEMSRecoverable);
-  EXPECT_THROW(third.AddVolume(Trap()), GGEMSRecoverable);
 }
 
 TEST(N1TrdTrap, RejectsUnresolvedFeaturesAndRotatedWorldContact) {

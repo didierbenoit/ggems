@@ -139,7 +139,8 @@ public:
 
   /*!
    * \brief Borrows the owned local-to-World proper rotation.
-   * \return Proper rotation, initially identity; it must not outlive this solid.
+   * \return Proper rotation, initially identity; it must not outlive this
+   * solid.
    */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
 

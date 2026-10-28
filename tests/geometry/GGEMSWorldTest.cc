@@ -355,7 +355,7 @@ TEST(GGEMSWorld, SetterOrderDoesNotChangeTheCompiledScene) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSWorld, AddVolumeAdmitsExactlyOneCompleteBoxInThisSlice) {
+TEST(GGEMSWorld, AddVolumeRejectsIncompleteBoxesAndOwnsMultipleOccurrences) {
   GGEMSWorld world = MakeWorld(200_mm, 200_mm, 200_mm, Vacuum());
 
   // Incomplete Boxes are rejected at registration and leave the World empty.
@@ -368,8 +368,12 @@ TEST(GGEMSWorld, AddVolumeAdmitsExactlyOneCompleteBoxInThisSlice) {
   EXPECT_TRUE(world.GetBoxes().empty());
 
   world.AddVolume(MakeBox());
-  EXPECT_THROW(world.AddVolume(MakeBox()), GGEMSRecoverable);
+  auto second = MakeBox();
+  second.SetPosition(MakePositionPM(-60'000'000'000LL, 40'000'000'000LL, 0LL));
+  EXPECT_NO_THROW(world.AddVolume(second));
+  EXPECT_EQ(world.GetVolumeCount(), 2U);
   EXPECT_EQ(world.GetBoxes().size(), 1U);
+  EXPECT_EQ(world.GetBoxes(1).size(), 1U);
   EXPECT_NO_THROW(world.Validate());
 }
 
@@ -589,9 +593,11 @@ TEST(GGEMSWorld, ScalarWorldRecordCarriesTheToleranceWithoutParticleState) {
   using ggems::geometry::GGEMSWorldRecord;
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSWorldRecord>);
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSWorldRecord>);
-  EXPECT_EQ(sizeof(GGEMSWorldRecord), 16U);
+  EXPECT_EQ(sizeof(GGEMSWorldRecord), 24U);
   EXPECT_EQ(alignof(GGEMSWorldRecord), 4U);
   EXPECT_EQ(offsetof(GGEMSWorldRecord, tolerance_pm), 12U);
+  EXPECT_EQ(offsetof(GGEMSWorldRecord, occurrence_count), 16U);
+  EXPECT_EQ(offsetof(GGEMSWorldRecord, max_boundary_events), 20U);
   GGEMSWorld const empty;
   EXPECT_EQ(empty.BuildRecord().tolerance_pm, 0.0F);
   EXPECT_EQ(empty.GetVolumeNavigationTolerancePM(), 0.0F);

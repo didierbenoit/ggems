@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines the single analytic volume shared with OpenCL.
+ * \brief Defines the evaluated analytical occurrence shared with OpenCL.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -36,7 +36,10 @@
 
 namespace ggems::geometry {
 
-/*! \brief Selects the implemented geometric predicate for the single volume. */
+/*!
+ * \brief Selects the implemented geometric predicate for one evaluated
+ * occurrence.
+ */
 enum class GGEMSAnalyticKind : std::uint32_t {
   /*! \brief World-only scene. */
   None = 0,
@@ -227,13 +230,15 @@ union GGEMSAnalyticParameters {
 };
 
 /*!
- * \brief Scalar 84-byte scene record, including the no-volume case.
+ * \brief Scalar 84-byte evaluated occurrence record, including the no-volume
+ * case.
  *
  * Mirrors GGEMSAnalyticVolumeRecord.clh with 4-byte scalar alignment. The
  * 32-bit tag selects the active member of the 80-byte union. All present
- * shapes except Sphere use the separate GGEMSBoxPoseRecord; Polyhedra appends
- * side and section arrays in the auxiliary buffer. All programs share this
- * scene layout. A None tag carries no physical volume.
+ * shapes except Sphere use the separate GGEMSBoxPoseRecord; Polyhedra
+ * references shared side and section arrays in the auxiliary buffer. Each
+ * evaluated record retains its occurrence identities and surface tolerance.
+ * All programs share this layout. A None tag carries no physical volume.
  */
 struct GGEMSAnalyticVolumeRecord {
   /*! \brief Predicate and active union member. */

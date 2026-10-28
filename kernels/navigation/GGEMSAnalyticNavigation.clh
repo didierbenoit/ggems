@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Dispatches the single analytic volume through FP32 local predicates.
+ * \brief Dispatches one analytical occurrence through FP32 local predicates.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -47,7 +47,6 @@
 
 /*!
  * \brief Locates the forward owner through the selected analytic predicate.
- * \param[in] world FP32 finite World.
  * \param[in] volume Single volume or None.
  * \param[in] box_pose Immutable auxiliary buffer: a shared rigid pose for
  * nonspherical solids, followed by side and section arrays for Polyhedra.
@@ -55,19 +54,12 @@
  * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.
  * \param[out] owner Packed VolumeID/MaterialID on success.
- * \return Resolved, outside World, or unresolved.
+ * \return Resolved or unresolved; the caller has validated the World ray.
  */
 static inline uint
-GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
-                     __global GGEMSAnalyticVolumeRecord const *volume,
-                     __global void const *box_pose, float3 position,
-                     float3 direction, ulong *owner) {
-  uint status = GGEMS_WorldValidateRay(world, position, direction);
-
-  if (status != GGEMS_NAVIGATION_RESOLVED) {
-    return status;
-  }
-
+GGEMS_AnalyticLocateVolume(__global GGEMSAnalyticVolumeRecord const *volume,
+                           __global void const *box_pose, float3 position,
+                           float3 direction, ulong *owner) {
   if (volume->kind == GGEMS_ANALYTIC_BOX) {
     return GGEMS_BoxLocate(&volume->parameters.box,
                            (__global GGEMSBoxPoseRecord const *)box_pose,
@@ -115,14 +107,36 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
 }
 
 /*!
+ * \brief Locates one occurrence after validating the global ray against World.
+ * \param[in] world Immutable FP32 World bounds and surface band.
+ * \param[in] volume One analytical record or None.
+ * \param[in] box_pose Immutable occurrence pose and optional profile data.
+ * \param[in] position Global FP32 position in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed forward VolumeID/MaterialID on success.
+ * \return Resolved, outside World, or unresolved.
+ */
+static inline uint
+GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
+                     __global GGEMSAnalyticVolumeRecord const *volume,
+                     __global void const *box_pose, float3 position,
+                     float3 direction, ulong *owner) {
+  uint const status = GGEMS_WorldValidateRay(world, position, direction);
+
+  return status == GGEMS_NAVIGATION_RESOLVED
+           ? GGEMS_AnalyticLocateVolume(volume, box_pose, position, direction,
+                                        owner)
+           : status;
+}
+
+/*!
  * \brief Selects the next analytic crossing or FP32 World exit.
  *
  * One convex volume and an unchanged straight-flight direction cannot reenter
  * after an accepted exit. Tubs and Cons can reenter beyond a bore, while
  * Polyhedra can contain multiple material intervals through its bore or concave
- * axial profile. Their interval predicates retain later entries. Ownership selects
- * the next root without relocating the FP32 endpoint.
- * \param[in] world FP32 World exit authority.
+ * axial profile. Their interval predicates retain later entries. Ownership
+ * selects the next root without relocating the FP32 endpoint.
  * \param[in] volume Single volume or None.
  * \param[in] box_pose Immutable auxiliary buffer: a shared rigid pose for
  * nonspherical solids, followed by side and section arrays for Polyhedra.
@@ -131,25 +145,20 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
  * \param[in] direction Actual stored direction.
  * \param[in] current_owner Known physical departure VolumeID.
  * \param[in] last_event Previously accepted event while direction is unchanged.
- * \param[out] result Selected event and movement evidence through a private
- * pointer.
+ * \param[in,out] result World exit on input, selected occurrence crossing on
+ * output. Each candidate requires its own copy of the World witness.
  * \return Resolved, outside World, or unresolved.
  */
-static inline uint
-GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
-                           __global GGEMSAnalyticVolumeRecord const *volume,
-                           __global void const *box_pose, float3 position,
-                           float3 direction, uint current_owner,
-                           uint last_event, GGEMSBoundaryWitness *result) {
-  uint status = GGEMS_WorldFindBoundary(world, position, direction, result);
-
-  if (status != GGEMS_NAVIGATION_RESOLVED ||
-      volume->kind == GGEMS_ANALYTIC_NONE ||
+static inline uint GGEMS_AnalyticVolumeFindBoundary(
+  __global GGEMSAnalyticVolumeRecord const *volume,
+  __global void const *box_pose, float3 position, float3 direction,
+  uint current_owner, uint last_event, GGEMSBoundaryWitness *result) {
+  if (volume->kind == GGEMS_ANALYTIC_NONE ||
       (current_owner == GGEMS_VOLUME_ID_WORLD &&
        last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
        volume->kind != GGEMS_ANALYTIC_TUBS &&
        volume->kind <= GGEMS_ANALYTIC_TRAP)) {
-    return status;
+    return GGEMS_NAVIGATION_RESOLVED;
   }
 
   if (volume->kind == GGEMS_ANALYTIC_BOX) {
@@ -196,6 +205,33 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
   }
 
   return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects one occurrence crossing against the finite World exit.
+ * \param[in] world Immutable FP32 World boundary authority.
+ * \param[in] volume One analytical record or None.
+ * \param[in] box_pose Immutable occurrence pose and optional profile data.
+ * \param[in] position Global FP32 anchor in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] last_event Previous event for this occurrence and direction.
+ * \param[out] result Selected physical crossing and arrival identities.
+ * \return Resolved, outside World, or unresolved.
+ */
+static inline uint
+GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
+                           __global GGEMSAnalyticVolumeRecord const *volume,
+                           __global void const *box_pose, float3 position,
+                           float3 direction, uint current_owner,
+                           uint last_event, GGEMSBoundaryWitness *result) {
+  uint const status =
+    GGEMS_WorldFindBoundary(world, position, direction, result);
+  return status == GGEMS_NAVIGATION_RESOLVED
+           ? GGEMS_AnalyticVolumeFindBoundary(volume, box_pose, position,
+                                              direction, current_owner,
+                                              last_event, result)
+           : status;
 }
 
 #endif

@@ -53,6 +53,7 @@
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/observer/GGEMSTransportObserver.hh"
@@ -779,7 +780,9 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
       {{.half_extent_x_pm = 11, .half_extent_y_pm = 23, .half_extent_z_pm = 37},
        {.half_extent_x_pm = 41,
         .half_extent_y_pm = 59,
-        .half_extent_z_pm = 83}}};
+        .half_extent_z_pm = 83,
+        .occurrence_count = 3U,
+        .max_boundary_events = 7U}}};
     auto world_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(worlds)});
     ocl::WriteSVMFromHost(world_buffer,
                           std::span<geometry::GGEMSWorldRecord const>{worlds});
@@ -794,7 +797,14 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
     ocl::WriteSVMFromHost(
       observer_buffer,
       std::span<observer::GGEMSObserverRecord const>{observed});
-    std::array<std::uint64_t, 17> layout{};
+    std::array<geometry::GGEMSAnalyticOccurrenceRecord, 2> const occurrences{{
+      {.record_index = 7U, .auxiliary_offset = 28U},
+      {.record_index = 11U, .auxiliary_offset = 44U},
+    }};
+    auto occurrence_buffer =
+      context.CreateSVMBuffer(units::Bytes{sizeof(occurrences)});
+    ocl::WriteSVMFromHost(occurrence_buffer, std::span{occurrences});
+    std::array<std::uint64_t, 28> layout{};
     auto output = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
     auto const &program = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
@@ -806,9 +816,10 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
     kernel.SetArgSVMPointer(1U, counter_buffer.GetData());
     kernel.SetArgSVMPointer(2U, observer_buffer.GetData());
     kernel.SetArgSVMPointer(3U, output.GetData());
+    kernel.SetArgSVMPointer(4U, occurrence_buffer.GetData());
     kernel.Run({1U}, {1U});
     ocl::ReadSVMToHost(output, std::span<std::uint64_t>{layout});
-    std::array<std::uint64_t, 17> const expected{
+    std::array<std::uint64_t, 28> const expected{
       sizeof(geometry::GGEMSWorldRecord),
       offsetof(geometry::GGEMSWorldRecord, half_extent_y_pm),
       offsetof(geometry::GGEMSWorldRecord, half_extent_z_pm),
@@ -825,7 +836,18 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
       sizeof(observer::GGEMSObserverRecord),
       std::bit_cast<std::uint32_t>(worlds[1].half_extent_x_pm),
       std::bit_cast<std::uint32_t>(worlds[1].half_extent_y_pm),
-      std::bit_cast<std::uint32_t>(worlds[1].half_extent_z_pm)};
+      std::bit_cast<std::uint32_t>(worlds[1].half_extent_z_pm),
+      offsetof(geometry::GGEMSWorldRecord, occurrence_count),
+      offsetof(geometry::GGEMSWorldRecord, max_boundary_events),
+      worlds[1].occurrence_count,
+      worlds[1].max_boundary_events,
+      sizeof(geometry::GGEMSAnalyticOccurrenceRecord),
+      alignof(geometry::GGEMSAnalyticOccurrenceRecord),
+      offsetof(geometry::GGEMSAnalyticOccurrenceRecord, record_index),
+      offsetof(geometry::GGEMSAnalyticOccurrenceRecord, auxiliary_offset),
+      occurrences[1].record_index,
+      occurrences[1].auxiliary_offset,
+      sizeof(geometry::GGEMSAnalyticOccurrenceRecord)};
     EXPECT_EQ(layout, expected);
     ocl::ReadSVMToHost(counter_buffer,
                        std::span<transport::GGEMSTransportCounters>{counts});

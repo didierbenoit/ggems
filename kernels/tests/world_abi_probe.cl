@@ -28,6 +28,7 @@
  */
 
 #include "geometry/GGEMSWorldRecord.clh"
+#include "geometry/GGEMSAnalyticOccurrenceRecord.clh"
 #include "observer/GGEMSObserverRecord.clh"
 #include "transport/GGEMSTransportCounters.clh"
 
@@ -46,10 +47,12 @@ typedef struct ObserverAlignmentProbe {
   GGEMSObserverRecord record;
 } ObserverAlignmentProbe;
 
-__kernel void world_abi_probe(__global GGEMSWorldRecord const *worlds,
-                              __global GGEMSTransportCounters *counts,
-                              __global GGEMSObserverRecord *observations,
-                              __global ulong *layout) {
+__kernel void
+world_abi_probe(__global GGEMSWorldRecord const *worlds,
+                __global GGEMSTransportCounters *counts,
+                __global GGEMSObserverRecord *observations,
+                __global ulong *layout,
+                __global GGEMSAnalyticOccurrenceRecord const *occurrences) {
   GGEMSWorldRecord world;
   GGEMSTransportCounters counter;
   GGEMSObserverRecord observer;
@@ -84,6 +87,19 @@ __kernel void world_abi_probe(__global GGEMSWorldRecord const *worlds,
   layout[14] = (ulong)as_uint(worlds[1].half_extent_x_pm);
   layout[15] = (ulong)as_uint(worlds[1].half_extent_y_pm);
   layout[16] = (ulong)as_uint(worlds[1].half_extent_z_pm);
+  layout[17] = __builtin_offsetof(GGEMSWorldRecord, occurrence_count);
+  layout[18] = __builtin_offsetof(GGEMSWorldRecord, max_boundary_events);
+  layout[19] = worlds[1].occurrence_count;
+  layout[20] = worlds[1].max_boundary_events;
+  layout[21] = sizeof(GGEMSAnalyticOccurrenceRecord);
+  layout[22] = __alignof(GGEMSAnalyticOccurrenceRecord);
+  layout[23] = __builtin_offsetof(GGEMSAnalyticOccurrenceRecord, record_index);
+  layout[24] =
+    __builtin_offsetof(GGEMSAnalyticOccurrenceRecord, auxiliary_offset);
+  layout[25] = occurrences[1].record_index;
+  layout[26] = occurrences[1].auxiliary_offset;
+  layout[27] = (ulong)((__global uchar *)&occurrences[1] -
+                       (__global uchar *)&occurrences[0]);
 
   counts[1].outside_world_count = 7U;
   counts[1].unresolved_geometry_count = 11U;

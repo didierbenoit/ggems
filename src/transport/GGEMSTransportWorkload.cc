@@ -423,7 +423,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   std::uint64_t random_stream_offset, std::uint32_t context_index,
   std::uint32_t observer_record_capacity,
   std::uint32_t launch_primary_count_limit, geometry::GGEMSWorld const *world,
-  geometry::GGEMSAnalyticVolumeRecord volume)
+  std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes)
     : context_{&context}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       emission_count_{
@@ -435,8 +435,8 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         worker_count, launch_primary_count_limit)},
       world_{world}, world_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
                        sizeof(geometry::GGEMSWorldRecord)})},
-      volume_buffer_{context.CreateSVMBuffer(
-        ggems::units::Bytes{sizeof(geometry::GGEMSAnalyticVolumeRecord)})},
+      volume_buffer_{context.CreateSVMBuffer(ComputeArrayBufferSize(
+        volumes.size(), sizeof(geometry::GGEMSAnalyticVolumeRecord)))},
       random_states_buffer_{context.CreateSVMBuffer(
         ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
       counters_buffer_{context.CreateSVMBuffer(
@@ -471,11 +471,19 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         context.CreateSVMBuffer(ggems::units::Bytes{sizeof(ObserverCounters)})},
       observer_records_buffer_{context.CreateSVMBuffer(
         ComputeObserverRecordsSize(observer_record_capacity))} {
+  if (world != nullptr && world->GetVolumeCount() != 0U &&
+      volumes.size() != world->GetVolumeCount()) {
+    throw GGEMSRecoverable("Transport analytical record count does not match "
+                           "the World occurrences.");
+  }
+
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   std::filesystem::path const kernel_transport_root = kernel_root / "transport";
 
-  auto const auxiliary = world != nullptr ? world->BuildAnalyticAuxiliaryData()
-                                          : std::vector<std::byte>{};
+  auto const auxiliary = world != nullptr
+                           ? world->BuildAnalyticAuxiliaryBuffer()
+                           : std::vector<std::byte>{};
+
   if (!auxiliary.empty()) {
     box_pose_buffer_.emplace(
       context.CreateSVMBuffer(ggems::units::Bytes{auxiliary.size()}));
@@ -532,13 +540,18 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                                                 : geometry::GGEMSWorldRecord{});
 
   kernel_->SetArgSVMPointer(argument_index++, volume_buffer_.GetData());
-  // Posed shapes share this argument; Polyhedra appends its flat profile.
+  // The immutable auxiliary buffer holds occurrence views and shared profiles.
   // Keep every kernel argument bound
   // to live SVM storage: a null pointer can leave it unset on OpenCL drivers.
   kernel_->SetArgSVMPointer(argument_index++, box_pose_buffer_
                                                 ? box_pose_buffer_->GetData()
                                                 : volume_buffer_.GetData());
-  ggems::ocl::WriteSVMFromHost(volume_buffer_, volume);
+  if (volumes.empty()) {
+    ggems::ocl::WriteSVMFromHost(volume_buffer_,
+                                 geometry::GGEMSAnalyticVolumeRecord{});
+  } else {
+    ggems::ocl::WriteSVMFromHost(volume_buffer_, volumes);
+  }
 
   auto const &source_emission_records =
     source_configuration.GetEmissionRecords();

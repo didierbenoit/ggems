@@ -41,7 +41,7 @@
 #include "geometry/GGEMSWorldRecord.clh"
 
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
-#include "navigation/GGEMSAnalyticNavigation.clh"
+#include "navigation/GGEMSOccurrenceNavigation.clh"
 
 /*!
  * \brief Commits one finite FP32 endpoint for every transport path.
@@ -55,7 +55,7 @@
  * \param[in,out] particle Private state; unchanged on failure.
  * \return Nonzero on success; zero for nonfinite input or endpoint.
  */
-static /*! \cond */__attribute__((noinline))/*! \endcond */ uint
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
 GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
   float3 position = (float3)(particle->position_x_pm, particle->position_y_pm,
                              particle->position_z_pm);
@@ -101,29 +101,32 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
  *
  * This transaction and GGEMS_TransportMoveToBoundary are deliberately kept
  * out of line. In the former -cl-fast-relaxed-math profile, inlining the
- * query and move into a kernel loop let the Intel CPU OpenCL compiler mix private
- * states of neighboring work-items (multi-source histories receive each
+ * query and move into a kernel loop let the Intel CPU OpenCL compiler mix
+ * private states of neighboring work-items (multi-source histories receive each
  * other's positions or end unresolved). The attributes are a documented
  * device-compiler boundary. Current production kernels do not enable
  * -cl-fast-relaxed-math.
  *
  * \param[in] world Immutable World record.
- * \param[in] volume Immutable tagged volume, or None.
- * \param[in] box_pose Immutable auxiliary buffer: a shared rigid pose for
- * nonspherical solids, followed by side and section arrays for Polyhedra.
- * Unused for Sphere and a World-only scene.
+ * \param[in] volume Immutable analytical array, or one None record.
+ * \param[in] box_pose Immutable single-occurrence auxiliary view, or flat
+ * descriptors, poses, and shared profiles for multiple occurrences. Unused
+ * only for a World-only scene or one Sphere.
  * \param[in,out] particle Private state with a valid current owner.
  * \param[in,out] event Last accepted event on entry (NONE at birth), updated
  * on success. Retained only while the straight flight direction is unchanged.
- * \param[out] faces World or local planar-solid mask; zero for curved solids.
+ * \param[out] faces Departure World or planar-solid mask; zero for curves.
+ * \param[in,out] previous_volume Departure VolumeID of the previous event;
+ * updated to this transaction's departure only after successful movement.
  * \return GGEMS_NAVIGATION_RESOLVED after an accepted move; otherwise the
  * failed status and the particle is unchanged.
  */
-static /*! \cond */__attribute__((noinline))/*! \endcond */ uint GGEMS_TransportToNextBoundary(
-  __global GGEMSWorldRecord const *world,
-  __global GGEMSAnalyticVolumeRecord const *volume,
-  __global void const *box_pose, GGEMSParticleState *particle, uint *event,
-  uint *faces) {
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
+GGEMS_TransportToNextBoundary(__global GGEMSWorldRecord const *world,
+                              __global GGEMSAnalyticVolumeRecord const *volume,
+                              __global void const *box_pose,
+                              GGEMSParticleState *particle, uint *event,
+                              uint *faces, uint *previous_volume) {
   float3 position = (float3)(particle->position_x_pm, particle->position_y_pm,
                              particle->position_z_pm);
 
@@ -131,9 +134,9 @@ static /*! \cond */__attribute__((noinline))/*! \endcond */ uint GGEMS_Transport
                               particle->direction_z);
 
   GGEMSBoundaryWitness witness;
-  uint const status =
-    GGEMS_AnalyticFindBoundary(world, volume, box_pose, position, direction,
-                               particle->current_volume_id, *event, &witness);
+  uint const status = GGEMS_SceneFindBoundary(
+    world, volume, box_pose, position, direction, particle->current_volume_id,
+    *event, *previous_volume, &witness);
 
   if (status != GGEMS_NAVIGATION_RESOLVED) {
     return status;
@@ -145,6 +148,7 @@ static /*! \cond */__attribute__((noinline))/*! \endcond */ uint GGEMS_Transport
     return GGEMS_NAVIGATION_UNRESOLVED;
   }
 
+  *previous_volume = particle->current_volume_id;
   particle->current_volume_id = witness.arrival_volume_id;
   particle->material_id = witness.arrival_material_id;
 

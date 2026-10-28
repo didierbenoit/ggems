@@ -12,7 +12,7 @@ opencl.print_devices()
 # opencl.set_worker_count(65_536)
 # opencl.set_worker_count(4_194_304)
 opencl.set_worker_count(1_048_576)
-opencl.select_devices("0")
+opencl.select_devices("2")
 opencl.initialize()
 
 opencl.print_contexts()
@@ -53,6 +53,19 @@ box.set_size(0.2, 0.1, 0.1, "m")
 box.set_position(0.0, 0.0, 0.0, "m")
 box.set_rotation(0.0, 0.0, 45.0, "deg")
 box.set_material("Water")
+world.add_volume(box)
+
+# Second Box, same geometry but different position
+box.set_position(0.5, 0.0, 0.0, "m")
+box.set_rotation(0.0, 0.0, 0.0, "deg")
+box.set_material("Aluminum")
+world.add_volume(box)
+
+# Third Box
+box.set_position(-0.5, 0.0, 0.0, "m")
+box.set_rotation(0.0, 0.0, 30.0, "deg")
+box.set_material("Water")
+world.add_volume(box)
 
 # sphere = ggems.geometry.GGEMSSphere()
 # sphere.set_radius(0.25, "m")
@@ -110,7 +123,7 @@ box.set_material("Water")
 # polyhedra.set_rotation(0.0, 30.0, 0.0, "deg")
 # polyhedra.set_material("Water")
 
-world.add_volume(box)
+# world.add_volume(box)
 # world.add_volume(sphere)
 # world.add_volume(tubs)
 # world.add_volume(ellipsoid)

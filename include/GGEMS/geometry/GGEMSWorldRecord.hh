@@ -29,9 +29,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace ggems::geometry {
 
-/*! \brief Device box parameters; all-zero denotes an unconfigured World. */
+/*! \brief Device box parameters; zero extents denote an unconfigured World. */
 struct GGEMSWorldRecord {
   /*! \brief Positive X half extent in signed FP32 pm. */
   float half_extent_x_pm{0.0F};
@@ -44,5 +46,11 @@ struct GGEMSWorldRecord {
 
   /*! \brief Half-width of the closed navigation surface band in FP32 pm. */
   float tolerance_pm{0.0F};
+
+  /*! \brief Number of independent direct World children. */
+  std::uint32_t occurrence_count{0};
+
+  /*! \brief Proven straight-ray crossing bound, including World exit. */
+  std::uint32_t max_boundary_events{1};
 };
 } // namespace ggems::geometry

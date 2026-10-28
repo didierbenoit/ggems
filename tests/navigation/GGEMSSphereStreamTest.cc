@@ -625,7 +625,7 @@ __kernel void analytic_layout(__global ulong *layout) {
     ocl::ReadSVMToHost(layout_buffer, std::span{layout});
     EXPECT_EQ(layout,
               (std::array<std::uint64_t, 15>{84, 4, 28, 0, 4, 8, 12, 16, 20, 80,
-                                             24, 16, 12, 24, 20}));
+                                             24, 24, 12, 24, 20}));
     Errors errors;
     auto const run_case = [&](SphereCase const &test,
                               std::uint32_t material) -> void {

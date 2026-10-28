@@ -74,9 +74,9 @@ struct GGEMSPolyhedraProfile {
  *
  * Validate() checks section and wall survival after FP32 packing. GGEMSWorld
  * additionally checks the automatically derived surface half-band against
- * section height, side width, nonzero bore, wall thickness, and World clearance.
- * Pose, side normals, and axial coefficients are uploaded once as immutable
- * auxiliary data; all per-particle queries execute in OpenCL.
+ * section height, side width, nonzero bore, wall thickness, and World
+ * clearance. Pose, side normals, and axial coefficients are uploaded once as
+ * immutable auxiliary data; all per-particle queries execute in OpenCL.
  */
 class GGEMSPolyhedra {
 public:
@@ -162,8 +162,8 @@ public:
 
   /*!
    * \brief Borrows the authored axial profile.
-   * \return Increasing local-Z planes in integer pm; SetZProfile() or destruction
-   * invalidates the view.
+   * \return Increasing local-Z planes in integer pm; SetZProfile() or
+   * destruction invalidates the view.
    */
   [[nodiscard]] auto GetZProfilePM() const noexcept
     -> std::span<GGEMSPolyhedraProfile const>;

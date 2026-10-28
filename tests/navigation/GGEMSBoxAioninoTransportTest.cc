@@ -160,7 +160,7 @@ auto MakeWorkload(ggems::ocl::GGEMSOpenCLContext &context,
   return std::make_unique<TransportWorkload>(
     context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}, random, 64U,
     *snapshot, 0ULL, 0U, static_cast<std::uint32_t>(2U * source_count), 0U,
-    world, volume);
+    world, std::span{&volume, 1U});
 }
 
 /*! \brief One authored history; its represented World exit is analytic. */

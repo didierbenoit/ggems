@@ -93,6 +93,7 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
   trace[0] = particle.current_volume_id;
   uint event = GGEMS_NAVIGATION_EVENT_NONE;
   uint faces = 0U;
+  uint previous_volume = GGEMS_VOLUME_ID_WORLD;
 
   for (uint index = 0U; index < 3U; ++index) {
     uint departure = particle.current_volume_id;
@@ -112,7 +113,7 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
     parameters[2U * index] = parameter;
     parameters[2U * index + 1U] = parameter * length(direction);
     status = GGEMS_TransportToNextBoundary(world, volume, pose, &particle,
-                                           &event, &faces);
+                                           &event, &faces, &previous_volume);
     trace[1] = status;
 
     if (status != GGEMS_NAVIGATION_RESOLVED) {

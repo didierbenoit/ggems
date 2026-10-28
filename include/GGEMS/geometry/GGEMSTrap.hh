@@ -185,7 +185,8 @@ public:
 
   /*!
    * \brief Borrows the owned local-to-World proper rotation.
-   * \return Proper rotation, initially identity; it must not outlive this solid.
+   * \return Proper rotation, initially identity; it must not outlive this
+   * solid.
    */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
 
@@ -216,7 +217,8 @@ private:
   /*! \brief Signed center-line tilt in integer picoradians; zero by default. */
   units::Angle inclination_theta_{};
 
-  /*! \brief Local center-line azimuth in integer picoradians; zero by default. */
+  /*! \brief Local center-line azimuth in integer picoradians; zero by default.
+   */
   units::Angle inclination_phi_{};
 
   /*! \brief Global local-frame origin in canonical pm. */

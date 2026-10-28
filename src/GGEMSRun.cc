@@ -373,14 +373,16 @@ auto GGEMSRun::Initialize() -> void {
 
   std::filesystem::path const kernel_root{GGEMS_KERNEL_ROOT};
 
-  // Compile the owned analytic volume after interning the World medium first.
-  geometry::GGEMSAnalyticVolumeRecord volume_record;
+  // Compile independent occurrences after interning the World medium first.
+  std::vector<geometry::GGEMSAnalyticVolumeRecord> volume_records(1U);
 
   if (world_) {
     std::vector<materials::GGEMSMaterial> scene_materials;
+    scene_materials.reserve(world_->GetVolumeCount() + 1U);
     scene_materials.push_back(world_->GetMaterial());
-    if (auto const *material = world_->GetVolumeMaterial()) {
-      scene_materials.push_back(*material);
+
+    for (std::size_t index = 0U; index < world_->GetVolumeCount(); ++index) {
+      scene_materials.push_back(*world_->GetVolumeMaterial(index));
     }
 
     // Exact dense Material identities from the Materials authority: the World
@@ -389,8 +391,8 @@ auto GGEMSRun::Initialize() -> void {
     materials::GGEMSEMMaterialPackage const package{scene_materials};
     std::span<std::uint32_t const> const material_ids =
       package.GetMaterialIds();
-    volume_record = world_->BuildAnalyticVolumeRecord(
-      material_ids.size() > 1U ? material_ids[1U] : 0U);
+    volume_records =
+      world_->BuildAnalyticDeviceRecords(material_ids.subspan(1U));
   }
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
@@ -409,7 +411,7 @@ auto GGEMSRun::Initialize() -> void {
         opencl.GetWorkerCount(), *new_source_configuration,
         random_stream_offset, static_cast<std::uint32_t>(context_index),
         observer_record_capacity, 0U, world_ ? &*world_ : nullptr,
-        volume_record));
+        volume_records));
   }
 
   GGEMS_INFO("Core", "{} transport workload(s) prepared.",

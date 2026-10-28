@@ -278,6 +278,7 @@ __kernel void polyhedra_layout(__global ulong *layout) {
   layout[18] = __builtin_offsetof(GGEMSPolyhedraSectionRecord, inner_radius_pm);
   layout[19] = __builtin_offsetof(GGEMSPolyhedraSectionRecord, inner_slope);
   layout[20] = __builtin_offsetof(GGEMSPolyhedraSectionRecord, inner_normal_length);
+  layout[21] = __builtin_offsetof(GGEMSPolyhedraRecord, profile_offset_bytes);
 }
 )cl";
   for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
@@ -295,7 +296,7 @@ __kernel void polyhedra_layout(__global ulong *layout) {
                             std::string{production.GetBuildOptions()}.c_str()),
               CL_SUCCESS)
       << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-    std::array<std::uint64_t, 21> layout{};
+    std::array<std::uint64_t, 22> layout{};
     auto layout_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     ocl::GGEMSOpenCLKernel layout_kernel{
       context, cl::Kernel(program, "polyhedra_layout"), "polyhedra_layout"};
@@ -304,7 +305,7 @@ __kernel void polyhedra_layout(__global ulong *layout) {
     ocl::ReadSVMToHost(layout_buffer, std::span{layout});
     EXPECT_EQ(
       layout,
-      (std::array<std::uint64_t, 21>{
+      (std::array<std::uint64_t, 22>{
         sizeof(geometry::GGEMSPolyhedraRecord),
         alignof(geometry::GGEMSPolyhedraRecord),
         offsetof(geometry::GGEMSPolyhedraRecord, side_count),
@@ -325,7 +326,8 @@ __kernel void polyhedra_layout(__global ulong *layout) {
         offsetof(geometry::GGEMSPolyhedraSectionRecord, outer_normal_length),
         offsetof(geometry::GGEMSPolyhedraSectionRecord, inner_radius_pm),
         offsetof(geometry::GGEMSPolyhedraSectionRecord, inner_slope),
-        offsetof(geometry::GGEMSPolyhedraSectionRecord, inner_normal_length)}));
+        offsetof(geometry::GGEMSPolyhedraSectionRecord, inner_normal_length),
+        offsetof(geometry::GGEMSPolyhedraRecord, profile_offset_bytes)}));
     for (auto const &fixture : cases) {
       CheckCase(context, program, random, fixture);
     }

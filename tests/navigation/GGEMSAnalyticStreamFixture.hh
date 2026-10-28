@@ -99,8 +99,9 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
   std::ifstream transaction_input{root / "transport/GGEMSTransport.clh"};
   std::string transaction{std::istreambuf_iterator<char>{transaction_input},
                           {}};
-  ReplaceUnique(transaction, "  uint *faces) {",
-                "  uint *faces, __global long *capture) {");
+  ReplaceUnique(
+    transaction, "  uint *faces, uint *previous_volume) {",
+    "  uint *faces, uint *previous_volume, __global long *capture) {");
   ReplaceUnique(transaction, "  if (status != GGEMS_NAVIGATION_RESOLVED) {",
                 "  capture[8] = (long)as_uint(witness.parameter);\n"
                 "  if (status != GGEMS_NAVIGATION_RESOLVED) {");
@@ -129,8 +130,8 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
     source, "    uint const status = GGEMS_TransportToNextBoundary(",
     "    uint const departure_owner = particle->current_volume_id;\n"
     "    uint const status = GGEMS_TransportToNextBoundary(");
-  ReplaceUnique(source, "particle, &event, &faces);",
-                "particle, &event, &faces, trace + 1U + 9U * event_index);");
+  ReplaceUnique(source, "&previous_volume);",
+                "&previous_volume, trace + 1U + 9U * event_index);");
   ReplaceUnique(
     source, "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {",
     "    if (status == GGEMS_NAVIGATION_RESOLVED) {\n"
@@ -165,7 +166,7 @@ struct StreamResult {
 inline auto
 RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
           random::GGEMSRandom &random, geometry::GGEMSWorldRecord const &world,
-          geometry::GGEMSAnalyticVolumeRecord const &volume,
+          std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes,
           sources::GGEMSSourceRecord const &source,
           geometry::GGEMSBoxPoseRecord const *pose = nullptr,
           bool capture_trace = true, std::span<std::byte const> auxiliary = {})
@@ -207,7 +208,9 @@ RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   auto observations = context.CreateSVMBuffer(
     units::Bytes{2 * sizeof(observer::GGEMSObserverRecord)});
   ocl::FillSVMFromHost(observations, 2U, observer::GGEMSObserverRecord{});
-  auto volume_buffer = buffer(volume);
+  auto volume_buffer =
+    context.CreateSVMBuffer(units::Bytes{volumes.size_bytes()});
+  ocl::WriteSVMFromHost(volume_buffer, volumes);
   std::array<std::int64_t, k_trace_values> trace{};
   auto trace_buffer =
     context.CreateSVMBuffer(units::Bytes{sizeof(std::int64_t) * trace.size()});
@@ -265,6 +268,19 @@ RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   ocl::ReadSVMToHost(rng, std::span{rng_after});
   result.unchanged_rng = rng_before == rng_after;
   return result;
+}
+
+/*! \brief Launches the same worker with one analytic record. */
+inline auto
+RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
+          random::GGEMSRandom &random, geometry::GGEMSWorldRecord const &world,
+          geometry::GGEMSAnalyticVolumeRecord const &volume,
+          sources::GGEMSSourceRecord const &source,
+          geometry::GGEMSBoxPoseRecord const *pose = nullptr,
+          bool capture_trace = true, std::span<std::byte const> auxiliary = {})
+  -> StreamResult {
+  return RunStream(context, program, random, world, std::span{&volume, 1U},
+                   source, pose, capture_trace, auxiliary);
 }
 
 } // namespace ggems::test

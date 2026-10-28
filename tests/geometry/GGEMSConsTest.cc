@@ -37,7 +37,6 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
-#include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSCons.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -127,7 +126,7 @@ TEST(N1Cons, AdmitsSolidTipCylinderAndClosingBoreWithoutRadiusReplacement) {
   EXPECT_THROW(shape.Validate(), GGEMSRecoverable);
 }
 
-TEST(N1Cons, CopiesPoseAndMaterialAndPreservesTheOneVolumeLimit) {
+TEST(N1Cons, CopiesPoseAndMaterial) {
   auto shape = Cons();
   shape.SetPosition(MakePositionPM(-5'000'000'000LL, 7'000'000'000LL, 0))
     .SetRotation(0_deg, 90_deg, 0_deg);
@@ -142,13 +141,6 @@ TEST(N1Cons, CopiesPoseAndMaterialAndPreservesTheOneVolumeLimit) {
   ASSERT_NE(copy.GetVolumeMaterial(), nullptr);
   EXPECT_EQ(copy.GetVolumeMaterial()->GetName(), "Water");
   EXPECT_TRUE(copy.BuildBoxPoseRecord().has_value());
-  EXPECT_THROW(copy.AddVolume(Cons()), GGEMSRecoverable);
-  GGEMSBox box;
-  box.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Water"));
-  EXPECT_THROW(copy.AddVolume(box), GGEMSRecoverable);
-  auto second = World();
-  second.AddVolume(box);
-  EXPECT_THROW(second.AddVolume(Cons()), GGEMSRecoverable);
 }
 
 TEST(N1Cons, RejectsUnresolvedFeaturesAndInsufficientWorldClearance) {

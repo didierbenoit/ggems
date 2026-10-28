@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines the common single-volume scene layout.
+ * \brief Defines the common evaluated analytical occurrence layout.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -29,7 +29,10 @@
 
 #ifndef GGEMS_ANALYTIC_VOLUME_RECORD_CLH
 
-/*! \brief Prevents repeated definition of the shared scene record. */
+/*!
+ * \brief Prevents repeated definition of the shared evaluated occurrence
+ * record.
+ */
 #define GGEMS_ANALYTIC_VOLUME_RECORD_CLH
 
 #include "geometry/GGEMSBoxRecord.clh"
@@ -229,7 +232,10 @@ typedef union GGEMSAnalyticParameters {
   GGEMSPlanarRecord planar;
 } GGEMSAnalyticParameters;
 
-/*! \brief One 84-byte scene record shared by every transport program. */
+/*!
+ * \brief One 84-byte evaluated occurrence record shared by every transport
+ * program.
+ */
 typedef struct GGEMSAnalyticVolumeRecord {
   /*! \brief GGEMS_ANALYTIC_* predicate selection. */
   uint kind;

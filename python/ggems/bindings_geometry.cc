@@ -854,6 +854,13 @@ GGEMSRun.set_world(), which copies the World and checks the completed scene.
 Sizes are converted once to the integer picometer lattice; each full size
 must be an even number of picometers.
 
+Independent direct children may use any supported analytical shape. Each
+add_volume() call creates an owned occurrence with its own insertion-order
+VolumeID, pose, and exact material. Interiors must be disjoint; touching
+surfaces are allowed. General overlap detection is not provided. A distinct
+World gap must remain resolvable outside both adjacent FP32 surface bands;
+a smaller gap may behave as contact. There is no nested geometry.
+
 Configuration methods return the same object, so calls can be chained.
 
 Example:
@@ -919,10 +926,10 @@ Example:
          R"doc(Add one physical volume owned by this World.
 
 The volume must be complete (size and material set) and is copied into the
-World; later edits of the caller's object do not reach the copy. The current
-implementation admits at most one Box, Sphere, Tubs, Ellipsoid, Trd, Trap, Cons,
-or Polyhedra. Strict containment in the World is
-checked when the World is attached with GGEMSRun.set_world().
+World; later edits of the caller's object do not reach the copy. Box, Sphere,
+Tubs, Ellipsoid, Trd, Trap, Cons, and Polyhedra may be mixed. Occurrence interiors
+must be disjoint. Strict containment in the World is checked when the World
+is attached with GGEMSRun.set_world().
 
 Args:
     volume: Configured GGEMSBox.
@@ -936,9 +943,9 @@ Example:
          py::arg("volume"), py::return_value_policy::reference_internal)
 
     .def("add_volume", py::overload_cast<GGEMSSphere>(&GGEMSWorld::AddVolume),
-         R"doc(Copy a complete Sphere into the single-volume World.
+         R"doc(Copy a complete Sphere into the World.
 
-Radius and material must be set. A second volume of any shape is rejected.
+Radius and material must be set. The World owns an independent occurrence.
 Strict World containment is checked by GGEMSRun.set_world().
 
 Returns:
@@ -947,50 +954,46 @@ Returns:
          py::arg("volume"), py::return_value_policy::reference_internal)
 
     .def("add_volume", py::overload_cast<GGEMSTubs>(&GGEMSWorld::AddVolume),
-         R"doc(Copy a complete Tubs into the single-volume World.
+         R"doc(Copy a complete Tubs into the World.
 
-Radii, full length, and material must be set. A second volume of any shape is
-rejected. Strict containment and FP32 band admission are checked by set_world().
-Return this World for chaining.
+Radii, full length, and material must be set. Strict containment and FP32
+band admission are checked by set_world(). Return this World for chaining.
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal)
 
     .def("add_volume",
          py::overload_cast<GGEMSEllipsoid>(&GGEMSWorld::AddVolume),
-         R"doc(Copy a complete Ellipsoid into the single-volume World.
+         R"doc(Copy a complete Ellipsoid into the World.
 
-Semi-axes and material must be set. A second volume of any shape is rejected.
+Semi-axes and material must be set. The World owns an independent occurrence.
 Strict containment and FP32 band admission are checked by set_world().
 Return this World for chaining.
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal)
 
     .def("add_volume", py::overload_cast<GGEMSTrd>(&GGEMSWorld::AddVolume),
-         R"doc(Copy a complete Trd into the single-volume World.
+         R"doc(Copy a complete Trd into the World.
 
-Both end sizes, full length and material must be set. A second volume is
-rejected. Strict containment and FP32 bands are checked by set_world().
-Return this World for chaining.
+Both end sizes, full length and material must be set. Strict containment
+and FP32 bands are checked by set_world(). Return this World for chaining.
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal)
 
     .def("add_volume",
          py::overload_cast<GGEMSPolyhedra>(&GGEMSWorld::AddVolume),
-         "Copy a complete Polyhedra into the single-volume World. Return this "
-         "World.",
+         "Copy a complete Polyhedra into the World. Return this World.",
          py::arg("volume"), py::return_value_policy::reference_internal)
 
-    .def(
-      "add_volume", py::overload_cast<GGEMSCons>(&GGEMSWorld::AddVolume),
-      "Copy a complete Cons into the single-volume World. Return this World.",
-      py::arg("volume"), py::return_value_policy::reference_internal)
+    .def("add_volume", py::overload_cast<GGEMSCons>(&GGEMSWorld::AddVolume),
+         "Copy a complete Cons into the World. Return this World.",
+         py::arg("volume"), py::return_value_policy::reference_internal)
 
     .def("add_volume", py::overload_cast<GGEMSTrap>(&GGEMSWorld::AddVolume),
-         R"doc(Copy a complete planar Trap into the single-volume World.
+         R"doc(Copy a complete planar Trap into the World.
 
 Both end dimensions, full length and material must be set. Incompatible
-nonplanar sides and a second volume are rejected. Strict containment and
-FP32 bands are checked by set_world(). Return this World for chaining.
+nonplanar sides are rejected. Strict containment and FP32 bands are checked by
+set_world(). Return this World for chaining.
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal);
 }

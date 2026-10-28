@@ -33,6 +33,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <span>
 #include <memory>
 #include <optional>
 
@@ -294,9 +295,11 @@ public:
    * zero to select the largest limit preserving atomic-cursor headroom.
    * \param[in] world Optional World copied to SVM; required for navigated
    * (Process-free) species.
-   * \param[in] volume Single tagged volume record copied to SVM.
+   * \param[in] volumes Immutable analytical records in occurrence order,
+   * copied into workload-owned SVM during construction. Empty binds None
+   * only when the World has no analytical occurrences.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
-   * are invalid.
+   * are invalid, or analytical record count disagrees with the World.
    * \throws GGEMSInternal If energy and cumulative-ticket table lengths
    * disagree.
    * \throws GGEMSFatal If kernel creation, SVM allocation, or an OpenCL
@@ -310,7 +313,7 @@ public:
     std::uint32_t observer_record_capacity = 1U,
     std::uint32_t launch_primary_count_limit = 0U,
     geometry::GGEMSWorld const *world = nullptr,
-    geometry::GGEMSAnalyticVolumeRecord volume = {});
+    std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes = {});
 
   /*! \brief Releases the bound kernel and all workload-owned SVM storage. */
   ~GGEMSTransportWorkload() = default;
@@ -463,10 +466,12 @@ private:
    */
   geometry::GGEMSWorld const *world_{nullptr};
 
-  /*! \brief Immutable origin-centered World box, or zero record if absent. */
+  /*!
+   * \brief Immutable origin-centered World box, or default record if absent.
+   */
   ggems::ocl::GGEMSOpenCLSVMBuffer world_buffer_;
 
-  /*! \brief Immutable single analytic volume record, including None. */
+  /*! \brief Immutable analytical occurrence records, or one None record. */
   ggems::ocl::GGEMSOpenCLSVMBuffer volume_buffer_;
 
   /*!

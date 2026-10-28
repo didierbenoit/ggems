@@ -49,7 +49,8 @@
 // =============================================================================
 
 /*!
- * \brief Constructs the private sentinel used before a worker processes a primary.
+ * \brief Constructs the private sentinel used before a worker processes a
+ * primary.
  *
  * \return Inactive Aionino at the origin, with zero energy/time, +Z direction,
  * and invalid history, track, and geometry identities.
@@ -126,7 +127,8 @@ GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
 // =============================================================================
 
 /*!
- * \brief Advances the diagnostic species by fixed global offsets and time ticks.
+ * \brief Advances the diagnostic species by fixed global offsets and time
+ * ticks.
  *
  * Gamma receives +100 mm in Z. Electron receives +50 mm in X and +25 mm
  * in Z. Every species receives 10000 ps; stored direction is not consulted.
@@ -170,7 +172,8 @@ static inline void GGEMS_DummyKillIfFinished(__private GGEMSParticleState *p,
 // =============================================================================
 
 /*!
- * \brief Runs the diagnostic depth-first branching workload on claimed primaries.
+ * \brief Runs the diagnostic depth-first branching workload on claimed
+ * primaries.
  *
  * Each active worker exclusively owns one RNG state and a bounded private
  * stack. Dynamic atomic claims select source ranges; births copy the source

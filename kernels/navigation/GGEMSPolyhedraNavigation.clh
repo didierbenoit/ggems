@@ -405,13 +405,17 @@ GGEMS_PolyhedraLocate(__global GGEMSPolyhedraRecord const *polyhedra,
                       float3 direction, ulong *owner) {
   __global GGEMSBoxPoseRecord const *pose =
     (__global GGEMSBoxPoseRecord const *)auxiliary;
+
   __global GGEMSPolyhedraSideRecord const *sides =
-    (__global GGEMSPolyhedraSideRecord const *)(pose + 1);
+    (__global GGEMSPolyhedraSideRecord const
+       *)((__global uchar const *)auxiliary + polyhedra->profile_offset_bytes);
+
   __global GGEMSPolyhedraSectionRecord const *sections =
     (__global GGEMSPolyhedraSectionRecord const *)(sides +
                                                    polyhedra->side_count);
   float3 local_position;
   float3 local_direction;
+
   GGEMS_BoxLocalRay(pose, position, direction, &local_position,
                     &local_direction);
 
@@ -472,8 +476,11 @@ GGEMS_PolyhedraFindBoundary(__global GGEMSPolyhedraRecord const *polyhedra,
                             uint last_event, GGEMSBoundaryWitness *witness) {
   __global GGEMSBoxPoseRecord const *pose =
     (__global GGEMSBoxPoseRecord const *)auxiliary;
+
   __global GGEMSPolyhedraSideRecord const *sides =
-    (__global GGEMSPolyhedraSideRecord const *)(pose + 1);
+    (__global GGEMSPolyhedraSideRecord const
+       *)((__global uchar const *)auxiliary + polyhedra->profile_offset_bytes);
+
   __global GGEMSPolyhedraSectionRecord const *sections =
     (__global GGEMSPolyhedraSectionRecord const *)(sides +
                                                    polyhedra->side_count);

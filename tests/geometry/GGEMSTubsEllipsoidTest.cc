@@ -37,7 +37,6 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
-#include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
@@ -168,24 +167,6 @@ TEST(N1Ellipsoid, CopiesPoseDimensionsAndMaterialIntoWorld) {
   EXPECT_EQ(copy.GetVolumeMaterial()->GetName(), "Water");
   EXPECT_TRUE(copy.BuildBoxPoseRecord().has_value());
   EXPECT_TRUE(copy.GetBoxes().empty());
-}
-
-TEST(N1TubsEllipsoid, PreservesTheOneVolumeLimitForEveryNewOverload) {
-  auto world = World();
-  world.AddVolume(Tubs());
-  EXPECT_THROW(world.AddVolume(Ellipsoid()), GGEMSRecoverable);
-  EXPECT_THROW(world.AddVolume(Tubs()), GGEMSRecoverable);
-  auto second = World();
-  second.AddVolume(Ellipsoid());
-  EXPECT_THROW(second.AddVolume(Tubs()), GGEMSRecoverable);
-  EXPECT_THROW(second.AddVolume(Ellipsoid()), GGEMSRecoverable);
-  GGEMSBox box;
-  box.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Water"));
-  EXPECT_THROW(second.AddVolume(box), GGEMSRecoverable);
-  auto third = World();
-  third.AddVolume(box);
-  EXPECT_THROW(third.AddVolume(Tubs()), GGEMSRecoverable);
-  EXPECT_THROW(third.AddVolume(Ellipsoid()), GGEMSRecoverable);
 }
 
 TEST(N1TubsEllipsoid, PoseValidationUsesTheSharedRotationContract) {

@@ -36,7 +36,6 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
-#include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSPolyhedra.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -150,7 +149,7 @@ TEST(N1Polyhedra, AdmitsGenericCountsConcavityAndClosingBore) {
   EXPECT_NO_THROW(world.Validate());
 }
 
-TEST(N1Polyhedra, OwnsProfilePoseAndMaterialAndRetainsOneVolumeLimit) {
+TEST(N1Polyhedra, OwnsProfilePoseAndMaterial) {
   auto shape = Shape();
   shape.SetPosition(MakePositionPM(4'000'000'000LL, -2'000'000'000LL, 0))
     .SetRotation(0_deg, 30_deg, 0_deg);
@@ -166,10 +165,6 @@ TEST(N1Polyhedra, OwnsProfilePoseAndMaterialAndRetainsOneVolumeLimit) {
   EXPECT_EQ(copy.BuildAnalyticAuxiliaryData(),
             world.BuildAnalyticAuxiliaryData());
   EXPECT_FALSE(copy.BuildAnalyticAuxiliaryData().empty());
-  EXPECT_THROW(copy.AddVolume(shape), GGEMSRecoverable);
-  GGEMSBox box;
-  box.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Water"));
-  EXPECT_THROW(copy.AddVolume(box), GGEMSRecoverable);
 }
 
 TEST(N1Polyhedra, RejectsUnresolvedProfilesAndWorldClearance) {

@@ -76,8 +76,9 @@ world_navigation_probe(__global GGEMSWorldRecord const *world,
 
   uint event = GGEMS_NAVIGATION_EVENT_NONE;
   uint faces = 0U;
-  statuses[ray] =
-    GGEMS_TransportToNextBoundary(world, volume, 0, &particle, &event, &faces);
+  uint previous_volume = GGEMS_VOLUME_ID_WORLD;
+  statuses[ray] = GGEMS_TransportToNextBoundary(
+    world, volume, 0, &particle, &event, &faces, &previous_volume);
   endpoints_pm[3U * ray] = particle.position_x_pm;
   endpoints_pm[3U * ray + 1U] = particle.position_y_pm;
   endpoints_pm[3U * ray + 2U] = particle.position_z_pm;

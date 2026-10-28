@@ -1,0 +1,256 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Selects physical owners and boundaries among independent occurrences.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_OCCURRENCE_NAVIGATION_CLH
+/*! \brief Prevents repeated inclusion of occurrence selection. */
+#define GGEMS_OCCURRENCE_NAVIGATION_CLH
+
+#include "geometry/GGEMSAnalyticOccurrenceRecord.clh"
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "geometry/GGEMSWorldRecord.clh"
+#include "navigation/GGEMSNavigation.clh"
+#include "navigation/GGEMSWorldNavigation.clh"
+#include "navigation/GGEMSAnalyticNavigation.clh"
+
+/*!
+ * \brief Resolves an occurrence's auxiliary view in the immutable scene buffer.
+ * \param[in] auxiliary Multi-volume buffer beginning with occurrence records.
+ * \param[in] occurrence Descriptor with an aligned byte offset in that buffer.
+ * \return Global pose/profile view valid for the immutable scene lifetime.
+ */
+static inline __global void const *GGEMS_OccurrenceAuxiliary(
+  __global void const *auxiliary,
+  __global GGEMSAnalyticOccurrenceRecord const *occurrence) {
+  return (__global uchar const *)auxiliary + occurrence->auxiliary_offset;
+}
+
+/*!
+ * \brief Finds the unique directional owner among a small sibling collection.
+ *
+ * Existing N1 predicates apply their closed surface bands and strict contracted
+ * interiors. Two qualifying siblings are ambiguous and fail; insertion order
+ * does not provide an overlap priority. The ray is already World-validated.
+ * \param[in] volumes Immutable evaluated analytical records.
+ * \param[in] auxiliary Descriptor array followed by poses and shared profiles.
+ * \param[in] count Number of descriptors; identities are index plus one.
+ * \param[in] position Global FP32 position in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[in] excluded_volume Accepted departure to exclude at its exit, or
+ * World.
+ * \param[out] owner Packed forward VolumeID/MaterialID, World if none
+ * qualifies.
+ * \return Resolved, or unresolved for ambiguous ownership or predicate failure.
+ */
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
+GGEMS_OccurrenceLocate(__global GGEMSAnalyticVolumeRecord const *volumes,
+                       __global void const *auxiliary, uint count,
+                       float3 position, float3 direction, uint excluded_volume,
+                       ulong *owner) {
+  __global GGEMSAnalyticOccurrenceRecord const *occurrences =
+    (__global GGEMSAnalyticOccurrenceRecord const *)auxiliary;
+
+  *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+
+  for (uint index = 0U; index < count; ++index) {
+    if (index + 1U == excluded_volume) {
+      continue;
+    }
+
+    ulong candidate;
+    uint const status = GGEMS_AnalyticLocateVolume(
+      &volumes[occurrences[index].record_index],
+      GGEMS_OccurrenceAuxiliary(auxiliary, &occurrences[index]), position,
+      direction, &candidate);
+
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+
+    if ((uint)(candidate >> 32U) != GGEMS_VOLUME_ID_WORLD) {
+      if ((uint)(*owner >> 32U) != GGEMS_VOLUME_ID_WORLD) {
+        return GGEMS_NAVIGATION_UNRESOLVED;
+      }
+      *owner = candidate;
+    }
+  }
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Locates a birth in World or its unique independent analytical owner.
+ * \param[in] world World bounds, automatic band, and occurrence count.
+ * \param[in] volumes Immutable analytical array, or one None record.
+ * \param[in] auxiliary Single N1 view or multi-volume descriptors and assets.
+ * \param[in] position Global FP32 birth position in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed VolumeID/MaterialID on success.
+ * \return Resolved, outside World, or unresolved.
+ */
+static inline uint
+GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
+                  __global GGEMSAnalyticVolumeRecord const *volumes,
+                  __global void const *auxiliary, float3 position,
+                  float3 direction, ulong *owner) {
+  if (world->occurrence_count <= 1U) {
+    return GGEMS_AnalyticLocate(world, volumes, auxiliary, position, direction,
+                                owner);
+  }
+
+  uint const status = GGEMS_WorldValidateRay(world, position, direction);
+
+  return status == GGEMS_NAVIGATION_RESOLVED
+           ? GGEMS_OccurrenceLocate(volumes, auxiliary, world->occurrence_count,
+                                    position, direction, GGEMS_VOLUME_ID_WORLD,
+                                    owner)
+           : status;
+}
+
+/*!
+ * \brief Selects a boundary by scanning the admitted independent siblings.
+ *
+ * An accepted interior owner supplies its exit without retesting other entry
+ * distances. Forward classification at that same FP32 endpoint supplies a
+ * touching arrival owner, so one physical step can cross directly A to B.
+ * Separately observable World gaps must lie outside neighboring closed bands;
+ * sub-band nominal gaps are not certified as distinct material segments.
+ * World-owned rays compare independent N1 queries seeded from the World exit.
+ * No candidate partition or classification displacement becomes physical path.
+ * \param[in] world Immutable World and occurrence count.
+ * \param[in] volumes Immutable evaluated analytical records.
+ * \param[in] auxiliary Descriptors, poses, and shared geometry assets.
+ * \param[in] position Global FP32 physical anchor in pm.
+ * \param[in] direction Actual stored straight-flight direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] last_event Previously accepted boundary event.
+ * \param[in] previous_volume Departure VolumeID of that previous event.
+ * \param[out] result Physical distance, departure feature, and arrival owner.
+ * \return Resolved, outside World, or unresolved for ambiguous ownership.
+ */
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
+GGEMS_OccurrenceFindBoundary(__global GGEMSWorldRecord const *world,
+                             __global GGEMSAnalyticVolumeRecord const *volumes,
+                             __global void const *auxiliary, float3 position,
+                             float3 direction, uint current_owner,
+                             uint last_event, uint previous_volume,
+                             GGEMSBoundaryWitness *result) {
+  GGEMSBoundaryWitness world_exit;
+  uint status =
+    GGEMS_WorldFindBoundary(world, position, direction, &world_exit);
+
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
+  }
+
+  *result = world_exit;
+  __global GGEMSAnalyticOccurrenceRecord const *occurrences =
+    (__global GGEMSAnalyticOccurrenceRecord const *)auxiliary;
+
+  if (current_owner != GGEMS_VOLUME_ID_WORLD) {
+    __global GGEMSAnalyticOccurrenceRecord const *occurrence =
+      &occurrences[current_owner - 1U];
+
+    status = GGEMS_AnalyticVolumeFindBoundary(
+      &volumes[occurrence->record_index],
+      GGEMS_OccurrenceAuxiliary(auxiliary, occurrence), position, direction,
+      current_owner, GGEMS_NAVIGATION_EVENT_NONE, result);
+
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+
+    ulong arrival;
+    status = GGEMS_OccurrenceLocate(volumes, auxiliary, world->occurrence_count,
+                                    position + result->parameter * direction,
+                                    direction, current_owner, &arrival);
+
+    if (status == GGEMS_NAVIGATION_RESOLVED) {
+      result->arrival_volume_id = (uint)(arrival >> 32U);
+      result->arrival_material_id = (uint)arrival;
+    }
+
+    return status;
+  }
+
+  for (uint index = 0U; index < world->occurrence_count; ++index) {
+    GGEMSBoundaryWitness candidate = world_exit;
+    status = GGEMS_AnalyticVolumeFindBoundary(
+      &volumes[occurrences[index].record_index],
+      GGEMS_OccurrenceAuxiliary(auxiliary, &occurrences[index]), position,
+      direction, GGEMS_VOLUME_ID_WORLD,
+      index + 1U == previous_volume ? last_event : GGEMS_NAVIGATION_EVENT_NONE,
+      &candidate);
+
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+
+    if (candidate.event == GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY) {
+      if (candidate.parameter < result->parameter) {
+        *result = candidate;
+      } else if (candidate.parameter == result->parameter &&
+                 result->event == GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY) {
+        return GGEMS_NAVIGATION_UNRESOLVED;
+      }
+    }
+  }
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Dispatches a scene query while keeping the ordinary N1 path direct.
+ * \param[in] world World bounds and immutable scene counts.
+ * \param[in] volumes Evaluated analytical array, or one None record.
+ * \param[in] auxiliary Single N1 view or descriptors followed by scene assets.
+ * \param[in] position Global FP32 anchor in pm.
+ * \param[in] direction Actual stored straight-flight direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] last_event Previous accepted event for this direction.
+ * \param[in] previous_volume Departure VolumeID of the previous event.
+ * \param[out] result Selected physical boundary and arrival context.
+ * \return Resolved, outside World, or unresolved.
+ */
+static inline uint
+GGEMS_SceneFindBoundary(__global GGEMSWorldRecord const *world,
+                        __global GGEMSAnalyticVolumeRecord const *volumes,
+                        __global void const *auxiliary, float3 position,
+                        float3 direction, uint current_owner, uint last_event,
+                        uint previous_volume, GGEMSBoundaryWitness *result) {
+  return world->occurrence_count <= 1U
+           ? GGEMS_AnalyticFindBoundary(world, volumes, auxiliary, position,
+                                        direction, current_owner, last_event,
+                                        result)
+           : GGEMS_OccurrenceFindBoundary(world, volumes, auxiliary, position,
+                                          direction, current_owner, last_event,
+                                          previous_volume, result);
+}
+
+#endif

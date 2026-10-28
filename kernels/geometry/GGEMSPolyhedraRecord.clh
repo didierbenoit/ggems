@@ -32,12 +32,14 @@
 #define GGEMS_POLYHEDRA_RECORD_CLH
 
 /*!
- * \brief Stores 20 bytes of host-prepared polygon counts and owner metadata.
+ * \brief Stores 24 bytes of host-prepared polygon counts and owner metadata.
  *
- * The companion auxiliary buffer contains one 48-byte GGEMSBoxPoseRecord,
- * side_count 8-byte GGEMSPolyhedraSideRecord entries, then section_count
- * 32-byte GGEMSPolyhedraSectionRecord entries. All records use scalar fields
- * with 4-byte natural alignment; no float3 alignment or padding is implied.
+ * The occurrence auxiliary pointer addresses its 48-byte GGEMSBoxPoseRecord.
+ * profile_offset_bytes locates the immutable side records relative to that
+ * pointer. The profile stores side_count 8-byte side records followed by
+ * section_count 32-byte section records. Several occurrences may share these
+ * profiles while retaining distinct poses, owners, Materials and tolerances.
+ * All fields use 32-bit scalars with matching host and OpenCL alignment.
  */
 typedef struct GGEMSPolyhedraRecord {
   /*! \brief Number of regular polygon sides. */
@@ -54,6 +56,9 @@ typedef struct GGEMSPolyhedraRecord {
 
   /*! \brief Automatic normal-distance surface half-band in pm. */
   float tolerance_pm;
+
+  /*! \brief Byte offset from this occurrence pose to its shared side records.*/
+  uint profile_offset_bytes;
 } GGEMSPolyhedraRecord;
 
 /*!
@@ -73,7 +78,8 @@ typedef struct GGEMSPolyhedraSideRecord {
 } GGEMSPolyhedraSideRecord;
 
 /*!
- * \brief Stores 32 bytes of continuous linear outer and bore profile coefficients.
+ * \brief Stores 32 bytes of continuous linear outer and bore profile
+ * coefficients.
  *
  * Each positive-height section spans strictly increasing local Z endpoints.
  * Apothems vary as radius + slope * (z - z_lower_pm). The outer and inner

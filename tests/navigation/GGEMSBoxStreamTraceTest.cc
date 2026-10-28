@@ -118,6 +118,8 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
     .half_extent_x_pm = static_cast<float>(test.half[0]),
     .half_extent_y_pm = static_cast<float>(test.half[1]),
     .half_extent_z_pm = static_cast<float>(test.half[2]),
+    .occurrence_count = 1U,
+    .max_boundary_events = 3U,
   };
   sources::GGEMSSourceRecord source{};
   source.emitted_particle_type =

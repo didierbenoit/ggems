@@ -110,21 +110,7 @@ TEST(GGEMSSphere, CopiesTheAuthoredValueAndKeepsTheBoxViewCompatible) {
   EXPECT_EQ(copy.GetMaterial().GetName(), "Vacuum");
 }
 
-TEST(GGEMSSphere, RejectsEverySecondPhysicalVolumeAndPreservesTheFirst) {
-  GGEMSBox box;
-  box.SetSize(2_pm, 2_pm, 2_pm).SetMaterial(BuildBuiltInMaterial("Water"));
-  auto sphere_world = World();
-  sphere_world.AddVolume(Sphere());
-  EXPECT_THROW(sphere_world.AddVolume(Sphere()), GGEMSRecoverable);
-  EXPECT_THROW(sphere_world.AddVolume(box), GGEMSRecoverable);
-  EXPECT_EQ(sphere_world.BuildAnalyticVolumeRecord(1U).kind,
-            GGEMSAnalyticKind::Sphere);
-  auto box_world = World();
-  box_world.AddVolume(box);
-  EXPECT_THROW(box_world.AddVolume(Sphere()), GGEMSRecoverable);
-  EXPECT_EQ(box_world.GetBoxes().size(), 1U);
-  EXPECT_EQ(box_world.BuildAnalyticVolumeRecord(1U).kind,
-            GGEMSAnalyticKind::Box);
+TEST(GGEMSSphere, RejectsIncompleteVolumeAndPreservesTheEmptyWorld) {
   auto empty = World();
   EXPECT_THROW(empty.AddVolume(GGEMSSphere{}), GGEMSRecoverable);
   EXPECT_EQ(empty.BuildAnalyticVolumeRecord(0U).kind, GGEMSAnalyticKind::None);
