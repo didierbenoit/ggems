@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Selects physical owners and boundaries among independent occurrences.
+ * \brief Selects physical owners and boundaries among analytical occurrences.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -102,35 +102,6 @@ GGEMS_OccurrenceLocate(__global GGEMSAnalyticVolumeRecord const *volumes,
   }
 
   return GGEMS_NAVIGATION_RESOLVED;
-}
-
-/*!
- * \brief Locates a birth in World or its unique independent analytical owner.
- * \param[in] world World bounds, automatic band, and occurrence count.
- * \param[in] volumes Immutable analytical array, or one None record.
- * \param[in] auxiliary Single N1 view or multi-volume descriptors and assets.
- * \param[in] position Global FP32 birth position in pm.
- * \param[in] direction Actual stored direction.
- * \param[out] owner Packed VolumeID/MaterialID on success.
- * \return Resolved, outside World, or unresolved.
- */
-static inline uint
-GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
-                  __global GGEMSAnalyticVolumeRecord const *volumes,
-                  __global void const *auxiliary, float3 position,
-                  float3 direction, ulong *owner) {
-  if (world->occurrence_count <= 1U) {
-    return GGEMS_AnalyticLocate(world, volumes, auxiliary, position, direction,
-                                owner);
-  }
-
-  uint const status = GGEMS_WorldValidateRay(world, position, direction);
-
-  return status == GGEMS_NAVIGATION_RESOLVED
-           ? GGEMS_OccurrenceLocate(volumes, auxiliary, world->occurrence_count,
-                                    position, direction, GGEMS_VOLUME_ID_WORLD,
-                                    owner)
-           : status;
 }
 
 /*!
@@ -226,6 +197,315 @@ GGEMS_OccurrenceFindBoundary(__global GGEMSWorldRecord const *world,
 }
 
 /*!
+ * \brief Tests membership in a host-validated physical parent chain.
+ * \param[in] occurrences Immutable descriptors with at most three levels.
+ * \param[in] ancestor Nonzero candidate VolumeID.
+ * \param[in] volume Leaf VolumeID, or World to represent an empty chain.
+ * \return Nonzero when ancestor equals volume or one of its physical parents.
+ */
+static inline uint GGEMS_HierarchyIsAncestor(
+  __global GGEMSAnalyticOccurrenceRecord const *occurrences, uint ancestor,
+  uint volume) {
+  while (volume != GGEMS_VOLUME_ID_WORLD) {
+    if (volume == ancestor) {
+      return 1U;
+    }
+    volume = occurrences[volume - 1U].parent_volume_id;
+  }
+
+  return 0U;
+}
+
+/*!
+ * \brief Descends through unique forward daughters of an active container.
+ *
+ * Only direct daughters are scanned at each admitted level. A missing daughter
+ * leaves the container's material active; its descendants outside that support
+ * are never visited. Multiple qualifying siblings fail without an order-based
+ * priority. The host admits at most three physical levels and acyclic lists.
+ * \param[in] volumes Immutable evaluated records in insertion order.
+ * \param[in] auxiliary Descriptors followed by global poses and shared assets.
+ * \param[in] position Global FP32 endpoint in pm; no displacement is applied.
+ * \param[in] direction Actual stored straight-flight direction.
+ * \param[in] excluded_volume Limiting departed branch, or World at birth.
+ * \param[in,out] owner Packed active container on input, deepest owner on
+ * output.
+ * \return Resolved, or unresolved for ambiguous ownership or leaf failure.
+ */
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
+GGEMS_HierarchyDescend(__global GGEMSAnalyticVolumeRecord const *volumes,
+                       __global void const *auxiliary, float3 position,
+                       float3 direction, uint excluded_volume, ulong *owner) {
+  __global GGEMSAnalyticOccurrenceRecord const *occurrences =
+    (__global GGEMSAnalyticOccurrenceRecord const *)auxiliary;
+  uint parent = (uint)(*owner >> 32U);
+
+  while (1) {
+    ulong selected = *owner;
+    uint child = parent == GGEMS_VOLUME_ID_WORLD
+                   ? 1U
+                   : occurrences[parent - 1U].first_child_id;
+
+    while (child != 0U) {
+      __global GGEMSAnalyticOccurrenceRecord const *occurrence =
+        &occurrences[child - 1U];
+
+      if (child != excluded_volume) {
+        ulong candidate;
+        uint const status = GGEMS_AnalyticLocateVolume(
+          &volumes[occurrence->record_index],
+          GGEMS_OccurrenceAuxiliary(auxiliary, occurrence), position, direction,
+          &candidate);
+
+        if (status != GGEMS_NAVIGATION_RESOLVED) {
+          return status;
+        }
+
+        if ((uint)(candidate >> 32U) != GGEMS_VOLUME_ID_WORLD) {
+          if ((uint)(selected >> 32U) != parent) {
+            return GGEMS_NAVIGATION_UNRESOLVED;
+          }
+          selected = candidate;
+        }
+      }
+      child = occurrence->next_sibling_id;
+    }
+
+    if ((uint)(selected >> 32U) == parent) {
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+
+    *owner = selected;
+    parent = (uint)(selected >> 32U);
+  }
+}
+
+/*!
+ * \brief Resolves the forward owner after one hierarchical physical crossing.
+ *
+ * All active ancestors are checked, including when an entry root wins before
+ * a coincident ancestor exit through FP32 rounding. The limiting exit is
+ * authoritative even if its rounded endpoint still classifies inside its band.
+ * Descending starts at the deepest surviving container, not always at World.
+ * \param[in] volumes Immutable analytical records.
+ * \param[in] auxiliary Indexed hierarchy and immutable occurrence assets.
+ * \param[in] position Prospective committed global FP32 endpoint in pm.
+ * \param[in] direction Actual stored straight-flight direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] limiting_exit Occurrence whose exit won, or World for an entry.
+ * \param[out] owner Packed deepest forward VolumeID and MaterialID.
+ * \param[out] departed_branch Highest ancestor left, or World if none.
+ * \return Resolved, or unresolved for a leaf failure or ambiguous siblings.
+ */
+static inline uint
+GGEMS_HierarchyArrival(__global GGEMSAnalyticVolumeRecord const *volumes,
+                       __global void const *auxiliary, float3 position,
+                       float3 direction, uint current_owner, uint limiting_exit,
+                       ulong *owner, uint *departed_branch) {
+  __global GGEMSAnalyticOccurrenceRecord const *occurrences =
+    (__global GGEMSAnalyticOccurrenceRecord const *)auxiliary;
+
+  *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+  *departed_branch = GGEMS_VOLUME_ID_WORLD;
+
+  for (uint ancestor = current_owner; ancestor != GGEMS_VOLUME_ID_WORLD;
+       ancestor = occurrences[ancestor - 1U].parent_volume_id) {
+    __global GGEMSAnalyticOccurrenceRecord const *occurrence =
+      &occurrences[ancestor - 1U];
+    ulong candidate = GGEMS_MATERIAL_ID_WORLD;
+
+    if (ancestor != limiting_exit) {
+      uint const status = GGEMS_AnalyticLocateVolume(
+        &volumes[occurrence->record_index],
+        GGEMS_OccurrenceAuxiliary(auxiliary, occurrence), position, direction,
+        &candidate);
+
+      if (status != GGEMS_NAVIGATION_RESOLVED) {
+        return status;
+      }
+    }
+
+    if ((uint)(candidate >> 32U) == GGEMS_VOLUME_ID_WORLD) {
+      *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+      *departed_branch = ancestor;
+    } else if ((uint)(*owner >> 32U) == GGEMS_VOLUME_ID_WORLD) {
+      *owner = candidate;
+    }
+  }
+
+  return GGEMS_HierarchyDescend(volumes, auxiliary, position, direction,
+                                *departed_branch, owner);
+}
+
+/*!
+ * \brief Selects the nearest effective boundary of a physical hierarchy.
+ *
+ * The current owner and every ancestor supply exit candidates; only direct
+ * daughters of the current owner supply entry candidates. Independent leaf
+ * queries use an infinite bound so protruding nominal geometry is not rejected
+ * merely because its own exit lies beyond the World or an ancestor. The finite
+ * World and ancestor exits cap the effective support afterward. Coincident
+ * hierarchy crossings produce one proposal and one deepest arrival owner.
+ *
+ * Effective clipped features and gaps must remain distinguishable under the
+ * existing leaf surface bands. This selector does not prove that admission or
+ * add an alternative tolerance, interval solver, or numerical displacement.
+ * \param[in] world Finite World bounds and validated hierarchy metadata.
+ * \param[in] volumes Immutable evaluated analytical records.
+ * \param[in] auxiliary Hierarchy descriptors, global poses, and shared assets.
+ * \param[in] position Global FP32 physical anchor in pm.
+ * \param[in] direction Actual stored straight-flight direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] last_event Last accepted event; reset to NONE after direction
+ * change.
+ * \param[in] previous_volume Departure of that event, defining its parent
+ * chain.
+ * \param[out] result Effective boundary with limiting feature and arrival
+ * owner.
+ * \return Resolved, outside World, or unresolved; no particle state is
+ * modified.
+ */
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
+GGEMS_HierarchyFindBoundary(__global GGEMSWorldRecord const *world,
+                            __global GGEMSAnalyticVolumeRecord const *volumes,
+                            __global void const *auxiliary, float3 position,
+                            float3 direction, uint current_owner,
+                            uint last_event, uint previous_volume,
+                            GGEMSBoundaryWitness *result) {
+  GGEMSBoundaryWitness world_exit;
+
+  uint status =
+    GGEMS_WorldFindBoundary(world, position, direction, &world_exit);
+
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
+  }
+
+  *result = world_exit;
+
+  uint limiting_exit = GGEMS_VOLUME_ID_WORLD;
+
+  __global GGEMSAnalyticOccurrenceRecord const *occurrences =
+    (__global GGEMSAnalyticOccurrenceRecord const *)auxiliary;
+
+  for (uint ancestor = current_owner; ancestor != GGEMS_VOLUME_ID_WORLD;
+       ancestor = occurrences[ancestor - 1U].parent_volume_id) {
+    __global GGEMSAnalyticOccurrenceRecord const *occurrence =
+      &occurrences[ancestor - 1U];
+
+    GGEMSBoundaryWitness candidate = world_exit;
+    candidate.parameter = INFINITY;
+    status = GGEMS_AnalyticVolumeFindBoundary(
+      &volumes[occurrence->record_index],
+      GGEMS_OccurrenceAuxiliary(auxiliary, occurrence), position, direction,
+      ancestor, GGEMS_NAVIGATION_EVENT_NONE, &candidate);
+
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+
+    if (candidate.event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
+        candidate.parameter <= result->parameter) {
+      *result = candidate;
+      limiting_exit = ancestor;
+    }
+  }
+
+  uint child = current_owner == GGEMS_VOLUME_ID_WORLD
+                 ? 1U
+                 : occurrences[current_owner - 1U].first_child_id;
+
+  while (child != 0U) {
+    __global GGEMSAnalyticOccurrenceRecord const *occurrence =
+      &occurrences[child - 1U];
+    GGEMSBoundaryWitness candidate = world_exit;
+    candidate.parameter = INFINITY;
+    uint const continuation =
+      last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
+          GGEMS_HierarchyIsAncestor(occurrences, child, previous_volume) != 0U
+        ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+        : GGEMS_NAVIGATION_EVENT_NONE;
+
+    status = GGEMS_AnalyticVolumeFindBoundary(
+      &volumes[occurrence->record_index],
+      GGEMS_OccurrenceAuxiliary(auxiliary, occurrence), position, direction,
+      GGEMS_VOLUME_ID_WORLD, continuation, &candidate);
+
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+
+    if (candidate.event == GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY &&
+        candidate.parameter < result->parameter) {
+      *result = candidate;
+      limiting_exit = GGEMS_VOLUME_ID_WORLD;
+    }
+    child = occurrence->next_sibling_id;
+  }
+
+  if (result->event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  ulong arrival;
+  uint departed_branch;
+  status = GGEMS_HierarchyArrival(
+    volumes, auxiliary, position + result->parameter * direction, direction,
+    current_owner, limiting_exit, &arrival, &departed_branch);
+
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
+  }
+
+  if ((uint)(arrival >> 32U) == current_owner) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  result->arrival_volume_id = (uint)(arrival >> 32U);
+  result->arrival_material_id = (uint)arrival;
+  result->event = departed_branch == GGEMS_VOLUME_ID_WORLD
+                    ? GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY
+                    : GGEMS_NAVIGATION_EVENT_VOLUME_EXIT;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Locates a birth in World or its deepest forward physical owner.
+ * \param[in] world World bounds, automatic band, and occurrence count.
+ * \param[in] volumes Immutable analytical array, or one None record.
+ * \param[in] auxiliary Single N1 view or multi-volume descriptors and assets.
+ * \param[in] position Global FP32 birth position in pm.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed VolumeID/MaterialID on success.
+ * \return Resolved, outside World, or unresolved.
+ */
+static inline uint
+GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
+                  __global GGEMSAnalyticVolumeRecord const *volumes,
+                  __global void const *auxiliary, float3 position,
+                  float3 direction, ulong *owner) {
+  if (world->occurrence_count <= 1U) {
+    return GGEMS_AnalyticLocate(world, volumes, auxiliary, position, direction,
+                                owner);
+  }
+
+  uint const status = GGEMS_WorldValidateRay(world, position, direction);
+
+  if (status == GGEMS_NAVIGATION_RESOLVED && world->hierarchy_depth > 1U) {
+    *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+    return GGEMS_HierarchyDescend(volumes, auxiliary, position, direction,
+                                  GGEMS_VOLUME_ID_WORLD, owner);
+  }
+
+  return status == GGEMS_NAVIGATION_RESOLVED
+           ? GGEMS_OccurrenceLocate(volumes, auxiliary, world->occurrence_count,
+                                    position, direction, GGEMS_VOLUME_ID_WORLD,
+                                    owner)
+           : status;
+}
+
+/*!
  * \brief Dispatches a scene query while keeping the ordinary N1 path direct.
  * \param[in] world World bounds and immutable scene counts.
  * \param[in] volumes Evaluated analytical array, or one None record.
@@ -234,7 +514,8 @@ GGEMS_OccurrenceFindBoundary(__global GGEMSWorldRecord const *world,
  * \param[in] direction Actual stored straight-flight direction.
  * \param[in] current_owner Accepted departure VolumeID.
  * \param[in] last_event Previous accepted event for this direction.
- * \param[in] previous_volume Departure VolumeID of the previous event.
+ * \param[in] previous_volume Departure VolumeID of the previous event; its
+ * parent chain scopes hierarchical exit continuation.
  * \param[out] result Selected physical boundary and arrival context.
  * \return Resolved, outside World, or unresolved.
  */
@@ -244,13 +525,21 @@ GGEMS_SceneFindBoundary(__global GGEMSWorldRecord const *world,
                         __global void const *auxiliary, float3 position,
                         float3 direction, uint current_owner, uint last_event,
                         uint previous_volume, GGEMSBoundaryWitness *result) {
-  return world->occurrence_count <= 1U
-           ? GGEMS_AnalyticFindBoundary(world, volumes, auxiliary, position,
-                                        direction, current_owner, last_event,
-                                        result)
-           : GGEMS_OccurrenceFindBoundary(world, volumes, auxiliary, position,
-                                          direction, current_owner, last_event,
-                                          previous_volume, result);
+  if (world->occurrence_count <= 1U) {
+    return GGEMS_AnalyticFindBoundary(world, volumes, auxiliary, position,
+                                      direction, current_owner, last_event,
+                                      result);
+  }
+
+  if (world->hierarchy_depth > 1U) {
+    return GGEMS_HierarchyFindBoundary(world, volumes, auxiliary, position,
+                                       direction, current_owner, last_event,
+                                       previous_volume, result);
+  }
+
+  return GGEMS_OccurrenceFindBoundary(world, volumes, auxiliary, position,
+                                      direction, current_owner, last_event,
+                                      previous_volume, result);
 }
 
 #endif

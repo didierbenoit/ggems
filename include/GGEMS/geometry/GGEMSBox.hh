@@ -45,14 +45,16 @@ namespace ggems::geometry {
  * \brief Owns a finite analytic Box with a rigid pose and explicit Material.
  *
  * The object is a host authoring value. A default-constructed Box is centered
- * on the global origin with no size and no Material; SetSize(), SetPosition()
- * and SetMaterial() may be called in any order. Validate() checks that the
- * Box is complete and is called by GGEMSWorld::AddVolume, which copies the
- * Box. Every full size is an even number of picometers, at least 2 pm, so the
- * local faces are exact lattice coordinates. Identity rotation permits exact
- * integer host containment checks. The owning World checks containment and
- * compiles the pose and face records. Per-particle location, intersection and
- * boundary selection are computed by OpenCL Navigation.
+ * on the parent-frame origin with no size and no Material; SetSize(),
+ * SetPosition() and SetMaterial() may be called in any order. Validate() checks
+ * that the Box is complete and is called by GGEMSWorld::AddVolume, which copies
+ * the Box. Every full size is an even number of picometers, at least 2 pm, so
+ * the local faces are exact lattice coordinates. Identity rotation permits
+ * exact integer host containment checks. The owning World checks containment
+ * and compiles the pose and face records. Per-particle location, intersection
+ * and boundary selection are computed by OpenCL Navigation. Pose coordinates
+ * and fixed rotation axes belong to the parent selected by
+ * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
 class GGEMSBox {
 public:
@@ -74,7 +76,7 @@ public:
     -> GGEMSBox &;
 
   /*!
-   * \brief Sets the global position of the geometric center.
+   * \brief Sets the parent-frame position of the geometric center.
    *
    * \param[in] center Global center in picometers.
    * \return This Box for chained configuration.
@@ -98,7 +100,7 @@ public:
                    units::Angle angle_z) -> GGEMSBox &;
 
   /*!
-   * \brief Returns the immutable local-to-global FP64 rotation.
+   * \brief Returns the immutable local-to-parent FP64 rotation.
    * \return Validated orientation owned by this Box.
    */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
@@ -150,7 +152,7 @@ private:
   /*! \brief Validated half extents in picometers; zero until SetSize(). */
   HalfExtent3PM half_extent_pm_{};
 
-  /*! \brief Proper local-to-global rotation; identity by default. */
+  /*! \brief Proper local-to-parent rotation; identity by default. */
   GGEMSRotation3D rotation_{};
 
   /*! \brief Owned Box medium, absent until SetMaterial(). */

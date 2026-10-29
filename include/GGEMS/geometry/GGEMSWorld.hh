@@ -62,13 +62,13 @@ namespace ggems::geometry {
  * keeps every World half extent at or below 2^62 - 1 pm, so every World point
  * fits CoordinatePM and the displacement between any two World points fits
  * CoordinatePM without further overflow checks. The cap applies to the World
- * only; volumes are bounded by strict containment in the World.
+ * only; direct children are bounded by strict containment in the World.
  */
 inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
 
 /*!
- * \brief Owns a finite axis-aligned World and independent analytical
- * occurrences.
+ * \brief Owns a finite World and a bounded physical hierarchy of analytical
+ * solids.
  *
  * The World frame is the canonical global frame of Position3PM and Direction3:
  * right-handed with X x Y = Z and default direction +Z. Faces lie at exactly
@@ -81,13 +81,17 @@ inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
  * may be called in any order. Validate() checks the completed scene and is
  * called by GGEMSRun::SetWorld, which copies the World: later edits of the
  * authoring object do not reach the Run. Physical identities follow insertion
- * order, starting at one after World identity zero. Occurrence interiors must
- * be disjoint; surface contact is permitted. There is no hierarchy or automatic
- * overlap correction. BuildAnalyticDeviceRecords() compiles the occurrences
- * into tagged device records with shared variable profile data. The World packs
- * the device-visible GGEMSWorldRecord and offers Contains() for static
- * validation of authored positions only. Per-particle location, intersection
- * and World exit are computed by OpenCL Navigation/Transport.
+ * order, starting at one after World identity zero. Each added shape supplies
+ * a pose relative to its already added parent; World is parent zero. The
+ * maximum physical depth is three below World. Descendants replace the parent
+ * medium only inside every ancestor, so their nominal solids may protrude.
+ * Sibling effective interiors must be disjoint; surface contact is permitted.
+ * There is no automatic overlap correction. BuildAnalyticDeviceRecords()
+ * compiles the occurrences into tagged device records with shared variable
+ * profile data. The World packs the device-visible GGEMSWorldRecord and offers
+ * Contains() for static validation of authored positions only. Per-particle
+ * location, intersection and World exit are computed by OpenCL
+ * Navigation/Transport.
  */
 class GGEMSWorld {
 public:
@@ -130,7 +134,7 @@ public:
    *
    * The value is the larger of eight World spacings and sixteen spacings at
    * the solid's uploaded local/global surface envelope. Validate() checks
-   * that each required feature and the World gap accommodate the bands.
+   * that each nominal feature and direct-child World gap accommodate the bands.
    * \param[in] index Zero-based physical occurrence index.
    * \return Effective half-band in FP32 pm, or zero when index is absent.
    */
@@ -142,71 +146,119 @@ public:
    * \brief Adds one complete physical volume owned by this World.
    *
    * Box, Sphere, Tubs, Ellipsoid, Trd, Trap, Cons and Polyhedra can be mixed;
-   * a World without volumes remains valid. Strict containment is
+   * a World without volumes remains valid. Direct-child World containment is
    * checked by Validate(), so the World size may still be set afterwards. Later
    * edits of the caller's Box do not reach the owned copy.
    *
    * \param[in] box Complete Box authoring value copied into the World.
+   * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
+   * The copied pose is relative to that parent; its newly assigned VolumeID
+   * is GetVolumeCount() after this call.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the Box is incomplete.
+   * Also rejects an absent parent, physical depth above three, or exhausted
+   * IDs.
    */
-  auto AddVolume(GGEMSBox box) -> GGEMSWorld &;
+  auto AddVolume(GGEMSBox box, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld &;
 
   /*!
    * \brief Copies one complete Sphere into the World.
    * \param[in] sphere Complete Sphere, independent of the caller after copying.
+   * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
+   * The copied pose is relative to that parent; its newly assigned VolumeID
+   * is GetVolumeCount() after this call.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Sphere is incomplete.
+   * Also rejects an absent parent, physical depth above three, or exhausted
+   * IDs.
    */
-  auto AddVolume(GGEMSSphere sphere) -> GGEMSWorld &;
+  auto AddVolume(GGEMSSphere sphere, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld &;
 
   /*!
    * \brief Copies one complete Tubs into the World.
    * \param[in] tubs Complete tube, independent of the caller after copying.
+   * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
+   * The copied pose is relative to that parent; its newly assigned VolumeID
+   * is GetVolumeCount() after this call.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the tube is incomplete.
+   * Also rejects an absent parent, physical depth above three, or exhausted
+   * IDs.
    */
-  auto AddVolume(GGEMSTubs tubs) -> GGEMSWorld &;
+  auto AddVolume(GGEMSTubs tubs, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld &;
 
   /*!
    * \brief Copies one complete Ellipsoid into the World.
    * \param[in] ellipsoid Complete ellipsoid, copied into the World.
+   * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
+   * The copied pose is relative to that parent; its newly assigned VolumeID
+   * is GetVolumeCount() after this call.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the ellipsoid is incomplete.
+   * Also rejects an absent parent, physical depth above three, or exhausted
+   * IDs.
    */
-  auto AddVolume(GGEMSEllipsoid ellipsoid) -> GGEMSWorld &;
+  auto AddVolume(GGEMSEllipsoid ellipsoid, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld &;
 
   /*!
    * \brief Copies one complete Trd into the World.
    * \param[in] trd Complete solid, copied independently of the caller.
+   * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
+   * The copied pose is relative to that parent; its newly assigned VolumeID
+   * is GetVolumeCount() after this call.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the solid is incomplete.
+   * Also rejects an absent parent, physical depth above three, or exhausted
+   * IDs.
    */
-  auto AddVolume(GGEMSTrd trd) -> GGEMSWorld &;
+  auto AddVolume(GGEMSTrd trd, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld &;
 
   /*!
    * \brief Copies one complete planar Trap into the World.
    * \param[in] trap Complete solid, copied independently of the caller.
+   * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
+   * The copied pose is relative to that parent; its newly assigned VolumeID
+   * is GetVolumeCount() after this call.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Trap admission fails.
+   * Also rejects an absent parent, physical depth above three, or exhausted
+   * IDs.
    */
-  auto AddVolume(GGEMSTrap trap) -> GGEMSWorld &;
+  auto AddVolume(GGEMSTrap trap, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld &;
 
   /*!
    * \brief Copies one complete full-azimuth Cons into this World.
    * \param[in] cons Complete frustum, independent of the caller after copying.
+   * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
+   * The copied pose is relative to that parent; its newly assigned VolumeID
+   * is GetVolumeCount() after this call.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Cons admission fails.
+   * Also rejects an absent parent, physical depth above three, or exhausted
+   * IDs.
    */
-  auto AddVolume(GGEMSCons cons) -> GGEMSWorld &;
+  auto AddVolume(GGEMSCons cons, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld &;
 
   /*!
    * \brief Copies one complete continuous-profile Polyhedra into this World.
    * \param[in] polyhedra Complete polygonal profile, copied into the World.
+   * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
+   * The copied pose is relative to that parent; its newly assigned VolumeID
+   * is GetVolumeCount() after this call.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If profile admission fails.
+   * Also rejects an absent parent, physical depth above three, or exhausted
+   * IDs.
    */
-  auto AddVolume(GGEMSPolyhedra polyhedra) -> GGEMSWorld &;
+  auto AddVolume(GGEMSPolyhedra polyhedra, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld &;
 
   /*!
    * \brief Packs one occurrence pose and its immutable shape data.
@@ -239,7 +291,7 @@ public:
     -> core::materials::GGEMSMaterial const *;
 
   /*!
-   * \brief Counts independently owned direct World children.
+   * \brief Counts all owned physical occurrences at every hierarchy depth.
    * \return Number of AddVolume snapshots, excluding the World itself; zero
    * before any volume is added. Valid occurrence indices are smaller than this
    * count, and their physical VolumeIDs are index + 1.
@@ -247,7 +299,7 @@ public:
   [[nodiscard]] auto GetVolumeCount() const noexcept -> std::size_t;
 
   /*!
-   * \brief Packs references to evaluated records and occurrence poses.
+   * \brief Packs geometry references and parent/child/sibling physical links.
    * \return Insertion-ordered descriptors; empty for World-only.
    * \pre Validate() has succeeded since the last scene edit.
    */
@@ -280,21 +332,22 @@ public:
   /*!
    * \brief Checks that the authored scene is complete and consistent.
    *
-   * Every volume must lie strictly inside the World: no surface may touch
-   * or cross a World face. Sphere retains integer-pm containment checks.
-   * Rotated Box bounds include FP64 roundoff; identity Box bounds retain the
-   * exact integer containment check. All other supported families use uploaded
-   * posed surface bounds with separated FP32 feature and World bands.
-   * Occurrence interiors must be disjoint. Only obvious Box and Sphere
-   * overlaps are rejected here (identity-axis Boxes and coaxial Spheres);
-   * other pairs remain an authoring contract.
-   * Distinct World gaps must remain observable outside both adjacent FP32
-   * surface bands. Unresolved sub-band gaps may behave as surface contacts.
+   * Direct World children must lie strictly inside the World with separated
+   * bands. Sphere and identity-axis Box retain exact integer containment;
+   * rotated Box bounds retain their existing FP64 roundoff admission. Nominal
+   * descendant solids may protrude beyond ancestors or World; Navigation clips
+   * their effective support to every ancestor. All nominal solid features must
+   * pass the existing FP32 admission using the composed uploaded global pose.
+   * Sibling effective interiors must be disjoint. Only obvious direct World
+   * Box/Sphere overlaps are checked here; nested effective-support overlap is
+   * an authoring contract, diagnosed on ambiguous device localization.
+   * Clipped material intervals and intended gaps must remain resolvable outside
+   * adjacent FP32 surface bands. Sub-band gaps may behave as contact. This
+   * method does not exhaustively prove clipped-feature or sibling separation.
    *
-   * \throws GGEMSRecoverable If the World size or Material is not set, or if a
-   * volume is not strictly inside the World, or the automatically derived
-   * FP32 half-bands cannot resolve the required features and World clearance,
-   * or a checked overlap or device count/offset limit is encountered.
+   * \throws GGEMSRecoverable If World size or Material is absent, direct-child
+   * containment or automatic feature/band admission fails, or a checked
+   * overlap or device count/offset limit is encountered.
    */
   auto Validate() const -> void;
 
@@ -318,11 +371,12 @@ public:
                   std::size_t index = 0U) const -> std::vector<GGEMSBoxRecord>;
 
   /*!
-   * \brief Packs the shared FP32 pose for every analytic shape except Sphere.
+   * \brief Packs the composed global FP32 pose for every shape except Sphere.
    *
    * \param[in] index Zero-based physical occurrence index.
-   * \return The posed shape's record, including identity; none for Sphere or
-   * an absent index. The established Box record and upload argument are reused.
+   * \return The composed local-to-global record, including identity; none for
+   * Sphere or an absent index. The established Box record and upload argument
+   * are reused.
    * \pre Validate() has succeeded since the last scene edit.
    */
   [[nodiscard]] auto BuildBoxPoseRecord(std::size_t index = 0U) const
@@ -356,7 +410,7 @@ public:
    *
    * \return FP32 half extents and surface half-band in pm; these geometric
    * fields are zero before SetSize(), denoting an unconfigured World.
-   * Occurrence count and the conservative crossing bound accompany the box.
+   * Occurrence count, physical depth and the crossing bound accompany the box.
    * \pre Validate() has succeeded before a configured scene is uploaded.
    */
   [[nodiscard]] auto BuildRecord() const noexcept -> GGEMSWorldRecord;
@@ -389,7 +443,7 @@ public:
    *
    * \param[in] index Zero-based physical occurrence index.
    * \return A borrowed view, empty for an absent index; AddVolume() invalidates
-   * it.
+   * it. Its position and rotation remain authored relative to its parent.
    */
   [[nodiscard]] auto GetBoxes(std::size_t index = 0U) const noexcept
     -> std::span<GGEMSBox const>;
@@ -405,8 +459,51 @@ private:
   using Volume = std::variant<GGEMSBox, GGEMSSphere, GGEMSTubs, GGEMSEllipsoid,
                               GGEMSTrd, GGEMSTrap, GGEMSCons, GGEMSPolyhedra>;
 
-  /*! \brief Owned direct World children in stable identity order. */
-  std::vector<Volume> volumes_;
+  /*! \brief One owned local authoring value and its existing physical parent.
+   */
+  struct Occurrence {
+    /*! \brief Canonical local shape, pose and Material snapshot. */
+    Volume volume;
+
+    /*! \brief Existing physical parent VolumeID, or zero for World. */
+    std::uint32_t parent_volume_id;
+  };
+
+  /*! \brief Owned occurrences in stable insertion/identity order. */
+  std::vector<Occurrence> volumes_;
+
+  /*!
+   * \brief Validates and appends one occurrence without modifying existing
+   * ones.
+   * \param[in] volume Complete local authoring value transferred into World.
+   * \param[in] parent_volume_id Existing parent identity, or zero for World.
+   * \return This World for chained configuration.
+   * \throws GGEMSRecoverable If shape admission, parent, depth or IDs are
+   * invalid.
+   */
+  auto AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
+    -> GGEMSWorld &;
+
+  /*!
+   * \brief Counts the parent chain from an occurrence to World.
+   * \param[in] volume_id Existing physical VolumeID, or zero for World.
+   * \return Zero for World; one through three for an admitted occurrence.
+   * \pre volume_id is no larger than GetVolumeCount().
+   */
+  [[nodiscard]] auto GetOccurrenceDepth(std::uint32_t volume_id) const noexcept
+    -> std::uint32_t;
+
+  /*!
+   * \brief Composes canonical local poses and packs one global FP32 pose.
+   * \param[in] index Existing zero-based occurrence index.
+   * \return Global center and local-to-global axes, with Sphere's inherited
+   * frame.
+   * \pre index is smaller than GetVolumeCount().
+   * \note The complete chain uses FP64 working arithmetic; only the final pose
+   * is converted to FP32. Authored integer positions are never rewritten.
+   */
+  [[nodiscard]] auto BuildOccurrencePose(std::size_t index) const noexcept
+    -> GGEMSBoxPoseRecord;
 
   /*!
    * \brief Applies existing solid feature and World-clearance admission.
@@ -420,7 +517,8 @@ private:
                       float world_tolerance) const -> void;
 
   /*!
-   * \brief Rejects exact overlaps for the supported simple pair checks.
+   * \brief Rejects exact nominal overlaps for simple direct World sibling
+   * pairs.
    * \param[in] first Zero-based index of the first physical occurrence.
    * \param[in] second Zero-based index of the second physical occurrence.
    * \pre Both indices are distinct and each occurrence passed ValidateVolume().

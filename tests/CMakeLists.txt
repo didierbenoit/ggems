@@ -139,6 +139,10 @@ foreach(test_directory IN LISTS GGEMS_CORE_TEST_DIRECTORIES)
   list(APPEND GGEMS_TEST_TARGETS ${test_target})
 endforeach()
 
+# Private C++ binding registration is tested without importing Python.
+target_include_directories(ggems_geometry_tests
+                           PRIVATE ${PROJECT_SOURCE_DIR}/python/ggems)
+
 # ==============================================================================
 # UI unit tests
 if(GGEMS_WITH_IMGUI)

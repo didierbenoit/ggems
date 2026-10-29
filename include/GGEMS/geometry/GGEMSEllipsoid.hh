@@ -45,6 +45,8 @@ namespace ggems::geometry {
  * The local surface is (x/a)^2 + (y/b)^2 + (z/c)^2 = 1. Semi-axes are radii,
  * not full dimensions; there are no cut planes. Equal semi-axes give a sphere.
  * World copies the complete value and admits its pose and FP32 surface bands.
+ * Pose coordinates and fixed rotation axes belong to the parent selected by
+ * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
 class GGEMSEllipsoid {
 public:
@@ -63,7 +65,7 @@ public:
                    units::Length axis_z) -> GGEMSEllipsoid &;
 
   /*!
-   * \brief Sets the global geometric center.
+   * \brief Sets the geometric center in the parent frame.
    * \param[in] center Signed integer-pm center.
    * \return This ellipsoid for chained configuration.
    */
@@ -104,13 +106,13 @@ public:
   [[nodiscard]] auto GetSemiAxesPM() const noexcept -> HalfExtent3PM;
 
   /*!
-   * \brief Returns the global geometric center.
+   * \brief Returns the geometric center in the parent frame.
    * \return Signed integer-pm center.
    */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
   /*!
-   * \brief Returns the immutable local-to-global rotation.
+   * \brief Returns the immutable local-to-parent rotation.
    * \return Validated orientation owned by this ellipsoid.
    */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
@@ -130,7 +132,7 @@ private:
   /*! \brief Local X/Y/Z semi-axes in pm; zeros until configuration. */
   HalfExtent3PM semi_axes_pm_{};
 
-  /*! \brief Proper local-to-global rotation; identity by default. */
+  /*! \brief Proper local-to-parent rotation; identity by default. */
   GGEMSRotation3D rotation_{};
 
   /*! \brief Explicit owned medium, absent until configuration. */

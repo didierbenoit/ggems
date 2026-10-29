@@ -101,6 +101,18 @@ world_abi_probe(__global GGEMSWorldRecord const *worlds,
   layout[27] = (ulong)((__global uchar *)&occurrences[1] -
                        (__global uchar *)&occurrences[0]);
 
+  layout[28] = __builtin_offsetof(GGEMSWorldRecord, hierarchy_depth);
+  layout[29] = worlds[1].hierarchy_depth;
+  layout[30] =
+    __builtin_offsetof(GGEMSAnalyticOccurrenceRecord, parent_volume_id);
+  layout[31] =
+    __builtin_offsetof(GGEMSAnalyticOccurrenceRecord, first_child_id);
+  layout[32] =
+    __builtin_offsetof(GGEMSAnalyticOccurrenceRecord, next_sibling_id);
+  layout[33] = occurrences[1].parent_volume_id;
+  layout[34] = occurrences[1].first_child_id;
+  layout[35] = occurrences[1].next_sibling_id;
+
   counts[1].outside_world_count = 7U;
   counts[1].unresolved_geometry_count = 11U;
   counts[1].escaped_world_count = 13U;

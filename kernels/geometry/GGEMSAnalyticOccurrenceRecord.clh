@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines flat references for independently placed analytical
+ * \brief Defines flat references for physically placed analytical
  * occurrences.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
@@ -33,12 +33,15 @@
 #define GGEMS_ANALYTIC_OCCURRENCE_RECORD_CLH
 
 /*!
- * \brief Stores an 8-byte reference to one evaluated record and auxiliary pose.
+ * \brief Stores 20-byte geometry references and physical hierarchy links.
  *
  * Multi-occurrence auxiliary buffers begin with occurrence_count descriptors.
  * The offset is measured in bytes from that buffer's beginning. Sphere has no
  * separate pose and uses offset zero. Record indices preserve insertion order;
  * physical VolumeID is that index plus one, after World identity zero.
+ * Parent and child/sibling links use physical VolumeIDs. Zero denotes World
+ * for the parent and no occurrence for child/sibling links; the first World
+ * child is always VolumeID one. Parents precede children in insertion order.
  */
 typedef struct GGEMSAnalyticOccurrenceRecord {
   /*! \brief Index in the contiguous evaluated analytical record array. */
@@ -46,6 +49,15 @@ typedef struct GGEMSAnalyticOccurrenceRecord {
 
   /*! \brief Byte offset of the occurrence pose within the auxiliary buffer. */
   uint auxiliary_offset;
+
+  /*! \brief Parent physical VolumeID; zero selects the World. */
+  uint parent_volume_id;
+
+  /*! \brief First direct child VolumeID; zero means no child. */
+  uint first_child_id;
+
+  /*! \brief Next direct sibling VolumeID; zero ends the sibling list. */
+  uint next_sibling_id;
 } GGEMSAnalyticOccurrenceRecord;
 
 #endif

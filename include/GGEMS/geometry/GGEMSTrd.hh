@@ -45,7 +45,9 @@ namespace ggems::geometry {
  *
  * All dimension setters take full positive even-pm sizes, as for Box.
  * End planes are at local Z = +/- half length; pose is Rz * Ry * Rx.
- * World copies this value and checks its packed FP32 bands and containment.
+ * World copies this value and checks its packed FP32 bands and direct-child
+ * containment. Pose coordinates and fixed rotation axes belong to the parent
+ * selected by GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
 class GGEMSTrd {
 public:
@@ -81,7 +83,7 @@ public:
   auto SetLength(units::Length length) -> GGEMSTrd &;
 
   /*!
-   * \brief Sets the global position of the local frame origin.
+   * \brief Sets the parent-frame position of the local frame origin.
    * \param[in] center Signed integer-pm position.
    * \return This solid for chained configuration.
    */
@@ -132,13 +134,13 @@ public:
   [[nodiscard]] auto GetHalfLengthPM() const noexcept -> DistancePM;
 
   /*!
-   * \brief Returns the local frame origin in the World.
-   * \return Signed integer-pm World position; the origin by default.
+   * \brief Returns the local frame origin in the parent frame.
+   * \return Signed integer-pm parent-frame position; the origin by default.
    */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
   /*!
-   * \brief Borrows the owned local-to-World proper rotation.
+   * \brief Borrows the owned local-to-parent proper rotation.
    * \return Proper rotation, initially identity; it must not outlive this
    * solid.
    */

@@ -425,7 +425,8 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
 
   {
     // Box touching the World +X face: rejected when the World is attached.
-    // A second Box is rejected by the World itself.
+    // A disjoint second Box remains valid authoring; the first violates World
+    // clearance.
     ggems::core::GGEMSRun run{};
     run.SetRandom(rng);
     run.AddSource(source);
@@ -435,12 +436,28 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
       .SetPosition(MakePositionPM(80'000'000'000LL, 0LL, 0LL))
       .SetMaterial(Material("Water"));
     world.AddVolume(touching);
-    EXPECT_THROW(world.AddVolume(MakeBox()), ggems::core::GGEMSRecoverable);
+    auto second = MakeBox();
+    second.SetPosition(MakePositionPM(-40'000'000'000LL, 40'000'000'000LL, 0));
+    EXPECT_NO_THROW(world.AddVolume(second));
+    EXPECT_EQ(world.GetVolumeCount(), 2U);
     EXPECT_THROW(run.SetWorld(world), ggems::core::GGEMSRecoverable);
     // The rejected World was not retained: the process-free source still has
     // no World to navigate.
     ASSERT_NO_THROW(run.Initialize());
     EXPECT_THROW(run.Run(), ggems::core::GGEMSRecoverable);
+  }
+  {
+    // Multiple disjoint Boxes are admitted; overlapping sibling interiors are
+    // not.
+    auto valid = MakeWorld();
+    auto second = MakeBox();
+    second.SetPosition(MakePositionPM(-40'000'000'000LL, 40'000'000'000LL, 0));
+    valid.AddVolume(MakeBox()).AddVolume(second);
+    EXPECT_EQ(valid.GetVolumeCount(), 2U);
+    EXPECT_NO_THROW(valid.Validate());
+    auto overlap = MakeWorld();
+    overlap.AddVolume(MakeBox()).AddVolume(MakeBox());
+    EXPECT_THROW(overlap.Validate(), ggems::core::GGEMSRecoverable);
   }
   {
     // Same Material as the World still gives a distinct physical volume: the

@@ -593,7 +593,7 @@ TEST(GGEMSWorld, ScalarWorldRecordCarriesTheToleranceWithoutParticleState) {
   using ggems::geometry::GGEMSWorldRecord;
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSWorldRecord>);
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSWorldRecord>);
-  EXPECT_EQ(sizeof(GGEMSWorldRecord), 24U);
+  EXPECT_EQ(sizeof(GGEMSWorldRecord), 28U);
   EXPECT_EQ(alignof(GGEMSWorldRecord), 4U);
   EXPECT_EQ(offsetof(GGEMSWorldRecord, tolerance_pm), 12U);
   EXPECT_EQ(offsetof(GGEMSWorldRecord, occurrence_count), 16U);

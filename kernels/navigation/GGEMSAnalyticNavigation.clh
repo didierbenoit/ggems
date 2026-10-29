@@ -145,8 +145,9 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
  * \param[in] direction Actual stored direction.
  * \param[in] current_owner Known physical departure VolumeID.
  * \param[in] last_event Previously accepted event while direction is unchanged.
- * \param[in,out] result World exit on input, selected occurrence crossing on
- * output. Each candidate requires its own copy of the World witness.
+ * \param[in,out] result Independent upper-bound witness on input, selected
+ * occurrence crossing on output. Flat scenes seed the World exit; hierarchy
+ * queries seed INFINITY and apply ancestor/World truncation afterward.
  * \return Resolved, outside World, or unresolved.
  */
 static inline uint GGEMS_AnalyticVolumeFindBoundary(

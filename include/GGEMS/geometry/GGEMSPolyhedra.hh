@@ -74,9 +74,11 @@ struct GGEMSPolyhedraProfile {
  *
  * Validate() checks section and wall survival after FP32 packing. GGEMSWorld
  * additionally checks the automatically derived surface half-band against
- * section height, side width, nonzero bore, wall thickness, and World
- * clearance. Pose, side normals, and axial coefficients are uploaded once as
- * immutable auxiliary data; all per-particle queries execute in OpenCL.
+ * section height, side width, nonzero bore, wall thickness, and direct-child
+ * World clearance. Pose, side normals, and axial coefficients are uploaded once
+ * as immutable auxiliary data; all per-particle queries execute in OpenCL. Pose
+ * coordinates and fixed rotation axes belong to the parent selected by
+ * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
 class GGEMSPolyhedra {
 public:
@@ -116,14 +118,14 @@ public:
     -> GGEMSPolyhedra &;
 
   /*!
-   * \brief Places the local frame origin in the World.
+   * \brief Places the local frame origin in the parent frame.
    * \param[in] position Signed integer-pm origin; not the profile midpoint.
    * \return This solid for chained configuration.
    */
   auto SetPosition(Position3PM position) noexcept -> GGEMSPolyhedra &;
 
   /*!
-   * \brief Replaces the active local-to-global rotation by Rz * Ry * Rx.
+   * \brief Replaces the active local-to-parent rotation by Rz * Ry * Rx.
    * \param[in] angle_x Rotation about the fixed X axis.
    * \param[in] angle_y Rotation about the fixed Y axis.
    * \param[in] angle_z Rotation about the fixed Z axis.
@@ -169,13 +171,13 @@ public:
     -> std::span<GGEMSPolyhedraProfile const>;
 
   /*!
-   * \brief Returns the local frame origin in the World.
+   * \brief Returns the local frame origin in the parent frame.
    * \return Signed integer-pm position, which need not be the profile midpoint.
    */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
   /*!
-   * \brief Borrows the proper local-to-World rotation.
+   * \brief Borrows the proper local-to-parent rotation.
    * \return Owned rotation, initially identity; it must not outlive this solid.
    */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
@@ -201,7 +203,7 @@ private:
   /*! \brief Validated continuous local axial profile. */
   std::vector<GGEMSPolyhedraProfile> profile_;
 
-  /*! \brief Proper local-to-global rotation. */
+  /*! \brief Proper local-to-parent rotation. */
   GGEMSRotation3D rotation_{};
 
   /*! \brief One owned medium for all sections. */

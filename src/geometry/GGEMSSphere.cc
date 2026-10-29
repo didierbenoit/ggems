@@ -33,6 +33,8 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSRotation3D.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -51,6 +53,20 @@ auto GGEMSSphere::SetRadius(units::Length radius) -> GGEMSSphere & {
 auto GGEMSSphere::SetPosition(Position3PM center) noexcept -> GGEMSSphere & {
   center_pm_ = center;
   return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSphere::SetRotation(units::Angle angle_x, units::Angle angle_y,
+                              units::Angle angle_z) -> GGEMSSphere & {
+  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSphere::GetRotation() const noexcept -> GGEMSRotation3D const & {
+  return rotation_;
 }
 
 // -----------------------------------------------------------------------------

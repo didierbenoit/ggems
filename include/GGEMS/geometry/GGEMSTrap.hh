@@ -45,12 +45,14 @@ namespace ggems::geometry {
  *
  * All dimension setters take full positive even-pm sizes, as for Box.
  * End planes are at local Z = +/- half length; pose is Rz * Ry * Rx.
- * World copies this value and checks its packed FP32 bands and containment.
- * Face centers are +/- half length * tan(theta) * (cos(phi), sin(phi)).
- * At either end, a local Y offset v has X center v * tan(skew).
- * X half-width varies linearly between the negative-Y and positive-Y edges.
- * The four side faces must be planar within the local FP32 surface band;
+ * World copies this value and checks its packed FP32 bands and direct-child
+ * containment. Face centers are +/- half length * tan(theta) * (cos(phi),
+ * sin(phi)). At either end, a local Y offset v has X center v * tan(skew). X
+ * half-width varies linearly between the negative-Y and positive-Y edges. The
+ * four side faces must be planar within the local FP32 surface band;
  * incompatible end skews or width gradients are rejected by Validate().
+ * Pose coordinates and fixed rotation axes belong to the parent selected by
+ * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
 class GGEMSTrap {
 public:
@@ -103,7 +105,7 @@ public:
   auto SetInclination(units::Angle theta, units::Angle phi) -> GGEMSTrap &;
 
   /*!
-   * \brief Sets the global position of the local frame origin.
+   * \brief Sets the parent-frame position of the local frame origin.
    * \param[in] center Signed integer-pm position.
    * \return This solid for chained configuration.
    */
@@ -178,13 +180,13 @@ public:
   [[nodiscard]] auto GetHalfLengthPM() const noexcept -> DistancePM;
 
   /*!
-   * \brief Returns the local frame origin in the World.
-   * \return Signed integer-pm World position; the origin by default.
+   * \brief Returns the local frame origin in the parent frame.
+   * \return Signed integer-pm parent-frame position; the origin by default.
    */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
   /*!
-   * \brief Borrows the owned local-to-World proper rotation.
+   * \brief Borrows the owned local-to-parent proper rotation.
    * \return Proper rotation, initially identity; it must not outlive this
    * solid.
    */

@@ -36,19 +36,20 @@
 namespace ggems::geometry {
 
 /*!
- * \brief Stores a right-handed local-to-global orthonormal basis in FP64.
+ * \brief Stores a right-handed local-to-reference orthonormal basis in FP64.
  *
- * Columns are local axes expressed in World coordinates, as in SourceFrame.
- * The transpose maps World-relative vectors into the local frame.
+ * Columns are local axes expressed in the selected reference frame: the
+ * physical parent for authored geometry, or World for a compiled global pose.
+ * The transpose maps reference-frame vectors into the local frame.
  */
 struct GGEMSRotation3D {
-  /*! \brief Local X axis in World coordinates. */
+  /*! \brief Local X axis in reference coordinates. */
   detail::NormalizedVector3D axis_x{.x = 1.0, .y = 0.0, .z = 0.0};
 
-  /*! \brief Local Y axis in World coordinates. */
+  /*! \brief Local Y axis in reference coordinates. */
   detail::NormalizedVector3D axis_y{.x = 0.0, .y = 1.0, .z = 0.0};
 
-  /*! \brief Local Z axis in World coordinates. */
+  /*! \brief Local Z axis in reference coordinates. */
   detail::NormalizedVector3D axis_z{.x = 0.0, .y = 0.0, .z = 1.0};
 
   /*!
@@ -61,7 +62,8 @@ struct GGEMSRotation3D {
 /*!
  * \brief Builds the active right-handed rotation Rz * Ry * Rx.
  *
- * Fixed World axes X, Y, then Z act on a local vector. Assignment is absolute.
+ * Fixed reference axes X, Y, then Z act on a local vector. Assignment is
+ * absolute within that frame.
  *
  * \param[in] angle_x Rotation about X.
  * \param[in] angle_y Rotation about Y.

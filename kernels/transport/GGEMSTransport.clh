@@ -115,9 +115,13 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
  * \param[in,out] particle Private state with a valid current owner.
  * \param[in,out] event Last accepted event on entry (NONE at birth), updated
  * on success. Retained only while the straight flight direction is unchanged.
- * \param[out] faces Departure World or planar-solid mask; zero for curves.
+ * \param[out] faces Limiting World or planar-solid mask, possibly from an
+ * ancestor of the departure owner; zero for curved limiting surfaces.
  * \param[in,out] previous_volume Departure VolumeID of the previous event;
- * updated to this transaction's departure only after successful movement.
+ * updated to this transaction's departure only after successful movement. Its
+ * parent chain identifies simultaneously departed ancestors. A direction change
+ * requires resetting event to NONE and reconciling the forward moving owner
+ * before the query, without relabeling an already completed Process effect.
  * \return GGEMS_NAVIGATION_RESOLVED after an accepted move; otherwise the
  * failed status and the particle is unchanged.
  */

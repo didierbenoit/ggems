@@ -177,7 +177,7 @@ TEST(GGEMSAnalyticOccurrences,
 TEST(GGEMSAnalyticOccurrences, SharedRecordsRetainCompactScalarLayout) {
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSAnalyticOccurrenceRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSAnalyticOccurrenceRecord>);
-  EXPECT_EQ(sizeof(GGEMSAnalyticOccurrenceRecord), 8U);
+  EXPECT_EQ(sizeof(GGEMSAnalyticOccurrenceRecord), 20U);
   EXPECT_EQ(alignof(GGEMSAnalyticOccurrenceRecord), 4U);
   EXPECT_EQ(offsetof(GGEMSAnalyticOccurrenceRecord, record_index), 0U);
   EXPECT_EQ(offsetof(GGEMSAnalyticOccurrenceRecord, auxiliary_offset), 4U);

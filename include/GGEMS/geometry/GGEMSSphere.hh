@@ -32,6 +32,8 @@
 #include <optional>
 
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSRotation3D.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -41,8 +43,12 @@ namespace ggems::geometry {
  * \brief Owns the host parameters of one full solid Sphere.
  *
  * Radius is a strictly positive integer number of picometers, including odd
- * values. World copies this value and checks strict containment. Per-particle
- * intersections and ownership belong to OpenCL Navigation.
+ * values. World copies this value with its parent-relative pose. Orientation
+ * defines the frame inherited by daughters; it does not change the spherical
+ * surface. Per-particle intersections and ownership belong to OpenCL
+ * Navigation.
+ * Pose coordinates and fixed rotation axes belong to the parent selected by
+ * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
 class GGEMSSphere {
 public:
@@ -58,11 +64,32 @@ public:
   auto SetRadius(units::Length radius) -> GGEMSSphere &;
 
   /*!
-   * \brief Sets the global geometric center.
+   * \brief Sets the geometric center in the selected parent frame.
    * \param[in] center Signed integer-pm center.
    * \return This Sphere for chained configuration.
    */
   auto SetPosition(Position3PM center) noexcept -> GGEMSSphere &;
+
+  /*!
+   * \brief Sets the local frame inherited by physical daughters.
+   *
+   * Uses the active right-handed Rz * Ry * Rx convention relative to the
+   * selected parent. The spherical boundary itself is rotation invariant.
+   * \param[in] angle_x Rotation about parent X.
+   * \param[in] angle_y Rotation about parent Y.
+   * \param[in] angle_z Rotation about parent Z.
+   * \return This Sphere for chained configuration.
+   * \throws core::GGEMSRecoverable If the basis is invalid; the old pose stays.
+   */
+  auto SetRotation(units::Angle angle_x, units::Angle angle_y,
+                   units::Angle angle_z) -> GGEMSSphere &;
+
+  /*!
+   * \brief Borrows the local-to-parent FP64 frame orientation.
+   * \return Validated basis owned by this Sphere; identity before
+   * SetRotation().
+   */
+  [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
 
   /*!
    * \brief Sets the owned Sphere medium.
@@ -84,7 +111,7 @@ public:
   [[nodiscard]] auto GetRadiusPM() const noexcept -> DistancePM;
 
   /*!
-   * \brief Returns the global geometric center.
+   * \brief Returns the geometric center in the selected parent frame.
    * \return Signed integer-pm center.
    */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
@@ -98,8 +125,11 @@ public:
     -> core::materials::GGEMSMaterial const &;
 
 private:
-  /*! \brief Global geometric center in pm. */
+  /*! \brief Geometric center in the selected parent frame, in pm. */
   Position3PM center_pm_{};
+
+  /*! \brief Local-to-parent daughter frame; identity until configured. */
+  GGEMSRotation3D rotation_{};
 
   /*! \brief Positive radius in pm; zero until configuration. */
   DistancePM radius_pm_{0};

@@ -47,10 +47,14 @@ struct GGEMSWorldRecord {
   /*! \brief Half-width of the closed navigation surface band in FP32 pm. */
   float tolerance_pm{0.0F};
 
-  /*! \brief Number of independent direct World children. */
+  /*! \brief Number of physical occurrences, excluding the World. */
   std::uint32_t occurrence_count{0};
 
   /*! \brief Proven straight-ray crossing bound, including World exit. */
   std::uint32_t max_boundary_events{1};
+
+  /*! \brief Maximum physical depth: zero when empty, one through three
+   * otherwise. */
+  std::uint32_t hierarchy_depth{0};
 };
 } // namespace ggems::geometry

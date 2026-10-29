@@ -46,6 +46,8 @@ namespace ggems::geometry {
  * the full 360 degrees. Zero inner radius gives a filled cylinder with no inner
  * wall. Radii are not diameters; length is the full cap-to-cap dimension.
  * World copies the complete value and admits its pose and FP32 surface bands.
+ * Pose coordinates and fixed rotation axes belong to the parent selected by
+ * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
 class GGEMSTubs {
 public:
@@ -72,7 +74,7 @@ public:
   auto SetLength(units::Length length) -> GGEMSTubs &;
 
   /*!
-   * \brief Sets the global geometric center.
+   * \brief Sets the geometric center in the parent frame.
    * \param[in] center Signed integer-pm center.
    * \return This tube for chained configuration.
    */
@@ -125,13 +127,13 @@ public:
   [[nodiscard]] auto GetHalfLengthPM() const noexcept -> DistancePM;
 
   /*!
-   * \brief Returns the global geometric center.
+   * \brief Returns the geometric center in the parent frame.
    * \return Signed integer-pm center.
    */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
   /*!
-   * \brief Returns the immutable local-to-global rotation.
+   * \brief Returns the immutable local-to-parent rotation.
    * \return Validated orientation owned by this tube.
    */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
@@ -157,7 +159,7 @@ private:
   /*! \brief Distance to each cap in pm; zero until configuration. */
   DistancePM half_length_pm_{0};
 
-  /*! \brief Proper local-to-global rotation; identity by default. */
+  /*! \brief Proper local-to-parent rotation; identity by default. */
   GGEMSRotation3D rotation_{};
 
   /*! \brief Explicit owned medium, absent until configuration. */
