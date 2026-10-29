@@ -191,7 +191,7 @@ TEST(GGEMSRotatedBox, RotationFitsWithSubPicometerWorldClearance) {
   EXPECT_THROW(shifted.Validate(), ggems::core::GGEMSRecoverable);
 }
 
-TEST(GGEMSRotatedBox, RejectsRotatedProtrusionAndExactContact) {
+TEST(GGEMSRotatedBox, RejectsRotatedProtrusionButAdmitsExactContact) {
   GGEMSWorld world;
   world.SetSize(Length{20}, Length{20}, Length{20})
     .SetMaterial(
@@ -210,7 +210,7 @@ TEST(GGEMSRotatedBox, RejectsRotatedProtrusionAndExactContact) {
   box.SetSize(Length{20}, Length{2}, Length{2})
     .SetRotation(0_deg, 0_deg, 90_deg);
   contact.AddVolume(box);
-  EXPECT_THROW(contact.Validate(), ggems::core::GGEMSRecoverable);
+  EXPECT_NO_THROW(contact.Validate());
 }
 
 TEST(GGEMSRotatedBox, WorldOwnsPoseAndPacksLocalHalfExtents) {

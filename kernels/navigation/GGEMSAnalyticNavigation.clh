@@ -146,8 +146,8 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
  * \param[in] current_owner Known physical departure VolumeID.
  * \param[in] last_event Previously accepted event while direction is unchanged.
  * \param[in,out] result Independent upper-bound witness on input, selected
- * occurrence crossing on output. Flat scenes seed the World exit; hierarchy
- * queries seed INFINITY and apply ancestor/World truncation afterward.
+ * occurrence crossing on output. Interior exits and hierarchy queries use
+ * INFINITY so coincident surfaces do not fail the leaf's strict bound check.
  * \return Resolved, outside World, or unresolved.
  */
 static inline uint GGEMS_AnalyticVolumeFindBoundary(
@@ -210,6 +210,8 @@ static inline uint GGEMS_AnalyticVolumeFindBoundary(
 
 /*!
  * \brief Selects one occurrence crossing against the finite World exit.
+ *
+ * An outward World-band exit retains the World witness and its face mask.
  * \param[in] world Immutable FP32 World boundary authority.
  * \param[in] volume One analytical record or None.
  * \param[in] box_pose Immutable occurrence pose and optional profile data.
@@ -228,11 +230,30 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
                            uint last_event, GGEMSBoundaryWitness *result) {
   uint const status =
     GGEMS_WorldFindBoundary(world, position, direction, result);
-  return status == GGEMS_NAVIGATION_RESOLVED
-           ? GGEMS_AnalyticVolumeFindBoundary(volume, box_pose, position,
-                                              direction, current_owner,
-                                              last_event, result)
-           : status;
+
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
+  }
+
+  if (current_owner == GGEMS_VOLUME_ID_WORLD) {
+    return GGEMS_AnalyticVolumeFindBoundary(
+      volume, box_pose, position, direction, current_owner, last_event, result);
+  }
+
+  GGEMSBoundaryWitness candidate = *result;
+  candidate.parameter = INFINITY;
+  uint const candidate_status =
+    GGEMS_AnalyticVolumeFindBoundary(volume, box_pose, position, direction,
+                                     current_owner, last_event, &candidate);
+
+  if (candidate_status == GGEMS_NAVIGATION_RESOLVED &&
+      candidate.parameter < result->parameter &&
+      GGEMS_WorldForwardExitFaces(
+        world, position + candidate.parameter * direction, direction) == 0U) {
+    *result = candidate;
+  }
+
+  return candidate_status;
 }
 
 #endif

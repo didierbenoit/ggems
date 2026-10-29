@@ -393,6 +393,13 @@ auto GGEMSRun::Initialize() -> void {
       package.GetMaterialIds();
     volume_records =
       world_->BuildAnalyticDeviceRecords(material_ids.subspan(1U));
+
+    if (world_->GetVolumeCount() != 0U) {
+      GGEMS_WARN("Geometry",
+                 "Ordinary analytical overlap/containment verification is "
+                 "not exhaustive. Users must verify their scene; absence "
+                 "of detected errors is not a geometry certification.");
+    }
   }
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>

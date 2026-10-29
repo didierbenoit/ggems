@@ -177,13 +177,12 @@ TEST(GGEMSBox, CompilesPositiveLocalHalfExtentsForEveryPlacement) {
   EXPECT_EQ(thirteen.half_extent_x_pm, static_cast<float>(65'000'000'000ULL));
   EXPECT_EQ(thirteen.half_extent_z_pm, static_cast<float>(65'000'000'000ULL));
 
-  // Smallest Box centered in the smallest World that can contain it: one
-  // picometer of clearance from every World face.
+  // A small Box with one picometer of clearance from every World face.
   GGEMSBoxRecord const tiny = Compile(
     MakeWorld(4_pm), PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, 0)));
   EXPECT_EQ(tiny.half_extent_x_pm, static_cast<float>(1ULL));
   EXPECT_EQ(tiny.half_extent_z_pm, static_cast<float>(1ULL));
-  EXPECT_FALSE(
+  EXPECT_TRUE(
     Fits(MakeWorld(2_pm), PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, 0))));
 
   // A resolved micrometer Box at an odd authored center.
@@ -199,7 +198,7 @@ TEST(GGEMSBox, CompilesPositiveLocalHalfExtentsForEveryPlacement) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSBox, StrictContainmentRejectsCoincidentWorldFaces) {
+TEST(GGEMSBox, ContainmentAdmitsCoincidentWorldFacesButRejectsProtrusion) {
   GGEMSWorld const world = MakeWorld(200_mm);
   auto const place = [](CoordinatePM center_x, CoordinatePM center_y,
                         CoordinatePM center_z) -> GGEMSBox {
@@ -208,17 +207,17 @@ TEST(GGEMSBox, StrictContainmentRejectsCoincidentWorldFaces) {
   };
 
   EXPECT_TRUE(Fits(world, place(0, 0, 0)));
-  // A resolved clearance is admitted; a collapsed one-pm gap is rejected.
+  // A resolved clearance and a one-pm gap that packs as contact are admitted.
   EXPECT_TRUE(Fits(world, place(80'000'000'000LL - 1'000'000LL, 0, 0)));
-  EXPECT_FALSE(Fits(world, place(80'000'000'000LL - 1, 0, 0)));
+  EXPECT_TRUE(Fits(world, place(80'000'000'000LL - 1, 0, 0)));
   // Coincident +X face.
-  EXPECT_FALSE(Fits(world, place(80'000'000'000LL, 0, 0)));
+  EXPECT_TRUE(Fits(world, place(80'000'000'000LL, 0, 0)));
   // Coincident -Y face.
-  EXPECT_FALSE(Fits(world, place(0, -90'000'000'000LL, 0)));
+  EXPECT_TRUE(Fits(world, place(0, -90'000'000'000LL, 0)));
   // Crossing -Z face.
   EXPECT_FALSE(Fits(world, place(0, 0, -95'000'000'000LL)));
   // Same size as the World, and larger than the World.
-  EXPECT_FALSE(
+  EXPECT_TRUE(
     Fits(world, PlaceBox(200_mm, 200_mm, 200_mm, MakePositionPM(0, 0, 0))));
   EXPECT_FALSE(
     Fits(world, PlaceBox(40_mm, 202_mm, 30_mm, MakePositionPM(0, 0, 0))));
@@ -251,7 +250,8 @@ TEST(GGEMSBox, PacksCanonicalHalfExtentsAtTheAdmittedBounds) {
     Fits(largest,
          PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, k_max_half_pm - 1))));
 
-  // A Box as wide as, or wider than, the largest World is rejected.
+  // Unresolved transverse features and dimensions beyond the World are
+  // rejected.
   EXPECT_FALSE(
     Fits(largest, PlaceBox(Length{ggems::geometry::k_max_world_size_pm}, 2_pm,
                            2_pm, MakePositionPM(0, 0, 0))));

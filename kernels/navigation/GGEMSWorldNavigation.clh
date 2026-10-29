@@ -76,6 +76,39 @@ GGEMS_WorldValidateRay(__global GGEMSWorldRecord const *world, float3 position,
 }
 
 /*!
+ * \brief Classifies outward World faces at an accepted occurrence endpoint.
+ *
+ * Only the existing World half-band participates; a larger solid band cannot
+ * absorb a distinguishable World gap. This is forward ownership classification,
+ * not a new distance query or a displacement of the physical endpoint.
+ * \param[in] world Immutable finite World and automatic surface half-band.
+ * \param[in] position Accepted global FP32 endpoint in pm.
+ * \param[in] direction Actual stored straight-flight direction.
+ * \return Outward World face mask, or zero without a forward World exit.
+ */
+static inline uint
+GGEMS_WorldForwardExitFaces(__global GGEMSWorldRecord const *world,
+                            float3 position, float3 direction) {
+  float half_extent[3] = {world->half_extent_x_pm, world->half_extent_y_pm,
+                          world->half_extent_z_pm};
+  float coordinates[3] = {position.x, position.y, position.z};
+  float components[3] = {direction.x, direction.y, direction.z};
+  uint faces = 0U;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    if (components[axis] < 0.0F &&
+        coordinates[axis] <= -half_extent[axis] + world->tolerance_pm) {
+      faces |= 1U << (2U * axis);
+    } else if (components[axis] > 0.0F &&
+               coordinates[axis] >= half_extent[axis] - world->tolerance_pm) {
+      faces |= 1U << (2U * axis + 1U);
+    }
+  }
+
+  return faces;
+}
+
+/*!
  * \brief Finds the first FP32 exit from the closed origin-centered World.
  *
  * Zero components are parallel. A start beyond a nominal face but within its

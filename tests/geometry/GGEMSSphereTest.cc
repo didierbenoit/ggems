@@ -116,7 +116,7 @@ TEST(GGEMSSphere, RejectsIncompleteVolumeAndPreservesTheEmptyWorld) {
   EXPECT_EQ(empty.BuildAnalyticVolumeRecord(0U).kind, GGEMSAnalyticKind::None);
 }
 
-TEST(GGEMSSphere, RequiresStrictContainmentOnAllSixWorldFaces) {
+TEST(GGEMSSphere, AdmitsContactAndPositiveGapsOnAllSixWorldFaces) {
   std::array<std::int64_t, 3> const half{10, 20, 30};
   for (std::size_t axis = 0; axis < 3; ++axis) {
     for (auto const sign : {-1, 1}) {
@@ -127,11 +127,7 @@ TEST(GGEMSSphere, RequiresStrictContainmentOnAllSixWorldFaces) {
         sphere.SetPosition(MakePositionPM(center[0], center[1], center[2]));
         auto world = World();
         world.AddVolume(sphere);
-        if (gap == 0) {
-          EXPECT_THROW(world.Validate(), GGEMSRecoverable);
-        } else {
-          EXPECT_NO_THROW(world.Validate());
-        }
+        EXPECT_NO_THROW(world.Validate());
       }
     }
   }
@@ -154,8 +150,8 @@ TEST(GGEMSSphere, ContainmentDoesNotOverflowAtIntegerLimits) {
   large.SetSize(Length{2 * half}, Length{2 * half}, Length{2 * half})
     .SetMaterial(BuildBuiltInMaterial("Vacuum"));
   large.AddVolume(Sphere(Length{half - 1}));
-  // A one-pm clearance at this scale collapses after FP32 packing.
-  EXPECT_THROW(large.Validate(), GGEMSRecoverable);
+  // A one-pm clearance at this scale packs as permitted surface contact.
+  EXPECT_NO_THROW(large.Validate());
 }
 
 TEST(GGEMSSphere, ScalarHostLayoutMatchesTheDocumentedDeviceABI) {

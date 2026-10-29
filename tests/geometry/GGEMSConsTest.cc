@@ -143,7 +143,7 @@ TEST(N1Cons, CopiesPoseAndMaterial) {
   EXPECT_TRUE(copy.BuildBoxPoseRecord().has_value());
 }
 
-TEST(N1Cons, RejectsUnresolvedFeaturesAndInsufficientWorldClearance) {
+TEST(N1Cons, RejectsUnresolvedFeaturesButAdmitsWorldContact) {
   auto tiny_bore = Cons();
   tiny_bore.SetNegativeZRadii(1_pm, 4_mm).SetPositiveZRadii(1_pm, 6_mm);
   auto thin_wall = Cons();
@@ -159,7 +159,7 @@ TEST(N1Cons, RejectsUnresolvedFeaturesAndInsufficientWorldClearance) {
   shape.SetPosition(MakePositionPM(34'000'000'000LL, 0, 0));
   auto world = World();
   world.AddVolume(shape);
-  EXPECT_THROW(world.Validate(), GGEMSRecoverable);
+  EXPECT_NO_THROW(world.Validate());
 }
 
 TEST(N1Cons, PreservesTheSharedRotationContract) {

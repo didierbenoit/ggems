@@ -62,7 +62,7 @@ namespace ggems::geometry {
  * keeps every World half extent at or below 2^62 - 1 pm, so every World point
  * fits CoordinatePM and the displacement between any two World points fits
  * CoordinatePM without further overflow checks. The cap applies to the World
- * only; direct children are bounded by strict containment in the World.
+ * only; direct children are bounded by containment in the World.
  */
 inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
 
@@ -83,9 +83,9 @@ inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
  * authoring object do not reach the Run. Physical identities follow insertion
  * order, starting at one after World identity zero. Each added shape supplies
  * a pose relative to its already added parent; World is parent zero. The
- * maximum physical depth is three below World. Descendants replace the parent
- * medium only inside every ancestor, so their nominal solids may protrude.
- * Sibling effective interiors must be disjoint; surface contact is permitted.
+ * maximum physical depth is three below World. Descendants must fit in their
+ * immediate parent's physical support and replace its medium there.
+ * Sibling interiors must be disjoint; surface contact is permitted.
  * There is no automatic overlap correction. BuildAnalyticDeviceRecords()
  * compiles the occurrences into tagged device records with shared variable
  * profile data. The World packs the device-visible GGEMSWorldRecord and offers
@@ -134,7 +134,8 @@ public:
    *
    * The value is the larger of eight World spacings and sixteen spacings at
    * the solid's uploaded local/global surface envelope. Validate() checks
-   * that each nominal feature and direct-child World gap accommodate the bands.
+   * that nominal features accommodate the bands; sub-band gaps may act as
+   * contact.
    * \param[in] index Zero-based physical occurrence index.
    * \return Effective half-band in FP32 pm, or zero when index is absent.
    */
@@ -332,20 +333,16 @@ public:
   /*!
    * \brief Checks that the authored scene is complete and consistent.
    *
-   * Direct World children must lie strictly inside the World with separated
-   * bands. Sphere and identity-axis Box retain exact integer containment;
-   * rotated Box bounds retain their existing FP64 roundoff admission. Nominal
-   * descendant solids may protrude beyond ancestors or World; Navigation clips
-   * their effective support to every ancestor. All nominal solid features must
-   * pass the existing FP32 admission using the composed uploaded global pose.
-   * Sibling effective interiors must be disjoint. Only obvious direct World
-   * Box/Sphere overlaps are checked here; nested effective-support overlap is
-   * an authoring contract, diagnosed on ambiguous device localization.
-   * Clipped material intervals and intended gaps must remain resolvable outside
-   * adjacent FP32 surface bands. Sub-band gaps may behave as contact. This
-   * method does not exhaustively prove clipped-feature or sibling separation.
+   * Each daughter must fit within its mother's physical support, including
+   * hollow walls, and sibling interiors must be disjoint. Coincident surfaces
+   * and positive gaps are allowed. Exact simple checks and bounded surface
+   * samples reject detected violations; sampling is not an exhaustive proof.
+   * Users remain responsible for verifying the complete scene. All nominal
+   * features must pass existing FP32 admission using the uploaded global pose.
+   * Gaps within adjacent surface bands may behave as contact; admission does
+   * not guarantee a distinct material interval for an unresolved gap.
    *
-   * \throws GGEMSRecoverable If World size or Material is absent, direct-child
+   * \throws GGEMSRecoverable If World size or Material is absent, detected
    * containment or automatic feature/band admission fails, or a checked
    * overlap or device count/offset limit is encountered.
    */
@@ -506,15 +503,13 @@ private:
     -> GGEMSBoxPoseRecord;
 
   /*!
-   * \brief Applies existing solid feature and World-clearance admission.
+   * \brief Applies feature-band and exact simple World containment checks.
    * \param[in] index Zero-based index of the owned occurrence to validate.
    * \param[in] world_spacing Upward FP32 spacing at the World extent in pm.
-   * \param[in] world_tolerance Validated World surface half-band in pm.
    * \pre World size is configured and index is smaller than GetVolumeCount().
    * \throws GGEMSRecoverable If containment or automatic band admission fails.
    */
-  auto ValidateVolume(std::size_t index, float world_spacing,
-                      float world_tolerance) const -> void;
+  auto ValidateVolume(std::size_t index, float world_spacing) const -> void;
 
   /*!
    * \brief Rejects exact nominal overlaps for simple direct World sibling
@@ -525,6 +520,13 @@ private:
    * \throws GGEMSRecoverable If identity-axis Boxes or coaxial Spheres overlap.
    */
   auto ValidateSimplePair(std::size_t first, std::size_t second) const -> void;
+
+  /*!
+   * \brief Rejects detected containment and sibling overlap violations.
+   * \throws GGEMSRecoverable If exact checks or bounded samples find a defect.
+   * \note This initialization diagnostic cannot certify arbitrary geometry.
+   */
+  auto ValidateHierarchy() const -> void;
 
   /*! \brief Shared plan for descriptor, pose and profile byte packing. */
   struct AuxiliaryLayout {

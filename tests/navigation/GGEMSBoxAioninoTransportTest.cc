@@ -424,18 +424,18 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
   observer->Enable().SetRecordCapacity(2U).CaptureFirstPrimaries(1U);
 
   {
-    // Box touching the World +X face: rejected when the World is attached.
+    // Box crossing the World +X face: rejected when the World is attached.
     // A disjoint second Box remains valid authoring; the first violates World
-    // clearance.
+    // containment.
     ggems::core::GGEMSRun run{};
     run.SetRandom(rng);
     run.AddSource(source);
     World world = MakeWorld();
-    Box touching{};
-    touching.SetSize(40_mm, 20_mm, 30_mm)
-      .SetPosition(MakePositionPM(80'000'000'000LL, 0LL, 0LL))
+    Box protruding{};
+    protruding.SetSize(40_mm, 20_mm, 30_mm)
+      .SetPosition(MakePositionPM(81'000'000'000LL, 0LL, 0LL))
       .SetMaterial(Material("Water"));
-    world.AddVolume(touching);
+    world.AddVolume(protruding);
     auto second = MakeBox();
     second.SetPosition(MakePositionPM(-40'000'000'000LL, 40'000'000'000LL, 0));
     EXPECT_NO_THROW(world.AddVolume(second));

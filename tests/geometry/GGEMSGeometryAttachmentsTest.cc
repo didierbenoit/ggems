@@ -100,7 +100,8 @@ auto MakeShape(Length half) -> std::shared_ptr<Shape> {
   } else if constexpr (std::is_same_v<Shape, GGEMSPolyhedra>) {
     auto const extent = static_cast<std::int64_t>(half.value);
     std::array const z{
-      PositionCoordinate{-extent}, PositionCoordinate{0},
+      PositionCoordinate{-extent},
+      PositionCoordinate{0},
       PositionCoordinate{extent},
     };
     std::array const inner{0_pm, 0_pm, 0_pm};

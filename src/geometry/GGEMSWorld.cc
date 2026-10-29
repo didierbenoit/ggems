@@ -592,20 +592,13 @@ auto RequireTolerance(float tolerance, float required,
 }
 
 /*!
- * \brief Requires distinct interior and World-clearance tolerance bands.
- * \param[in] world_half Uploaded World half extents' authoring values.
+ * \brief Requires the existing automatic band to leave a resolved feature.
  * \param[in] scale Uploaded solid envelope and minimum feature half-width.
- * \param[in] world_tolerance Effective World half-band in pm.
  * \param[in] tolerance Effective solid half-band in pm.
- * \param[in] require_world_clearance True for a direct World child.
- * \throws ggems::core::GGEMSRecoverable If a feature or gap is unresolved.
+ * \throws ggems::core::GGEMSRecoverable If a nominal feature is unresolved.
  */
-auto RequireSeparatedBands(ggems::geometry::HalfExtent3PM world_half,
-                           SurfaceScale const &scale, float world_tolerance,
-                           float tolerance, bool require_world_clearance)
-  -> void {
+auto RequireFeatureBands(SurfaceScale const &scale, float tolerance) -> void {
   auto const spacing = SurfaceSpacingPM(scale);
-
   if (!(scale.minimum_half_extent_pm >
         static_cast<double>(tolerance) + spacing)) {
     throw ggems::core::GGEMSRecoverable(std::format(
@@ -613,30 +606,6 @@ auto RequireSeparatedBands(ggems::geometry::HalfExtent3PM world_half,
       "half-band {} pm and FP32 spacing {} pm; enlarge the feature or reduce "
       "the coordinate envelope.",
       scale.minimum_half_extent_pm, tolerance, spacing));
-  }
-
-  if (!require_world_clearance) {
-    return;
-  }
-
-  std::array<float, 3U> const half{
-    static_cast<float>(world_half.x),
-    static_cast<float>(world_half.y),
-    static_cast<float>(world_half.z),
-  };
-
-  for (std::size_t axis = 0U; axis < 3U; ++axis) {
-    auto const gap = static_cast<double>(half[axis]) - scale.envelope_pm[axis];
-    auto const required = static_cast<double>(world_tolerance) +
-                          (tolerance * scale.band_projection[axis]) +
-                          std::max(SpacingPM(half[axis]), spacing);
-
-    if (!(gap > required)) {
-      throw ggems::core::GGEMSRecoverable(std::format(
-        "World/solid gap on axis {} is {} pm after FP32 packing; it must "
-        "exceed {} pm to separate both navigation bands and one spacing.",
-        axis, gap, required));
-    }
   }
 }
 
@@ -665,103 +634,310 @@ auto RequireSeparatedBands(ggems::geometry::HalfExtent3PM world_half,
 // =============================================================================
 
 /*!
- * \brief Checks conservative rotated extrema against exact World margins.
- * \param[in] world_half Canonical World half extents.
- * \param[in] box Box with a nonidentity proper rotation.
- * \return True only for strict containment including a FP64 roundoff allowance.
+ * \brief Checks exact identity-axis Box containment, allowing contact.
+ * \param[in] parent_half Canonical parent Box or World half extents.
+ * \param[in] box Child Box in the parent frame with identity rotation.
+ * \return True when all faces are within the closed parent bounds.
  */
 [[nodiscard]] auto
-IsRotatedStrictlyInside(ggems::geometry::HalfExtent3PM world_half,
-                        ggems::geometry::GGEMSBox const &box) noexcept -> bool {
+IsAxisAlignedBoxInside(ggems::geometry::HalfExtent3PM parent_half,
+                       ggems::geometry::GGEMSBox const &box) noexcept -> bool {
   auto const half = box.GetHalfExtentPM();
-  auto const center = box.GetPositionPM();
-  auto const &rotation = box.GetRotation();
-
-  std::array<DistancePM, 3U> const sizes{half.x, half.y, half.z};
-  std::array<DistancePM, 3U> const world{world_half.x, world_half.y,
-                                         world_half.z};
-
-  std::array<CoordinatePM, 3U> const position{center.x, center.y, center.z};
-
-  std::array<std::array<double, 3U>, 3U> const rows{{
-    {rotation.axis_x.x, rotation.axis_y.x, rotation.axis_z.x},
-    {rotation.axis_x.y, rotation.axis_y.y, rotation.axis_z.y},
-    {rotation.axis_x.z, rotation.axis_y.z, rotation.axis_z.z},
-  }};
-
-  auto const infinity = std::numeric_limits<long double>::infinity();
-
-  for (std::size_t axis = 0U; axis < 3U; ++axis) {
-    auto const world_radius = static_cast<CoordinatePM>(world[axis]);
-    if (position[axis] <= -world_radius || position[axis] >= world_radius) {
-      return false;
-    }
-
-    CoordinatePM const magnitude =
-      position[axis] < 0 ? -position[axis] : position[axis];
-
-    auto const margin = static_cast<long double>(world_radius - magnitude);
-
-    long double radius = 0.0L;
-
-    for (std::size_t column = 0U; column < 3U; ++column) {
-      long double const extent =
-        std::nextafter(static_cast<long double>(sizes[column]), infinity);
-
-      long double const term = std::nextafter(
-        std::abs(static_cast<long double>(rows[axis][column])) * extent,
-        infinity);
-
-      radius = std::nextafter(radius + term, infinity);
-    }
-
-    // Includes roundoff from the binary64 basis, never a physical gap.
-    radius = std::nextafter(
-      radius * (1.0L + (16.0L * std::numeric_limits<double>::epsilon())),
-      infinity);
-
-    if (!(radius < std::nextafter(margin, -infinity))) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// =============================================================================
-// =============================================================================
-
-/*!
- * \brief Checks that a centered Box lies strictly inside the World.
- *
- * The World half extents are at most 2^62 - 1 pm. Each margin is formed only
- * after the Box half extent is known to be smaller, so it is a positive signed
- * value and the center is compared against it directly; no face sum is
- * evaluated, so the check cannot overflow for any signed center.
- *
- * \param[in] world_half World half extents.
- * \param[in] box Complete Box.
- * \return True when every Box face is strictly between the World faces.
- */
-[[nodiscard]] auto
-IsStrictlyInside(ggems::geometry::HalfExtent3PM world_half,
-                 ggems::geometry::GGEMSBox const &box) noexcept -> bool {
-  if (!box.GetRotation().IsIdentity()) {
-    return IsRotatedStrictlyInside(world_half, box);
-  }
-
-  ggems::geometry::HalfExtent3PM const half = box.GetHalfExtentPM();
-  if (half.x >= world_half.x || half.y >= world_half.y ||
-      half.z >= world_half.z) {
+  if (half.x > parent_half.x || half.y > parent_half.y ||
+      half.z > parent_half.z) {
     return false;
   }
+  auto const margin_x = static_cast<CoordinatePM>(parent_half.x - half.x);
+  auto const margin_y = static_cast<CoordinatePM>(parent_half.y - half.y);
+  auto const margin_z = static_cast<CoordinatePM>(parent_half.z - half.z);
+  auto const center = box.GetPositionPM();
+  return center.x >= -margin_x && center.x <= margin_x &&
+         center.y >= -margin_y && center.y <= margin_y &&
+         center.z >= -margin_z && center.z <= margin_z;
+}
 
-  auto const margin_x = static_cast<CoordinatePM>(world_half.x - half.x);
-  auto const margin_y = static_cast<CoordinatePM>(world_half.y - half.y);
-  auto const margin_z = static_cast<CoordinatePM>(world_half.z - half.z);
-  ggems::geometry::Position3PM const center = box.GetPositionPM();
-  return center.x > -margin_x && center.x < margin_x && center.y > -margin_y &&
-         center.y < margin_y && center.z > -margin_z && center.z < margin_z;
+/*! \brief Global or local diagnostic coordinates in pm, never track state. */
+using AdmissionPoint = std::array<double, 3U>;
+
+/*! \brief One bounded diagnostic point on or inside physical material. */
+struct AdmissionSample {
+  /*! \brief Global position in pm. */
+  AdmissionPoint position;
+
+  /*! \brief True only on an actual outer or bore boundary. */
+  bool surface;
+};
+
+/*! \brief Temporary preparation data, never uploaded to a device. */
+struct AdmissionSolid {
+  /*! \brief Existing packed analytical coefficients. */
+  ggems::geometry::GGEMSAnalyticVolumeRecord record;
+
+  /*! \brief Existing composed local-to-World pose. */
+  ggems::geometry::GGEMSBoxPoseRecord pose;
+
+  /*! \brief Conservative global-axis radii around the posed origin. */
+  AdmissionPoint radius;
+
+  /*! \brief Existing automatic surface half-band in pm. */
+  double tolerance;
+
+  /*! \brief Polygon side normals, empty for other families. */
+  std::vector<ggems::geometry::GGEMSPolyhedraSideRecord> sides;
+
+  /*! \brief Polygon axial sections, empty for other families. */
+  std::vector<ggems::geometry::GGEMSPolyhedraSectionRecord> sections;
+
+  /*! \brief Deterministic surface and interior diagnostic samples. */
+  std::vector<AdmissionSample> samples;
+};
+
+/*!
+ * \brief Classifies a diagnostic point against expanded physical support.
+ * \param[in] solid Packed static geometry with its composed pose.
+ * \param[in] point Global diagnostic position in pm.
+ * \param[in] band Signed existing half-band: negative contracts the support.
+ * \return True in expanded closed or contracted strict support, excluding
+ * bores.
+ */
+auto AdmissionContains(AdmissionSolid const &solid, AdmissionPoint point,
+                       double band) -> bool {
+  using ggems::geometry::GGEMSAnalyticKind;
+  auto const &pose = solid.pose;
+  auto const dx = point[0] - pose.center_x_pm;
+  auto const dy = point[1] - pose.center_y_pm;
+  auto const dz = point[2] - pose.center_z_pm;
+  auto const x =
+    (dx * pose.axis_x_x) + (dy * pose.axis_x_y) + (dz * pose.axis_x_z);
+  auto const y =
+    (dx * pose.axis_y_x) + (dy * pose.axis_y_y) + (dz * pose.axis_y_z);
+  auto const z =
+    (dx * pose.axis_z_x) + (dy * pose.axis_z_y) + (dz * pose.axis_z_z);
+  auto const &parameters = solid.record.parameters;
+  auto const within = [band](double value, double limit) -> bool {
+    return band < 0.0 ? value < limit : value <= limit;
+  };
+  switch (solid.record.kind) {
+  case GGEMSAnalyticKind::Box:
+    return within(std::abs(x), parameters.box.half_extent_x_pm + band) &&
+           within(std::abs(y), parameters.box.half_extent_y_pm + band) &&
+           within(std::abs(z), parameters.box.half_extent_z_pm + band);
+  case GGEMSAnalyticKind::Sphere:
+    return within(std::hypot(dx, dy, dz), parameters.sphere.radius_pm + band);
+  case GGEMSAnalyticKind::Ellipsoid: {
+    auto const &axes = parameters.ellipsoid;
+    if (std::min(
+          {axes.semi_axis_x_pm, axes.semi_axis_y_pm, axes.semi_axis_z_pm}) +
+          band <=
+        0.0) {
+      return false;
+    }
+    return within(std::hypot(x / (axes.semi_axis_x_pm + band),
+                             y / (axes.semi_axis_y_pm + band),
+                             z / (axes.semi_axis_z_pm + band)),
+                  1.0);
+  }
+  case GGEMSAnalyticKind::Trd:
+  case GGEMSAnalyticKind::Trap:
+    if (!within(std::abs(z), parameters.planar.half_length_pm + band)) {
+      return false;
+    }
+    return std::ranges::all_of(
+      parameters.planar.sides, [&](auto const &side) -> bool {
+        return within((side.normal_x * x) + (side.normal_y * y) +
+                        (side.normal_z * z),
+                      side.offset_pm + band);
+      });
+  case GGEMSAnalyticKind::Tubs: {
+    auto const &tube = parameters.tubs;
+    auto const radius = std::hypot(x, y);
+    return within(std::abs(z), tube.half_length_pm + band) &&
+           within(radius, tube.outer_radius_pm + band) &&
+           (tube.inner_radius_pm == 0.0F ||
+            within(-radius, -tube.inner_radius_pm + band));
+  }
+  case GGEMSAnalyticKind::Cons: {
+    auto const &cone = parameters.cons;
+    auto const radius = std::hypot(x, y);
+    return within(std::abs(z), cone.half_length_pm + band) &&
+           within(radius, cone.outer_radius_pm + (cone.outer_slope * z) +
+                            (band * cone.outer_normal_scale)) &&
+           (cone.inner_radius_pm == 0.0F ||
+            within(-radius, -cone.inner_radius_pm - (cone.inner_slope * z) +
+                              (band * cone.inner_normal_scale)));
+  }
+  case GGEMSAnalyticKind::Polyhedra: {
+    if (!within(-z, -solid.sections.front().z_lower_pm + band) ||
+        !within(z, solid.sections.back().z_upper_pm + band)) {
+      return false;
+    }
+    double projection = -std::numeric_limits<double>::infinity();
+    for (auto const &side : solid.sides) {
+      projection =
+        std::max(projection, (side.normal_x * x) + (side.normal_y * y));
+    }
+    auto section =
+      std::ranges::find_if(solid.sections, [&](auto const &part) -> bool {
+        return z <= part.z_upper_pm;
+      });
+    if (section == solid.sections.end()) {
+      section = solid.sections.end() - 1;
+    }
+    auto const offset = z - section->z_lower_pm;
+    return within(projection, section->outer_radius_pm +
+                                (section->outer_slope * offset) +
+                                (band * section->outer_normal_length)) &&
+           ((section->inner_radius_pm == 0.0F &&
+             section->inner_slope == 0.0F) ||
+            within(-projection, -section->inner_radius_pm -
+                                  (section->inner_slope * offset) +
+                                  (band * section->inner_normal_length)));
+  }
+  case GGEMSAnalyticKind::None:
+    return false;
+  }
+  return false;
+}
+
+/*!
+ * \brief Samples physical surfaces and interior points without a proof claim.
+ * \param[in,out] solid Packed geometry receiving at most 1152 static samples.
+ *
+ * Curves use 16 azimuths; polygon profiles use at most eight sections.
+ * Internal profile joins are not physical surfaces. Narrow defects between
+ * samples can be missed, including unsampled profile sections.
+ */
+auto SampleAdmissionSolid(AdmissionSolid &solid) -> void {
+  using ggems::geometry::GGEMSAnalyticKind;
+  auto const &pose = solid.pose;
+  auto const add = [&](double x, double y, double z, bool surface) -> void {
+    solid.samples.push_back({
+      .position =
+        {
+          pose.center_x_pm + (x * pose.axis_x_x) + (y * pose.axis_y_x) +
+            (z * pose.axis_z_x),
+          pose.center_y_pm + (x * pose.axis_x_y) + (y * pose.axis_y_y) +
+            (z * pose.axis_z_y),
+          pose.center_z_pm + (x * pose.axis_x_z) + (y * pose.axis_y_z) +
+            (z * pose.axis_z_z),
+        },
+      .surface = surface,
+    });
+  };
+  auto const &parameters = solid.record.parameters;
+  auto const kind = solid.record.kind;
+  if (kind == GGEMSAnalyticKind::Box || kind == GGEMSAnalyticKind::Sphere ||
+      kind == GGEMSAnalyticKind::Ellipsoid) {
+    AdmissionPoint extent{};
+    if (kind == GGEMSAnalyticKind::Box) {
+      extent = {
+        parameters.box.half_extent_x_pm,
+        parameters.box.half_extent_y_pm,
+        parameters.box.half_extent_z_pm,
+      };
+    } else if (kind == GGEMSAnalyticKind::Sphere) {
+      extent.fill(parameters.sphere.radius_pm);
+    } else {
+      extent = {
+        parameters.ellipsoid.semi_axis_x_pm,
+        parameters.ellipsoid.semi_axis_y_pm,
+        parameters.ellipsoid.semi_axis_z_pm,
+      };
+    }
+    for (auto x : {-1.0, 0.0, 1.0}) {
+      for (auto y : {-1.0, 0.0, 1.0}) {
+        for (auto z : {-1.0, 0.0, 1.0}) {
+          auto const norm = std::hypot(x, y, z);
+          auto const divisor =
+            kind == GGEMSAnalyticKind::Box || norm == 0.0 ? 1.0 : norm;
+          add(x * extent[0] / divisor, y * extent[1] / divisor,
+              z * extent[2] / divisor, norm != 0.0);
+        }
+      }
+    }
+    return;
+  }
+  if (kind == GGEMSAnalyticKind::Trd || kind == GGEMSAnalyticKind::Trap) {
+    auto const &planar = parameters.planar;
+    for (auto axial : {-1.0, 0.0, 1.0}) {
+      auto const z = axial * planar.half_length_pm;
+      auto const lower_y =
+        (planar.sides[0].offset_pm - (planar.sides[0].normal_z * z)) /
+        planar.sides[0].normal_y;
+      auto const upper_y =
+        (planar.sides[1].offset_pm - (planar.sides[1].normal_z * z)) /
+        planar.sides[1].normal_y;
+      for (auto across_y : {0.0, 0.5, 1.0}) {
+        auto const y = std::lerp(lower_y, upper_y, across_y);
+        auto const lower_x =
+          (planar.sides[2].offset_pm - (planar.sides[2].normal_y * y) -
+           (planar.sides[2].normal_z * z)) /
+          planar.sides[2].normal_x;
+        auto const upper_x =
+          (planar.sides[3].offset_pm - (planar.sides[3].normal_y * y) -
+           (planar.sides[3].normal_z * z)) /
+          planar.sides[3].normal_x;
+        for (auto across_x : {0.0, 0.5, 1.0}) {
+          add(std::lerp(lower_x, upper_x, across_x), y, z,
+              axial != 0.0 || across_x != 0.5 || across_y != 0.5);
+        }
+      }
+    }
+    return;
+  }
+  auto const sections = kind == GGEMSAnalyticKind::Polyhedra
+                          ? std::min(solid.sections.size(), std::size_t{8U})
+                          : 1U;
+  for (std::size_t sample = 0U; sample < sections; ++sample) {
+    auto const index =
+      sections <= 1U ? 0U
+                     : sample * (solid.sections.size() - 1U) / (sections - 1U);
+    for (auto axial : {0.0, 0.5, 1.0}) {
+      double z;
+      double inner;
+      double outer;
+      bool cap = axial != 0.5;
+      if (kind == GGEMSAnalyticKind::Polyhedra) {
+        auto const &section = solid.sections[index];
+        z = std::lerp(static_cast<double>(section.z_lower_pm),
+                      static_cast<double>(section.z_upper_pm), axial);
+        inner = section.inner_radius_pm +
+                (section.inner_slope * (z - section.z_lower_pm));
+        outer = section.outer_radius_pm +
+                (section.outer_slope * (z - section.z_lower_pm));
+        cap = (axial == 0.0 && index == 0U) ||
+              (axial == 1.0 && index + 1U == solid.sections.size());
+      } else if (kind == GGEMSAnalyticKind::Cons) {
+        auto const &cone = parameters.cons;
+        z = ((2.0 * axial) - 1.0) * cone.half_length_pm;
+        inner = cone.inner_radius_pm + (cone.inner_slope * z);
+        outer = cone.outer_radius_pm + (cone.outer_slope * z);
+      } else {
+        auto const &tube = parameters.tubs;
+        z = ((2.0 * axial) - 1.0) * tube.half_length_pm;
+        inner = tube.inner_radius_pm;
+        outer = tube.outer_radius_pm;
+      }
+      for (unsigned azimuth = 0U; azimuth < 16U; ++azimuth) {
+        auto const angle = 2.0 * std::numbers::pi * azimuth / 16.0;
+        auto const x = std::cos(angle);
+        auto const y = std::sin(angle);
+        double projection = 1.0;
+        if (kind == GGEMSAnalyticKind::Polyhedra) {
+          projection = 0.0;
+          for (auto const &side : solid.sides) {
+            projection =
+              std::max(projection, (side.normal_x * x) + (side.normal_y * y));
+          }
+        }
+        for (auto radial : {0.0, 0.5, 1.0}) {
+          auto const radius = std::lerp(inner, outer, radial) / projection;
+          add(radius * x, radius * y, z,
+              cap || radial == 1.0 || (radial == 0.0 && inner > 0.0));
+        }
+      }
+    }
+  }
 }
 
 } // namespace
@@ -973,7 +1149,7 @@ auto GGEMSWorld::Validate() const -> void {
   }
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
-    ValidateVolume(index, world_spacing, world_tolerance);
+    ValidateVolume(index, world_spacing);
   }
 
   if (volumes_.size() > std::numeric_limits<std::uint32_t>::max() ||
@@ -988,20 +1164,21 @@ auto GGEMSWorld::Validate() const -> void {
       ValidateSimplePair(first, second);
     }
   }
+  ValidateHierarchy();
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::ValidateVolume(std::size_t index, float world_spacing,
-                                float world_tolerance) const -> void {
+auto GGEMSWorld::ValidateVolume(std::size_t index, float world_spacing) const
+  -> void {
   auto const &volume = volumes_[index].volume;
   auto const direct_child = volumes_[index].parent_volume_id == 0U;
   auto const pose = BuildOccurrencePose(index);
   for (auto const &box : GetBoxes(index)) {
-    if (direct_child && !IsStrictlyInside(half_extent_pm_, box)) {
-      throw core::GGEMSRecoverable(
-        "Every Box must lie strictly inside the World; coincident or "
-        "crossing faces are not supported.");
+    if (direct_child && box.GetRotation().IsIdentity() &&
+        !IsAxisAlignedBoxInside(half_extent_pm_, box)) {
+      throw core::GGEMSRecoverable("Every Box must fit inside the World; "
+                                   "crossing faces are not supported.");
     }
 
     auto const scale = BuildSurfaceScale(box, pose);
@@ -1010,8 +1187,7 @@ auto GGEMSWorld::ValidateVolume(std::size_t index, float world_spacing,
     RequireTolerance(tolerance, RequiredTolerancePM(scale, world_spacing),
                      "Box");
 
-    RequireSeparatedBands(half_extent_pm_, scale, world_tolerance, tolerance,
-                          direct_child);
+    RequireFeatureBands(scale, tolerance);
   }
 
   if (auto const *sphere = std::get_if<GGEMSSphere>(&volume)) {
@@ -1020,10 +1196,9 @@ auto GGEMSWorld::ValidateVolume(std::size_t index, float world_spacing,
 
     // Compare margins before subtracting signed centers or adding the radius.
     if (direct_child &&
-        (radius >= half_extent_pm_.x || radius >= half_extent_pm_.y ||
-         radius >= half_extent_pm_.z)) {
-      throw core::GGEMSRecoverable(
-        "Sphere must lie strictly inside the World.");
+        (radius > half_extent_pm_.x || radius > half_extent_pm_.y ||
+         radius > half_extent_pm_.z)) {
+      throw core::GGEMSRecoverable("Sphere must fit inside the World.");
     }
 
     auto const scale = BuildSurfaceScale(*sphere, pose);
@@ -1032,8 +1207,7 @@ auto GGEMSWorld::ValidateVolume(std::size_t index, float world_spacing,
     RequireTolerance(tolerance, RequiredTolerancePM(scale, world_spacing),
                      "Sphere");
 
-    RequireSeparatedBands(half_extent_pm_, scale, world_tolerance, tolerance,
-                          direct_child);
+    RequireFeatureBands(scale, tolerance);
 
     if (direct_child) {
       auto const margin_x =
@@ -1043,49 +1217,41 @@ auto GGEMSWorld::ValidateVolume(std::size_t index, float world_spacing,
       auto const margin_z =
         static_cast<CoordinatePM>(half_extent_pm_.z - radius);
 
-      if (center.x <= -margin_x || center.x >= margin_x ||
-          center.y <= -margin_y || center.y >= margin_y ||
-          center.z <= -margin_z || center.z >= margin_z) {
-        throw core::GGEMSRecoverable(
-          "Sphere must lie strictly inside the World.");
+      if (center.x < -margin_x || center.x > margin_x || center.y < -margin_y ||
+          center.y > margin_y || center.z < -margin_z || center.z > margin_z) {
+        throw core::GGEMSRecoverable("Sphere must fit inside the World.");
       }
     }
   }
 
   if (auto const *solid = std::get_if<GGEMSPolyhedra>(&volume)) {
-    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*solid, pose),
-                          world_tolerance,
-                          GetVolumeNavigationTolerancePM(index), direct_child);
+    RequireFeatureBands(BuildSurfaceScale(*solid, pose),
+                        GetVolumeNavigationTolerancePM(index));
   }
 
   if (auto const *cons = std::get_if<GGEMSCons>(&volume)) {
-    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*cons, pose),
-                          world_tolerance,
-                          GetVolumeNavigationTolerancePM(index), direct_child);
+    RequireFeatureBands(BuildSurfaceScale(*cons, pose),
+                        GetVolumeNavigationTolerancePM(index));
   }
 
   if (auto const *tubs = std::get_if<GGEMSTubs>(&volume)) {
-    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*tubs, pose),
-                          world_tolerance,
-                          GetVolumeNavigationTolerancePM(index), direct_child);
+    RequireFeatureBands(BuildSurfaceScale(*tubs, pose),
+                        GetVolumeNavigationTolerancePM(index));
   }
 
   if (auto const *ellipsoid = std::get_if<GGEMSEllipsoid>(&volume)) {
-    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*ellipsoid, pose),
-                          world_tolerance,
-                          GetVolumeNavigationTolerancePM(index), direct_child);
+    RequireFeatureBands(BuildSurfaceScale(*ellipsoid, pose),
+                        GetVolumeNavigationTolerancePM(index));
   }
 
   if (auto const *trd = std::get_if<GGEMSTrd>(&volume)) {
-    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*trd, pose),
-                          world_tolerance,
-                          GetVolumeNavigationTolerancePM(index), direct_child);
+    RequireFeatureBands(BuildSurfaceScale(*trd, pose),
+                        GetVolumeNavigationTolerancePM(index));
   }
 
   if (auto const *trap = std::get_if<GGEMSTrap>(&volume)) {
-    RequireSeparatedBands(half_extent_pm_, BuildSurfaceScale(*trap, pose),
-                          world_tolerance,
-                          GetVolumeNavigationTolerancePM(index), direct_child);
+    RequireFeatureBands(BuildSurfaceScale(*trap, pose),
+                        GetVolumeNavigationTolerancePM(index));
   }
 }
 
@@ -1098,7 +1264,7 @@ auto GGEMSWorld::ValidateSimplePair(std::size_t first, std::size_t second) const
     return;
   }
   // Exact integer checks reject identity-axis Boxes and coaxial Spheres only.
-  // Other shape pairs retain the explicit disjoint-interior authoring contract.
+  // Remaining pairs also receive bounded physical-support diagnostics.
   auto const *left_box = std::get_if<GGEMSBox>(&volumes_[first].volume);
   auto const *right_box = std::get_if<GGEMSBox>(&volumes_[second].volume);
   bool overlap = false;
@@ -1141,6 +1307,142 @@ auto GGEMSWorld::ValidateSimplePair(std::size_t first, std::size_t second) const
     throw core::GGEMSRecoverable(std::format(
       "Analytical occurrences {} and {} have overlapping interiors.",
       first + 1U, second + 1U));
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::ValidateHierarchy() const -> void {
+  std::vector<AdmissionSolid> solids;
+  solids.reserve(volumes_.size());
+  for (std::size_t index = 0U; index < volumes_.size(); ++index) {
+    auto const pose = BuildOccurrencePose(index);
+    auto centered_pose = pose;
+    centered_pose.center_x_pm = 0.0F;
+    centered_pose.center_y_pm = 0.0F;
+    centered_pose.center_z_pm = 0.0F;
+    AdmissionSolid solid{
+      .record = BuildAnalyticVolumeRecord(0U, index),
+      .pose = pose,
+      .radius = std::visit(
+        [&](auto const &shape) -> AdmissionPoint {
+          return BuildSurfaceScale(shape, centered_pose).envelope_pm;
+        },
+        volumes_[index].volume),
+      .tolerance = GetVolumeNavigationTolerancePM(index),
+      .sides = {},
+      .sections = {},
+      .samples = {},
+    };
+    if (auto const *polygon =
+          std::get_if<GGEMSPolyhedra>(&volumes_[index].volume)) {
+      solid.sides = detail::BuildPolyhedraSides(*polygon);
+      solid.sections = detail::BuildPolyhedraSections(*polygon);
+    }
+    SampleAdmissionSolid(solid);
+    solids.push_back(std::move(solid));
+  }
+
+  AdmissionPoint const world_half{
+    static_cast<float>(half_extent_pm_.x),
+    static_cast<float>(half_extent_pm_.y),
+    static_cast<float>(half_extent_pm_.z),
+  };
+  for (std::size_t index = 0U; index < solids.size(); ++index) {
+    auto const &child = solids[index];
+    auto const parent_id = volumes_[index].parent_volume_id;
+    bool outside = false;
+    if (parent_id == 0U) {
+      auto const band = child.tolerance + GetNavigationTolerancePM();
+      // These curved envelopes are actual supports, not conservative cylinders.
+      if (child.record.kind == GGEMSAnalyticKind::Tubs ||
+          child.record.kind == GGEMSAnalyticKind::Ellipsoid) {
+        AdmissionPoint const center{
+          child.pose.center_x_pm,
+          child.pose.center_y_pm,
+          child.pose.center_z_pm,
+        };
+        for (std::size_t axis = 0U; axis < 3U; ++axis) {
+          outside = outside || std::abs(center[axis]) + child.radius[axis] >
+                                 world_half[axis] + band;
+        }
+      }
+      outside =
+        outside ||
+        std::ranges::any_of(child.samples, [&](auto const &sample) -> bool {
+          return std::abs(sample.position[0]) > world_half[0] + band ||
+                 std::abs(sample.position[1]) > world_half[1] + band ||
+                 std::abs(sample.position[2]) > world_half[2] + band;
+        });
+    } else {
+      auto const &parent = solids[parent_id - 1U];
+      auto const band = parent.tolerance + child.tolerance;
+      auto const *parent_box =
+        std::get_if<GGEMSBox>(&volumes_[parent_id - 1U].volume);
+      auto const *child_box = std::get_if<GGEMSBox>(&volumes_[index].volume);
+      if (parent_box != nullptr && child_box != nullptr &&
+          child_box->GetRotation().IsIdentity()) {
+        outside =
+          !IsAxisAlignedBoxInside(parent_box->GetHalfExtentPM(), *child_box);
+      }
+      outside =
+        outside ||
+        std::ranges::any_of(child.samples,
+                            [&](auto const &sample) -> bool {
+                              return !AdmissionContains(parent, sample.position,
+                                                        band);
+                            }) ||
+        std::ranges::any_of(parent.samples, [&](auto const &sample) -> bool {
+          // A bore boundary strictly inside the child detects filled
+          // cavities that the child's own outer surface can miss.
+          return sample.surface &&
+                 AdmissionContains(child, sample.position, -band);
+        });
+    }
+    if (outside) {
+      throw core::GGEMSRecoverable(std::format(
+        "Analytical occurrence {} protrudes outside the physical support of "
+        "parent {} (containment diagnostic).",
+        index + 1U, parent_id));
+    }
+  }
+
+  for (std::size_t first = 0U; first < solids.size(); ++first) {
+    for (std::size_t second = first + 1U; second < solids.size(); ++second) {
+      if (volumes_[first].parent_volume_id !=
+          volumes_[second].parent_volume_id) {
+        continue;
+      }
+      auto const &left = solids[first];
+      auto const &right = solids[second];
+      AdmissionPoint const separation{
+        std::abs(static_cast<double>(left.pose.center_x_pm) -
+                 right.pose.center_x_pm),
+        std::abs(static_cast<double>(left.pose.center_y_pm) -
+                 right.pose.center_y_pm),
+        std::abs(static_cast<double>(left.pose.center_z_pm) -
+                 right.pose.center_z_pm),
+      };
+      if (separation[0] >= left.radius[0] + right.radius[0] ||
+          separation[1] >= left.radius[1] + right.radius[1] ||
+          separation[2] >= left.radius[2] + right.radius[2]) {
+        continue;
+      }
+      auto const band = left.tolerance + right.tolerance;
+      if (std::ranges::any_of(left.samples,
+                              [&](auto const &sample) -> bool {
+                                return AdmissionContains(right, sample.position,
+                                                         -band);
+                              }) ||
+          std::ranges::any_of(right.samples, [&](auto const &sample) -> bool {
+            return AdmissionContains(left, sample.position, -band);
+          })) {
+        throw core::GGEMSRecoverable(std::format(
+          "Analytical occurrences {} and {} have overlapping interiors "
+          "(bounded sampling diagnostic).",
+          first + 1U, second + 1U));
+      }
+    }
   }
 }
 

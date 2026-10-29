@@ -261,25 +261,70 @@ auto Scenes() -> std::vector<Scene> {
                     .crossings = {{10, 1, 3}, {30, 0, 3}},
                     .initial_owner = 3U});
 
-  auto clipped = World();
-  clipped.AddVolume(Box(40_mm, 40_mm, 40_mm));
-  clipped.AddVolume(Sphere(10_mm, {18, 0, 0}), 1U);
-  clipped.AddVolume(Box(20_mm, 4_mm, 6_mm, {6, 0, 0}, "Air"), 2U);
-  scenes.push_back(
-    {.name = "H6 ancestor truncates two protruding descendants",
-     .world = clipped,
-     .crossings = {{40, 1, 2}, {68, 2, 2}, {74, 3, 2}, {80, 0, 3, 2U}}});
-  scenes.push_back(
-    {.name = "H6 reverse entry selects deepest clipped support",
-     .world = clipped,
-     .start = {60, 0, 0},
-     .direction = {-1, 0, 0},
-     .crossings = {{40, 3, 2}, {46, 2, 3}, {52, 1, 3}, {80, 0, 3}}});
-  scenes.push_back(
-    {.name = "H6 birth in nominal child outside ancestor is World",
-     .world = clipped,
-     .start = {24, 0, 0},
-     .crossings = {}});
+  auto coincident = World();
+  coincident.AddVolume(Box(60_mm, 40_mm, 40_mm));
+  coincident.AddVolume(Box(40_mm, 20_mm, 20_mm, {10, 0, 0}, "Aluminum"), 1U);
+  coincident.AddVolume(Box(20_mm, 10_mm, 10_mm, {10, 0, 0}, "Air"), 2U);
+  scenes.push_back({
+    .name = "H6 three coincident positive X faces exit in one step",
+    .world = coincident,
+    .crossings =
+      {
+        {.parameter_mm = 30, .arrival = 1, .event = 2},
+        {.parameter_mm = 50, .arrival = 2, .event = 2},
+        {.parameter_mm = 70, .arrival = 3, .event = 2},
+        {.parameter_mm = 90, .arrival = 0, .event = 3},
+      },
+  });
+  scenes.push_back({
+    .name = "H6 three coincident faces enter the deepest owner in reverse",
+    .world = coincident,
+    .start = {60, 0, 0},
+    .direction = {-1, 0, 0},
+    .crossings =
+      {
+        {.parameter_mm = 30, .arrival = 3, .event = 2},
+        {.parameter_mm = 50, .arrival = 2, .event = 3},
+        {.parameter_mm = 70, .arrival = 1, .event = 3},
+        {.parameter_mm = 90, .arrival = 0, .event = 3},
+      },
+  });
+
+  for (bool contact : {false, true}) {
+    for (bool reversed : {false, true}) {
+      auto siblings = World();
+      auto const near_surface = Box(8_mm, 100_mm, 20_mm, {-20, 45, 0});
+      auto const near_center =
+        Box(8_mm, 10_mm, 12_mm, {contact ? -12.0 : -10.0, 0, 0}, "Air");
+      if (reversed) {
+        siblings.AddVolume(near_center).AddVolume(near_surface);
+      } else {
+        siblings.AddVolume(near_surface).AddVolume(near_center);
+      }
+      std::uint32_t const first = reversed ? 2U : 1U;
+      std::uint32_t const second = reversed ? 1U : 2U;
+      siblings.AddVolume(Box(4_mm, 4_mm, 4_mm, {0, -45, 0}, "Aluminum"), first);
+      // The first surface is closer although its center is farther away.
+      std::vector<Crossing> crossings{
+        {.parameter_mm = 36, .arrival = first, .event = 2},
+        {.parameter_mm = 38, .arrival = 3, .event = 2},
+        {.parameter_mm = 42, .arrival = first, .event = 3},
+        {.parameter_mm = 44, .arrival = contact ? second : 0U, .event = 3},
+      };
+      if (!contact) {
+        crossings.push_back(
+          {.parameter_mm = 46, .arrival = second, .event = 2});
+      }
+      crossings.push_back(
+        {.parameter_mm = contact ? 52.0 : 54.0, .arrival = 0, .event = 3});
+      scenes.push_back({
+        .name = std::format("H6 World siblings contact={} reversed={}", contact,
+                            reversed),
+        .world = siblings,
+        .crossings = crossings,
+      });
+    }
+  }
 
   auto hollow = World();
   geometry::GGEMSPolyhedra polygon;
@@ -292,16 +337,85 @@ auto Scenes() -> std::vector<Scene> {
     .SetZProfile(z, inner, outer)
     .SetMaterial(materials::builtins::BuildBuiltInMaterial("Water"));
   hollow.AddVolume(polygon);
-  hollow.AddVolume(Box(20_mm, 4_mm, 6_mm, {0, 0, 0}, "Aluminum"), 1U);
-  scenes.push_back(
-    {.name = "H6 nonconvex ancestor permits later convex child reentry",
-     .world = hollow,
-     .crossings = {{48, 1, 2},
-                   {50, 2, 2},
-                   {54, 0, 3},
-                   {66, 2, 2},
-                   {70, 1, 3},
-                   {72, 0, 3}}});
+  std::array const child_z{
+    units::PositionCoordinate{-10'000'000'000LL},
+    units::PositionCoordinate{10'000'000'000LL},
+  };
+  std::array const child_inner{8_mm, 8_mm};
+  std::array const child_outer{10_mm, 10_mm};
+  polygon.SetZProfile(child_z, child_inner, child_outer)
+    .SetMaterial(materials::builtins::BuildBuiltInMaterial("Aluminum"));
+  hollow.AddVolume(polygon, 1U);
+  scenes.push_back({
+    .name =
+      "H6 contained hollow daughter preserves mother walls and World bore",
+    .world = hollow,
+    .crossings =
+      {
+        {.parameter_mm = 48, .arrival = 1, .event = 2},
+        {.parameter_mm = 50, .arrival = 2, .event = 2},
+        {.parameter_mm = 52, .arrival = 1, .event = 3},
+        {.parameter_mm = 54, .arrival = 0, .event = 3},
+        {.parameter_mm = 66, .arrival = 1, .event = 2},
+        {.parameter_mm = 68, .arrival = 2, .event = 2},
+        {.parameter_mm = 70, .arrival = 1, .event = 3},
+        {.parameter_mm = 72, .arrival = 0, .event = 3},
+      },
+  });
+
+  for (double gap : {0.0, 10.0}) {
+    for (auto const path : {0U, 1U, 2U}) {
+      auto world_contact = World();
+      world_contact.AddVolume(Box(40_mm, 20_mm, 20_mm, {80 - gap, 0, 0}));
+      std::vector<Crossing> crossings;
+      if (path == 1U) {
+        world_contact.AddVolume(Box(4_mm, 6_mm, 6_mm, {-20, 0, 0}, "Air"));
+        crossings.push_back({.parameter_mm = 38, .arrival = 2, .event = 2});
+        crossings.push_back({.parameter_mm = 42, .arrival = 0, .event = 3});
+      }
+      crossings.push_back(
+        {.parameter_mm = 120 - gap, .arrival = 1, .event = 2});
+      if (path == 2U) {
+        world_contact.AddVolume(
+          Box(20_mm, 10_mm, 10_mm, {10, 0, 0}, "Aluminum"), 1U);
+        crossings.push_back(
+          {.parameter_mm = 140 - gap, .arrival = 2, .event = 2});
+      }
+      if (gap != 0) {
+        crossings.push_back(
+          {.parameter_mm = 160 - gap, .arrival = 0, .event = 3});
+      }
+      scenes.push_back({
+        .name =
+          std::format("H6 World contact/gap={} mm, scene kind={}", gap, path),
+        .world = world_contact,
+        .crossings = crossings,
+      });
+    }
+  }
+
+  double const contact_norm = std::hypot(1.0, 0.375);
+  Vec const contact_direction{
+    static_cast<double>(static_cast<float>(1.0 / contact_norm)),
+    static_cast<double>(static_cast<float>(-0.375 / contact_norm)),
+    0,
+  };
+  for (bool siblings : {false, true}) {
+    auto curved_contact = World();
+    curved_contact.AddVolume(Sphere(100_mm));
+    if (siblings) {
+      curved_contact.AddVolume(Sphere(5_mm, {80, 80, 0}));
+    }
+    scenes.push_back({
+      .name = siblings ? "H6 flat siblings preserve curved World contact"
+                       : "H6 single Sphere preserves curved World contact",
+      .world = curved_contact,
+      .start = {0, 37.5, 0},
+      .direction = contact_direction,
+      .crossings = {},
+      .initial_owner = 1U,
+    });
+  }
   return scenes;
 }
 
@@ -416,7 +530,7 @@ auto CheckScene(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
 } // namespace
 
 TEST_F(GGEMSNavigationDeviceTest,
-       PhysicalHierarchyPreservesH1ThroughH6Intervals) {
+       PhysicalHierarchyPreservesContainedIntervals) {
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   auto const instrumented = test::InstrumentStream(root);
   auto const scenes = Scenes();

@@ -187,7 +187,7 @@ TEST(N1TubsEllipsoid, PoseValidationUsesTheSharedRotationContract) {
   EXPECT_DOUBLE_EQ(ellipsoid.GetRotation().axis_z.x, 1.0);
 }
 
-TEST(N1TubsEllipsoid, RejectsUnresolvedFeaturesAndWorldClearance) {
+TEST(N1TubsEllipsoid, RejectsUnresolvedFeaturesAndWorldProtrusion) {
   auto tiny_bore = Tubs();
   tiny_bore.SetRadii(4_mm, 1_pm);
   auto thin_wall = Tubs();
@@ -211,10 +211,15 @@ TEST(N1TubsEllipsoid, RejectsUnresolvedFeaturesAndWorldClearance) {
     ellipsoid.SetPosition(MakePositionPM(center, 0, 0));
     auto first = World();
     first.AddVolume(tubs);
-    EXPECT_THROW(first.Validate(), GGEMSRecoverable);
     auto second = World();
     second.AddVolume(ellipsoid);
-    EXPECT_THROW(second.Validate(), GGEMSRecoverable);
+    if (center == 36'000'000'000LL) {
+      EXPECT_NO_THROW(first.Validate());
+      EXPECT_NO_THROW(second.Validate());
+    } else {
+      EXPECT_THROW(first.Validate(), GGEMSRecoverable);
+      EXPECT_THROW(second.Validate(), GGEMSRecoverable);
+    }
   }
   auto rotated = Tubs();
   rotated.SetRotation(0_deg, 90_deg, 0_deg)

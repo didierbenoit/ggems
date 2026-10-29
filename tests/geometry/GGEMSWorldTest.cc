@@ -380,7 +380,7 @@ TEST(GGEMSWorld, AddVolumeRejectsIncompleteBoxesAndOwnsMultipleOccurrences) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSWorld, ValidateRejectsVolumesThatEscapeTheWorld) {
+TEST(GGEMSWorld, ValidateAdmitsContactButRejectsVolumesThatEscapeTheWorld) {
   // Box whose +X face coincides with the World +X face.
   {
     GGEMSWorld world = MakeWorld(200_mm, 200_mm, 200_mm, Vacuum());
@@ -389,7 +389,7 @@ TEST(GGEMSWorld, ValidateRejectsVolumesThatEscapeTheWorld) {
       .SetPosition(MakePositionPM(80'000'000'000LL, 0LL, 0LL))
       .SetMaterial(Water());
     world.AddVolume(box);
-    EXPECT_THROW(world.Validate(), GGEMSRecoverable);
+    EXPECT_NO_THROW(world.Validate());
   }
   // The World size set after the volume still decides containment.
   {
@@ -565,7 +565,7 @@ TEST(GGEMSWorld, RejectsUnresolvedPhysicalFeatures) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSWorld, RequiresDistinctWorldAndSolidToleranceBandsAfterPacking) {
+TEST(GGEMSWorld, AdmitsPositiveWorldGapsWithoutChangingAutomaticBands) {
   for (auto const gap : {1_um, 10_um}) {
     SCOPED_TRACE(gap.value);
     auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
@@ -576,13 +576,9 @@ TEST(GGEMSWorld, RequiresDistinctWorldAndSolidToleranceBandsAfterPacking) {
                                   0, 0))
       .SetMaterial(Water());
     world.AddVolume(sphere);
-    if (gap == 1_um) {
-      EXPECT_THROW(world.Validate(), GGEMSRecoverable);
-    } else {
-      EXPECT_NO_THROW(world.Validate());
-      EXPECT_GT(world.GetVolumeNavigationTolerancePM(),
-                world.GetNavigationTolerancePM());
-    }
+    EXPECT_NO_THROW(world.Validate());
+    EXPECT_GT(world.GetVolumeNavigationTolerancePM(),
+              world.GetNavigationTolerancePM());
   }
 }
 
@@ -606,7 +602,7 @@ TEST(GGEMSWorld, ScalarWorldRecordCarriesTheToleranceWithoutParticleState) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSWorld, RotatedBoxClearanceProjectsTheLocalSurfaceBand) {
+TEST(GGEMSWorld, RotatedBoxPositiveGapsDoNotRequireDisjointSurfaceBands) {
   for (auto const gap_pm : {3'500'000LL, 5'000'000LL}) {
     SCOPED_TRACE(gap_pm);
     auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
@@ -620,10 +616,6 @@ TEST(GGEMSWorld, RotatedBoxClearanceProjectsTheLocalSurfaceBand) {
     box.SetPosition(
       MakePositionPM(1'500'000'000'000LL - extent_pm - gap_pm, 0, 0));
     world.AddVolume(box);
-    if (gap_pm == 3'500'000LL) {
-      EXPECT_THROW(world.Validate(), GGEMSRecoverable);
-    } else {
-      EXPECT_NO_THROW(world.Validate());
-    }
+    EXPECT_NO_THROW(world.Validate());
   }
 }

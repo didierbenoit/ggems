@@ -21,8 +21,7 @@
 
 /*!
  * \file
- * \brief Checks hierarchy authoring, occurrence links, and composed static
- * poses.
+ * \brief Checks ordinary hierarchy admission, occurrence links, and poses.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -37,6 +36,7 @@
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSPolyhedra.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
@@ -148,8 +148,7 @@ TEST(GGEMSPhysicalHierarchy, ComposesParentLocalTranslationAndRotation) {
   EXPECT_FLOAT_EQ(sphere_child_pose->axis_y_x, -1.0F);
 }
 
-TEST(GGEMSPhysicalHierarchy,
-     AdmitsAncestorClippingButRejectsWorldSiblingOverlap) {
+TEST(GGEMSPhysicalHierarchy, RejectsProtrudingDaughtersAtEveryLevel) {
   auto clipped = World();
   clipped.AddVolume(Box(40_mm, 40_mm, 40_mm));
   GGEMSSphere daughter;
@@ -160,10 +159,82 @@ TEST(GGEMSPhysicalHierarchy,
   auto grandchild = Box(20_mm, 4_mm, 6_mm);
   grandchild.SetPosition(MakePositionPM(6'000'000'000LL, 0, 0));
   clipped.AddVolume(grandchild, 2U);
-  EXPECT_NO_THROW(clipped.Validate());
+  EXPECT_THROW(clipped.Validate(), GGEMSRecoverable);
   EXPECT_EQ(clipped.GetVolumeCount(), 3U);
 
+  auto deepest = World();
+  daughter.SetPosition(MakePositionPM(0, 0, 0));
+  deepest.AddVolume(Box(40_mm, 40_mm, 40_mm))
+    .AddVolume(daughter, 1U)
+    .AddVolume(grandchild, 2U);
+  EXPECT_THROW(deepest.Validate(), GGEMSRecoverable);
+
+  auto rotated = World();
+  auto wide = Box(30_mm, 30_mm, 8_mm);
+  wide.SetRotation(0_deg, 0_deg, 45_deg);
+  rotated.AddVolume(Box(40_mm, 40_mm, 40_mm)).AddVolume(wide, 1U);
+  EXPECT_THROW(rotated.Validate(), GGEMSRecoverable);
+}
+
+TEST(GGEMSPhysicalHierarchy, RejectsSiblingInteriorOverlapInsideAMother) {
   auto overlap = World();
-  overlap.AddVolume(Box()).AddVolume(Box());
+  overlap.AddVolume(Box(80_mm, 60_mm, 60_mm))
+    .AddVolume(Box(), 1U)
+    .AddVolume(Box(), 1U);
   EXPECT_THROW(overlap.Validate(), GGEMSRecoverable);
+
+  auto mixed = World();
+  GGEMSSphere sphere;
+  sphere.SetRadius(10_mm).SetMaterial(BuildBuiltInMaterial("Aluminum"));
+  auto rotated = Box();
+  rotated.SetRotation(0_deg, 0_deg, 45_deg)
+    .SetPosition(MakePositionPM(5'000'000'000LL, 0, 0));
+  mixed.AddVolume(Box(80_mm, 60_mm, 60_mm))
+    .AddVolume(sphere, 1U)
+    .AddVolume(rotated, 1U);
+  EXPECT_THROW(mixed.Validate(), GGEMSRecoverable);
+}
+
+TEST(GGEMSPhysicalHierarchy,
+     RejectsHollowBoreIntrusionAndAdmitsContainedWalls) {
+  GGEMSPolyhedra mother;
+  std::array const z{
+    PositionCoordinate{-15'000'000'000LL},
+    PositionCoordinate{15'000'000'000LL},
+  };
+  std::array const inner{6_mm, 6_mm};
+  std::array const outer{12_mm, 12_mm};
+  mother.SetSideCount(4U)
+    .SetStartAngle(45_deg)
+    .SetZProfile(z, inner, outer)
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  auto crossed_bore = World();
+  crossed_bore.AddVolume(mother).AddVolume(Box(20_mm, 4_mm, 6_mm), 1U);
+  EXPECT_THROW(crossed_bore.Validate(), GGEMSRecoverable);
+
+  auto daughter = mother;
+  std::array const child_z{
+    PositionCoordinate{-10'000'000'000LL},
+    PositionCoordinate{10'000'000'000LL},
+  };
+  std::array const child_inner{8_mm, 8_mm};
+  std::array const child_outer{10_mm, 10_mm};
+  daughter.SetZProfile(child_z, child_inner, child_outer)
+    .SetMaterial(BuildBuiltInMaterial("Aluminum"));
+  auto contained = World();
+  contained.AddVolume(mother).AddVolume(daughter, 1U);
+  EXPECT_NO_THROW(contained.Validate());
+}
+
+TEST(GGEMSPhysicalHierarchy, AdmitsWorldContactAndRejectsRootProtrusion) {
+  auto root = Box(40_mm, 20_mm, 30_mm);
+  root.SetPosition(MakePositionPM(80'000'000'000LL, 0, 0));
+  auto contact = World();
+  contact.AddVolume(root);
+  EXPECT_NO_THROW(contact.Validate());
+
+  root.SetPosition(MakePositionPM(81'000'000'000LL, 0, 0));
+  auto protruding = World();
+  protruding.AddVolume(root);
+  EXPECT_THROW(protruding.Validate(), GGEMSRecoverable);
 }
