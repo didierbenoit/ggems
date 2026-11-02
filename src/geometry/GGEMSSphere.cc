@@ -65,6 +65,15 @@ auto GGEMSSphere::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSSphere::SetRotation(GGEMSRotation3D const &rotation)
+  -> GGEMSSphere & {
+  ValidateRotation3D(rotation);
+  rotation_ = rotation;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSSphere::GetRotation() const noexcept -> GGEMSRotation3D const & {
   return rotation_;
 }

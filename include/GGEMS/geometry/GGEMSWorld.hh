@@ -50,6 +50,7 @@
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -83,7 +84,11 @@ inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
  * authoring object do not reach the Run. Physical identities follow insertion
  * order, starting at one after World identity zero. Each added shape supplies
  * a pose relative to its already added parent; World is parent zero. The
- * maximum physical depth is three below World. Descendants must fit in their
+ * maximum physical depth is three below World. Detached solid values may own
+ * immutable child/repeater descriptions; attaching such a subtree requires a
+ * configured World and atomically admits its preorder physical expansion.
+ * Ordinary leaf AddVolume retains its deferred Validate() behavior.
+ * Descendants must fit in their
  * immediate parent's physical support and replace its medium there.
  * Sibling interiors must be disjoint; surface contact is permitted.
  * There is no automatic overlap correction. BuildAnalyticDeviceRecords()
@@ -148,13 +153,15 @@ public:
    *
    * Box, Sphere, Tubs, Ellipsoid, Trd, Trap, Cons and Polyhedra can be mixed;
    * a World without volumes remains valid. Direct-child World containment is
-   * checked by Validate(), so the World size may still be set afterwards. Later
-   * edits of the caller's Box do not reach the owned copy.
+   * checked by Validate() for a leaf, so World size may be set afterwards.
+   * A captured subtree requires configured World size and Material and passes
+   * complete scene admission atomically. Later source edits do not reach it.
    *
    * \param[in] box Complete Box authoring value copied into the World.
    * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
-   * The copied pose is relative to that parent; its newly assigned VolumeID
-   * is GetVolumeCount() after this call.
+   * The copied pose is relative to that parent. The root VolumeID is the
+   * previous GetVolumeCount() + 1; descendants follow in preorder. A subtree
+   * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the Box is incomplete.
    * Also rejects an absent parent, physical depth above three, or exhausted
@@ -167,8 +174,9 @@ public:
    * \brief Copies one complete Sphere into the World.
    * \param[in] sphere Complete Sphere, independent of the caller after copying.
    * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
-   * The copied pose is relative to that parent; its newly assigned VolumeID
-   * is GetVolumeCount() after this call.
+   * The copied pose is relative to that parent. The root VolumeID is the
+   * previous GetVolumeCount() + 1; descendants follow in preorder. A subtree
+   * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Sphere is incomplete.
    * Also rejects an absent parent, physical depth above three, or exhausted
@@ -181,8 +189,9 @@ public:
    * \brief Copies one complete Tubs into the World.
    * \param[in] tubs Complete tube, independent of the caller after copying.
    * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
-   * The copied pose is relative to that parent; its newly assigned VolumeID
-   * is GetVolumeCount() after this call.
+   * The copied pose is relative to that parent. The root VolumeID is the
+   * previous GetVolumeCount() + 1; descendants follow in preorder. A subtree
+   * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the tube is incomplete.
    * Also rejects an absent parent, physical depth above three, or exhausted
@@ -195,8 +204,9 @@ public:
    * \brief Copies one complete Ellipsoid into the World.
    * \param[in] ellipsoid Complete ellipsoid, copied into the World.
    * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
-   * The copied pose is relative to that parent; its newly assigned VolumeID
-   * is GetVolumeCount() after this call.
+   * The copied pose is relative to that parent. The root VolumeID is the
+   * previous GetVolumeCount() + 1; descendants follow in preorder. A subtree
+   * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the ellipsoid is incomplete.
    * Also rejects an absent parent, physical depth above three, or exhausted
@@ -209,8 +219,9 @@ public:
    * \brief Copies one complete Trd into the World.
    * \param[in] trd Complete solid, copied independently of the caller.
    * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
-   * The copied pose is relative to that parent; its newly assigned VolumeID
-   * is GetVolumeCount() after this call.
+   * The copied pose is relative to that parent. The root VolumeID is the
+   * previous GetVolumeCount() + 1; descendants follow in preorder. A subtree
+   * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the solid is incomplete.
    * Also rejects an absent parent, physical depth above three, or exhausted
@@ -223,8 +234,9 @@ public:
    * \brief Copies one complete planar Trap into the World.
    * \param[in] trap Complete solid, copied independently of the caller.
    * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
-   * The copied pose is relative to that parent; its newly assigned VolumeID
-   * is GetVolumeCount() after this call.
+   * The copied pose is relative to that parent. The root VolumeID is the
+   * previous GetVolumeCount() + 1; descendants follow in preorder. A subtree
+   * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Trap admission fails.
    * Also rejects an absent parent, physical depth above three, or exhausted
@@ -237,8 +249,9 @@ public:
    * \brief Copies one complete full-azimuth Cons into this World.
    * \param[in] cons Complete frustum, independent of the caller after copying.
    * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
-   * The copied pose is relative to that parent; its newly assigned VolumeID
-   * is GetVolumeCount() after this call.
+   * The copied pose is relative to that parent. The root VolumeID is the
+   * previous GetVolumeCount() + 1; descendants follow in preorder. A subtree
+   * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Cons admission fails.
    * Also rejects an absent parent, physical depth above three, or exhausted
@@ -251,8 +264,9 @@ public:
    * \brief Copies one complete continuous-profile Polyhedra into this World.
    * \param[in] polyhedra Complete polygonal profile, copied into the World.
    * \param[in] parent_volume_id Existing parent VolumeID, or zero for World.
-   * The copied pose is relative to that parent; its newly assigned VolumeID
-   * is GetVolumeCount() after this call.
+   * The copied pose is relative to that parent. The root VolumeID is the
+   * previous GetVolumeCount() + 1; descendants follow in preorder. A subtree
+   * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If profile admission fails.
    * Also rejects an absent parent, physical depth above three, or exhausted
@@ -260,6 +274,72 @@ public:
    */
   auto AddVolume(GGEMSPolyhedra polyhedra, std::uint32_t parent_volume_id = 0U)
     -> GGEMSWorld &;
+
+  /*!
+   * \brief Atomically attaches a complete independently captured subtree.
+   *
+   * The World size and Material must already be configured. The complete
+   * staged scene passes existing CPU admission before any occurrence changes.
+   * Children were captured when authored; this call captures the root's final
+   * pose. Later edits of any source value cannot change this World.
+   * \tparam Child One of the eight analytical authoring types.
+   * \param[in] volume Root value and its immutable child descriptions.
+   * \param[in] parent_volume_id Existing physical parent, or zero for World.
+   * \return This World for chained configuration.
+   * \throws core::GGEMSRecoverable If configuration, depth, capacity, or
+   * complete scene admission fails. The original World is retained.
+   */
+  template <class Child>
+  auto AttachVolume(Child const &volume, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld & {
+    return AttachBatch(Volume{volume}, 1U, units::Length{0}, GGEMSRepeatAxis::X,
+                       false, parent_volume_id);
+  }
+
+  /*!
+   * \brief Atomically expands a mother-local linear subtree repeater.
+   * \tparam Child One of the eight analytical authoring types.
+   * \param[in] volume Captured reference root; its pose defines occurrence
+   * zero.
+   * \param[in] count Total positive number of copies, including index zero.
+   * \param[in] pitch Center-to-center length, positive when count exceeds one.
+   * \param[in] axis Positive X, Y, or Z in the selected parent's local frame.
+   * \param[in] parent_volume_id Existing physical parent, or zero for World.
+   * \return This World for chained configuration.
+   * \throws core::GGEMSRecoverable If inputs, placements, capacity, or staged
+   * geometry admission fail. A configured World is required; no partial batch
+   * is retained. Runtime Navigation uses ordinary physical occurrences.
+   */
+  template <class Child>
+  auto LinearRepeater(Child const &volume, std::uint32_t count,
+                      units::Length pitch, GGEMSRepeatAxis axis,
+                      std::uint32_t parent_volume_id = 0U) -> GGEMSWorld & {
+    return AttachBatch(Volume{volume}, count, pitch, axis, false,
+                       parent_volume_id);
+  }
+
+  /*!
+   * \brief Atomically expands a full-turn mother-local circular repeater.
+   * \tparam Child One of the eight analytical authoring types.
+   * \param[in] volume Reference pose and independently captured descendants.
+   * \param[in] count Total positive number of copies, without a final
+   * duplicate.
+   * \param[in] axis Positive axis through the parent's local origin.
+   * \param[in] parent_volume_id Existing physical parent, or zero for World.
+   * \return This World for chained configuration.
+   * \throws core::GGEMSRecoverable If inputs, zero-radius multi-copy placement,
+   * depth, capacity, or staged admission fail. A configured World is required.
+   * \note Position and orientation both rotate by 2*pi*i/count. Expansion is
+   * host preparation; device navigation and its linear child scans are
+   * unchanged.
+   */
+  template <class Child>
+  auto CircularRepeater(Child const &volume, std::uint32_t count,
+                        GGEMSRepeatAxis axis,
+                        std::uint32_t parent_volume_id = 0U) -> GGEMSWorld & {
+    return AttachBatch(Volume{volume}, count, units::Length{0}, axis, true,
+                       parent_volume_id);
+  }
 
   /*!
    * \brief Packs one occurrence pose and its immutable shape data.
@@ -293,7 +373,7 @@ public:
 
   /*!
    * \brief Counts all owned physical occurrences at every hierarchy depth.
-   * \return Number of AddVolume snapshots, excluding the World itself; zero
+   * \return Number of expanded physical occurrences, excluding World; zero
    * before any volume is added. Valid occurrence indices are smaller than this
    * count, and their physical VolumeIDs are index + 1.
    */
@@ -480,6 +560,34 @@ private:
    */
   auto AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
     -> GGEMSWorld &;
+
+  /*!
+   * \brief Plans and admits an entire finite subtree batch before committing
+   * it.
+   * \param[in] volume Captured local root with immutable child descriptions.
+   * \param[in] count Number of repeated roots, including the reference.
+   * \param[in] pitch Linear center spacing in canonical pm; ignored for
+   * circular.
+   * \param[in] axis Positive parent-local repeat axis.
+   * \param[in] circular Selects rigid full-turn rotation instead of
+   * translation.
+   * \param[in] parent_volume_id Existing physical parent identity.
+   * \return This World after successful atomic attachment.
+   * \throws core::GGEMSRecoverable If preparation or complete admission fails.
+   */
+  auto AttachBatch(Volume volume, std::uint32_t count, units::Length pitch,
+                   GGEMSRepeatAxis axis, bool circular,
+                   std::uint32_t parent_volume_id) -> GGEMSWorld &;
+
+  /*!
+   * \brief Checks expanded device byte and crossing bounds before allocation.
+   * \param[in] recipe Admitted finite recipe appended to existing occurrences.
+   * \param[in] total Checked combined physical occurrence count.
+   * \throws core::GGEMSRecoverable If device offsets or crossing bounds exceed
+   * their existing 32-bit domains.
+   */
+  auto ValidateBatchCapacity(detail::GGEMSVolumeRecipe const &recipe,
+                             std::size_t total) const -> void;
 
   /*!
    * \brief Counts the parent chain from an occurrence to World.

@@ -33,6 +33,7 @@
 #include <cstring>
 #include <numbers>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <cstddef>
 #include <cstdint>
@@ -54,6 +55,8 @@
 #include "GGEMS/geometry/GGEMSTrd.hh"
 #include "GGEMS/geometry/GGEMSTrap.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
+#include "GGEMS/geometry/detail/GGEMSVolumeRecipe.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
 #include "GGEMS/geometry/GGEMSPolyhedraRecord.hh"
@@ -69,11 +72,143 @@
 #include "GGEMS/geometry/detail/GGEMSGeometrySize.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 
 using ggems::geometry::CoordinatePM;
 using ggems::geometry::DistancePM;
+
+/*!
+ * \brief Compares immutable polygon coefficients used for shared packing.
+ * \param[in] left First polygon definition.
+ * \param[in] right Second polygon definition.
+ * \return True when the existing side/section packing can be shared.
+ */
+auto SamePolyhedraProfile(ggems::geometry::GGEMSPolyhedra const &left,
+                          ggems::geometry::GGEMSPolyhedra const &right)
+  -> bool {
+  return left.GetSideCount() == right.GetSideCount() &&
+         left.GetStartAngle().value == right.GetStartAngle().value &&
+         std::ranges::equal(
+           left.GetZProfilePM(), right.GetZProfilePM(),
+           [](auto const &left_section, auto const &right_section) -> bool {
+             return left_section.z_pm == right_section.z_pm &&
+                    left_section.inner_radius_pm ==
+                      right_section.inner_radius_pm &&
+                    left_section.outer_radius_pm ==
+                      right_section.outer_radius_pm;
+           });
+}
+
+/*!
+ * \brief Returns the existing conservative crossing bound of one solid.
+ * \tparam Shape One of the eight analytical solid types.
+ * \param[in] shape Complete solid definition.
+ * \return Maximum material crossings of a straight ray through the solid.
+ */
+template <class Shape>
+auto ShapeBoundaryEvents(Shape const &shape) -> std::uint64_t {
+  using namespace ggems::geometry;
+
+  if constexpr (std::is_same_v<Shape, GGEMSPolyhedra>) {
+    return 4ULL * static_cast<std::uint64_t>(shape.GetZProfilePM().size() - 1U);
+  } else if constexpr (std::is_same_v<Shape, GGEMSCons>) {
+    return 4ULL;
+  } else if constexpr (std::is_same_v<Shape, GGEMSTubs>) {
+    return shape.GetInnerRadiusPM() > 0ULL ? 4ULL : 2ULL;
+  } else {
+    return 2ULL;
+  }
+}
+
+/*!
+ * \brief Prepares one canonical parent-local repeater placement on the host.
+ * \param[in] recipe Captured immutable subtree and admitted placement inputs.
+ * \param[in] index Zero-based copy index, smaller than recipe.count.
+ * \return A value with translated or rigidly rotated reference pose.
+ * \throws ggems::core::GGEMSRecoverable If a rotated position is not
+ * representable in canonical signed picometers or its rotation is invalid.
+ */
+auto PlaceRecipeVolume(ggems::geometry::detail::GGEMSVolumeRecipe const &recipe,
+                       std::uint32_t index)
+  -> ggems::geometry::detail::GGEMSAuthoredVolume::Volume {
+  using namespace ggems::geometry;
+  auto placed = recipe.child->volume;
+
+  if (index == 0U) {
+    return placed;
+  }
+
+  std::visit(
+    [&](auto &shape) -> void {
+      auto const position = shape.GetPositionPM();
+
+      if (recipe.kind == detail::GGEMSRepeatKind::Linear) {
+        shape.SetPosition(
+          detail::LinearPosition(position, index, recipe.pitch, recipe.axis));
+        return;
+      }
+
+      auto const angle = ggems::units::MakeRadians(
+        2.0L * std::numbers::pi_v<long double> * index / recipe.count);
+      ggems::units::Angle const zero{0};
+
+      auto const turn =
+        BuildRotationXYZ(recipe.axis == GGEMSRepeatAxis::X ? angle : zero,
+                         recipe.axis == GGEMSRepeatAxis::Y ? angle : zero,
+                         recipe.axis == GGEMSRepeatAxis::Z ? angle : zero);
+
+      auto const rotate =
+        [&turn](
+          detail::NormalizedVector3D vector) -> detail::NormalizedVector3D {
+        return {
+          .x = (turn.axis_x.x * vector.x) + (turn.axis_y.x * vector.y) +
+               (turn.axis_z.x * vector.z),
+          .y = (turn.axis_x.y * vector.x) + (turn.axis_y.y * vector.y) +
+               (turn.axis_z.y * vector.z),
+          .z = (turn.axis_x.z * vector.x) + (turn.axis_y.z * vector.y) +
+               (turn.axis_z.z * vector.z),
+        };
+      };
+
+      auto const center = rotate({
+        .x = static_cast<double>(position.x),
+        .y = static_cast<double>(position.y),
+        .z = static_cast<double>(position.z),
+      });
+
+      auto const coordinate = [](double value) -> CoordinatePM {
+        auto const converted =
+          ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(value,
+                                                                       "pm");
+        if (!converted) {
+          throw ggems::core::GGEMSRecoverable(
+            "Circular repeater position exceeds the signed picometer domain.");
+        }
+
+        return converted->value;
+      };
+
+      auto const &reference = shape.GetRotation();
+
+      GGEMSRotation3D const rotation{
+        .axis_x = rotate(reference.axis_x),
+        .axis_y = rotate(reference.axis_y),
+        .axis_z = rotate(reference.axis_z),
+      };
+
+      shape.SetPosition(MakePositionPM(
+        recipe.axis == GGEMSRepeatAxis::X ? position.x : coordinate(center.x),
+        recipe.axis == GGEMSRepeatAxis::Y ? position.y : coordinate(center.y),
+        recipe.axis == GGEMSRepeatAxis::Z ? position.z : coordinate(center.z)));
+      shape.SetRotation(rotation);
+    },
+    placed);
+
+  return placed;
+}
 
 /*! \brief Immutable FP32 surface envelope used only during host admission. */
 struct SurfaceScale {
@@ -1097,20 +1232,188 @@ auto GGEMSWorld::AddVolume(GGEMSPolyhedra polyhedra,
 
 auto GGEMSWorld::AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
   -> GGEMSWorld & {
+  if (std::visit([](auto const &shape)
+                   -> bool { return shape.GetDescendantCount() != 0U; },
+                 volume)) {
+    return AttachBatch(std::move(volume), 1U, units::Length{0},
+                       GGEMSRepeatAxis::X, false, parent_volume_id);
+  }
+
   if (parent_volume_id > volumes_.size()) {
     throw core::GGEMSRecoverable(
       "Physical parent must already exist in this World.");
   }
+
   if (GetOccurrenceDepth(parent_volume_id) >= 3U) {
     throw core::GGEMSRecoverable(
       "Physical hierarchy depth cannot exceed three below World.");
   }
+
   if (volumes_.size() >= std::numeric_limits<std::uint32_t>::max() - 1U) {
     throw core::GGEMSRecoverable("Physical VolumeID domain is exhausted.");
   }
+
   std::visit([](auto const &shape) -> void { shape.Validate(); }, volume);
+
   volumes_.push_back(
     {.volume = std::move(volume), .parent_volume_id = parent_volume_id});
+
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::ValidateBatchCapacity(detail::GGEMSVolumeRecipe const &recipe,
+                                       std::size_t total) const -> void {
+  auto constexpr limit = std::numeric_limits<std::uint32_t>::max();
+
+  // Count descriptor, pose, shared-profile and crossing requirements without
+  // materializing repeated occurrences. All limits are existing record limits.
+  std::uint64_t bytes =
+    total > 1U ? total * sizeof(GGEMSAnalyticOccurrenceRecord) : 0U;
+
+  std::uint64_t crossings = 1U;
+
+  std::vector<GGEMSPolyhedra const *> profiles;
+
+  auto const account = [&](auto const &shape,
+                           std::uint64_t multiplicity) -> void {
+    using Shape = std::decay_t<decltype(shape)>;
+
+    if constexpr (!std::is_same_v<Shape, GGEMSSphere>) {
+      bytes += multiplicity * sizeof(GGEMSBoxPoseRecord);
+    }
+
+    auto const boundary_count = ShapeBoundaryEvents(shape);
+
+    if (boundary_count > (limit - crossings) / multiplicity) {
+      throw core::GGEMSRecoverable(
+        "Expanded crossing bound exceeds the device domain.");
+    }
+
+    crossings += multiplicity * boundary_count;
+
+    if constexpr (std::is_same_v<Shape, GGEMSPolyhedra>) {
+      if (std::ranges::none_of(profiles, [&](auto const *known) -> bool {
+            return SamePolyhedraProfile(shape, *known);
+          })) {
+        bytes += static_cast<std::uint64_t>(shape.GetSideCount()) *
+                   sizeof(GGEMSPolyhedraSideRecord) +
+                 (shape.GetZProfilePM().size() - 1U) *
+                   sizeof(GGEMSPolyhedraSectionRecord);
+        profiles.push_back(&shape);
+      }
+    }
+
+    if (bytes > limit) {
+      throw core::GGEMSRecoverable(
+        "Expanded auxiliary data exceeds the 32-bit byte-offset domain.");
+    }
+  };
+
+  for (auto const &existing : volumes_) {
+    std::visit([&](auto const &shape) -> void { account(shape, 1U); },
+               existing.volume);
+  }
+
+  auto const plan = [&](auto const &self, detail::GGEMSVolumeRecipe const &item,
+                        std::uint64_t multiplicity) -> void {
+    multiplicity *= item.count;
+    std::visit(
+      [&](auto const &shape) -> void {
+        account(shape, multiplicity);
+        for (auto const &child : shape.GetChildRecipes()) {
+          self(self, child, multiplicity);
+        }
+      },
+      item.child->volume);
+  };
+
+  plan(plan, recipe, 1U);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AttachBatch(Volume volume, std::uint32_t count,
+                             units::Length pitch, GGEMSRepeatAxis axis,
+                             bool circular, std::uint32_t parent_volume_id)
+  -> GGEMSWorld & {
+  if (half_extent_pm_.x == 0ULL || !material_) {
+    throw core::GGEMSRecoverable("Configure World size and material before "
+                                 "attaching a subtree or repeater.");
+  }
+
+  if (parent_volume_id > volumes_.size()) {
+    throw core::GGEMSRecoverable(
+      "Physical parent must already exist in this World.");
+  }
+
+  detail::GGEMSVolumeRecipe const recipe{
+    .child = std::make_shared<detail::GGEMSAuthoredVolume const>(
+      detail::GGEMSAuthoredVolume{.volume = std::move(volume)}),
+    .kind = circular ? detail::GGEMSRepeatKind::Circular
+                     : detail::GGEMSRepeatKind::Linear,
+    .count = count,
+    .pitch = pitch,
+    .axis = axis,
+  };
+
+  detail::ValidateRecipe(recipe);
+
+  auto const depth = std::visit(
+    [](auto const &shape) -> std::uint32_t {
+      return 1U + shape.GetDescendantDepth();
+    },
+    recipe.child->volume);
+
+  if (GetOccurrenceDepth(parent_volume_id) + depth > 3U) {
+    throw core::GGEMSRecoverable(
+      "Physical hierarchy depth cannot exceed three below World.");
+  }
+
+  auto const additional = detail::RecipeOccurrenceCount(recipe);
+
+  auto constexpr limit = std::numeric_limits<std::uint32_t>::max();
+
+  if (additional > limit - 1U - volumes_.size()) {
+    throw core::GGEMSRecoverable("Physical VolumeID domain is exhausted.");
+  }
+
+  auto const total = volumes_.size() + additional;
+
+  if (total > volumes_.max_size()) {
+    throw core::GGEMSRecoverable(
+      "Expanded occurrences exceed host address capacity.");
+  }
+
+  ValidateBatchCapacity(recipe, total);
+
+  auto candidate = *this;
+  candidate.volumes_.reserve(total);
+  auto const expand = [&](auto const &self,
+                          detail::GGEMSVolumeRecipe const &item,
+                          std::uint32_t parent) -> void {
+    for (std::uint32_t index = 0U; index < item.count; ++index) {
+      auto placed = PlaceRecipeVolume(item, index);
+      std::visit([](auto &shape) -> void { shape.ClearChildRecipes(); },
+                 placed);
+      candidate.AddOccurrence(std::move(placed), parent);
+      auto const root_id =
+        static_cast<std::uint32_t>(candidate.volumes_.size());
+      std::visit(
+        [&](auto const &shape) -> void {
+          for (auto const &child : shape.GetChildRecipes()) {
+            self(self, child, root_id);
+          }
+        },
+        item.child->volume);
+    }
+  };
+
+  expand(expand, recipe, parent_volume_id);
+  candidate.Validate();
+  volumes_.swap(candidate.volumes_);
+
   return *this;
 }
 
@@ -1562,6 +1865,7 @@ auto GGEMSWorld::BuildBoxPoseRecord(std::size_t index) const
       std::holds_alternative<GGEMSSphere>(volumes_[index].volume)) {
     return std::nullopt;
   }
+
   return BuildOccurrencePose(index);
 }
 
@@ -1607,17 +1911,7 @@ auto GGEMSWorld::CountBoundaryEvents() const noexcept -> std::uint64_t {
   for (auto const &volume : volumes_) {
     auto const crossings = std::visit(
       [](auto const &shape) -> std::uint64_t {
-        using Shape = std::decay_t<decltype(shape)>;
-        if constexpr (std::is_same_v<Shape, GGEMSPolyhedra>) {
-          return 4ULL *
-                 static_cast<std::uint64_t>(shape.GetZProfilePM().size() - 1U);
-        } else if constexpr (std::is_same_v<Shape, GGEMSCons>) {
-          return 4ULL;
-        } else if constexpr (std::is_same_v<Shape, GGEMSTubs>) {
-          return shape.GetInnerRadiusPM() > 0ULL ? 4ULL : 2ULL;
-        } else {
-          return 2ULL;
-        }
+        return ShapeBoundaryEvents(shape);
       },
       volume.volume);
 
@@ -1696,17 +1990,7 @@ auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
     for (auto const source : layout.profile_sources) {
       auto const &candidate = std::get<GGEMSPolyhedra>(volumes_[source].volume);
 
-      if (shape->GetSideCount() == candidate.GetSideCount() &&
-          shape->GetStartAngle().value == candidate.GetStartAngle().value &&
-          std::ranges::equal(shape->GetZProfilePM(), candidate.GetZProfilePM(),
-                             [](GGEMSPolyhedraProfile const &left,
-                                GGEMSPolyhedraProfile const &right) -> bool {
-                               return left.z_pm == right.z_pm &&
-                                      left.inner_radius_pm ==
-                                        right.inner_radius_pm &&
-                                      left.outer_radius_pm ==
-                                        right.outer_radius_pm;
-                             })) {
+      if (SamePolyhedraProfile(*shape, candidate)) {
         layout.profile_offsets[index] = layout.profile_offsets[source];
         break;
       }

@@ -35,6 +35,7 @@
 #include <span>
 #include <vector>
 
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -80,7 +81,7 @@ struct GGEMSPolyhedraProfile {
  * coordinates and fixed rotation axes belong to the parent selected by
  * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
-class GGEMSPolyhedra {
+class GGEMSPolyhedra : public GGEMSVolumeAuthoring {
 public:
   /*! \brief Creates an unconfigured solid with an identity pose. */
   GGEMSPolyhedra() = default;
@@ -134,6 +135,15 @@ public:
    */
   auto SetRotation(units::Angle angle_x, units::Angle angle_y,
                    units::Angle angle_z) -> GGEMSPolyhedra &;
+
+  /*!
+   * \brief Assigns a proper local-to-parent rotation basis directly.
+   * \param[in] rotation Finite right-handed orthonormal basis.
+   * \return This Polyhedra for chained configuration.
+   * \throws core::GGEMSRecoverable If the basis fails existing host rotation
+   * admission; the previous rotation remains unchanged.
+   */
+  auto SetRotation(GGEMSRotation3D const &rotation) -> GGEMSPolyhedra &;
 
   /*!
    * \brief Sets the one owned medium for the entire profile.

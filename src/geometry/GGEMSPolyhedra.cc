@@ -126,6 +126,15 @@ auto GGEMSPolyhedra::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSPolyhedra::SetRotation(GGEMSRotation3D const &rotation)
+  -> GGEMSPolyhedra & {
+  ValidateRotation3D(rotation);
+  rotation_ = rotation;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSPolyhedra::SetMaterial(core::materials::GGEMSMaterial material)
   -> GGEMSPolyhedra & {
   material_ = std::move(material);

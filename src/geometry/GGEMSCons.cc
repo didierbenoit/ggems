@@ -63,6 +63,8 @@ auto RequireRadii(ggems::units::Length inner, ggems::units::Length outer)
 
 namespace ggems::geometry {
 
+// -----------------------------------------------------------------------------
+
 auto GGEMSCons::SetNegativeZRadii(units::Length inner_radius,
                                   units::Length outer_radius) -> GGEMSCons & {
   RequireRadii(inner_radius, outer_radius);
@@ -72,6 +74,7 @@ auto GGEMSCons::SetNegativeZRadii(units::Length inner_radius,
   return *this;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::SetPositiveZRadii(units::Length inner_radius,
                                   units::Length outer_radius) -> GGEMSCons & {
   RequireRadii(inner_radius, outer_radius);
@@ -81,28 +84,41 @@ auto GGEMSCons::SetPositiveZRadii(units::Length inner_radius,
   return *this;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::SetLength(units::Length length) -> GGEMSCons & {
   half_length_pm_ = detail::RequireEvenHalfExtentPM(length, "Cons", "Z");
   return *this;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::SetPosition(Position3PM center) noexcept -> GGEMSCons & {
   center_pm_ = center;
   return *this;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::SetRotation(units::Angle angle_x, units::Angle angle_y,
                             units::Angle angle_z) -> GGEMSCons & {
   rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
   return *this;
 }
 
+// -----------------------------------------------------------------------------
+
+auto GGEMSCons::SetRotation(GGEMSRotation3D const &rotation) -> GGEMSCons & {
+  ValidateRotation3D(rotation);
+  rotation_ = rotation;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
 auto GGEMSCons::SetMaterial(core::materials::GGEMSMaterial material)
   -> GGEMSCons & {
   material_ = std::move(material);
   return *this;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::Validate() const -> void {
   if (!negative_z_set_ || !positive_z_set_ || half_length_pm_ == 0ULL ||
       (negative_z_outer_radius_pm_ == 0ULL &&
@@ -122,34 +138,42 @@ auto GGEMSCons::Validate() const -> void {
   }
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::GetNegativeZOuterRadiusPM() const noexcept -> DistancePM {
   return negative_z_outer_radius_pm_;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::GetPositiveZOuterRadiusPM() const noexcept -> DistancePM {
   return positive_z_outer_radius_pm_;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::GetNegativeZInnerRadiusPM() const noexcept -> DistancePM {
   return negative_z_inner_radius_pm_;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::GetPositiveZInnerRadiusPM() const noexcept -> DistancePM {
   return positive_z_inner_radius_pm_;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::GetHalfLengthPM() const noexcept -> DistancePM {
   return half_length_pm_;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::GetPositionPM() const noexcept -> Position3PM {
   return center_pm_;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::GetRotation() const noexcept -> GGEMSRotation3D const & {
   return rotation_;
 }
 
+// -----------------------------------------------------------------------------
 auto GGEMSCons::GetMaterial() const -> core::materials::GGEMSMaterial const & {
   if (!material_) {
     throw core::GGEMSRecoverable("Cons material is not set.");

@@ -37,6 +37,7 @@
 #include <format>
 #include <limits>
 #include <memory>
+#include <numbers>
 #include <span>
 #include <string>
 #include <vector>
@@ -50,6 +51,7 @@
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSPolyhedra.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -593,5 +595,141 @@ TEST_F(GGEMSNavigationDeviceTest,
         8 * band);
       EXPECT_EQ(records[0].global_primary_id, records[1].global_primary_id);
     }
+  }
+}
+
+// Expanded authored recipes traverse the production physical-boundary path;
+// the independent intervals retain every owner, even across equal materials.
+TEST_F(GGEMSNavigationDeviceTest,
+       DetachedRepeatersPreserveEveryFirstPhysicalBoundary) {
+  std::vector<Scene> scenes;
+  auto gap_world = World();
+  auto gap_mother = Box(60_mm, 40_mm, 40_mm);
+  gap_mother.LinearRepeater(Box(2_mm, 6_mm, 8_mm, {-10, 0, 0}), 3U, 4_mm,
+                            geometry::GGEMSRepeatAxis::X);
+  gap_world.AddVolume(gap_mother);
+  scenes.push_back({
+    .name = "N2.3 linear gaps retain the mother between equal-material copies",
+    .world = gap_world,
+    .crossings =
+      {
+        {.parameter_mm = 30, .arrival = 1, .event = 2},
+        {.parameter_mm = 49, .arrival = 2, .event = 2},
+        {.parameter_mm = 51, .arrival = 1, .event = 3},
+        {.parameter_mm = 53, .arrival = 3, .event = 2},
+        {.parameter_mm = 55, .arrival = 1, .event = 3},
+        {.parameter_mm = 57, .arrival = 4, .event = 2},
+        {.parameter_mm = 59, .arrival = 1, .event = 3},
+        {.parameter_mm = 90, .arrival = 0, .event = 3},
+      },
+  });
+
+  auto contact_world = World();
+  auto contact_mother = Box(60_mm, 40_mm, 40_mm);
+  contact_mother.LinearRepeater(Box(2_mm, 6_mm, 8_mm, {-4, 0, 0}), 3U, 2_mm,
+                                geometry::GGEMSRepeatAxis::X);
+  contact_world.AddVolume(contact_mother);
+  scenes.push_back({
+    .name = "N2.3 face contact preserves three distinct equal-material IDs",
+    .world = contact_world,
+    .crossings =
+      {
+        {.parameter_mm = 30, .arrival = 1, .event = 2},
+        {.parameter_mm = 55, .arrival = 2, .event = 2},
+        {.parameter_mm = 57, .arrival = 3, .event = 3},
+        {.parameter_mm = 59, .arrival = 4, .event = 3},
+        {.parameter_mm = 61, .arrival = 1, .event = 3},
+        {.parameter_mm = 90, .arrival = 0, .event = 3},
+      },
+  });
+
+  auto nested_world = World();
+  auto scanner = Box(100_mm, 60_mm, 40_mm);
+  auto module = Box(12_mm, 14_mm, 16_mm, {-20, 0, 0}, "Aluminum");
+  module.AddVolume(Box(4_mm, 6_mm, 8_mm, {2, 0, 0}, "Air"));
+  scanner.LinearRepeater(module, 2U, 40_mm, geometry::GGEMSRepeatAxis::X);
+  nested_world.AddVolume(scanner);
+  scenes.push_back({
+    .name = "N2.3 repeated descendants restore their own physical parents",
+    .world = nested_world,
+    .crossings =
+      {
+        {.parameter_mm = 10, .arrival = 1, .event = 2},
+        {.parameter_mm = 34, .arrival = 2, .event = 2},
+        {.parameter_mm = 40, .arrival = 3, .event = 2},
+        {.parameter_mm = 44, .arrival = 2, .event = 3},
+        {.parameter_mm = 46, .arrival = 1, .event = 3},
+        {.parameter_mm = 74, .arrival = 4, .event = 2},
+        {.parameter_mm = 80, .arrival = 5, .event = 2},
+        {.parameter_mm = 84, .arrival = 4, .event = 3},
+        {.parameter_mm = 86, .arrival = 1, .event = 3},
+        {.parameter_mm = 110, .arrival = 0, .event = 3},
+      },
+  });
+
+  auto mixed_world = World();
+  auto mixed_mother = Box(80_mm, 60_mm, 60_mm);
+  mixed_mother
+    .LinearRepeater(Box(4_mm, 6_mm, 8_mm, {10, 0, 0}), 2U, 8_mm,
+                    geometry::GGEMSRepeatAxis::X)
+    .AddVolume(Box(4_mm, 6_mm, 8_mm, {-20, 0, 0}, "Aluminum"));
+  mixed_world.AddVolume(mixed_mother);
+  scenes.push_back({
+    .name = "N2.3 later ordinary sibling wins the actual nearest boundary",
+    .world = mixed_world,
+    .crossings =
+      {
+        {.parameter_mm = 20, .arrival = 1, .event = 2},
+        {.parameter_mm = 38, .arrival = 4, .event = 2},
+        {.parameter_mm = 42, .arrival = 1, .event = 3},
+        {.parameter_mm = 68, .arrival = 2, .event = 2},
+        {.parameter_mm = 72, .arrival = 1, .event = 3},
+        {.parameter_mm = 76, .arrival = 3, .event = 2},
+        {.parameter_mm = 80, .arrival = 1, .event = 3},
+        {.parameter_mm = 100, .arrival = 0, .event = 3},
+      },
+  });
+
+  auto circular_world = World();
+  auto circular_mother = Box(100_mm, 100_mm, 100_mm);
+  circular_mother.CircularRepeater(Box(4_mm, 8_mm, 6_mm, {20, 0, 0}), 7U,
+                                   geometry::GGEMSRepeatAxis::Z);
+  circular_world.AddVolume(circular_mother);
+  auto const angle = 4.0 * std::numbers::pi / 7.0;
+  Vec const radial{
+    static_cast<float>(std::cos(angle)),
+    static_cast<float>(std::sin(angle)),
+    0.0,
+  };
+  auto const mother_exit =
+    50.0 / std::max(std::abs(radial[0]), std::abs(radial[1]));
+  scenes.push_back({
+    .name = "N2.3 seven-copy ring rotates the off-axis radial Box chord",
+    .world = circular_world,
+    .start = {0, 0, 0},
+    .direction = radial,
+    .crossings =
+      {
+        {.parameter_mm = 18, .arrival = 4, .event = 2},
+        {.parameter_mm = 22, .arrival = 1, .event = 3},
+        {.parameter_mm = mother_exit, .arrival = 0, .event = 3},
+      },
+    .initial_owner = 1U,
+  });
+
+  std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
+  auto const instrumented = test::InstrumentStream(root);
+  auto &context = ggems::test::GetSelectedOpenCLContext();
+  SCOPED_TRACE(context.GetDevice().GetName());
+  random::GGEMSRandom random;
+  random.SetEngine("philox").SetSeed(91231U);
+  auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
+    context, root / "transport", "particle_stream_transport",
+    std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
+                root.generic_string(), random.GetKernelBuildDefinition()));
+  auto const &program =
+    test::GetAnalyticTraceProgram(instrumented, production.GetBuildOptions());
+  for (auto const &scene : scenes) {
+    CheckScene(context, program, random, scene);
   }
 }

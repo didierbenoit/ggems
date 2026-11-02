@@ -32,136 +32,213 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <type_traits>
 
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
 
 namespace ggems::python::detail {
 
 /*!
- * \brief Keeps weak registrations for natural geometry binding methods.
+ * \brief Routes detached authoring and unique top-down World attachments.
  *
- * One instance is shared by the geometry bindings. World still copies each
- * complete shape immediately; later scientific setters do not update that
- * copy. A registered mother can append daughters to its original World, while
- * GGEMSRun::SetWorld retains its independent value-copy boundary. No scientific
- * objects are retained by this registry. Expired records are reclaimed on root
- * attachment or when the binding methods release the registry.
+ * Detached solids own immutable child recipes in C++; this registry owns no
+ * scientific objects. Each explicit ordinary attachment registers only its
+ * subtree root for subsequent top-down additions to the original live World.
+ * Captured descendants and repeater sources never acquire a World alias.
+ * Later source setters do not change any captured occurrence.
+ * GGEMSRun::SetWorld retains its independent completed-scene copy.
  *
- * \pre Calls are serialized (the binding methods hold the GIL). Registered
- * World pointees must not be replaced, moved from, or assigned over. The bound
- * Python API exposes none of those operations; this private helper is not a
- * general C++ attachment API. Each bound object has its own shared holder.
+ * \pre Calls hold the Python GIL. Registered World pointees must not be
+ * replaced, moved from, or assigned over; the bound API exposes none of these
+ * operations. Each bound object has its own shared holder.
  */
 class GGEMSGeometryAttachments {
 public:
   /*!
-   * \brief Copies and registers one direct World child.
+   * \brief Captures one child subtree under a detached or attached parent.
+   * \tparam Parent Bound World or one of the eight analytical mother types.
    * \tparam Child One of the eight existing analytical shape types.
-   * \param[in] world Bound World receiving the copied occurrence.
-   * \param[in] child Bound complete shape to register.
-   * \throws core::GGEMSRecoverable If either pointer is null, child is already
-   * registered to a live World, or existing World admission rejects it.
+   * \param[in] parent Detached mother, registered mother, or World.
+   * \param[in] child Complete child whose current value is captured.
+   * \throws core::GGEMSRecoverable If either pointer is null, self-use or live
+   * child reuse occurs, the parent's registered World expired, or authoring
+   * admission fails. Every World attachment requires configured size and
+   * material and commits atomically, including an ordinary leaf.
    */
-  template <class Child>
-  auto AddVolume(std::shared_ptr<geometry::GGEMSWorld> const &world,
+  template <class Parent, class Child>
+  auto AddVolume(std::shared_ptr<Parent> const &parent,
                  std::shared_ptr<Child> const &child) -> void {
-    if (!world || !child) {
-      throw core::GGEMSRecoverable("World and volume must be non-null.");
+    CheckChild(parent, child);
+    auto const target = ResolveParent(parent);
+    if (target.world) {
+      Insert(target.world, child, target.volume_id);
+    } else {
+      parent->AddVolume(*child);
     }
-
-    std::erase_if(registrations_, [](auto const &entry) -> bool {
-      return entry.first.expired() || entry.second.world.expired();
-    });
-
-    Insert(world, child, 0U);
   }
 
   /*!
-   * \brief Copies a daughter below an already registered mother.
-   * \tparam Mother One of the eight existing analytical shape types.
+   * \brief Captures a linear subtree repeater in the parent's local frame.
+   * \tparam Parent Bound World or one of the eight analytical mother types.
    * \tparam Child One of the eight existing analytical shape types.
-   * \param[in] mother Bound mother previously registered in a live World.
-   * \param[in] child Bound complete shape, not already registered.
-   * \throws core::GGEMSRecoverable If either pointer is null, the mother is
-   * unregistered or its World expired, child is already registered, or existing
-   * World shape/depth admission rejects it. Self and ancestor reuse reject.
+   * \param[in] parent Detached mother, registered mother, or World.
+   * \param[in] child Complete reference subtree captured at occurrence zero.
+   * \param[in] count Total number of physical copies, including index zero.
+   * \param[in] pitch Center-to-center displacement in canonical picometers.
+   * \param[in] axis Positive parent-local repetition axis.
+   * \throws core::GGEMSRecoverable If ownership, repetition, depth, capacity,
+   * or geometry admission fails. No source registration or partial batch is
+   * published on failure.
    */
-  template <class Mother, class Child>
-  auto AddVolume(std::shared_ptr<Mother> const &mother,
-                 std::shared_ptr<Child> const &child) -> void {
-    if (!mother || !child) {
-      throw core::GGEMSRecoverable("Mother and daughter must be non-null.");
+  template <class Parent, class Child>
+  auto LinearRepeater(std::shared_ptr<Parent> const &parent,
+                      std::shared_ptr<Child> const &child, std::uint32_t count,
+                      units::Length pitch, geometry::GGEMSRepeatAxis axis)
+    -> void {
+    CheckChild(parent, child);
+    auto const target = ResolveParent(parent);
+    if (target.world) {
+      target.world->LinearRepeater(*child, count, pitch, axis,
+                                   target.volume_id);
+    } else {
+      parent->LinearRepeater(*child, count, pitch, axis);
     }
+  }
 
-    auto const found = registrations_.find(std::weak_ptr<void>{mother});
-
-    if (found == registrations_.end()) {
-      throw core::GGEMSRecoverable("Register the mother in a World first.");
+  /*!
+   * \brief Captures rigidly rotated subtree copies around the parent origin.
+   * \tparam Parent Bound World or one of the eight analytical mother types.
+   * \tparam Child One of the eight existing analytical shape types.
+   * \param[in] parent Detached mother, registered mother, or World.
+   * \param[in] child Complete reference subtree captured at occurrence zero.
+   * \param[in] count Total physical copies over one turn, with no end
+   * duplicate.
+   * \param[in] axis Positive parent-local axis through the parent's origin.
+   * \throws core::GGEMSRecoverable If ownership, repetition, depth, capacity,
+   * or geometry admission fails. No source registration or partial batch is
+   * published on failure.
+   */
+  template <class Parent, class Child>
+  auto CircularRepeater(std::shared_ptr<Parent> const &parent,
+                        std::shared_ptr<Child> const &child,
+                        std::uint32_t count, geometry::GGEMSRepeatAxis axis)
+    -> void {
+    CheckChild(parent, child);
+    auto const target = ResolveParent(parent);
+    if (target.world) {
+      target.world->CircularRepeater(*child, count, axis, target.volume_id);
+    } else {
+      parent->CircularRepeater(*child, count, axis);
     }
-
-    auto const world = found->second.world.lock();
-
-    if (!world) {
-      throw core::GGEMSRecoverable(
-        "The mother's registered World has expired.");
-    }
-
-    Insert(world, child, found->second.volume_id);
   }
 
 private:
-  /*! \brief Weak World ownership and its existing internal occurrence ID. */
+  /*! \brief Weak World ownership and one explicit subtree-root identity. */
   struct Registration {
-    /*! \brief World that owns the independent scientific value copy. */
+    /*! \brief World owning an independent scientific value copy. */
     std::weak_ptr<geometry::GGEMSWorld> world;
 
-    /*! \brief One-based occurrence ID, committed only after insertion. */
+    /*! \brief One-based root VolumeID, committed after successful insertion. */
     std::uint32_t volume_id;
   };
 
+  /*! \brief Temporarily retains a live target during one binding call. */
+  struct AttachmentTarget {
+    /*! \brief Target World, or null for detached authoring. */
+    std::shared_ptr<geometry::GGEMSWorld> world;
+
+    /*! \brief Parent ID, or zero for World and detached authoring. */
+    std::uint32_t volume_id{0U};
+  };
+
   /*!
-   * \brief Reserves registration before the original World insertion.
-   * \tparam Child Existing analytical shape accepted by World::AddVolume.
-   * \param[in] world Live World receiving the copied occurrence.
-   * \param[in] child Non-null bound shape whose identity is registered.
+   * \brief Rejects null pointers, self-use, and live child reuse.
+   * \tparam Parent Bound World or analytical mother type.
+   * \tparam Child Bound analytical child type.
+   * \param[in] parent Parent identity used to reject direct self-capture.
+   * \param[in] child Child identity checked against unique live attachments.
+   * \throws core::GGEMSRecoverable If a pointer is null, identities match, or
+   * the child already has a live registered World occurrence.
+   */
+  template <class Parent, class Child>
+  auto CheckChild(std::shared_ptr<Parent> const &parent,
+                  std::shared_ptr<Child> const &child) const -> void {
+    if (!parent || !child) {
+      throw core::GGEMSRecoverable("Parent and volume must be non-null.");
+    }
+    if (static_cast<void const *>(parent.get()) ==
+        static_cast<void const *>(child.get())) {
+      throw core::GGEMSRecoverable("A volume cannot capture itself.");
+    }
+    auto const found = registrations_.find(std::weak_ptr<void>{child});
+    if (found != registrations_.end() && !found->second.world.expired()) {
+      throw core::GGEMSRecoverable("Volume is already registered in a World.");
+    }
+  }
+
+  /*!
+   * \brief Resolves a unique live World target or a detached mother.
+   * \tparam Parent Bound World or analytical mother type.
+   * \param[in] parent Non-null bound parent.
+   * \return Live World and parent ID, or an empty target for a detached mother.
+   * \throws core::GGEMSRecoverable If the registered mother's World expired.
+   */
+  template <class Parent>
+  [[nodiscard]] auto ResolveParent(std::shared_ptr<Parent> const &parent)
+    -> AttachmentTarget {
+    if constexpr (std::is_same_v<Parent, geometry::GGEMSWorld>) {
+      std::erase_if(registrations_, [](auto const &entry) -> bool {
+        return entry.first.expired() || entry.second.world.expired();
+      });
+      return {.world = parent, .volume_id = 0U};
+    } else {
+      auto const found = registrations_.find(std::weak_ptr<void>{parent});
+      if (found == registrations_.end()) {
+        return {};
+      }
+      auto const world = found->second.world.lock();
+      if (!world) {
+        throw core::GGEMSRecoverable(
+          "The mother's registered World has expired.");
+      }
+      return {.world = world, .volume_id = found->second.volume_id};
+    }
+  }
+
+  /*!
+   * \brief Reserves a root registration and commits it after World insertion.
+   * \tparam Child Existing analytical shape accepted by World::AttachVolume.
+   * \param[in] world Live World receiving the independent subtree snapshot.
+   * \param[in] child Non-null shape without a live registration.
    * \param[in] parent_volume_id Existing parent ID, or zero for World.
-   * \throws core::GGEMSRecoverable If child already belongs to a live World
-   * or World admission fails. Allocation failure precedes World mutation;
-   * failed World insertion removes the reserved registration and rethrows.
+   * \throws core::GGEMSRecoverable If World admission fails. Registration
+   * allocation precedes World mutation; failed insertion erases the
+   * reservation.
    */
   template <class Child>
   auto Insert(std::shared_ptr<geometry::GGEMSWorld> const &world,
               std::shared_ptr<Child> const &child,
               std::uint32_t parent_volume_id) -> void {
     std::weak_ptr<void> const identity{child};
-    auto const previous = registrations_.find(identity);
-
-    if (previous != registrations_.end()) {
-      if (!previous->second.world.expired()) {
-        throw core::GGEMSRecoverable(
-          "Volume is already registered in a World.");
-      }
-      registrations_.erase(previous);
-    }
-
+    registrations_.erase(identity);
     auto const entry =
       registrations_
         .emplace(identity, Registration{.world = world, .volume_id = 0U})
         .first;
-
+    auto const previous_count = world->GetVolumeCount();
     try {
-      world->AddVolume(*child, parent_volume_id);
+      world->AttachVolume(*child, parent_volume_id);
     } catch (...) {
       registrations_.erase(entry);
       throw;
     }
-
-    entry->second.volume_id =
-      static_cast<std::uint32_t>(world->GetVolumeCount());
+    entry->second.volume_id = static_cast<std::uint32_t>(previous_count + 1U);
   }
 
-  /*! \brief Weak owner keys distinguish reused object addresses. */
+  /*! \brief Weak identities distinguish reused addresses without ownership. */
   std::map<std::weak_ptr<void>, Registration,
            std::owner_less<std::weak_ptr<void>>>
     registrations_;

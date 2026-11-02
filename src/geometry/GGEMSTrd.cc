@@ -93,6 +93,14 @@ auto GGEMSTrd::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSTrd::SetRotation(GGEMSRotation3D const &rotation) -> GGEMSTrd & {
+  ValidateRotation3D(rotation);
+  rotation_ = rotation;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSTrd::SetMaterial(core::materials::GGEMSMaterial material)
   -> GGEMSTrd & {
   material_ = std::move(material);

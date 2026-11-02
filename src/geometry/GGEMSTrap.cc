@@ -136,6 +136,14 @@ auto GGEMSTrap::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSTrap::SetRotation(GGEMSRotation3D const &rotation) -> GGEMSTrap & {
+  ValidateRotation3D(rotation);
+  rotation_ = rotation;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSTrap::SetMaterial(core::materials::GGEMSMaterial material)
   -> GGEMSTrap & {
   material_ = std::move(material);

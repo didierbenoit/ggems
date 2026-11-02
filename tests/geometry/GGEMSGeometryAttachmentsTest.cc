@@ -21,24 +21,27 @@
 
 /*!
  * \file
- * \brief Checks root-first object attachment, copied geometry, and weak
- * registration lifetime through the private C++ binding helper.
+ * \brief Checks detached recipes, repeaters, and copied geometry attachments.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <memory>
+#include <numbers>
 #include <type_traits>
 #include <vector>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
@@ -51,6 +54,7 @@
 #include "GGEMS/geometry/GGEMSTrap.hh"
 #include "GGEMS/geometry/GGEMSTrd.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -250,7 +254,6 @@ TEST(GGEMSGeometryAttachments, RejectsInvalidAttachmentsWithoutConsumingChild) {
   EXPECT_THROW(attachments.AddVolume(null_world, mother), GGEMSRecoverable);
   EXPECT_THROW(attachments.AddVolume(world, null_shape), GGEMSRecoverable);
   EXPECT_THROW(attachments.AddVolume(null_shape, child), GGEMSRecoverable);
-  EXPECT_THROW(attachments.AddVolume(mother, child), GGEMSRecoverable);
   EXPECT_EQ(world->GetVolumeCount(), 0U);
   attachments.AddVolume(world, mother);
   EXPECT_THROW(attachments.AddVolume(mother, null_shape), GGEMSRecoverable);
@@ -319,4 +322,369 @@ TEST(GGEMSGeometryAttachments, WeakRegistrationsPermitExpirationAndRootReuse) {
   EXPECT_TRUE(weak_new_world.expired());
   EXPECT_TRUE(weak_survivor.expired());
   EXPECT_TRUE(weak_late_child.expired());
+}
+
+// Capturing each child freezes its value while a detached mother's pose remains
+// editable; both authoring orders produce the same independent World snapshot.
+TEST(GGEMSGeometryAttachments, DetachedSubtreePreservesCaptureAndPoseOrder) {
+  auto mother = *MakeShape<GGEMSBox>(20_mm);
+  auto daughter = *MakeShape<GGEMSSphere>(8_mm);
+  auto leaf = *MakeShape<GGEMSBox>(2_mm);
+  daughter.SetPosition(MakePositionPM(6'000'000'000LL, 3'000'000'000LL, 0))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  leaf.SetPosition(MakePositionPM(2'000'000'000LL, 1'000'000'000LL, 0))
+    .SetMaterial(BuildBuiltInMaterial("Aluminum"));
+  auto const captured_daughter = daughter;
+  auto const captured_leaf = leaf;
+  daughter.AddVolume(leaf);
+  leaf.SetSize(20_mm, 20_mm, 20_mm)
+    .SetPosition(MakePositionPM(90'000'000'000LL, 0, 0));
+
+  auto posed_first = mother;
+  posed_first
+    .SetPosition(
+      MakePositionPM(10'000'000'000LL, -5'000'000'000LL, 3'000'000'000LL))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  auto const captured_mother = posed_first;
+  posed_first.AddVolume(daughter);
+  mother.AddVolume(daughter)
+    .SetPosition(
+      MakePositionPM(10'000'000'000LL, -5'000'000'000LL, 3'000'000'000LL))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  daughter.SetRadius(1_mm).SetPosition(MakePositionPM(80'000'000'000LL, 0, 0));
+
+  auto before = *MakeWorld();
+  auto after = *MakeWorld();
+  before.AddVolume(posed_first);
+  after.AddVolume(mother);
+  auto expected = *MakeWorld();
+  expected.AddVolume(captured_mother)
+    .AddVolume(captured_daughter, 1U)
+    .AddVolume(captured_leaf, 2U);
+  mother.SetSize(2_mm, 2_mm, 2_mm)
+    .SetPosition(MakePositionPM(70'000'000'000LL, 0, 0));
+  ExpectSameCompilation(before, expected);
+  ExpectSameCompilation(after, expected);
+  EXPECT_EQ(after.BuildRecord().hierarchy_depth, 3U);
+}
+
+// Detached source handles do not silently become live handles to captured
+// descendants; an explicitly registered mother still supports top-down adds.
+TEST(GGEMSGeometryAttachments, DetachedBindingKeepsCapturedSourcesIndependent) {
+  GGEMSGeometryAttachments attachments;
+  auto world = MakeWorld();
+  auto mother = MakeShape<GGEMSBox>(20_mm);
+  auto child = MakeShape<GGEMSBox>(4_mm);
+  auto leaf = MakeShape<GGEMSBox>(1_mm);
+  attachments.AddVolume(mother, child);
+  attachments.AddVolume(world, mother);
+  auto const captured = *world;
+  attachments.AddVolume(child, leaf);
+  ExpectSameCompilation(*world, captured);
+
+  auto sibling = MakeShape<GGEMSBox>(1_mm);
+  sibling->SetPosition(MakePositionPM(10'000'000'000LL, 0, 0));
+  mother->SetPosition(MakePositionPM(80'000'000'000LL, 0, 0));
+  attachments.AddVolume(mother, sibling);
+  ASSERT_NO_THROW(world->Validate());
+  ASSERT_EQ(world->GetVolumeCount(), 3U);
+  EXPECT_EQ(world->BuildOccurrenceRecords()[2].parent_volume_id, 1U);
+  EXPECT_FLOAT_EQ(world->BuildBoxPoseRecord(2U)->center_x_pm, 10.0e9F);
+
+  auto before_rejection = *world;
+  auto rejected_child = MakeShape<GGEMSBox>(1_mm);
+  EXPECT_THROW(attachments.AddVolume(mother, rejected_child), GGEMSRecoverable);
+  ExpectSameCompilation(*world, before_rejection);
+  rejected_child->SetPosition(MakePositionPM(-10'000'000'000LL, 0, 0));
+  attachments.AddVolume(mother, rejected_child);
+  ASSERT_EQ(world->GetVolumeCount(), 4U);
+  EXPECT_EQ(world->BuildOccurrenceRecords()[3].parent_volume_id, 1U);
+
+  before_rejection = *world;
+  auto rejected_root = MakeShape<GGEMSBox>(1_mm);
+  EXPECT_THROW(attachments.AddVolume(world, rejected_root), GGEMSRecoverable);
+  ExpectSameCompilation(*world, before_rejection);
+  rejected_root->SetPosition(MakePositionPM(60'000'000'000LL, 0, 0));
+  attachments.AddVolume(world, rejected_root);
+  ASSERT_EQ(world->GetVolumeCount(), 5U);
+  EXPECT_EQ(world->BuildOccurrenceRecords()[4].parent_volume_id, 0U);
+
+  auto unconfigured_world = std::make_shared<GGEMSWorld>();
+  auto unregistered_leaf = MakeShape<GGEMSBox>(1_mm);
+  EXPECT_THROW(attachments.AddVolume(unconfigured_world, unregistered_leaf),
+               GGEMSRecoverable);
+  EXPECT_EQ(unconfigured_world->GetVolumeCount(), 0U);
+  unconfigured_world->SetSize(200_mm, 200_mm, 200_mm)
+    .SetMaterial(BuildBuiltInMaterial("Vacuum"));
+  attachments.AddVolume(unconfigured_world, unregistered_leaf);
+  EXPECT_EQ(unconfigured_world->GetVolumeCount(), 1U);
+}
+
+// A pitch is center-to-center, count includes the reference, and identical
+// materials do not collapse physical identities, including at face contact.
+TEST(GGEMSGeometryAttachments, LinearRepeatersPreserveGapsContactAndCountOne) {
+  for (auto const pitch : {0_mm, 2_mm, 4_mm}) {
+    SCOPED_TRACE(pitch.value);
+    auto mother = *MakeShape<GGEMSBox>(20_mm);
+    auto child = *MakeShape<GGEMSBox>(1_mm);
+    child.SetPosition(MakePositionPM(-4'000'000'000LL, 0, 0));
+    auto const count = pitch.value == 0U ? 1U : 3U;
+    auto expected = *MakeWorld();
+    expected.AddVolume(mother);
+    for (std::uint32_t index = 0U; index < count; ++index) {
+      auto copy = child;
+      copy.SetPosition(MakePositionPM(
+        -4'000'000'000LL + static_cast<std::int64_t>(index * pitch.value), 0,
+        0));
+      expected.AddVolume(copy, 1U);
+    }
+    mother.LinearRepeater(child, count, pitch, GGEMSRepeatAxis::X);
+    auto world = *MakeWorld();
+    world.AddVolume(mother);
+    ExpectSameCompilation(world, expected);
+    std::vector<std::uint32_t> const material_ids(world.GetVolumeCount(), 7U);
+    auto const records = world.BuildAnalyticDeviceRecords(material_ids);
+    for (std::size_t index = 0U; index < records.size(); ++index) {
+      EXPECT_EQ(records[index].parameters.box.volume_id, index + 1U);
+      EXPECT_EQ(records[index].parameters.box.material_id, 7U);
+    }
+  }
+  auto mother = *MakeShape<GGEMSBox>(20_mm);
+  mother.CircularRepeater(*MakeShape<GGEMSBox>(1_mm), 1U, GGEMSRepeatAxis::Z);
+  auto world = *MakeWorld();
+  world.AddVolume(mother);
+  EXPECT_EQ(world.GetVolumeCount(), 2U);
+}
+
+// Invalid recipes leave no retained child; invalid expanded scenes leave the
+// previously attached World unchanged and can be corrected before retrying.
+TEST(GGEMSGeometryAttachments, InvalidRecipesAndBatchesRejectAtomically) {
+  auto mother = *MakeShape<GGEMSBox>(20_mm);
+  auto child = *MakeShape<GGEMSBox>(1_mm);
+  GGEMSWorld unconfigured;
+  EXPECT_THROW(unconfigured.AttachVolume(child), GGEMSRecoverable);
+  EXPECT_EQ(unconfigured.GetVolumeCount(), 0U);
+  EXPECT_NO_THROW(unconfigured.AddVolume(child));
+  EXPECT_EQ(unconfigured.GetVolumeCount(), 1U);
+  EXPECT_THROW(mother.LinearRepeater(child, 0U, 4_mm, GGEMSRepeatAxis::X),
+               GGEMSRecoverable);
+  EXPECT_THROW(mother.LinearRepeater(child, 2U, 0_mm, GGEMSRepeatAxis::X),
+               GGEMSRecoverable);
+  EXPECT_THROW(
+    mother.LinearRepeater(child, 2U, 4_mm, static_cast<GGEMSRepeatAxis>(3U)),
+    GGEMSRecoverable);
+  EXPECT_THROW(mother.LinearRepeater(
+                 child, 2U, Length{std::numeric_limits<std::uint64_t>::max()},
+                 GGEMSRepeatAxis::X),
+               GGEMSRecoverable);
+  EXPECT_THROW(mother.CircularRepeater(child, 0U, GGEMSRepeatAxis::Z),
+               GGEMSRecoverable);
+  EXPECT_THROW(mother.CircularRepeater(child, 2U, GGEMSRepeatAxis::Z),
+               GGEMSRecoverable);
+  EXPECT_THROW(mother.LinearRepeater(child,
+                                     std::numeric_limits<std::uint32_t>::max(),
+                                     4_mm, GGEMSRepeatAxis::X),
+               GGEMSRecoverable);
+  EXPECT_THROW(mother.AddVolume(mother), GGEMSRecoverable);
+  auto empty = *MakeWorld();
+  empty.AddVolume(mother);
+  EXPECT_EQ(empty.GetVolumeCount(), 1U);
+
+  auto world = *MakeWorld();
+  auto existing = *MakeShape<GGEMSBox>(1_mm);
+  existing.SetPosition(MakePositionPM(60'000'000'000LL, 0, 0));
+  world.AddVolume(existing);
+  auto const before = world;
+  auto const excessive_descriptors =
+    static_cast<std::uint32_t>((std::numeric_limits<std::uint32_t>::max() /
+                                sizeof(GGEMSAnalyticOccurrenceRecord)) +
+                               1U);
+  EXPECT_THROW(
+    world.CircularRepeater(existing, excessive_descriptors, GGEMSRepeatAxis::Z),
+    GGEMSRecoverable);
+  ExpectSameCompilation(world, before);
+  auto overlapping = *MakeShape<GGEMSBox>(10_mm);
+  overlapping.LinearRepeater(child, 2U, 1_mm, GGEMSRepeatAxis::X);
+  EXPECT_THROW(world.AddVolume(overlapping), GGEMSRecoverable);
+  ExpectSameCompilation(world, before);
+
+  auto protruding = *MakeShape<GGEMSBox>(5_mm);
+  child.SetPosition(MakePositionPM(4'000'000'000LL, 0, 0));
+  protruding.LinearRepeater(child, 2U, 4_mm, GGEMSRepeatAxis::X);
+  EXPECT_THROW(world.AddVolume(protruding), GGEMSRecoverable);
+  ExpectSameCompilation(world, before);
+
+  auto mixed = *MakeShape<GGEMSBox>(10_mm);
+  mixed.AddVolume(child).LinearRepeater(child, 2U, 4_mm, GGEMSRepeatAxis::X);
+  EXPECT_THROW(world.AddVolume(mixed), GGEMSRecoverable);
+  ExpectSameCompilation(world, before);
+  EXPECT_THROW(world.LinearRepeater(existing, 2U, 4_mm, GGEMSRepeatAxis::X),
+               GGEMSRecoverable);
+  ExpectSameCompilation(world, before);
+
+  child.SetPosition(MakePositionPM(0, 0, 0));
+  mother.AddVolume(child);
+  EXPECT_THROW(unconfigured.AddVolume(mother), GGEMSRecoverable);
+  EXPECT_EQ(unconfigured.GetVolumeCount(), 1U);
+  mother.SetPosition(MakePositionPM(90'000'000'000LL, 0, 0));
+  EXPECT_THROW(world.AddVolume(mother), GGEMSRecoverable);
+  ExpectSameCompilation(world, before);
+  mother.SetPosition(MakePositionPM(0, 0, 0));
+  EXPECT_NO_THROW(world.AddVolume(mother));
+  EXPECT_EQ(world.GetVolumeCount(), 3U);
+}
+
+// Independent axis-rotation formulas check position and a nonidentity reference
+// orientation for two nontrivial counts, without a duplicate full-turn copy.
+TEST(GGEMSGeometryAttachments,
+     CircularRepeatersRotateReferencePoseOnEveryAxis) {
+  for (auto const count : {7U, 11U}) {
+    for (std::size_t axis = 0U; axis < 3U; ++axis) {
+      SCOPED_TRACE(count);
+      SCOPED_TRACE(axis);
+      auto mother = *MakeShape<GGEMSBox>(40_mm);
+      auto child = *MakeShape<GGEMSBox>(1_mm);
+      child.SetSize(2_mm, 4_mm, 6_mm).SetRotation(0_deg, 0_deg, 90_deg);
+      std::array<double, 3> position{};
+      position[axis] = 1.0e9;
+      position[(axis + 1U) % 3U] = 20.0e9;
+      child.SetPosition(MakePositionPM(static_cast<std::int64_t>(position[0]),
+                                       static_cast<std::int64_t>(position[1]),
+                                       static_cast<std::int64_t>(position[2])));
+      mother.CircularRepeater(child, count, static_cast<GGEMSRepeatAxis>(axis));
+      auto world = *MakeWorld();
+      ASSERT_NO_THROW(world.AddVolume(mother));
+      ASSERT_EQ(world.GetVolumeCount(), count + 1U);
+      for (std::uint32_t index = 0U; index < count; ++index) {
+        SCOPED_TRACE(index);
+        auto const angle = 2.0 * std::numbers::pi * index / count;
+        auto const cosine = std::cos(angle);
+        auto const sine = std::sin(angle);
+        auto const rotate =
+          [&](std::array<double, 3> value) -> std::array<double, 3> {
+          auto result = value;
+          auto const first = (axis + 1U) % 3U;
+          auto const second = (axis + 2U) % 3U;
+          result[first] = (cosine * value[first]) - (sine * value[second]);
+          result[second] = (sine * value[first]) + (cosine * value[second]);
+          return result;
+        };
+        auto const center = rotate(position);
+        auto const axis_x = rotate({0.0, 1.0, 0.0});
+        auto const axis_y = rotate({-1.0, 0.0, 0.0});
+        auto const axis_z = rotate({0.0, 0.0, 1.0});
+        auto const pose = world.BuildBoxPoseRecord(index + 1U);
+        ASSERT_TRUE(pose.has_value());
+        // Four FP32 relative roundoff units at the largest center component;
+        // sixteen for products of the two independently authored rotations.
+        constexpr double coordinate_budget =
+          4.0 * std::numeric_limits<float>::epsilon() * 20.0e9;
+        constexpr double rotation_budget =
+          16.0 * std::numeric_limits<float>::epsilon();
+        EXPECT_NEAR(pose->center_x_pm, center[0], coordinate_budget);
+        EXPECT_NEAR(pose->center_y_pm, center[1], coordinate_budget);
+        EXPECT_NEAR(pose->center_z_pm, center[2], coordinate_budget);
+        EXPECT_NEAR(pose->axis_x_x, axis_x[0], rotation_budget);
+        EXPECT_NEAR(pose->axis_x_y, axis_x[1], rotation_budget);
+        EXPECT_NEAR(pose->axis_x_z, axis_x[2], rotation_budget);
+        EXPECT_NEAR(pose->axis_y_x, axis_y[0], rotation_budget);
+        EXPECT_NEAR(pose->axis_y_y, axis_y[1], rotation_budget);
+        EXPECT_NEAR(pose->axis_y_z, axis_y[2], rotation_budget);
+        EXPECT_NEAR(pose->axis_z_x, axis_z[0], rotation_budget);
+        EXPECT_NEAR(pose->axis_z_y, axis_z[1], rotation_budget);
+        EXPECT_NEAR(pose->axis_z_z, axis_z[2], rotation_budget);
+      }
+    }
+  }
+}
+
+// Repetition clones a complete subtree with unique physical IDs, retaining the
+// existing maximum depth and leaving a failed depth extension unrecorded.
+TEST(GGEMSGeometryAttachments, RepeatedSubtreesPreserveParentageAndDepth) {
+  auto scanner = *MakeShape<GGEMSBox>(50_mm);
+  auto module = *MakeShape<GGEMSBox>(10_mm);
+  auto crystal = *MakeShape<GGEMSBox>(2_mm);
+  crystal.SetPosition(MakePositionPM(2'000'000'000LL, 0, 0));
+  module.AddVolume(crystal).SetPosition(
+    MakePositionPM(-20'000'000'000LL, 0, 0));
+  scanner.LinearRepeater(module, 2U, 40_mm, GGEMSRepeatAxis::X);
+  auto world = *MakeWorld();
+  world.AddVolume(scanner);
+  ASSERT_EQ(world.GetVolumeCount(), 5U);
+  auto const links = world.BuildOccurrenceRecords();
+  std::array<std::uint32_t, 5> const parents{0U, 1U, 2U, 1U, 4U};
+  for (std::size_t index = 0U; index < links.size(); ++index) {
+    EXPECT_EQ(links[index].parent_volume_id, parents[index]);
+    EXPECT_EQ(
+      world.BuildAnalyticVolumeRecord(9U, index).parameters.box.volume_id,
+      index + 1U);
+  }
+  EXPECT_FLOAT_EQ(world.BuildBoxPoseRecord(2U)->center_x_pm, -18.0e9F);
+  EXPECT_FLOAT_EQ(world.BuildBoxPoseRecord(4U)->center_x_pm, 22.0e9F);
+  EXPECT_EQ(world.BuildRecord().hierarchy_depth, 3U);
+  auto outer = *MakeShape<GGEMSBox>(60_mm);
+  EXPECT_THROW(outer.AddVolume(scanner), GGEMSRecoverable);
+  auto unchanged = *MakeWorld();
+  unchanged.AddVolume(outer);
+  EXPECT_EQ(unchanged.GetVolumeCount(), 1U);
+
+  auto repeated_module = *MakeShape<GGEMSBox>(5_mm);
+  auto repeated_crystal = *MakeShape<GGEMSBox>(1_mm);
+  repeated_crystal.SetPosition(MakePositionPM(-2'000'000'000LL, 0, 0));
+  repeated_module.LinearRepeater(repeated_crystal, 2U, 4_mm, GGEMSRepeatAxis::X)
+    .SetPosition(MakePositionPM(30'000'000'000LL, 0, 0));
+  auto ring_before = *MakeShape<GGEMSBox>(50_mm);
+  auto ring_after = ring_before;
+  ring_before.SetPosition(MakePositionPM(1'000'000'000LL, 0, 0))
+    .SetRotation(0_deg, 0_deg, 90_deg)
+    .CircularRepeater(repeated_module, 7U, GGEMSRepeatAxis::Z);
+  ring_after.CircularRepeater(repeated_module, 7U, GGEMSRepeatAxis::Z)
+    .SetPosition(MakePositionPM(1'000'000'000LL, 0, 0))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  auto before_pose = *MakeWorld();
+  auto after_pose = *MakeWorld();
+  before_pose.AddVolume(ring_before);
+  after_pose.AddVolume(ring_after);
+  ExpectSameCompilation(after_pose, before_pose);
+  ASSERT_EQ(after_pose.GetVolumeCount(), 22U);
+  auto const ring_links = after_pose.BuildOccurrenceRecords();
+  for (std::uint32_t index = 0U; index < 7U; ++index) {
+    auto const module_id = 2U + (3U * index);
+    EXPECT_EQ(ring_links[module_id - 1U].parent_volume_id, 1U);
+    EXPECT_EQ(ring_links[module_id].parent_volume_id, module_id);
+    EXPECT_EQ(ring_links[module_id + 1U].parent_volume_id, module_id);
+  }
+}
+
+// The same two operations dispatch every admitted analytical family without
+// introducing a shape-specific authoring path.
+TEST(GGEMSGeometryAttachments, BothRepeatersAcceptAllEightAnalyticalFamilies) {
+  auto const check = []<typename Shape> -> void {
+    for (bool circular : {false, true}) {
+      SCOPED_TRACE(circular);
+      auto mother = *MakeShape<GGEMSBox>(40_mm);
+      auto child = *MakeShape<Shape>(1_mm);
+      child.SetPosition(MakePositionPM(20'000'000'000LL, 0, 0));
+      if (circular) {
+        mother.CircularRepeater(child, 7U, GGEMSRepeatAxis::Z);
+      } else {
+        mother.LinearRepeater(child, 2U, 4_mm, GGEMSRepeatAxis::X);
+      }
+      auto world = *MakeWorld();
+      world.AddVolume(mother);
+      EXPECT_EQ(world.GetVolumeCount(), circular ? 8U : 3U);
+      auto const kind = world.BuildAnalyticVolumeRecord(0U, 1U).kind;
+      for (std::size_t index = 2U; index < world.GetVolumeCount(); ++index) {
+        EXPECT_EQ(world.BuildAnalyticVolumeRecord(0U, index).kind, kind);
+      }
+    }
+  };
+  check.template operator()<GGEMSBox>();
+  check.template operator()<GGEMSSphere>();
+  check.template operator()<GGEMSTubs>();
+  check.template operator()<GGEMSCons>();
+  check.template operator()<GGEMSPolyhedra>();
+  check.template operator()<GGEMSEllipsoid>();
+  check.template operator()<GGEMSTrd>();
+  check.template operator()<GGEMSTrap>();
 }

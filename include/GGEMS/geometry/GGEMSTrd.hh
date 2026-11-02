@@ -32,6 +32,7 @@
 #include <array>
 #include <optional>
 
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -49,7 +50,7 @@ namespace ggems::geometry {
  * containment. Pose coordinates and fixed rotation axes belong to the parent
  * selected by GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
-class GGEMSTrd {
+class GGEMSTrd : public GGEMSVolumeAuthoring {
 public:
   /*! \brief Creates an unconfigured solid at the origin with identity pose. */
   GGEMSTrd() = default;
@@ -99,6 +100,15 @@ public:
    */
   auto SetRotation(units::Angle angle_x, units::Angle angle_y,
                    units::Angle angle_z) -> GGEMSTrd &;
+
+  /*!
+   * \brief Assigns a proper local-to-parent rotation basis directly.
+   * \param[in] rotation Finite right-handed orthonormal basis.
+   * \return This Trd for chained configuration.
+   * \throws core::GGEMSRecoverable If the basis fails existing host rotation
+   * admission; the previous rotation remains unchanged.
+   */
+  auto SetRotation(GGEMSRotation3D const &rotation) -> GGEMSTrd &;
 
   /*!
    * \brief Sets the explicit owned medium.

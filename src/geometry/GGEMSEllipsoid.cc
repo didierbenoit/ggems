@@ -68,6 +68,15 @@ auto GGEMSEllipsoid::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSEllipsoid::SetRotation(GGEMSRotation3D const &rotation)
+  -> GGEMSEllipsoid & {
+  ValidateRotation3D(rotation);
+  rotation_ = rotation;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSEllipsoid::SetMaterial(core::materials::GGEMSMaterial material)
   -> GGEMSEllipsoid & {
   material_ = std::move(material);

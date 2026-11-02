@@ -87,24 +87,7 @@ auto GGEMSRotation3D::IsIdentity() const noexcept -> bool {
 
 // -----------------------------------------------------------------------------
 
-auto BuildRotationXYZ(units::Angle angle_x, units::Angle angle_y,
-                      units::Angle angle_z) -> GGEMSRotation3D {
-  auto const [sx, cx] = SinCos(angle_x);
-  auto const [sy, cy] = SinCos(angle_y);
-  auto const [sz, cz] = SinCos(angle_z);
-
-  GGEMSRotation3D const rotation{
-    .axis_x = {.x = static_cast<double>(cz * cy),
-               .y = static_cast<double>(sz * cy),
-               .z = static_cast<double>(-sy)},
-    .axis_y = {.x = static_cast<double>((cz * sy * sx) - (sz * cx)),
-               .y = static_cast<double>((sz * sy * sx) + (cz * cx)),
-               .z = static_cast<double>(cy * sx)},
-    .axis_z = {.x = static_cast<double>((cz * sy * cx) + (sz * sx)),
-               .y = static_cast<double>((sz * sy * cx) - (cz * sx)),
-               .z = static_cast<double>(cy * cx)},
-  };
-
+auto ValidateRotation3D(GGEMSRotation3D const &rotation) -> void {
   auto const &axis_x = rotation.axis_x;
   auto const &axis_y = rotation.axis_y;
   auto const &axis_z = rotation.axis_z;
@@ -129,6 +112,38 @@ auto BuildRotationXYZ(units::Angle angle_x, units::Angle angle_y,
     throw core::GGEMSRecoverable(
       "Box rotation must form a proper finite basis.");
   }
+}
+
+// -----------------------------------------------------------------------------
+
+auto BuildRotationXYZ(units::Angle angle_x, units::Angle angle_y,
+                      units::Angle angle_z) -> GGEMSRotation3D {
+  auto const [sx, cx] = SinCos(angle_x);
+  auto const [sy, cy] = SinCos(angle_y);
+  auto const [sz, cz] = SinCos(angle_z);
+
+  GGEMSRotation3D const rotation{
+    .axis_x =
+      {
+        .x = static_cast<double>(cz * cy),
+        .y = static_cast<double>(sz * cy),
+        .z = static_cast<double>(-sy),
+      },
+    .axis_y =
+      {
+        .x = static_cast<double>((cz * sy * sx) - (sz * cx)),
+        .y = static_cast<double>((sz * sy * sx) + (cz * cx)),
+        .z = static_cast<double>(cy * sx),
+      },
+    .axis_z =
+      {
+        .x = static_cast<double>((cz * sy * cx) + (sz * sx)),
+        .y = static_cast<double>((sz * sy * cx) - (cz * sx)),
+        .z = static_cast<double>(cy * cx),
+      },
+  };
+
+  ValidateRotation3D(rotation);
 
   return rotation;
 }

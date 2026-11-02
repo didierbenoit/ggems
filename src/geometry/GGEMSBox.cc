@@ -95,6 +95,14 @@ auto GGEMSBox::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSBox::SetRotation(GGEMSRotation3D const &rotation) -> GGEMSBox & {
+  ValidateRotation3D(rotation);
+  rotation_ = rotation;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSBox::GetRotation() const noexcept -> GGEMSRotation3D const & {
   return rotation_;
 }

@@ -27,12 +27,16 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <cstdint>
 #include <string>
+#include <string_view>
 #include <memory>
 #include <vector>
 
 #include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/cast.h>
+#include <pybind11/pytypes.h>
 
 #include "detail/GGEMSPythonQuantityConversion.hh"
 #include "detail/GGEMSGeometryAttachments.hh"
@@ -48,6 +52,7 @@
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -75,11 +80,56 @@ using ggems::python::detail::MakeQuantityOrThrow;
 }
 
 /*!
- * \brief Binds object-based attachment for all existing daughter types.
+ * \brief Converts an actual positive Python integer to the occurrence domain.
+ * \param[in] value Python integer; Boolean values are not admitted counts.
+ * \return Count in the existing unsigned 32-bit occurrence domain.
+ * \throws py::type_error If value is not an integer or is a Boolean.
+ * \throws py::value_error If value is zero, negative, or exceeds uint32.
+ */
+[[nodiscard]] auto ParseRepeatCount(py::handle value) -> std::uint32_t {
+  if (!py::isinstance<py::int_>(value) || py::isinstance<py::bool_>(value)) {
+    throw py::type_error("count must be a positive integer, not a Boolean.");
+  }
+  std::uint32_t count{};
+  try {
+    count = py::cast<std::uint32_t>(value);
+  } catch (py::cast_error const &) {
+    throw py::value_error("count must be in [1, 4294967295].");
+  }
+  if (count == 0U) {
+    throw py::value_error("count must be in [1, 4294967295].");
+  }
+  return count;
+}
+
+/*!
+ * \brief Resolves one exact positive mother-local axis token.
+ * \param[in] axis Case-sensitive X, Y, or Z token.
+ * \return Corresponding positive Cartesian repetition axis.
+ * \throws py::value_error If the token is unsupported.
+ */
+[[nodiscard]] auto ParseRepeatAxis(std::string_view axis)
+  -> ggems::geometry::GGEMSRepeatAxis {
+  using ggems::geometry::GGEMSRepeatAxis;
+  if (axis == "X") {
+    return GGEMSRepeatAxis::X;
+  }
+  if (axis == "Y") {
+    return GGEMSRepeatAxis::Y;
+  }
+  if (axis == "Z") {
+    return GGEMSRepeatAxis::Z;
+  }
+  throw py::value_error(
+    "axis must be exactly X, Y, or Z; reversed axes are unsupported.");
+}
+
+/*!
+ * \brief Binds value attachment and two repeaters for all analytical children.
  * \tparam Parent Bound World or analytical mother type.
- * \param[in,out] binding Existing class receiving eight typed overloads.
- * \param[in] attachments Module-local C++ registration metadata, retained by
- * the callables; it holds no strong World or shape references.
+ * \param[in,out] binding Existing class receiving eight typed child overloads.
+ * \param[in] attachments Module-local weak metadata for unique top-down
+ * attachments; scientific descriptions remain owned by C++ authoring values.
  */
 template <typename Parent>
 auto BindAttachments(
@@ -94,25 +144,124 @@ auto BindAttachments(
         attachments->AddVolume(parent, child);
         return *parent;
       },
-      R"doc(Copy a configured volume under this World or registered mother.
+      R"doc(Capture a configured volume and its current subtree by value.
 
-Attach the mother to World before adding daughters. Every shape must have one
-registration in a live World; duplicate or multiple attachment is rejected.
-Position and rotation are relative to this parent. Three physical levels below
-World are supported. Physical IDs are assigned internally.
+Detached mothers own the captured description. Later changes to the source child
+never update that copy. A detached mother may be translated or rotated before
+or after adding children, until its own value is captured by its parent.
+Position and rotation are parent-local; physical depth is at most three below
+World. Physical IDs are assigned internally.
 
-Shape dimensions, pose, and material are copied now; later setters do not change
-the occurrence. Adding a daughter extends the original authoring World, which
-must remain alive. run.set_world(world) copies the completed World; later
-attachments do not change that Run. Bottom-up assembly is not supported.
+World attachment copies the complete subtree independently. An explicitly
+attached root remains a handle for top-down additions to its original live
+World; its later setters do not change the stored pose, shape, or material.
+Descendant sources captured bottom-up have no such handle. Adding children to
+those sources changes only their own authoring values. Direct self-use and reuse
+of a source already registered in a live World are rejected.
+
+Every World or registered-mother attachment requires configured World size and
+material and validates the complete batch before publication, including a
+single leaf. A rejected attachment leaves the World and registrations unchanged.
+run.set_world(world) copies the completed World; later attachments do not change
+the Run.
 
 Args:
-    volume: Complete analytical shape, not already attached to a live World.
+    volume: Complete analytical shape and its currently authored descendants.
 
 Returns:
     This parent for chaining.
 )doc",
       py::arg("volume"), py::return_value_policy::reference_internal);
+
+    binding.def(
+      "linear_repeater",
+      [attachments](std::shared_ptr<Parent> const &parent,
+                    std::shared_ptr<Child> const &child, py::handle count,
+                    double pitch, std::string const &unit,
+                    std::string const &axis) -> Parent & {
+        auto const copies = ParseRepeatCount(count);
+        auto const repeat_axis = ParseRepeatAxis(axis);
+        auto const spacing =
+          MakeQuantityOrThrow<ggems::units::Length>(pitch, unit);
+        attachments->LinearRepeater(parent, child, copies, spacing,
+                                    repeat_axis);
+        return *parent;
+      },
+      R"doc(Capture a subtree repeated along a positive mother-local axis.
+
+Count includes occurrence zero at the source's current pose. Occurrence i has
+position p + i*pitch*axis and the unchanged source orientation. Pitch is the
+center-to-center displacement, with an explicit GGEMS length unit. For multiple
+copies it must remain strictly positive after unit conversion; zero is allowed
+only for count=1. Negative and nonfinite pitch are rejected. Reversed axes are
+not supported.
+
+The complete child subtree is captured now. Later source edits do not alter the
+recipe. The detached mother's final pose composes with every occurrence when
+attached to World. A uniquely registered mother instead extends its original
+World using the already captured parent pose. Repeated source objects never
+become live handles for individual occurrences. Direct self-use and reuse of a
+source registered in a live World are rejected.
+
+World expansion requires configured size and material. Existing depth, capacity,
+FP32, containment, and overlap admission apply atomically to the expanded batch.
+Bounded overlap checks do not prove arbitrary geometry overlap-free. Initial
+expansion uses ordinary occurrences and linear device candidate scans; this is
+not a scalable accelerator for large repeated scenes.
+
+Args:
+    volume: Complete analytical reference volume and captured descendants.
+    count: Positive integer total count, excluding Booleans.
+    pitch: Nonnegative center-to-center displacement.
+    unit: Explicit GGEMS length unit.
+    axis: Exactly "X", "Y", or "Z" in the mother's local frame.
+
+Returns:
+    This parent for chaining.
+)doc",
+      py::arg("volume"), py::arg("count"), py::arg("pitch"), py::arg("unit"),
+      py::arg("axis"), py::return_value_policy::reference_internal);
+
+    binding.def(
+      "circular_repeater",
+      [attachments](std::shared_ptr<Parent> const &parent,
+                    std::shared_ptr<Child> const &child, py::handle count,
+                    std::string const &axis) -> Parent & {
+        auto const copies = ParseRepeatCount(count);
+        auto const repeat_axis = ParseRepeatAxis(axis);
+        attachments->CircularRepeater(parent, child, copies, repeat_axis);
+        return *parent;
+      },
+      R"doc(Capture rigid subtree copies around a mother-local axis through its origin.
+
+Count includes occurrence zero at the source pose. Occurrence i rotates both
+source position and orientation by the positive right-handed angle 2*pi*i/count.
+No final 360-degree duplicate is added. The source pose determines radius and
+phase; a zero-radius placement with multiple copies is rejected.
+
+The complete child subtree is captured now. Later source edits do not alter the
+recipe. The detached mother's final pose composes with every occurrence when
+attached to World. A uniquely registered mother instead extends its original
+World using the already captured parent pose. Repeated sources are not handles
+for individual occurrences. Direct self-use and reuse of a source registered in
+a live World are rejected.
+
+World expansion requires configured size and material. Existing depth, capacity,
+FP32, containment, and overlap admission apply atomically to the expanded batch.
+Bounded overlap checks are not an exhaustive geometric proof. Expansion uses
+ordinary physical VolumeIDs, including separate IDs for equal materials, and
+linear device candidate scans. Large-scene acceleration is not implemented.
+
+Args:
+    volume: Complete analytical reference volume and captured descendants.
+    count: Positive integer total count, excluding Booleans.
+    axis: Exactly "X", "Y", or "Z" in the mother's local frame.
+
+Returns:
+    This parent for chaining.
+)doc",
+      py::arg("volume"), py::arg("count"), py::arg("axis"),
+      py::return_value_policy::reference_internal);
   };
   bind.template operator()<ggems::geometry::GGEMSBox>();
   bind.template operator()<ggems::geometry::GGEMSSphere>();
@@ -968,21 +1117,27 @@ GGEMSRun.set_world(), which copies the World and checks the completed scene.
 Sizes are converted once to the integer picometer lattice; each full size
 must be an even number of picometers.
 
-Physical occurrences may use any supported analytical shape. Add a configured
-mother with world.add_volume(mother), then daughters with
-mother.add_volume(child). Each call copies the shape value; subsequent setters
-do not change that copy. The authoring World must remain alive while daughters
-are added. Physical IDs are internal. Position and rotation use the parent's
-local frame. Physical depth is limited to three below World. Sphere rotation
-defines its daughter frame while leaving its spherical surface unchanged.
-Bottom-up assembly is rejected.
+Physical occurrences may use any of the eight supported analytical families.
+Detached mothers capture ordinary children and linear/circular repeater recipes
+by value. Configure the mother pose before or after its children, then attach
+its complete subtree with world.add_volume(mother). Later source edits never
+change captured copies. Position and rotation remain parent-local. Physical
+depth is limited to three below World, and Sphere rotation defines its daughter
+frame without changing the spherical surface.
 
-A daughter replaces its parent's medium only inside all ancestor solids.
-Nominal daughters may protrude beyond ancestors or World. Sibling effective
-interiors must be disjoint; surface contacts are allowed. General effective
-support overlap detection is not provided. Clipped intervals and intended gaps
-must remain resolvable outside adjacent FP32 surface bands; smaller gaps may
-behave as contact. Direct World children retain strict World clearance.
+Explicit ordinary attachment also retains top-down assembly: subsequent
+mother.add_volume(child) extends the original live World using the stored mother
+pose. Descendant sources captured bottom-up and repeater sources have no live
+occurrence handle. run.set_world(world) copies the completed scene independently.
+
+All World attachments and repeater batches require configured size and material;
+every attachment is atomic, including a single leaf. Invalid geometry is
+rejected without publishing a partial batch. Children must fit parent and World
+support; sibling interiors must be disjoint. Gaps and surface contact are
+allowed subject to existing FP32 admission. Bounded geometric samples reject
+detected violations but are not an exhaustive overlap proof. Sub-band gaps may
+behave as contact. Expanded repeaters use the existing ordinary OpenCL path;
+they do not provide large-scene spatial acceleration.
 
 Configuration methods return the same object, so calls can be chained.
 
@@ -990,8 +1145,9 @@ Example:
     world = ggems.geometry.GGEMSWorld()
     world.set_size(2.0, 2.0, 2.0, "m")
     world.set_material("Air")
-    world.add_volume(mother)
     mother.add_volume(daughter)
+    mother.set_position(10.0, 0.0, 0.0, "mm")
+    world.add_volume(mother)
     run.set_world(world)
 )doc")
       .def(py::init<>(),

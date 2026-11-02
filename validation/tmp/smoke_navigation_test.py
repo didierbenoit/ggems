@@ -31,8 +31,8 @@ source_test = (
     .set_direction(1.0, 0.0, 0.0)
     .set_angular_isotropic(0.0, 2.5, 0.0, 360.0, "deg")
     # .set_angular_fixed()
-    # .set_primary_count(100_000_000)
-    .set_primary_count(1_073_741_824)
+    .set_primary_count(10_000_000)
+    # .set_primary_count(1_073_741_824)
     # .set_primary_count(1_000_000_000)
     # .set_primary_count(2_147_483_648)
     # .set_primary_count(50_000_000_000)
@@ -49,21 +49,20 @@ world.set_size(3.0, 3.0, 3.0, "m")
 world.set_material("Air")
 
 # Level 1: Mother Box
-box1 = ggems.geometry.GGEMSBox()
-box1.set_size(250, 250, 250, "mm")
-box1.set_material("Water")
-world.add_volume(box1)
+mother = ggems.geometry.GGEMSBox()
+mother.set_size(250, 250, 250, "mm")
+mother.set_material("Water")
 
-# Level 2: Daughter Sphere
-sphere = ggems.geometry.GGEMSSphere()
-sphere.set_radius(100, "mm")
-sphere.set_material("Aluminum")
-box1.add_volume(sphere)
+for iy in range(10):
+    for iz in range(10):
+        crystal = ggems.geometry.GGEMSBox()
+        crystal.set_size(10, 10, 10, "mm")
+        crystal.set_material("Aluminum")
+        crystal.set_position(-54, -54 + iy * 12, -54 + iz * 12, "mm")
 
-box2 = ggems.geometry.GGEMSBox()
-box2.set_size(25, 25, 25, "mm")
-box2.set_material("Air")
-sphere.add_volume(box2)
+        mother.linear_repeater(crystal, count=10, pitch=12, unit="mm", axis="X")
+
+world.add_volume(mother)
 
 # box = ggems.geometry.GGEMSBox()
 # box.set_size(0.2, 0.1, 0.1, "m")

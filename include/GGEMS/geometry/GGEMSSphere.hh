@@ -31,6 +31,7 @@
 
 #include <optional>
 
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
@@ -50,7 +51,7 @@ namespace ggems::geometry {
  * Pose coordinates and fixed rotation axes belong to the parent selected by
  * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
-class GGEMSSphere {
+class GGEMSSphere : public GGEMSVolumeAuthoring {
 public:
   /*! \brief Creates a Sphere at the origin without radius or Material. */
   GGEMSSphere() = default;
@@ -83,6 +84,15 @@ public:
    */
   auto SetRotation(units::Angle angle_x, units::Angle angle_y,
                    units::Angle angle_z) -> GGEMSSphere &;
+
+  /*!
+   * \brief Assigns a proper local-to-parent rotation basis directly.
+   * \param[in] rotation Finite right-handed orthonormal basis.
+   * \return This Sphere for chained configuration.
+   * \throws core::GGEMSRecoverable If the basis fails existing host rotation
+   * admission; the previous rotation remains unchanged.
+   */
+  auto SetRotation(GGEMSRotation3D const &rotation) -> GGEMSSphere &;
 
   /*!
    * \brief Borrows the local-to-parent FP64 frame orientation.

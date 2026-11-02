@@ -31,6 +31,7 @@
 
 #include <optional>
 
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -60,7 +61,7 @@ namespace ggems::geometry {
  * band. Pose coordinates and fixed rotation axes belong to the parent selected
  * by GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
-class GGEMSCons {
+class GGEMSCons : public GGEMSVolumeAuthoring {
 public:
   /*! \brief Creates an unconfigured frustum with an identity pose. */
   GGEMSCons() = default;
@@ -110,6 +111,15 @@ public:
    */
   auto SetRotation(units::Angle angle_x, units::Angle angle_y,
                    units::Angle angle_z) -> GGEMSCons &;
+
+  /*!
+   * \brief Assigns a proper local-to-parent rotation basis directly.
+   * \param[in] rotation Finite right-handed orthonormal basis.
+   * \return This Cons for chained configuration.
+   * \throws core::GGEMSRecoverable If the basis fails existing host rotation
+   * admission; the previous rotation remains unchanged.
+   */
+  auto SetRotation(GGEMSRotation3D const &rotation) -> GGEMSCons &;
 
   /*!
    * \brief Sets the owned medium between the inner and outer surfaces.

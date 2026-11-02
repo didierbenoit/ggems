@@ -60,6 +60,13 @@ struct GGEMSRotation3D {
 };
 
 /*!
+ * \brief Admits a proper finite local-to-reference rotation basis.
+ * \param[in] rotation Candidate right-handed orthonormal basis.
+ * \throws core::GGEMSRecoverable If the existing host basis tolerance fails.
+ */
+auto ValidateRotation3D(GGEMSRotation3D const &rotation) -> void;
+
+/*!
  * \brief Builds the active right-handed rotation Rz * Ry * Rx.
  *
  * Fixed reference axes X, Y, then Z act on a local vector. Assignment is

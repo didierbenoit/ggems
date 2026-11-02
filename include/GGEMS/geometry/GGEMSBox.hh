@@ -33,6 +33,7 @@
 
 #include <optional>
 
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
@@ -56,7 +57,7 @@ namespace ggems::geometry {
  * and fixed rotation axes belong to the parent selected by
  * GGEMSWorld::AddVolume; parent zero selects the World frame.
  */
-class GGEMSBox {
+class GGEMSBox : public GGEMSVolumeAuthoring {
 public:
   /*! \brief Creates a Box centered on the origin with no size and no Material.
    */
@@ -98,6 +99,15 @@ public:
    */
   auto SetRotation(units::Angle angle_x, units::Angle angle_y,
                    units::Angle angle_z) -> GGEMSBox &;
+
+  /*!
+   * \brief Assigns a proper local-to-parent rotation basis directly.
+   * \param[in] rotation Finite right-handed orthonormal basis.
+   * \return This Box for chained configuration.
+   * \throws core::GGEMSRecoverable If the basis fails existing host rotation
+   * admission; the previous rotation remains unchanged.
+   */
+  auto SetRotation(GGEMSRotation3D const &rotation) -> GGEMSBox &;
 
   /*!
    * \brief Returns the immutable local-to-parent FP64 rotation.
