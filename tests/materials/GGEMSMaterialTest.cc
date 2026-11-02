@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks material behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -78,6 +80,8 @@ auto ConstructMaterial(
 // =============================================================================
 // =============================================================================
 
+// Prepared isotope and elemental densities must agree with the physical
+// composition.
 TEST(GGEMSMaterialTest, PureElementComputesNumberDensities) {
   materials::GGEMSMaterial const material{
     "carbon", 2.0_g_cm3, {{.atomic_number = 6U, .mass_fraction = 1.0L}}};
@@ -114,6 +118,8 @@ TEST(GGEMSMaterialTest, PureElementComputesNumberDensities) {
 // =============================================================================
 // =============================================================================
 
+// Prepared isotope and elemental densities must agree with the physical
+// composition.
 TEST(GGEMSMaterialTest, BinaryMixtureComputesNumberDensities) {
   materials::GGEMSMaterial const material{
     "hydrogen-oxygen mixture",
@@ -175,6 +181,8 @@ TEST(GGEMSMaterialTest, BinaryMixtureComputesNumberDensities) {
 // =============================================================================
 // =============================================================================
 
+// Stable semantic ordering must be independent of the order in which the
+// caller supplied data.
 TEST(GGEMSMaterialTest, StoresConstituentsInAtomicNumberOrder) {
   materials::GGEMSMaterial const material{
     "reverse input",
@@ -195,6 +203,8 @@ TEST(GGEMSMaterialTest, StoresConstituentsInAtomicNumberOrder) {
 // =============================================================================
 // =============================================================================
 
+// Atom and mass authoring bases must produce the correct isotope population
+// and densities.
 TEST(GGEMSMaterialTest, NormalizesNearUnitMassFractionSum) {
   materials::GGEMSMaterial const material{
     "near-unit carbon",
@@ -211,6 +221,8 @@ TEST(GGEMSMaterialTest, NormalizesNearUnitMassFractionSum) {
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSMaterialTest, RejectsInvalidInput) {
   auto const valid_density = 1.0_g_cm3;
 
@@ -268,6 +280,8 @@ TEST(GGEMSMaterialTest, RejectsInvalidInput) {
 // =============================================================================
 // =============================================================================
 
+// Vacuum must remain exactly matterless rather than an artificial low-density
+// material.
 TEST(GGEMSMaterialTest, SupportsVacuum) {
   materials::GGEMSMaterial const material{
     "Vacuum", units::Density{.value = 0.0L}, {}};
@@ -283,6 +297,8 @@ TEST(GGEMSMaterialTest, SupportsVacuum) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSMaterialTest, ResolvesNaturalHydrogenAndOxygen) {
   materials::GGEMSMaterial const hydrogen{
     "hydrogen", 1.0_g_cm3, {{.atomic_number = 1U, .mass_fraction = 1.0L}}};
@@ -309,6 +325,8 @@ TEST(GGEMSMaterialTest, ResolvesNaturalHydrogenAndOxygen) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSMaterialTest, UsesDefaultReferenceIsotopeForTechnetium) {
   materials::GGEMSMaterial const technetium{
     "technetium", 11.5_g_cm3, {{.atomic_number = 43U, .mass_fraction = 1.0L}}};
@@ -331,6 +349,8 @@ TEST(GGEMSMaterialTest, UsesDefaultReferenceIsotopeForTechnetium) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSMaterialTest, DistinguishesNaturalAndEnrichedBoron) {
   materials::GGEMSMaterial const natural{
     "natural boron",
@@ -383,6 +403,8 @@ TEST(GGEMSMaterialTest, DistinguishesNaturalAndEnrichedBoron) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSMaterialTest, BuildsExplicitIsotopicMaterial) {
   auto const material = materials::GGEMSMaterial::FromIsotopicComposition(
     "enriched boron carbon oxygen", 1.37_g_cm3,
@@ -439,6 +461,8 @@ TEST(GGEMSMaterialTest, BuildsExplicitIsotopicMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Stable semantic ordering must be independent of the order in which the
+// caller supplied data.
 TEST(GGEMSMaterialTest, ElementalInputOrderDoesNotChangeResult) {
   materials::GGEMSMaterial const forward{
     "forward",
@@ -477,6 +501,8 @@ TEST(GGEMSMaterialTest, ElementalInputOrderDoesNotChangeResult) {
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSMaterialTest, IsotopicAuthoringRejectsInvalidDensityAndEmptyMatter) {
   auto const boron_share = [] -> materials::GGEMSElementalShare {
     return {

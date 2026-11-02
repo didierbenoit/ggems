@@ -35,7 +35,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <iostream>
 #include <limits>
 #include <memory>
 #include <span>
@@ -44,6 +43,8 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
@@ -276,18 +277,9 @@ auto RootBudget(std::array<fp::Scalar, 3> const &anchor, Vec const &center,
               : fp::Subtract(projection, half_chord);
 }
 
-struct Errors {
-  double position{0};
-  double segment{0};
-  double flight{0};
-  double position_budget{0};
-  double segment_budget{0};
-  double flight_budget{0};
-};
-
 auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
                random::GGEMSRandom &random, SphereCase const &test,
-               std::uint32_t material, Errors &errors) -> void {
+               std::uint32_t material) -> void {
   SCOPED_TRACE(test.name);
   geometry::GGEMSWorld world;
   Point half{};
@@ -371,22 +363,15 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   EXPECT_EQ(result.trace[test::k_initial_owner_index + 1U],
             test.initial_owner == 0U ? 0U : material);
   EXPECT_EQ(result.trace[test::k_initial_owner_index + 2U], 0U);
-  // Print actual topology before a fatal count mismatch; other test cases and
-  // device contexts still run because this assertion belongs to this helper.
-  std::cout << std::format("Sphere case '{}' on {}: events {}, completed {}, "
-                           "unresolved {}\n",
-                           test.name, context.GetDevice().GetName(),
-                           result.trace[0],
-                           result.counts.completed_history_count,
-                           result.counts.unresolved_geometry_count);
+  std::string topology;
   if (std::cmp_not_equal(result.trace[0], test.event_count)) {
     for (std::size_t index = 0;
          index <
          std::min<std::size_t>(3, static_cast<std::size_t>(result.trace[0]));
          ++index) {
       auto const offset = 1 + (test::k_trace_stride * index);
-      std::cout << std::format(
-        "  boundary {}: owner {} -> {}, face {}, event {}, material {}, "
+      topology += std::format(
+        "boundary {}: owner {} -> {}, face {}, event {}, material {}, "
         "point ({:.6f}, {:.6f}, {:.6f}) pm, parameter {:.6f} pm\n",
         index, result.trace[offset], result.trace[offset + 1],
         result.trace[offset + 2], result.trace[offset + 6],
@@ -394,7 +379,7 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
         coordinate(offset + 4), coordinate(offset + 5), coordinate(offset + 8));
     }
   }
-  ASSERT_EQ(result.trace[0], test.event_count);
+  ASSERT_EQ(result.trace[0], test.event_count) << topology;
   EXPECT_EQ(result.counts.unresolved_geometry_count, 0U);
   EXPECT_EQ(result.counts.escaped_world_count, 1U);
   EXPECT_EQ(result.counts.completed_history_count, 1U);
@@ -518,19 +503,12 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
     propagated_parameter.value = ideal_step;
     ASSERT_TRUE(std::isfinite(propagated_parameter.error));
     fp::ExpectWithin(measured, propagated_parameter);
-    auto const segment_error = std::abs((measured - expected) * norm);
     flight += measured * norm;
     // Propagate uncertainty from the uploaded inputs through every accepted
     // movement. No measured discrepancy enters this accumulated path budget.
     accumulated_budget += propagated_parameter.error * norm;
     auto const flight_budget = accumulated_budget;
-    EXPECT_LE(std::abs(flight - ideal_parameter * norm), flight_budget);
-    errors.segment = std::max(errors.segment, segment_error);
-    errors.segment_budget =
-      std::max(errors.segment_budget, parameter.error * norm);
-    errors.flight =
-      std::max(errors.flight, std::abs(flight - (ideal_parameter * norm)));
-    errors.flight_budget = std::max(errors.flight_budget, flight_budget);
+    EXPECT_LE(std::abs(flight - (ideal_parameter * norm)), flight_budget);
     for (std::size_t axis = 0; axis < 3; ++axis) {
       auto const moved =
         fp::Add(propagated_anchor[axis],
@@ -541,9 +519,6 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
       ASSERT_TRUE(std::isfinite(budget));
       ASSERT_TRUE(std::isfinite(endpoint[axis]));
       EXPECT_LE(std::abs(endpoint[axis] - reference), budget);
-      errors.position =
-        std::max(errors.position, std::abs(endpoint[axis] - reference));
-      errors.position_budget = std::max(errors.position_budget, budget);
       propagated_anchor[axis] = {.value = reference, .error = budget};
     }
     if (test.predicate_witness && !world_exit) {
@@ -586,7 +561,8 @@ __kernel void analytic_layout(__global ulong *layout) {
   layout[14] = __builtin_offsetof(GGEMSBoxRecord, tolerance_pm);
 }
 )cl";
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231);
@@ -610,12 +586,8 @@ __kernel void analytic_layout(__global ulong *layout) {
               std::string::npos);
     EXPECT_EQ(production.GetBuildOptions().find("-g"), std::string::npos);
 #endif
-    cl::Program program{context.GetContextNative(), source};
-    auto const device = context.GetDevice().GetDeviceNative();
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(source, production.GetBuildOptions());
     std::array<std::uint64_t, 15> layout{};
     auto layout_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     ocl::GGEMSOpenCLKernel layout_kernel{
@@ -626,25 +598,9 @@ __kernel void analytic_layout(__global ulong *layout) {
     EXPECT_EQ(layout,
               (std::array<std::uint64_t, 15>{84, 4, 28, 0, 4, 8, 12, 16, 20, 80,
                                              24, 28, 12, 24, 20}));
-    Errors errors;
     auto const run_case = [&](SphereCase const &test,
                               std::uint32_t material) -> void {
-      Errors current;
-      CheckCase(context, program, random, test, material, current);
-      std::cout << std::format(
-        "Sphere budget '{}': max error/budget position {:.6f}/{:.6f} pm, "
-        "segment {:.6f}/{:.6f} pm, flight {:.6f}/{:.6f} pm\n",
-        test.name, current.position, current.position_budget, current.segment,
-        current.segment_budget, current.flight, current.flight_budget);
-      errors.position = std::max(errors.position, current.position);
-      errors.segment = std::max(errors.segment, current.segment);
-      errors.flight = std::max(errors.flight, current.flight);
-      errors.position_budget =
-        std::max(errors.position_budget, current.position_budget);
-      errors.segment_budget =
-        std::max(errors.segment_budget, current.segment_budget);
-      errors.flight_budget =
-        std::max(errors.flight_budget, current.flight_budget);
+      CheckCase(context, program, random, test, material);
     };
     for (auto const &test : cases) {
       run_case(test, 7U);
@@ -652,19 +608,12 @@ __kernel void analytic_layout(__global ulong *layout) {
     if (same_material) {
       run_case(cases.front(), 0U);
     }
-    std::cout << std::format(
-      "Sphere {}: {} histories; maximum error/budget position {:.6f}/{:.6f} "
-      "pm, "
-      "segment {:.6f}/{:.6f} pm, accumulated flight {:.6f}/{:.6f} pm\nOptions: "
-      "{}\n",
-      context.GetDevice().GetName(), cases.size() + (same_material ? 1U : 0U),
-      errors.position, errors.position_budget, errors.segment,
-      errors.segment_budget, errors.flight, errors.flight_budget,
-      production.GetBuildOptions());
   }
 }
 } // namespace
 
+// Checks sphere chords and continuous positions in the actual production
+// worker.
 TEST_F(GGEMSNavigationDeviceTest, SphereProductionWorkerGeometryAndContinuity) {
   RunCases(OrdinaryCases(), true);
 }
@@ -673,6 +622,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereProductionWorkerGeometryAndContinuity) {
 // or physical material interval. These discrete lifecycle assertions remain
 // exact even though sub-tolerance continuum geometry is intentionally
 // unresolved.
+// Prevents an external grazing ray from creating a spurious sphere interval.
 TEST_F(GGEMSNavigationDeviceTest, SphereToleranceTangentRemainsInWorld) {
   RunCases({
     {
@@ -687,6 +637,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereToleranceTangentRemainsInWorld) {
   });
 }
 
+// Assigns an outward surface birth to the surrounding World.
 TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceOutwardRemainsInWorld) {
   RunCases({
     {
@@ -701,6 +652,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceOutwardRemainsInWorld) {
   });
 }
 
+// Assigns a tangential surface birth to the surrounding World.
 TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceTangentRemainsInWorld) {
   RunCases({
     {
@@ -715,6 +667,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceTangentRemainsInWorld) {
   });
 }
 
+// Assigns an inward surface birth to the sphere's physical owner.
 TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceInwardUsesSphere) {
   RunCases({
     {
@@ -729,6 +682,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereToleranceSurfaceInwardUsesSphere) {
   });
 }
 
+// Distinguishes the sphere predicate from a box using an off-axis chord.
 TEST_F(GGEMSNavigationDeviceTest,
        SpherePredicateDispatchHasDistinctOffAxisChord) {
   RunCases({
@@ -745,6 +699,7 @@ TEST_F(GGEMSNavigationDeviceTest,
   });
 }
 
+// Checks sphere snapshot ownership and shape dispatch through Run.
 TEST_F(GGEMSNavigationDeviceTest,
        RunOwnsSphereSnapshotAndDispatchesItsPredicate) {
   using namespace ggems::units;

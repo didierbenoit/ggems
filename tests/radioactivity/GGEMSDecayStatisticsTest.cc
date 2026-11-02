@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks decay statistics behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -77,6 +79,8 @@ static_assert(std::is_same_v<
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSDecayStatisticsTest, ZeroActivityHasZeroExpectedCount) {
   EXPECT_EQ(
     ComputeExpectedDecayEventCount(
@@ -88,6 +92,8 @@ TEST(GGEMSDecayStatisticsTest, ZeroActivityHasZeroExpectedCount) {
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSDecayStatisticsTest, EmptyWindowHasZeroExpectedCount) {
   EXPECT_EQ(ComputeExpectedDecayEventCount(
               ggems::units::MakeQuantity<Activity>(1.0e6L, "Bq").value(),
@@ -99,6 +105,8 @@ TEST(GGEMSDecayStatisticsTest, EmptyWindowHasZeroExpectedCount) {
 // =============================================================================
 // =============================================================================
 
+// Equivalent authored activity units must enter the decay law at the same
+// physical scale.
 TEST(GGEMSDecayStatisticsTest, EquivalentUnitsEnterDecayFormulaInBecquerels) {
   std::array<Activity, 4U> const activities{
     ggems::units::MakeQuantity<Activity>(1'000.0L, "mBq").value(),
@@ -109,8 +117,10 @@ TEST(GGEMSDecayStatisticsTest, EquivalentUnitsEnterDecayFormulaInBecquerels) {
   };
   // One Bq with a one-second half-life integrates to 1/(2*ln(2)) decays.
   long double const expected = 0.5L / std::numbers::ln2_v<long double>;
-  GGEMSTimeWindow const window{.start_ps = 0ULL,
-                               .stop_ps = 1'000'000'000'000ULL};
+  GGEMSTimeWindow const window{
+    .start_ps = 0ULL,
+    .stop_ps = 1'000'000'000'000ULL,
+  };
   for (auto const activity : activities) {
     EXPECT_EQ(activity.value, 1'000ULL);
     EXPECT_DOUBLE_EQ(static_cast<double>(ComputeExpectedDecayEventCount(
@@ -122,6 +132,8 @@ TEST(GGEMSDecayStatisticsTest, EquivalentUnitsEnterDecayFormulaInBecquerels) {
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSDecayStatisticsTest, RejectsInvalidActivityAtUnitsBoundary) {
   GGEMSTimeWindow const window{.start_ps = 0ULL, .stop_ps = 1ULL};
 
@@ -140,6 +152,8 @@ TEST(GGEMSDecayStatisticsTest, RejectsInvalidActivityAtUnitsBoundary) {
 // =============================================================================
 // =============================================================================
 
+// Source populations must respect the exact run window and its persistent
+// chronology.
 TEST(GGEMSDecayStatisticsTest, RejectsReferenceTimeAfterWindowStart) {
   EXPECT_THROW((void)ComputeExpectedDecayEventCount(
                  ggems::units::MakeQuantity<Activity>(1.0L, "Bq").value(), 1.0L,
@@ -150,6 +164,8 @@ TEST(GGEMSDecayStatisticsTest, RejectsReferenceTimeAfterWindowStart) {
 // =============================================================================
 // =============================================================================
 
+// Source populations must respect the exact run window and its persistent
+// chronology.
 TEST(GGEMSDecayStatisticsTest, AdjacentWindowsAreAdditive) {
   auto const activity =
     ggems::units::MakeQuantity<Activity>(1.0e6L, "Bq").value();
@@ -180,6 +196,8 @@ TEST(GGEMSDecayStatisticsTest, AdjacentWindowsAreAdditive) {
 // =============================================================================
 // =============================================================================
 
+// The slow-decay limit must remain numerically consistent with constant
+// activity.
 TEST(GGEMSDecayStatisticsTest,
      VeryLongHalfLifeApproachesActivityTimesDuration) {
   auto const activity =
@@ -196,6 +214,8 @@ TEST(GGEMSDecayStatisticsTest,
 // =============================================================================
 // =============================================================================
 
+// Integrated F-18 activity must agree with an independently evaluated decay
+// reference.
 TEST(GGEMSDecayStatisticsTest, MatchesF18HalfLifeNumericalReference) {
   long double const actual = ComputeExpectedDecayEventCount(
     ggems::units::MakeQuantity<Activity>(1.0e6L, "Bq").value(),
@@ -208,6 +228,8 @@ TEST(GGEMSDecayStatisticsTest, MatchesF18HalfLifeNumericalReference) {
 // =============================================================================
 // =============================================================================
 
+// A fixed stream must replay within its contract and continue without
+// unintended reset.
 TEST(GGEMSDecayStatisticsTest,
      SampledCountHasDeterministicContinuationForFixedStream) {
   GGEMSRandom configuration{};
@@ -232,12 +254,15 @@ TEST(GGEMSDecayStatisticsTest,
 // =============================================================================
 // =============================================================================
 
+// A stochastic count must not replace or overwrite its physical expectation.
 TEST(GGEMSDecayStatisticsTest, ExpectedAndSampledCountsRemainDistinct) {
   GGEMSRandom configuration{};
   configuration.SetEngine(GGEMSRandomEngine::Philox).SetSeed(77'777ULL);
   GGEMSHostRandomStream random{configuration, 42ULL};
-  GGEMSTimeWindow const window{.start_ps = 0ULL,
-                               .stop_ps = 1'000'000'000'000ULL};
+  GGEMSTimeWindow const window{
+    .start_ps = 0ULL,
+    .stop_ps = 1'000'000'000'000ULL,
+  };
   long double const expected = ComputeExpectedDecayEventCount(
     ggems::units::MakeQuantity<Activity>(123.45L, "Bq").value(), 1'000.0L, 0ULL,
     window);
@@ -252,6 +277,8 @@ TEST(GGEMSDecayStatisticsTest, ExpectedAndSampledCountsRemainDistinct) {
 // =============================================================================
 // =============================================================================
 
+// An exactly empty decay population must leave the subsequent random stream
+// unchanged.
 TEST(GGEMSDecayStatisticsTest, ZeroExpectedCountDoesNotConsumeHostRandomState) {
   GGEMSRandom configuration{};
   configuration.SetEngine(GGEMSRandomEngine::JKISS).SetSeed(77'777ULL);
@@ -269,6 +296,8 @@ TEST(GGEMSDecayStatisticsTest, ZeroExpectedCountDoesNotConsumeHostRandomState) {
 // =============================================================================
 // =============================================================================
 
+// Values around a canonical half quantum must follow the specified rounding
+// rule.
 TEST(GGEMSDecayStatisticsTest,
      SubMillibecquerelQuantizationPreservesZeroDraws) {
   auto const activity =

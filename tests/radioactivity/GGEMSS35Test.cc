@@ -51,6 +51,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSS35Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildS35Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "S-35");
@@ -71,6 +73,8 @@ TEST(GGEMSS35Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSS35Test, PreservesBetaMinus16733Kev) {
   auto const definition = BuildS35Radionuclide();
   auto const &distribution =

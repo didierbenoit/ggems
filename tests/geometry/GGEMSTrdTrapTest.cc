@@ -87,6 +87,7 @@ auto World() -> GGEMSWorld {
 }
 } // namespace
 
+// Checks that each trapezoid end uses its own full authored dimensions.
 TEST(N1Trd, IndependentEndFacesUseFullDimensions) {
   GGEMSTrd shape;
   EXPECT_THROW(shape.Validate(), GGEMSRecoverable);
@@ -111,6 +112,7 @@ TEST(N1Trd, IndependentEndFacesUseFullDimensions) {
             (std::array<DistancePM, 2>{3'000'000'000ULL, 5'000'000'000ULL}));
 }
 
+// Separates intrinsic trap geometry from its global placement transform.
 TEST(N1Trap, FullFaceDimensionsSkewAndInclinationAreIndependentOfPose) {
   auto shape = Trap();
   EXPECT_NO_THROW(shape.Validate());
@@ -140,6 +142,7 @@ TEST(N1Trap, FullFaceDimensionsSkewAndInclinationAreIndependentOfPose) {
   EXPECT_EQ(shape.GetPositiveZHalfSizePM(), positive);
 }
 
+// Rejects incomplete or invalid polyhedra without losing accepted dimensions.
 TEST(N1TrdTrap, RejectsMissingDimensionsMaterialAndInvalidSettersAtomically) {
   GGEMSTrap incomplete;
   EXPECT_THROW(incomplete.Validate(), GGEMSRecoverable);
@@ -177,6 +180,7 @@ TEST(N1TrdTrap, RejectsMissingDimensionsMaterialAndInvalidSettersAtomically) {
   EXPECT_NO_THROW(trap.Validate());
 }
 
+// Rejects nonplanar trap faces instead of silently repairing the shape.
 TEST(N1Trap, RejectsWarpedSidesWithoutRepairingAuthoredDimensions) {
   auto widths = Trap();
   widths.SetPositiveZFace(4_mm, 7_mm, 9_mm, MakeRadians(std::atan(.25)));
@@ -189,6 +193,7 @@ TEST(N1Trap, RejectsWarpedSidesWithoutRepairingAuthoredDimensions) {
   EXPECT_THROW(skew.Validate(), GGEMSRecoverable);
 }
 
+// Preserves solid dimensions and materials after caller and copy mutations.
 TEST(N1TrdTrap, OwnsValuesMaterialsAndCopiedWorldSnapshots) {
   auto check = [](auto shape, GGEMSAnalyticKind kind) -> void {
     shape
@@ -225,6 +230,7 @@ TEST(N1TrdTrap, OwnsValuesMaterialsAndCopiedWorldSnapshots) {
   check(Trap(), GGEMSAnalyticKind::Trap);
 }
 
+// Checks numerical admission and transformed containment of planar solids.
 TEST(N1TrdTrap, RejectsUnresolvedFeaturesAndRotatedWorldContact) {
   auto check = [](auto shape) -> void {
     shape.SetLength(2_pm);
@@ -247,6 +253,7 @@ TEST(N1TrdTrap, RejectsUnresolvedFeaturesAndRotatedWorldContact) {
   check(Trap());
 }
 
+// Checks dimension rounding before half-extent and face construction.
 TEST(N1Trd, CentralUnitsConversionPrecedesFullDimensionAuthoring) {
   auto const size = MakeQuantity<Length>(1.25, "mm");
   ASSERT_TRUE(size.has_value());
@@ -256,6 +263,7 @@ TEST(N1Trd, CentralUnitsConversionPrecedesFullDimensionAuthoring) {
   EXPECT_EQ(shape.GetPositiveZHalfSizePM()[1], 625'000'000ULL);
 }
 
+// Catches thin edges that a face-center-only resolution check would miss.
 TEST(N1Trap, RejectsUnresolvedNarrowEdgeDespiteBroadFaceCenters) {
   GGEMSTrap shape;
   shape.SetNegativeZFace(20_mm, 20_mm, 2_pm)
@@ -276,6 +284,7 @@ TEST(N1Trap, RejectsUnresolvedNarrowEdgeDespiteBroadFaceCenters) {
   EXPECT_NO_THROW(resolved.Validate());
 }
 
+// Protects plane payload offsets while retaining the particle-state ABI.
 TEST(N1TrdTrap, HostPlanePayloadMatchesDeviceOffsetsWithoutParticleGrowth) {
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSPlaneRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSPlaneRecord>);

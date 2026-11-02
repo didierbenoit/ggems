@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks volume units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -53,6 +55,8 @@ constexpr long double k_volume_relative_tolerance =
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSVolumeUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
     std::string_view unit;
@@ -87,6 +91,8 @@ TEST(GGEMSVolumeUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSVolumeUnitsTest, RejectsNegativeVolume) {
   auto const converted = MakeQuantity<Volume>(-1.0L, "cm3");
 
@@ -97,6 +103,8 @@ TEST(GGEMSVolumeUnitsTest, RejectsNegativeVolume) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSVolumeUnitsTest, AutomaticallyDisplaysCubicUnits) {
   {
     ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
@@ -112,6 +120,8 @@ TEST(GGEMSVolumeUnitsTest, AutomaticallyDisplaysCubicUnits) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSVolumeUnitsTest, LiteralStoresCubicPicometers) {
   using namespace ggems::units;
 

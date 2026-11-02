@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source types behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -35,6 +37,8 @@
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSSourceTypes, EmissionGeometryKernelIdsAreStable) {
   using enum ggems::core::sources::GGEMSEmissionGeometryType;
   using ggems::core::sources::FromKernelEmissionGeometryType;
@@ -67,6 +71,8 @@ TEST(GGEMSSourceTypes, EmissionGeometryKernelIdsAreStable) {
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSSourceTypes, AngularDistributionKernelIdsAreStable) {
   using enum ggems::core::sources::GGEMSAngularDistributionType;
   using ggems::core::sources::FromKernelAngularDistributionType;

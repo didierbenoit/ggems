@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Checks observer-to-render trace identity, grouping, and visibility.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -128,6 +129,7 @@ auto ExpectParticleColor(ggems::render::GGEMSParticleTraceVertex const &vertex,
 // =============================================================================
 // =============================================================================
 
+// An empty observer snapshot must not invent a visible particle path.
 TEST(GGEMSParticleTrace, EmptyRecordsProduceNoSegment) {
   std::vector<GGEMSObserverRecord> const records{};
 
@@ -137,6 +139,7 @@ TEST(GGEMSParticleTrace, EmptyRecordsProduceNoSegment) {
 // =============================================================================
 // =============================================================================
 
+// A single point has no physical segment to draw.
 TEST(GGEMSParticleTrace, SingleRecordProducesNoSegment) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
@@ -149,6 +152,8 @@ TEST(GGEMSParticleTrace, SingleRecordProducesNoSegment) {
 // =============================================================================
 // =============================================================================
 
+// Adjacent records must preserve identity and convert picometer positions to
+// meter endpoints.
 TEST(GGEMSParticleTrace, ConsecutiveRecordsInSameTrackProduceSegments) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
@@ -156,8 +161,8 @@ TEST(GGEMSParticleTrace, ConsecutiveRecordsInSameTrackProduceSegments) {
     MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
                GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 4U, 2ULL),
     MakeRecord(0ULL, 7ULL, 42ULL, 20ULL, GGEMSObserverRecordKind::Step,
-               GGEMSParticleType::Gamma, 0LL, 0LL, 200'000'000'000LL, 4U,
-               2ULL)};
+               GGEMSParticleType::Gamma, 0LL, 0LL, 200'000'000'000LL, 4U, 2ULL),
+  };
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
     ggems::render::BuildParticleTraceSegments(records);
@@ -184,15 +189,17 @@ TEST(GGEMSParticleTrace, ConsecutiveRecordsInSameTrackProduceSegments) {
 // =============================================================================
 // =============================================================================
 
+// Rendering must preserve 64-bit history identities without narrowing them to
+// 32 bits.
 TEST(GGEMSParticleTrace, PreservesFiniteGlobalPrimaryIdentityAboveUint32) {
   constexpr std::uint64_t primary_id{4'294'967'337ULL};
-  std::array<GGEMSObserverRecord, 3U> records{{
+  std::array<GGEMSObserverRecord, 3U> records{
     GGEMSObserverRecord{},
     MakeRecord(0ULL, primary_id, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
                GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
     MakeRecord(0ULL, primary_id, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
                GGEMSParticleType::Gamma, 1'000'000'000'000LL, 0LL, 0LL),
-  }};
+  };
   records[1U].global_particle_id = primary_id;
   records[2U].global_particle_id = primary_id;
   auto const segments = ggems::render::BuildParticleTraceSegments(records);
@@ -206,8 +213,10 @@ TEST(GGEMSParticleTrace, PreservesFiniteGlobalPrimaryIdentityAboveUint32) {
 // =============================================================================
 // =============================================================================
 
+// An invalid recorded position must split a trace instead of drawing a
+// fictitious connection.
 TEST(GGEMSParticleTrace, UnrepresentablePositionBreaksConnectivity) {
-  std::array<GGEMSObserverRecord, 5U> records{{
+  std::array<GGEMSObserverRecord, 5U> records{
     MakeRecord(0ULL, 1ULL, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
                GGEMSParticleType::Gamma, 1'000'000'000'000LL, 0LL, 0LL),
     MakeRecord(0ULL, 1ULL, 0ULL, 1ULL, GGEMSObserverRecordKind::Step,
@@ -218,7 +227,7 @@ TEST(GGEMSParticleTrace, UnrepresentablePositionBreaksConnectivity) {
                GGEMSParticleType::Gamma, 3'000'000'000'000LL, 0LL, 0LL),
     MakeRecord(0ULL, 1ULL, 0ULL, 4ULL, GGEMSObserverRecordKind::Terminal,
                GGEMSParticleType::Gamma, 4'000'000'000'000LL, 0LL, 0LL),
-  }};
+  };
   records[2U].position_valid = 0U;
   auto const segments = ggems::render::BuildParticleTraceSegments(records);
   ASSERT_EQ(segments.size(), 2U);
@@ -231,6 +240,8 @@ TEST(GGEMSParticleTrace, UnrepresentablePositionBreaksConnectivity) {
 // =============================================================================
 // =============================================================================
 
+// Out-of-order diagnostic records must reconstruct the chronological particle
+// path.
 TEST(GGEMSParticleTrace, RecordsAreSortedBeforeSegmentConstruction) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(0ULL, 3ULL, 9ULL, 20ULL, GGEMSObserverRecordKind::Step,
@@ -252,6 +263,8 @@ TEST(GGEMSParticleTrace, RecordsAreSortedBeforeSegmentConstruction) {
 // =============================================================================
 // =============================================================================
 
+// A secondary track must remain separate from its parent while retaining
+// ancestry metadata.
 TEST(GGEMSParticleTrace, DifferentTrackAreNotConnectedTogether) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(0ULL, 1ULL, 10ULL, 0ULL, GGEMSObserverRecordKind::Source,
@@ -263,7 +276,8 @@ TEST(GGEMSParticleTrace, DifferentTrackAreNotConnectedTogether) {
                0ULL, 10ULL),
     MakeRecord(0ULL, 1ULL, 11ULL, 25ULL, GGEMSObserverRecordKind::Step,
                GGEMSParticleType::Electron, 50'000'000'000LL, 0LL,
-               125'000'000'000LL, 0U, 0ULL, 10ULL)};
+               125'000'000'000LL, 0U, 0ULL, 10ULL),
+  };
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
     ggems::render::BuildParticleTraceSegments(records);
@@ -279,6 +293,7 @@ TEST(GGEMSParticleTrace, DifferentTrackAreNotConnectedTogether) {
 // =============================================================================
 // =============================================================================
 
+// Reused local IDs in sequential runs must not join unrelated paths.
 TEST(GGEMSParticleTrace, RepeatedLocalIdentifiersAcrossRunsRemainSeparate) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(3ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
@@ -288,8 +303,8 @@ TEST(GGEMSParticleTrace, RepeatedLocalIdentifiersAcrossRunsRemainSeparate) {
     MakeRecord(4ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
                GGEMSParticleType::Gamma, 200'000'000'000LL, 0LL, 0LL, 2U, 5ULL),
     MakeRecord(4ULL, 12ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
-               GGEMSParticleType::Gamma, 300'000'000'000LL, 0LL, 0LL, 2U,
-               5ULL)};
+               GGEMSParticleType::Gamma, 300'000'000'000LL, 0LL, 0LL, 2U, 5ULL),
+  };
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
     ggems::render::BuildParticleTraceSegments(records);
@@ -310,14 +325,16 @@ TEST(GGEMSParticleTrace, RepeatedLocalIdentifiersAcrossRunsRemainSeparate) {
 // =============================================================================
 // =============================================================================
 
+// Global history identity must prevent connections when all local identifiers
+// coincide.
 TEST(GGEMSParticleTrace,
      DifferentGlobalPrimaryIdentifiersAreNotConnectedWhenLocalFieldsMatch) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(3ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
                GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 5ULL),
     MakeRecord(3ULL, 13ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
-               GGEMSParticleType::Gamma, 100'000'000'000LL, 0LL, 0LL, 2U,
-               5ULL)};
+               GGEMSParticleType::Gamma, 100'000'000'000LL, 0LL, 0LL, 2U, 5ULL),
+  };
 
   EXPECT_TRUE(ggems::render::BuildParticleTraceSegments(records).empty());
 }
@@ -325,13 +342,15 @@ TEST(GGEMSParticleTrace,
 // =============================================================================
 // =============================================================================
 
+// Source identity and source-local history identity must both prevent
+// cross-source connections.
 TEST(GGEMSParticleTrace, DifferentSourceProvenanceIsNotConnected) {
   std::vector<GGEMSObserverRecord> different_source_index{
     MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
                GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 0U, 4ULL),
     MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
-               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 2U,
-               4ULL)};
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 2U, 4ULL),
+  };
 
   EXPECT_TRUE(
     ggems::render::BuildParticleTraceSegments(different_source_index).empty());
@@ -351,6 +370,8 @@ TEST(GGEMSParticleTrace, DifferentSourceProvenanceIsNotConnected) {
 // =============================================================================
 // =============================================================================
 
+// A terminal record at the previous position must not add a duplicate visible
+// segment.
 TEST(GGEMSParticleTrace, ZeroLengthTerminalRecordDoesNotCreateSegment) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(0ULL, 2ULL, 20ULL, 0ULL, GGEMSObserverRecordKind::Source,
@@ -358,7 +379,8 @@ TEST(GGEMSParticleTrace, ZeroLengthTerminalRecordDoesNotCreateSegment) {
     MakeRecord(0ULL, 2ULL, 20ULL, 10ULL, GGEMSObserverRecordKind::Step,
                GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL),
     MakeRecord(0ULL, 2ULL, 20ULL, 10ULL, GGEMSObserverRecordKind::Terminal,
-               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL)};
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL),
+  };
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
     ggems::render::BuildParticleTraceSegments(records);
@@ -371,6 +393,8 @@ TEST(GGEMSParticleTrace, ZeroLengthTerminalRecordDoesNotCreateSegment) {
 // =============================================================================
 // =============================================================================
 
+// An unassigned diagnostic segment must not claim the identity of a real
+// source.
 TEST(GGEMSParticleTrace, DefaultSegmentHasInvalidSourceProvenance) {
   ggems::render::GGEMSParticleTraceSegment segment{};
 
@@ -381,13 +405,21 @@ TEST(GGEMSParticleTrace, DefaultSegmentHasInvalidSourceProvenance) {
 // =============================================================================
 // =============================================================================
 
+// Line vertices must preserve both asymmetric endpoints and a common opaque
+// particle color.
 TEST(GGEMSParticleTrace, SegmentsBuildLineVertices) {
   ggems::render::GGEMSParticleTraceSegment segment{};
   segment.particle_type = GGEMSParticleType::Gamma;
   segment.begin = ggems::render::GGEMSParticleTracePoint{
-    .x_m = 1.0F, .y_m = 2.0F, .z_m = 3.0F};
+    .x_m = 1.0F,
+    .y_m = 2.0F,
+    .z_m = 3.0F,
+  };
   segment.end = ggems::render::GGEMSParticleTracePoint{
-    .x_m = 4.0F, .y_m = 5.0F, .z_m = 6.0F};
+    .x_m = 4.0F,
+    .y_m = 5.0F,
+    .z_m = 6.0F,
+  };
 
   std::vector<ggems::render::GGEMSParticleTraceVertex> const vertices =
     ggems::render::BuildParticleTraceVertices(
@@ -413,12 +445,15 @@ TEST(GGEMSParticleTrace, SegmentsBuildLineVertices) {
 // =============================================================================
 // =============================================================================
 
+// Draw preparation must group interleaved sources and keep every endpoint in
+// its source range.
 TEST(GGEMSParticleTrace, InterleavedSegmentsAreGroupedBySourceIndex) {
   std::array<ggems::render::GGEMSParticleTraceSegment, 4U> segments{
     MakeSegment(2U, GGEMSParticleType::Gamma, 20.0F),
     MakeSegment(0U, GGEMSParticleType::Electron, 0.0F),
     MakeSegment(2U, GGEMSParticleType::Proton, 21.0F),
-    MakeSegment(1U, GGEMSParticleType::Positron, 10.0F)};
+    MakeSegment(1U, GGEMSParticleType::Positron, 10.0F),
+  };
 
   auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
 
@@ -446,13 +481,15 @@ TEST(GGEMSParticleTrace, InterleavedSegmentsAreGroupedBySourceIndex) {
 // =============================================================================
 // =============================================================================
 
+// Draw ranges must cover all vertices exactly once without gaps or overlaps.
 TEST(GGEMSParticleTrace, DrawRangesAreContiguous) {
   std::array<ggems::render::GGEMSParticleTraceSegment, 5U> segments{
     MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
     MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
     MakeSegment(2U, GGEMSParticleType::Positron, 3.0F),
     MakeSegment(1U, GGEMSParticleType::Proton, 4.0F),
-    MakeSegment(0U, GGEMSParticleType::Neutron, 5.0F)};
+    MakeSegment(0U, GGEMSParticleType::Neutron, 5.0F),
+  };
 
   auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
 
@@ -471,11 +508,14 @@ TEST(GGEMSParticleTrace, DrawRangesAreContiguous) {
 // =============================================================================
 // =============================================================================
 
+// Grouping by source must preserve each segment's particle color on both
+// endpoints.
 TEST(GGEMSParticleTrace, GroupingPreservesParticleColors) {
   std::array<ggems::render::GGEMSParticleTraceSegment, 3U> segments{
     MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
     MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
-    MakeSegment(1U, GGEMSParticleType::Proton, 3.0F)};
+    MakeSegment(1U, GGEMSParticleType::Proton, 3.0F),
+  };
 
   auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
 
@@ -492,6 +532,8 @@ TEST(GGEMSParticleTrace, GroupingPreservesParticleColors) {
 // =============================================================================
 // =============================================================================
 
+// Resizing the source list must keep retained preferences and initialize newly
+// added sources.
 TEST(GGEMSParticleTraceVisibility,
      ReconciliationPreservesOnlyRetainedSourcePreferences) {
   ggems::render::GGEMSParticleTraceVisibility visibility{};
@@ -521,6 +563,8 @@ TEST(GGEMSParticleTraceVisibility,
 // =============================================================================
 // =============================================================================
 
+// Global visibility must not erase per-source preferences when toggled off and
+// on.
 TEST(GGEMSParticleTraceVisibility,
      GlobalAndIndividualFiltersRemainIndependent) {
   ggems::render::GGEMSParticleTraceVisibility visibility{};
@@ -547,6 +591,8 @@ TEST(GGEMSParticleTraceVisibility,
 // =============================================================================
 // =============================================================================
 
+// Observer-to-draw integration must preserve signed axes, diagonal endpoints,
+// and source filtering.
 TEST(GGEMSParticleTrace,
      DiagnosticCardinalAndDiagonalHistoriesBuildSevenFilteredRanges) {
   constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_begin_pm{
@@ -652,6 +698,8 @@ TEST(GGEMSParticleTrace,
 // =============================================================================
 // =============================================================================
 
+// Particles sharing local metadata must still produce separate paths under
+// their global IDs.
 TEST(GGEMSParticleTrace,
      SeparatesInterleavedParticlesWithDifferentGlobalParticleIds) {
   auto source_a =

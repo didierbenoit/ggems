@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks production cut description behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -35,7 +37,6 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
@@ -146,6 +147,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST_F(GGEMSProductionCutDescriptionTest, InspectsTheCompiledContext) {
   auto const inspection = processes::InspectProductionCutContext(package_, 2U);
 
@@ -177,6 +180,8 @@ TEST_F(GGEMSProductionCutDescriptionTest, InspectsTheCompiledContext) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST_F(GGEMSProductionCutDescriptionTest, DescribesLengthScopeAndThreshold) {
   auto const inspection = processes::InspectProductionCutContext(package_, 2U);
   auto const description =
@@ -202,6 +207,8 @@ TEST_F(GGEMSProductionCutDescriptionTest, DescribesLengthScopeAndThreshold) {
 // =============================================================================
 // =============================================================================
 
+// Reports must not confuse registry handles with compact scientific snapshot
+// IDs.
 TEST_F(GGEMSProductionCutDescriptionTest,
        DistinguishesAuthoringIndexFromSnapshotMaterialId) {
   auto const water = processes::InspectProductionCutContext(package_, 0U);
@@ -219,6 +226,8 @@ TEST_F(GGEMSProductionCutDescriptionTest,
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST_F(GGEMSProductionCutDescriptionTest, DescribesProductionNotTracking) {
   for (std::size_t context = 0U; context < contexts_.size(); ++context) {
     auto const description =

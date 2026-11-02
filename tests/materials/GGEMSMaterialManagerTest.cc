@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks material manager behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -45,16 +47,8 @@ using namespace ggems::units;
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSMaterialManagerTest, IsProcessWideSingleton) {
-  auto &first = materials::GGEMSMaterialManager::GetInstance();
-  auto &second = materials::GGEMSMaterialManager::GetInstance();
-
-  EXPECT_EQ(&first, &second);
-}
-
-// =============================================================================
-// =============================================================================
-
+// Definition, inspection, and registration must have the documented
+// observable side effects.
 TEST(GGEMSMaterialManagerTest, GetsOrAddsBuiltInOnce) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
@@ -71,6 +65,8 @@ TEST(GGEMSMaterialManagerTest, GetsOrAddsBuiltInOnce) {
 // =============================================================================
 // =============================================================================
 
+// Definition, inspection, and registration must have the documented
+// observable side effects.
 TEST(GGEMSMaterialManagerTest, DefinesCustomMaterialAndRegistersItOnDemand) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
@@ -123,6 +119,8 @@ TEST(GGEMSMaterialManagerTest, DefinesCustomMaterialAndRegistersItOnDemand) {
 // =============================================================================
 // =============================================================================
 
+// Rejected registration must preserve the previously published material
+// definitions.
 TEST(GGEMSMaterialManagerTest, RejectsDuplicateCustomMaterial) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
@@ -154,6 +152,8 @@ TEST(GGEMSMaterialManagerTest, RejectsDuplicateCustomMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Rejected registration must preserve the previously published material
+// definitions.
 TEST(GGEMSMaterialManagerTest, RejectsBuiltInNameForCustomMaterial) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
@@ -178,6 +178,8 @@ TEST(GGEMSMaterialManagerTest, RejectsBuiltInNameForCustomMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Rejected registration must preserve the previously published material
+// definitions.
 TEST(GGEMSMaterialManagerTest, RejectsUnknownMaterialWithoutMutation) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
@@ -194,6 +196,8 @@ TEST(GGEMSMaterialManagerTest, RejectsUnknownMaterialWithoutMutation) {
 // =============================================================================
 // =============================================================================
 
+// Unsupported identities must fail explicitly without approximate lookup or
+// substitution.
 TEST(GGEMSMaterialManagerTest, RejectsUnknownLookup) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 

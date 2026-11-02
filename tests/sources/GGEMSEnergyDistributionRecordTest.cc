@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks energy distribution record behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,6 +42,8 @@ using EnergyRecord = ggems::core::sources::GGEMSEnergyDistributionRecord;
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSEnergyDistributionRecord, DefaultsToUnknownAndEmptyTable) {
   EnergyRecord const record{};
   EXPECT_EQ(record.regular_bin_width_micro_eV, 0ULL);
@@ -53,6 +57,8 @@ TEST(GGEMSEnergyDistributionRecord, DefaultsToUnknownAndEmptyTable) {
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSEnergyDistributionRecord, HasApprovedHostLayout) {
   EXPECT_TRUE(std::is_standard_layout_v<EnergyRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<EnergyRecord>);
@@ -67,6 +73,8 @@ TEST(GGEMSEnergyDistributionRecord, HasApprovedHostLayout) {
 // =============================================================================
 // =============================================================================
 
+// Asymmetric record values must survive assignment without a swapped or
+// omitted field.
 TEST(GGEMSEnergyDistributionRecord, PreservesEveryField) {
   EnergyRecord const record{
     .regular_bin_width_micro_eV = 2'000'000ULL,

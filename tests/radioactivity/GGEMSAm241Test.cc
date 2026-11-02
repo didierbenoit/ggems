@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks am241 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -90,6 +92,8 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSAm241Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildAm241Radionuclide();
 
@@ -130,6 +134,8 @@ TEST(GGEMSAm241Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
   GGEMSRadionuclideDefinition const definition = BuildAm241Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -208,6 +214,8 @@ TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSAm241Test, PreservesMirdAugerCatalog) {
   GGEMSRadionuclideDefinition const definition = BuildAm241Radionuclide();
   GGEMSRadionuclideEmission const &auger = definition.GetEmissions()[3U];
@@ -231,6 +239,8 @@ TEST(GGEMSAm241Test, PreservesMirdAugerCatalog) {
 // =============================================================================
 // =============================================================================
 
+// All selected LNHB conversion lines must retain their energies and absolute
+// yields.
 TEST(GGEMSAm241Test, PreservesAllLnhbConversionElectronLines) {
   GGEMSRadionuclideDefinition const definition = BuildAm241Radionuclide();
   auto const emissions = definition.GetEmissions();

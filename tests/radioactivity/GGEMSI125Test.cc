@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks i125 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -191,6 +193,8 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSI125Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildI125Radionuclide();
 
@@ -220,6 +224,8 @@ TEST(GGEMSI125Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// Selected parent photon lines must retain their physical energies and
+// absolute yields.
 TEST(GGEMSI125Test, PreservesSingleEvaluatedGammaAndCompactXRayGroups) {
   GGEMSRadionuclideDefinition const definition = BuildI125Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -247,6 +253,8 @@ TEST(GGEMSI125Test, PreservesSingleEvaluatedGammaAndCompactXRayGroups) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSI125Test, PreservesMirdAugerAndPenNucConversionElectrons) {
   GGEMSRadionuclideDefinition const definition = BuildI125Radionuclide();
   auto const emissions = definition.GetEmissions();

@@ -119,8 +119,14 @@ auto ExpectSameCompilation(GGEMSWorld const &actual, GGEMSWorld const &expected)
   ASSERT_EQ(actual.GetVolumeCount(), expected.GetVolumeCount());
   auto const actual_world = actual.BuildRecord();
   auto const expected_world = expected.BuildRecord();
-  EXPECT_EQ(std::memcmp(&actual_world, &expected_world, sizeof(actual_world)),
-            0);
+  EXPECT_EQ(actual_world.half_extent_x_pm, expected_world.half_extent_x_pm);
+  EXPECT_EQ(actual_world.half_extent_y_pm, expected_world.half_extent_y_pm);
+  EXPECT_EQ(actual_world.half_extent_z_pm, expected_world.half_extent_z_pm);
+  EXPECT_EQ(actual_world.tolerance_pm, expected_world.tolerance_pm);
+  EXPECT_EQ(actual_world.occurrence_count, expected_world.occurrence_count);
+  EXPECT_EQ(actual_world.max_boundary_events,
+            expected_world.max_boundary_events);
+  EXPECT_EQ(actual_world.hierarchy_depth, expected_world.hierarchy_depth);
   EXPECT_EQ(actual.BuildAnalyticAuxiliaryBuffer(),
             expected.BuildAnalyticAuxiliaryBuffer());
 
@@ -173,6 +179,8 @@ template <typename Mother, typename Child> auto CheckFamilyPair() -> void {
 }
 } // namespace
 
+// Checks shape dispatch and occurrence indexing for all supported solid
+// families.
 TEST(GGEMSGeometryAttachments, AllFamiliesPreserveIndexedCompilation) {
   CheckFamilyPair<GGEMSBox, GGEMSSphere>();
   CheckFamilyPair<GGEMSSphere, GGEMSTubs>();
@@ -184,6 +192,7 @@ TEST(GGEMSGeometryAttachments, AllFamiliesPreserveIndexedCompilation) {
   CheckFamilyPair<GGEMSPolyhedra, GGEMSBox>();
 }
 
+// Preserves nested snapshots when the caller later mutates an attached solid.
 TEST(GGEMSGeometryAttachments, ThreeLevelsRetainCopyAtAddAndWorldIndependence) {
   GGEMSGeometryAttachments attachments;
   auto world = MakeWorld();
@@ -226,6 +235,7 @@ TEST(GGEMSGeometryAttachments, ThreeLevelsRetainCopyAtAddAndWorldIndependence) {
   EXPECT_EQ(copied_world.GetHalfExtentPM().x, 100'000'000'000ULL);
 }
 
+// Keeps the child reusable after a rejected hierarchy attachment.
 TEST(GGEMSGeometryAttachments, RejectsInvalidAttachmentsWithoutConsumingChild) {
   GGEMSGeometryAttachments attachments;
   auto world = MakeWorld();
@@ -269,6 +279,7 @@ TEST(GGEMSGeometryAttachments, RejectsInvalidAttachmentsWithoutConsumingChild) {
   EXPECT_NO_THROW(world->Validate());
 }
 
+// Allows a surviving solid to be reused after its former parent expires.
 TEST(GGEMSGeometryAttachments, WeakRegistrationsPermitExpirationAndRootReuse) {
   GGEMSGeometryAttachments attachments;
   auto world = MakeWorld();

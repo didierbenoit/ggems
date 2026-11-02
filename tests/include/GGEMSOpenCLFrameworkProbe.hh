@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Locates the shared kernel fixture for OpenCL infrastructure tests.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,6 +42,6 @@ inline constexpr std::string_view k_opencl_framework_probe_name{
 
 [[nodiscard]] inline auto GetOpenCLFrameworkProbeRoot()
   -> std::filesystem::path {
-  return std::filesystem::path{GGEMS_TEST_KERNEL_ROOT} / "tests";
+  return std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 }
 } // namespace ggems::test

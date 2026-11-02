@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks SVM host transfers, generation, and failure atomicity.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -85,249 +87,259 @@ ReadHostAccessRecords(ggems::ocl::GGEMSOpenCLSVMBuffer &buffer)
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto MakeGeneratedHostAccessRecord(std::size_t index) noexcept
-  -> HostAccessRecord {
-  return HostAccessRecord{
-    .identifier = static_cast<std::uint64_t>(100U + index),
-    .value = static_cast<std::int32_t>(index) - 2,
-    .weight = static_cast<float>(index) * 0.25F,
-  };
-}
-
 } // namespace
 
 // =============================================================================
 // =============================================================================
 
+// SVM object transfer preserves independent integer and floating sentinel
+// fields.
 TEST(GGEMSOpenCLSVMHostAccessTest, WritesAndReadsObjectExactly) {
-  std::size_t compatible_device_count{0U};
+  auto const &inventory = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
 
-  for (auto const &inventory : ggems::test::GetOpenCLDeviceInventory()) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-    auto const &device = inventory.device.get();
-    if (device.GetAvailable() == CL_FALSE) {
-      continue;
-    }
+  auto buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{sizeof(HostAccessRecord)});
 
-    ggems::ocl::GGEMSOpenCLContext context{device};
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
-    ++compatible_device_count;
+  HostAccessRecord expected{
+    .identifier = 0x0123456789ABCDEFULL,
+    .value = -123'456,
+    .weight = 0.375F,
+  };
 
-    auto buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(HostAccessRecord)});
+  ggems::ocl::WriteSVMFromHost(buffer, expected);
 
-    HostAccessRecord expected{
-      .identifier = 0x0123456789ABCDEFULL,
-      .value = -123'456,
-      .weight = 0.375F,
-    };
+  auto actual = ggems::ocl::ReadSVMToHost<HostAccessRecord>(buffer);
 
-    ggems::ocl::WriteSVMFromHost(buffer, expected);
-
-    auto actual = ggems::ocl::ReadSVMToHost<HostAccessRecord>(buffer);
-
-    EXPECT_EQ(actual, expected);
-  }
-
-  if (compatible_device_count == 0U) {
-    GTEST_SKIP() << "No available GGEMS-discovered device supports SVM.";
-  }
+  EXPECT_EQ(actual, expected);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Span transfers copy elements across both extent forms, including replacement
+// writes.
 TEST(GGEMSOpenCLSVMHostAccessTest,
      WritesAndReadsDynamicAndFixedExtentSpansExactly) {
-  std::size_t compatible_device_count{0U};
+  auto const &inventory = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
 
-  for (auto const &inventory : ggems::test::GetOpenCLDeviceInventory()) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-    auto const &device = inventory.device.get();
-    if (device.GetAvailable() == CL_FALSE) {
-      continue;
-    }
+  std::array<HostAccessRecord, 3U> expected{{
+    {.identifier = 1ULL, .value = -1, .weight = 0.25F},
+    {.identifier = 2ULL, .value = 0, .weight = 0.50F},
+    {.identifier = 3ULL, .value = 1, .weight = 0.75F},
+  }};
 
-    ggems::ocl::GGEMSOpenCLContext context{device};
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
-    ++compatible_device_count;
+  auto buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{3U * sizeof(HostAccessRecord)});
 
-    std::array<HostAccessRecord, 3U> expected{{
-      {.identifier = 1ULL, .value = -1, .weight = 0.25F},
-      {.identifier = 2ULL, .value = 0, .weight = 0.50F},
-      {.identifier = 3ULL, .value = 1, .weight = 0.75F},
-    }};
+  std::span<HostAccessRecord> dynamic_source{expected};
+  ggems::ocl::WriteSVMFromHost(buffer, dynamic_source);
 
-    auto buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{3U * sizeof(HostAccessRecord)});
+  std::array<HostAccessRecord, 3U> actual{};
 
-    std::span<HostAccessRecord> dynamic_source{expected};
-    ggems::ocl::WriteSVMFromHost(buffer, dynamic_source);
+  std::span<HostAccessRecord, 3U> fixed_destination{actual};
+  ggems::ocl::ReadSVMToHost(buffer, fixed_destination);
 
-    std::array<HostAccessRecord, 3U> actual{};
+  EXPECT_EQ(actual, expected);
 
-    std::span<HostAccessRecord, 3U> fixed_destination{actual};
-    ggems::ocl::ReadSVMToHost(buffer, fixed_destination);
+  std::array<HostAccessRecord, 3U> replacement{{
+    {.identifier = 4ULL, .value = -4, .weight = 1.25F},
+    {.identifier = 5ULL, .value = 5, .weight = 1.50F},
+    {.identifier = 6ULL, .value = 6, .weight = 1.75F},
+  }};
 
-    EXPECT_EQ(actual, expected);
+  std::span<HostAccessRecord, 3U> fixed_source{replacement};
+  ggems::ocl::WriteSVMFromHost(buffer, fixed_source);
 
-    std::array<HostAccessRecord, 3U> replacement{{
-      {.identifier = 4ULL, .value = -4, .weight = 1.25F},
-      {.identifier = 5ULL, .value = 5, .weight = 1.50F},
-      {.identifier = 6ULL, .value = 6, .weight = 1.75F},
-    }};
+  std::span<HostAccessRecord> dynamic_destination{actual};
+  ggems::ocl::ReadSVMToHost(buffer, dynamic_destination);
 
-    std::span<HostAccessRecord, 3U> fixed_source{replacement};
-    ggems::ocl::WriteSVMFromHost(buffer, fixed_source);
-
-    std::span<HostAccessRecord> dynamic_destination{actual};
-    ggems::ocl::ReadSVMToHost(buffer, dynamic_destination);
-
-    EXPECT_EQ(actual, replacement);
-  }
-
-  if (compatible_device_count == 0U) {
-    GTEST_SKIP() << "No available GGEMS-discovered device supports SVM.";
-  }
+  EXPECT_EQ(actual, replacement);
 }
 
 // =============================================================================
 // =============================================================================
 
+// A host fill reaches every SVM element with the requested sentinel record.
 TEST(GGEMSOpenCLSVMHostAccessTest, FillsEveryArrayElementExactly) {
-  std::size_t compatible_device_count{0U};
+  auto const &inventory = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
 
-  for (auto const &inventory : ggems::test::GetOpenCLDeviceInventory()) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-    auto const &device = inventory.device.get();
-    if (device.GetAvailable() == CL_FALSE) {
-      continue;
-    }
+  constexpr std::size_t k_element_count{5U};
 
-    ggems::ocl::GGEMSOpenCLContext context{device};
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
-    ++compatible_device_count;
+  HostAccessRecord expected{
+    .identifier = 0xFEDCBA9876543210ULL,
+    .value = -42,
+    .weight = 1.25F,
+  };
 
-    constexpr std::size_t k_element_count{5U};
+  auto buffer = context.CreateSVMBuffer(
+    ggems::units::Bytes{k_element_count * sizeof(HostAccessRecord)});
 
-    HostAccessRecord expected{
-      .identifier = 0xFEDCBA9876543210ULL,
-      .value = -42,
-      .weight = 1.25F,
-    };
+  ggems::ocl::FillSVMFromHost(buffer, k_element_count, expected);
 
-    auto buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_element_count * sizeof(HostAccessRecord)});
+  auto actual = ReadHostAccessRecords<k_element_count>(buffer);
 
-    ggems::ocl::FillSVMFromHost(buffer, k_element_count, expected);
-
-    auto actual = ReadHostAccessRecords<k_element_count>(buffer);
-
-    for (auto const &record : actual) {
-      EXPECT_EQ(record, expected);
-    }
-  }
-
-  if (compatible_device_count == 0U) {
-    GTEST_SKIP() << "No available GGEMS-discovered device supports SVM.";
+  for (auto const &record : actual) {
+    EXPECT_EQ(record, expected);
   }
 }
 
 // =============================================================================
 // =============================================================================
 
+// Generation visits each index once and writes independently enumerated
+// expected records.
 TEST(GGEMSOpenCLSVMHostAccessTest, GeneratesEveryElementFromItsIndex) {
-  std::size_t compatible_device_count{0U};
+  auto const &inventory = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
 
-  for (auto const &inventory : ggems::test::GetOpenCLDeviceInventory()) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-    auto const &device = inventory.device.get();
-    if (device.GetAvailable() == CL_FALSE) {
-      continue;
-    }
+  constexpr std::size_t k_element_count{5U};
 
-    ggems::ocl::GGEMSOpenCLContext context{device};
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
-    ++compatible_device_count;
+  auto buffer = context.CreateSVMBuffer(
+    ggems::units::Bytes{k_element_count * sizeof(HostAccessRecord)});
 
-    constexpr std::size_t k_element_count{5U};
+  std::size_t invocation_count{0U};
 
-    auto buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_element_count * sizeof(HostAccessRecord)});
-
-    std::size_t invocation_count{0U};
-
-    auto generator =
-      [&invocation_count](std::size_t index) noexcept -> HostAccessRecord {
-      ++invocation_count;
-      return MakeGeneratedHostAccessRecord(index);
+  auto generator =
+    [&invocation_count](std::size_t index) noexcept -> HostAccessRecord {
+    ++invocation_count;
+    return HostAccessRecord{
+      .identifier = static_cast<std::uint64_t>(100U + index),
+      .value = static_cast<std::int32_t>(index) - 2,
+      .weight = static_cast<float>(index) * 0.25F,
     };
+  };
 
-    ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(buffer, k_element_count,
-                                                      generator);
+  ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(buffer, k_element_count,
+                                                    generator);
 
-    EXPECT_EQ(invocation_count, k_element_count);
+  EXPECT_EQ(invocation_count, k_element_count);
 
-    auto actual = ReadHostAccessRecords<k_element_count>(buffer);
+  auto actual = ReadHostAccessRecords<k_element_count>(buffer);
 
-    for (std::size_t index = 0U; index < k_element_count; ++index) {
-      EXPECT_EQ(actual[index], MakeGeneratedHostAccessRecord(index));
-    }
-  }
-
-  if (compatible_device_count == 0U) {
-    GTEST_SKIP() << "No available GGEMS-discovered device supports SVM.";
-  }
+  std::array<HostAccessRecord, k_element_count> const expected{{
+    {.identifier = 100ULL, .value = -2, .weight = 0.0F},
+    {.identifier = 101ULL, .value = -1, .weight = 0.25F},
+    {.identifier = 102ULL, .value = 0, .weight = 0.5F},
+    {.identifier = 103ULL, .value = 1, .weight = 0.75F},
+    {.identifier = 104ULL, .value = 2, .weight = 1.0F},
+  }};
+  EXPECT_EQ(actual, expected);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Empty transfers and generation preserve existing SVM data and never invoke
+// the generator.
 TEST(GGEMSOpenCLSVMHostAccessTest, ZeroLengthOperationsAreNoOps) {
-  std::size_t compatible_device_count{0U};
+  auto const &inventory = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
 
-  for (auto const &inventory : ggems::test::GetOpenCLDeviceInventory()) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-    auto const &device = inventory.device.get();
-    if (device.GetAvailable() == CL_FALSE) {
-      continue;
-    }
+  std::array<HostAccessRecord, 2U> sentinels{{
+    {.identifier = 7ULL, .value = -7, .weight = 0.125F},
+    {.identifier = 8ULL, .value = -8, .weight = 0.875F},
+  }};
 
-    ggems::ocl::GGEMSOpenCLContext context{device};
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
-    ++compatible_device_count;
+  auto buffer = context.CreateSVMBuffer(
+    ggems::units::Bytes{sentinels.size() * sizeof(HostAccessRecord)});
 
-    std::array<HostAccessRecord, 2U> sentinels{{
+  ggems::ocl::WriteSVMFromHost(buffer, std::span{sentinels});
+
+  std::span<HostAccessRecord> empty_source{};
+  std::span<HostAccessRecord> empty_destination{};
+
+  ggems::ocl::WriteSVMFromHost(buffer, empty_source);
+  ggems::ocl::ReadSVMToHost(buffer, empty_destination);
+  ggems::ocl::FillSVMFromHost(buffer, 0U, HostAccessRecord{});
+
+  std::size_t invocation_count{0U};
+
+  auto generator =
+    [&invocation_count](std::size_t) noexcept -> HostAccessRecord {
+    ++invocation_count;
+    return HostAccessRecord{};
+  };
+
+  ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(buffer, 0U, generator);
+
+  EXPECT_EQ(invocation_count, 0U);
+  EXPECT_EQ(ReadHostAccessRecords<2U>(buffer), sentinels);
+}
+
+// =============================================================================
+// =============================================================================
+
+// Oversized transfers preserve source, destination, and allocation state before
+// failing.
+TEST(GGEMSOpenCLSVMHostAccessTest, RejectsInsufficientCapacityBeforeAnyAccess) {
+  auto const &inventory = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
+
+  auto &context = ggems::test::GetSelectedOpenCLContext();
+
+  constexpr std::size_t k_buffer_element_count{2U};
+
+  auto const allocated_before = context.GetAllocatedVRAM().value;
+  auto const allocation_count_before = context.GetAllocationCountVRAM();
+
+  {
+    auto buffer = context.CreateSVMBuffer(
+      ggems::units::Bytes{k_buffer_element_count * sizeof(HostAccessRecord)});
+
+    EXPECT_EQ(context.GetAllocatedVRAM().value,
+              allocated_before +
+                (k_buffer_element_count * sizeof(HostAccessRecord)));
+    EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before + 1U);
+
+    std::array<HostAccessRecord, k_buffer_element_count> sentinels{{
       {.identifier = 7ULL, .value = -7, .weight = 0.125F},
       {.identifier = 8ULL, .value = -8, .weight = 0.875F},
     }};
 
-    auto buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{sentinels.size() * sizeof(HostAccessRecord)});
-
     ggems::ocl::WriteSVMFromHost(buffer, std::span{sentinels});
 
-    std::span<HostAccessRecord> empty_source{};
-    std::span<HostAccessRecord> empty_destination{};
+    std::array<HostAccessRecord, k_buffer_element_count + 1U>
+      oversized_values{};
 
-    ggems::ocl::WriteSVMFromHost(buffer, empty_source);
-    ggems::ocl::ReadSVMToHost(buffer, empty_destination);
-    ggems::ocl::FillSVMFromHost(buffer, 0U, HostAccessRecord{});
+    EXPECT_THROW(
+      ggems::ocl::WriteSVMFromHost(buffer, std::span{oversized_values}),
+      ggems::core::GGEMSInternal);
+
+    EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer), sentinels);
+
+    std::array<HostAccessRecord, k_buffer_element_count + 1U>
+      oversized_destination{{
+        {.identifier = 11ULL, .value = 11, .weight = 0.11F},
+        {.identifier = 12ULL, .value = 12, .weight = 0.12F},
+        {.identifier = 13ULL, .value = 13, .weight = 0.13F},
+      }};
+    auto const destination_before = oversized_destination;
+
+    EXPECT_THROW(
+      ggems::ocl::ReadSVMToHost(buffer, std::span{oversized_destination}),
+      ggems::core::GGEMSInternal);
+
+    EXPECT_EQ(oversized_destination, destination_before);
+    EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer), sentinels);
+
+    EXPECT_THROW(ggems::ocl::FillSVMFromHost(
+                   buffer, k_buffer_element_count + 1U, HostAccessRecord{}),
+                 ggems::core::GGEMSInternal);
+
+    EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer), sentinels);
 
     std::size_t invocation_count{0U};
 
@@ -337,183 +349,67 @@ TEST(GGEMSOpenCLSVMHostAccessTest, ZeroLengthOperationsAreNoOps) {
       return HostAccessRecord{};
     };
 
-    ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(buffer, 0U, generator);
+    EXPECT_THROW(ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(
+                   buffer, k_buffer_element_count + 1U, generator),
+                 ggems::core::GGEMSInternal);
 
     EXPECT_EQ(invocation_count, 0U);
-    EXPECT_EQ(ReadHostAccessRecords<2U>(buffer), sentinels);
+    EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer), sentinels);
+
+    EXPECT_EQ(context.GetAllocatedVRAM().value,
+              allocated_before +
+                (k_buffer_element_count * sizeof(HostAccessRecord)));
+    EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before + 1U);
   }
 
-  if (compatible_device_count == 0U) {
-    GTEST_SKIP() << "No available GGEMS-discovered device supports SVM.";
-  }
+  EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_before);
+  EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSOpenCLSVMHostAccessTest, RejectsInsufficientCapacityBeforeAnyAccess) {
-  std::size_t compatible_device_count{0U};
-
-  for (auto const &inventory : ggems::test::GetOpenCLDeviceInventory()) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
-
-    auto const &device = inventory.device.get();
-    if (device.GetAvailable() == CL_FALSE) {
-      continue;
-    }
-
-    ggems::ocl::GGEMSOpenCLContext context{device};
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
-    ++compatible_device_count;
-
-    constexpr std::size_t k_buffer_element_count{2U};
-
-    auto const allocated_before = context.GetAllocatedVRAM().value;
-    auto const allocation_count_before = context.GetAllocationCountVRAM();
-
-    {
-      auto buffer = context.CreateSVMBuffer(
-        ggems::units::Bytes{k_buffer_element_count * sizeof(HostAccessRecord)});
-
-      EXPECT_EQ(context.GetAllocatedVRAM().value,
-                allocated_before +
-                  (k_buffer_element_count * sizeof(HostAccessRecord)));
-      EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before + 1U);
-
-      std::array<HostAccessRecord, k_buffer_element_count> sentinels{{
-        {.identifier = 7ULL, .value = -7, .weight = 0.125F},
-        {.identifier = 8ULL, .value = -8, .weight = 0.875F},
-      }};
-
-      ggems::ocl::WriteSVMFromHost(buffer, std::span{sentinels});
-
-      std::array<HostAccessRecord, k_buffer_element_count + 1U>
-        oversized_values{};
-
-      EXPECT_THROW(
-        ggems::ocl::WriteSVMFromHost(buffer, std::span{oversized_values}),
-        ggems::core::GGEMSInternal);
-
-      EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer),
-                sentinels);
-
-      std::array<HostAccessRecord, k_buffer_element_count + 1U>
-        oversized_destination{{
-          {.identifier = 11ULL, .value = 11, .weight = 0.11F},
-          {.identifier = 12ULL, .value = 12, .weight = 0.12F},
-          {.identifier = 13ULL, .value = 13, .weight = 0.13F},
-        }};
-      auto const destination_before = oversized_destination;
-
-      EXPECT_THROW(
-        ggems::ocl::ReadSVMToHost(buffer, std::span{oversized_destination}),
-        ggems::core::GGEMSInternal);
-
-      EXPECT_EQ(oversized_destination, destination_before);
-      EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer),
-                sentinels);
-
-      EXPECT_THROW(ggems::ocl::FillSVMFromHost(
-                     buffer, k_buffer_element_count + 1U, HostAccessRecord{}),
-                   ggems::core::GGEMSInternal);
-
-      EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer),
-                sentinels);
-
-      std::size_t invocation_count{0U};
-
-      auto generator =
-        [&invocation_count](std::size_t) noexcept -> HostAccessRecord {
-        ++invocation_count;
-        return HostAccessRecord{};
-      };
-
-      EXPECT_THROW(ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(
-                     buffer, k_buffer_element_count + 1U, generator),
-                   ggems::core::GGEMSInternal);
-
-      EXPECT_EQ(invocation_count, 0U);
-      EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer),
-                sentinels);
-
-      EXPECT_EQ(context.GetAllocatedVRAM().value,
-                allocated_before +
-                  (k_buffer_element_count * sizeof(HostAccessRecord)));
-      EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before + 1U);
-    }
-
-    EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_before);
-    EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
-  }
-
-  if (compatible_device_count == 0U) {
-    GTEST_SKIP() << "No available GGEMS-discovered device supports SVM.";
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
+// An overflowing element count fails before generation or any buffer mutation.
 TEST(GGEMSOpenCLSVMHostAccessTest, RejectsElementCountOverflowBeforeAnyAccess) {
-  std::size_t compatible_device_count{0U};
+  auto const &inventory = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
 
-  for (auto const &inventory : ggems::test::GetOpenCLDeviceInventory()) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(inventory));
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-    auto const &device = inventory.device.get();
-    if (device.GetAvailable() == CL_FALSE) {
-      continue;
-    }
+  auto const allocated_before = context.GetAllocatedVRAM().value;
+  auto const allocation_count_before = context.GetAllocationCountVRAM();
 
-    ggems::ocl::GGEMSOpenCLContext context{device};
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
-    ++compatible_device_count;
+  {
+    auto buffer =
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(HostAccessRecord)});
 
-    auto const allocated_before = context.GetAllocatedVRAM().value;
-    auto const allocation_count_before = context.GetAllocationCountVRAM();
+    HostAccessRecord sentinel{
+      .identifier = 0x123456789ABCDEF0ULL,
+      .value = -17,
+      .weight = 0.625F,
+    };
+    ggems::ocl::WriteSVMFromHost(buffer, sentinel);
 
-    {
-      auto buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(HostAccessRecord)});
+    auto const allocated_with_buffer = context.GetAllocatedVRAM().value;
+    auto const allocation_count_with_buffer = context.GetAllocationCountVRAM();
+    std::size_t invocation_count{0U};
 
-      HostAccessRecord sentinel{
-        .identifier = 0x123456789ABCDEF0ULL,
-        .value = -17,
-        .weight = 0.625F,
-      };
-      ggems::ocl::WriteSVMFromHost(buffer, sentinel);
+    auto generator =
+      [&invocation_count](std::size_t) noexcept -> HostAccessRecord {
+      ++invocation_count;
+      return HostAccessRecord{};
+    };
 
-      auto const allocated_with_buffer = context.GetAllocatedVRAM().value;
-      auto const allocation_count_with_buffer =
-        context.GetAllocationCountVRAM();
-      std::size_t invocation_count{0U};
+    EXPECT_THROW(ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(
+                   buffer, std::numeric_limits<std::size_t>::max(), generator),
+                 ggems::core::GGEMSInternal);
 
-      auto generator =
-        [&invocation_count](std::size_t) noexcept -> HostAccessRecord {
-        ++invocation_count;
-        return HostAccessRecord{};
-      };
-
-      EXPECT_THROW(
-        ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(
-          buffer, std::numeric_limits<std::size_t>::max(), generator),
-        ggems::core::GGEMSInternal);
-
-      EXPECT_EQ(invocation_count, 0U);
-      EXPECT_EQ(ggems::ocl::ReadSVMToHost<HostAccessRecord>(buffer), sentinel);
-      EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_with_buffer);
-      EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_with_buffer);
-    }
-
-    EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_before);
-    EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
+    EXPECT_EQ(invocation_count, 0U);
+    EXPECT_EQ(ggems::ocl::ReadSVMToHost<HostAccessRecord>(buffer), sentinel);
+    EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_with_buffer);
+    EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_with_buffer);
   }
 
-  if (compatible_device_count == 0U) {
-    GTEST_SKIP() << "No available GGEMS-discovered device supports SVM.";
-  }
+  EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_before);
+  EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
 }

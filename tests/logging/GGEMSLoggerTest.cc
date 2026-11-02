@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Checks logger dispatch, formatting, and file output.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -108,6 +109,8 @@ private:
 // =============================================================================
 // =============================================================================
 
+// Rendered diagnostics must retain their message and identify severity, thread,
+// module, and caller.
 TEST(GGEMSLogFormatterTest, PreservesRecordDataAndBuildsExpectedPrefix) {
   LogRecord record{};
   record.timestamp = std::chrono::system_clock::time_point{};
@@ -132,6 +135,8 @@ TEST(GGEMSLogFormatterTest, PreservesRecordDataAndBuildsExpectedPrefix) {
 // =============================================================================
 // =============================================================================
 
+// Warning rendering must select the warning color and keep severity visible in
+// plain text.
 TEST(GGEMSLogFormatterTest, SelectsLevelColorWhenColorIsEnabled) {
   LogRecord record{};
   record.timestamp = std::chrono::system_clock::time_point{};
@@ -149,6 +154,8 @@ TEST(GGEMSLogFormatterTest, SelectsLevelColorWhenColorIsEnabled) {
 // =============================================================================
 // =============================================================================
 
+// The file sink must persist complete newline-delimited text with and without a
+// prefix.
 TEST(GGEMSFileSinkTest, WritesPrefixAndMessageAsPlainText) {
   std::filesystem::path const path =
     std::filesystem::temp_directory_path() / "ggems_logger_test.log";
@@ -182,6 +189,8 @@ TEST(GGEMSFileSinkTest, WritesPrefixAndMessageAsPlainText) {
 // =============================================================================
 // =============================================================================
 
+// Detail filtering must suppress verbose records while delivering the formatted
+// admitted message.
 TEST_F(GGEMSLoggerTest, DispatchesFormattedMessageAndHonorsDetailLevel) {
   auto captured = std::make_shared<CapturedLines>();
   auto &logger = GGEMSLogger::GetInstance();
@@ -204,6 +213,8 @@ TEST_F(GGEMSLoggerTest, DispatchesFormattedMessageAndHonorsDetailLevel) {
 // =============================================================================
 // =============================================================================
 
+// Replacing sinks must stop delivery to the old destination and preserve the
+// new message.
 TEST_F(GGEMSLoggerTest, ClearSinksRemovesPreviouslyInstalledSinks) {
   auto first_capture = std::make_shared<CapturedLines>();
   auto second_capture = std::make_shared<CapturedLines>();
@@ -229,6 +240,8 @@ TEST_F(GGEMSLoggerTest, ClearSinksRemovesPreviouslyInstalledSinks) {
 // =============================================================================
 // =============================================================================
 
+// A null output destination must fail at the logger's public registration
+// boundary.
 TEST_F(GGEMSLoggerTest, RejectsNullSink) {
   auto &logger = GGEMSLogger::GetInstance();
 
@@ -238,6 +251,8 @@ TEST_F(GGEMSLoggerTest, RejectsNullSink) {
 // =============================================================================
 // =============================================================================
 
+// Explicit terminal preferences must override automatic color and encoding
+// decisions.
 TEST_F(GGEMSLoggerTest, ForcedColorAndEncodingRoundTrip) {
   auto &logger = GGEMSLogger::GetInstance();
 
@@ -253,4 +268,3 @@ TEST_F(GGEMSLoggerTest, ForcedColorAndEncodingRoundTrip) {
   logger.SetForceEncoding(Encoding::Ascii);
   EXPECT_EQ(logger.GetEncoding(), Encoding::Ascii);
 }
-/// \endcond

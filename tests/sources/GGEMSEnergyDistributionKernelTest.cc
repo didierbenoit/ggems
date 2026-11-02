@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks energy distribution kernel behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -38,6 +40,11 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
+
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSEnergyDistribution.hh"
@@ -100,10 +107,16 @@ struct RawProbeResult {
     ggems::core::sources::ToKernelEnergyDistributionType(
       EnergyType::DiscreteLines);
   input.distribution.table_count = 3U;
-  input.energies = {2'000'000'000'000ULL, 4'000'000'000'000ULL,
-                    6'000'000'000'000ULL};
-  input.cumulative_ticket_upper = {2'147'483'648ULL, 2'147'483'648ULL,
-                                   4'294'967'296ULL};
+  input.energies = {
+    2'000'000'000'000ULL,
+    4'000'000'000'000ULL,
+    6'000'000'000'000ULL,
+  };
+  input.cumulative_ticket_upper = {
+    2'147'483'648ULL,
+    2'147'483'648ULL,
+    4'294'967'296ULL,
+  };
   input.expected_draw_count = 1U;
   return input;
 }
@@ -119,10 +132,16 @@ struct RawProbeResult {
     ggems::core::sources::ToKernelEnergyDistributionType(
       EnergyType::RegularSpectrum);
   input.distribution.table_count = 3U;
-  input.energies = {10'000'000'000'000ULL, 12'000'000'000'000ULL,
-                    14'000'000'000'000ULL};
-  input.cumulative_ticket_upper = {2'147'483'648ULL, 2'147'483'648ULL,
-                                   4'294'967'296ULL};
+  input.energies = {
+    10'000'000'000'000ULL,
+    12'000'000'000'000ULL,
+    14'000'000'000'000ULL,
+  };
+  input.cumulative_ticket_upper = {
+    2'147'483'648ULL,
+    2'147'483'648ULL,
+    4'294'967'296ULL,
+  };
   input.expected_draw_count = 1U;
   return input;
 }
@@ -133,18 +152,11 @@ struct RawProbeResult {
 class GGEMSEnergyDistributionKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 
   static auto Context() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 
   [[nodiscard]] static auto BuildOptions(Random const &random) -> std::string {
@@ -197,8 +209,8 @@ protected:
                                  std::span{input.cumulative_ticket_upper});
     ggems::ocl::WriteSVMFromHost(sampled_energy_buffer, sampled_energy);
 
-    std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path const kernel_test_root = kernel_root / "tests";
+    std::filesystem::path const kernel_test_root =
+      std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
     auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       BuildOptions(random));
@@ -250,8 +262,8 @@ protected:
                                  std::span{input.cumulative_ticket_upper});
     ggems::ocl::WriteSVMFromHost(sampled_energy_buffer, sampled_energy);
 
-    std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path const kernel_test_root = kernel_root / "tests";
+    std::filesystem::path const kernel_test_root =
+      std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
     auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       FixedBuildOptions());
@@ -279,8 +291,8 @@ protected:
     EnergyRecord distribution{
       .distribution_type = ggems::core::sources::ToKernelEnergyDistributionType(
         EnergyType::DiscreteLines),
-      .table_count =
-        static_cast<std::uint32_t>(cumulative_ticket_upper.size())};
+      .table_count = static_cast<std::uint32_t>(cumulative_ticket_upper.size()),
+    };
     std::uint32_t selected_index{std::numeric_limits<std::uint32_t>::max()};
 
     auto distribution_buffer =
@@ -293,8 +305,8 @@ protected:
     ggems::ocl::WriteSVMFromHost(ticket_buffer, cumulative_ticket_upper);
     ggems::ocl::WriteSVMFromHost(result_buffer, selected_index);
 
-    std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path const kernel_test_root = kernel_root / "tests";
+    std::filesystem::path const kernel_test_root =
+      std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
     auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       FixedBuildOptions());
@@ -323,8 +335,8 @@ protected:
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(offset)});
     ggems::ocl::WriteSVMFromHost(result_buffer, offset);
 
-    std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path const kernel_test_root = kernel_root / "tests";
+    std::filesystem::path const kernel_test_root =
+      std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
     auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       FixedBuildOptions());
@@ -368,8 +380,8 @@ protected:
     ggems::ocl::WriteSVMFromHost(raw_output_buffer, result.raw_output);
     ggems::ocl::WriteSVMFromHost(uniform_output_buffer, result.uniform_output);
 
-    std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path const kernel_test_root = kernel_root / "tests";
+    std::filesystem::path const kernel_test_root =
+      std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
     auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       BuildOptions(random));
@@ -403,6 +415,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Device sampling must consume the specified random words and preserve the
+// observable stream progression.
 TEST_F(GGEMSEnergyDistributionKernelTest,
        RawApiMatchesScalarStateProgressionAndRetainsAllBits) {
   constexpr std::array<std::string_view, 3U> k_engines{
@@ -435,6 +449,8 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Device sampling must consume the specified random words and preserve the
+// observable stream progression.
 TEST_F(GGEMSEnergyDistributionKernelTest,
        ExactEnergyDrawCountForEveryEngineAndMode) {
   constexpr std::array<std::string_view, 3U> k_engines{
@@ -473,6 +489,8 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Device sampling must consume the specified random words and preserve the
+// observable stream progression.
 TEST_F(GGEMSEnergyDistributionKernelTest,
        RawTicketBoundariesSkipZeroWidthEntries) {
   constexpr std::array<std::uint64_t, 5U> k_bounds{
@@ -495,7 +513,11 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
   EXPECT_EQ(RunFindIndexProbe(k_leading_plateau, 0U), 2U);
 
   ProbeInput discrete = MakeDiscreteInput();
-  discrete.cumulative_ticket_upper = {2ULL, 2ULL, 4'294'967'296ULL};
+  discrete.cumulative_ticket_upper = {
+    2ULL,
+    2ULL,
+    4'294'967'296ULL,
+  };
   EXPECT_EQ(RunExplicitTicketProbe(discrete, 0U), 2'000'000'000'000ULL);
   EXPECT_EQ(RunExplicitTicketProbe(discrete, 1U), 2'000'000'000'000ULL);
   EXPECT_EQ(RunExplicitTicketProbe(discrete, 2U), 6'000'000'000'000ULL);
@@ -507,6 +529,8 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST_F(GGEMSEnergyDistributionKernelTest,
        SuppliedCtFirstTwoPositiveBinsAreReachable) {
   std::filesystem::path const path =
@@ -536,6 +560,8 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST_F(GGEMSEnergyDistributionKernelTest,
        RegularMappingIsExactBoundedAndOverflowSafe) {
   ProbeInput regular = MakeRegularInput();
@@ -548,7 +574,11 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
     RunExplicitTicketProbe(regular, std::numeric_limits<std::uint32_t>::max()),
     14'999'999'999'068ULL);
 
-  regular.cumulative_ticket_upper = {1ULL, 1ULL, 4'294'967'296ULL};
+  regular.cumulative_ticket_upper = {
+    1ULL,
+    1ULL,
+    4'294'967'296ULL,
+  };
   EXPECT_EQ(RunExplicitTicketProbe(regular, 0U), 9'000'000'000'000ULL);
 
   constexpr std::array<std::uint64_t, 5U> k_width_3_expected{
@@ -583,6 +613,8 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Canonical energy quanta and table-free monochromatic sampling must remain
+// exact.
 TEST_F(GGEMSEnergyDistributionKernelTest, ThermalNeutronQuantumUsesNoMonoDraw) {
   for (std::string_view const engine : {"jkiss", "pcg32", "philox"}) {
     SCOPED_TRACE(engine);
@@ -597,6 +629,8 @@ TEST_F(GGEMSEnergyDistributionKernelTest, ThermalNeutronQuantumUsesNoMonoDraw) {
 // =============================================================================
 // =============================================================================
 
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST_F(GGEMSEnergyDistributionKernelTest,
        MicroScaleRefinesTheSameRegularTicketLaw) {
   constexpr std::array<std::uint64_t, 5U> tickets{

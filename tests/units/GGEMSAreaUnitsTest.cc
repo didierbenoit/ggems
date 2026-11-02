@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks area units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -70,6 +72,8 @@ auto ExpectScaleNear(long double actual, long double expected) -> void {
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSAreaUnits, ConvertsEveryOfficialRuntimeToken) {
   constexpr std::array<AreaConversionCase, 7U> cases{
     {
@@ -95,6 +99,8 @@ TEST(GGEMSAreaUnits, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSAreaUnits, RejectsNegativeValues) {
   auto const converted = MakeQuantity<Area>(-1.0L, "pm2");
 
@@ -105,6 +111,8 @@ TEST(GGEMSAreaUnits, RejectsNegativeValues) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSAreaUnits, UsesSquaredAutomaticAndUnicodeDisplay) {
   using namespace ggems::units;
 
@@ -122,6 +130,8 @@ TEST(GGEMSAreaUnits, UsesSquaredAutomaticAndUnicodeDisplay) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSAreaUnits, LiteralStoresCanonicalSquarePicometers) {
   using namespace ggems::units;
 

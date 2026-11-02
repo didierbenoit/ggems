@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Checks rendering-device selection and actionable failures.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -6,6 +35,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <vulkan/vulkan.hpp>
 
 #include "GGEMS/ui/detail/GGEMSVulkanDeviceSelection.hh"
 
@@ -42,6 +72,8 @@ MakeCandidate(std::uint32_t index, std::string name,
 // =============================================================================
 // =============================================================================
 
+// Automatic rendering selection must prioritize the actual display adapter when
+// identified.
 TEST(GGEMSVulkanDeviceSelection, AutoPrefersDisplayMatchOverDiscreteDevice) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
     MakeCandidate(5U, "Display Vulkan Device",
@@ -49,7 +81,8 @@ TEST(GGEMSVulkanDeviceSelection, AutoPrefersDisplayMatchOverDiscreteDevice) {
                   "win32-luid:display"),
     MakeCandidate(17U, "Discrete Vulkan Device",
                   vk::PhysicalDeviceType::eDiscreteGpu, true,
-                  "win32-luid:other")};
+                  "win32-luid:other"),
+  };
 
   GGEMSVulkanDisplayAdapter display_adapter{
     .platform_id = "win32-luid:display",
@@ -69,6 +102,8 @@ TEST(GGEMSVulkanDeviceSelection, AutoPrefersDisplayMatchOverDiscreteDevice) {
 // =============================================================================
 // =============================================================================
 
+// Missing display identity must use the admitted rendering preference and
+// explain its choice.
 TEST(GGEMSVulkanDeviceSelection,
      AutoUsesCurrentFallbackWhenDisplayIdentityIsUnavailable) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
@@ -89,6 +124,8 @@ TEST(GGEMSVulkanDeviceSelection,
 // =============================================================================
 // =============================================================================
 
+// Explicit rendering selection must use enumeration IDs rather than vector
+// positions.
 TEST(GGEMSVulkanDeviceSelection,
      ExplicitIndexSupportsNonContiguousEnumerationIndices) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
@@ -106,9 +143,12 @@ TEST(GGEMSVulkanDeviceSelection,
 // =============================================================================
 // =============================================================================
 
+// An unknown rendering index must report the requested value without choosing
+// another device.
 TEST(GGEMSVulkanDeviceSelection, InvalidExplicitIndexFails) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
-    MakeCandidate(11U, "Only device", vk::PhysicalDeviceType::eIntegratedGpu)};
+    MakeCandidate(11U, "Only device", vk::PhysicalDeviceType::eIntegratedGpu),
+  };
 
   auto result = SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromIndex(3U),
                                    std::span{candidates}, std::nullopt);
@@ -120,9 +160,13 @@ TEST(GGEMSVulkanDeviceSelection, InvalidExplicitIndexFails) {
 // =============================================================================
 // =============================================================================
 
+// Rendering device names must be selectable without matching vendor
+// capitalization.
 TEST(GGEMSVulkanDeviceSelection, NameSearchIsCaseInsensitive) {
-  std::vector<GGEMSVulkanDeviceCandidate> candidates{MakeCandidate(
-    8U, "AMD Radeon RX 7900 XTX", vk::PhysicalDeviceType::eDiscreteGpu)};
+  std::vector<GGEMSVulkanDeviceCandidate> candidates{
+    MakeCandidate(8U, "AMD Radeon RX 7900 XTX",
+                  vk::PhysicalDeviceType::eDiscreteGpu),
+  };
 
   auto result =
     SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromString("amd radeon"),
@@ -135,6 +179,7 @@ TEST(GGEMSVulkanDeviceSelection, NameSearchIsCaseInsensitive) {
 // =============================================================================
 // =============================================================================
 
+// An exact device name must resolve uniquely even when other names contain it.
 TEST(GGEMSVulkanDeviceSelection,
      ExactNameMatchTakesPriorityOverPartialMatches) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
@@ -156,6 +201,8 @@ TEST(GGEMSVulkanDeviceSelection,
 // =============================================================================
 // =============================================================================
 
+// Ambiguous rendering selection must expose candidates instead of silently
+// choosing one.
 TEST(GGEMSVulkanDeviceSelection, AmbiguousNameFailsAndListsCandidates) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
     MakeCandidate(2U, "AMD Radeon RX 7800 XT",
@@ -177,10 +224,13 @@ TEST(GGEMSVulkanDeviceSelection, AmbiguousNameFailsAndListsCandidates) {
 // =============================================================================
 // =============================================================================
 
+// Explicit rendering selection must report the device's missing capability.
 TEST(GGEMSVulkanDeviceSelection, ExplicitlyIncompatibleDeviceFailsWithReason) {
-  std::vector<GGEMSVulkanDeviceCandidate> candidates{MakeCandidate(
-    31U, "Incompatible device", vk::PhysicalDeviceType::eDiscreteGpu, false,
-    std::nullopt, "no presentation queue")};
+  std::vector<GGEMSVulkanDeviceCandidate> candidates{
+    MakeCandidate(31U, "Incompatible device",
+                  vk::PhysicalDeviceType::eDiscreteGpu, false, std::nullopt,
+                  "no presentation queue"),
+  };
   auto result = SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromIndex(31U),
                                    std::span{candidates}, std::nullopt);
   ASSERT_FALSE(result.has_value());
@@ -190,6 +240,8 @@ TEST(GGEMSVulkanDeviceSelection, ExplicitlyIncompatibleDeviceFailsWithReason) {
 // =============================================================================
 // =============================================================================
 
+// An inventory with no usable rendering device must produce an actionable
+// failure.
 TEST(GGEMSVulkanDeviceSelection, NoCompatibleDeviceFailsClearly) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
     MakeCandidate(1U, "First", vk::PhysicalDeviceType::eIntegratedGpu, false),
@@ -206,10 +258,13 @@ TEST(GGEMSVulkanDeviceSelection, NoCompatibleDeviceFailsClearly) {
 // =============================================================================
 // =============================================================================
 
+// A reliable display/render adapter mismatch must remain visible to the caller.
 TEST(GGEMSVulkanDeviceSelection, ReliableCrossAdapterMismatchIsReported) {
-  std::vector<GGEMSVulkanDeviceCandidate> candidates{MakeCandidate(
-    29U, "Selected renderer", vk::PhysicalDeviceType::eDiscreteGpu, true,
-    "win32-luid:renderer")};
+  std::vector<GGEMSVulkanDeviceCandidate> candidates{
+    MakeCandidate(29U, "Selected renderer",
+                  vk::PhysicalDeviceType::eDiscreteGpu, true,
+                  "win32-luid:renderer"),
+  };
 
   GGEMSVulkanDisplayAdapter display_adapter{
     .platform_id = "win32-luid:display",

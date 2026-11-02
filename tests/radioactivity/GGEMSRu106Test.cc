@@ -51,6 +51,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSRu106Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildRu106Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Ru-106");
@@ -71,6 +73,8 @@ TEST(GGEMSRu106Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRu106Test, PreservesBetaMinus3940Kev) {
   auto const definition = BuildRu106Radionuclide();
   auto const &distribution =

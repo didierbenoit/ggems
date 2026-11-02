@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Checks device observer layout and physical-state export.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <bit>
@@ -17,6 +46,7 @@
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
@@ -45,16 +75,13 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -63,12 +90,14 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Executes device field probes to verify shared ABI offsets and array strides.
 TEST_F(GGEMSObserverRecordKernelTest, HostAndKernelLayoutsMatch) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   auto &context = GetContext();
 
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path const kernel_test_root = kernel_root / "tests";
+  std::filesystem::path const kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
   std::string const build_options =
     std::format("-I{}", kernel_root.generic_string());
@@ -191,6 +220,8 @@ TEST_F(GGEMSObserverRecordKernelTest, HostAndKernelLayoutsMatch) {
 // =============================================================================
 // =============================================================================
 
+// Preserves finite FP32 physical coordinates when exporting particle state on
+// device.
 TEST_F(GGEMSObserverRecordKernelTest,
        ExportsCompactStateWithoutSaturatingPosition) {
   using ParticleState = ggems::core::particles::GGEMSParticleState;
@@ -262,7 +293,8 @@ TEST_F(GGEMSObserverRecordKernelTest,
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
   auto const &program =
     ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-      context, kernel_root / "tests", "observer_record_abi_probe",
+      context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+      "observer_record_abi_probe",
       std::format("-I{}", kernel_root.generic_string()));
   auto raw_kernel = program.CreateKernel("observer_particle_export_probe");
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),

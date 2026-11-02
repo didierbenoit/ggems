@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks dummy branching, capture policies, provenance, and chunked
+ * execution.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -45,6 +48,7 @@
 #include "GGEMS/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/transport/GGEMSDummyTransportWorkload.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/sources/GGEMSSource.hh"
@@ -186,18 +190,13 @@ protected:
   static void SetUpTestSuite() {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    return opencl.GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -206,6 +205,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Checks dummy branching counts, terminal state, and retained primary
+// provenance.
 TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
@@ -278,6 +279,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
 // =============================================================================
 // =============================================================================
 
+// Prevents rounded launch padding from creating extra particle histories.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        GuardsPaddedWorkItemsForRoundedGlobalSize) {
   constexpr std::uint32_t k_non_multiple_worker_count{257U};
@@ -317,6 +319,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks observer selection of the first source-local primary histories.
 TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
@@ -407,6 +410,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
 // =============================================================================
 // =============================================================================
 
+// Bounds requested capture independently by each source's available population.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        CapsFirstPrimaryCaptureAtEachSourceCount) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
@@ -456,6 +460,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Preserves source-slot identity when empty slots interrupt active sources.
 TEST_F(GGEMSDummyTransportWorkloadTest, CapturesAcrossZeroPrimarySourceSlots) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
@@ -502,6 +507,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesAcrossZeroPrimarySourceSlots) {
 // =============================================================================
 // =============================================================================
 
+// Selects the requested source-local history without capturing its neighbors.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        CapturesSpecificSourceLocalPrimaryHistory) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
@@ -547,6 +553,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Deduplicates a history selected by both capture policies.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        CombinesFirstAndSpecificCaptureWithoutDuplicateHistory) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
@@ -602,6 +609,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks disjoint synthetic range slices on the single selected device.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        CapturesPerSourceLocalPrimariesAcrossDeviceSlices) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
@@ -670,6 +678,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Prevents diagnostic movement and artificial termination from inventing energy
+// deposit.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        RecordsZeroDepositForLosslessMoveAndArtificialTermination) {
   constexpr std::uint64_t k_source_energy_micro_eV{511'000'001'000ULL};
@@ -733,6 +743,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks sliced capture and stable SVM reuse across repeated launches.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        SelectsRangesAcrossDeviceSliceWithoutPerRunAllocations) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
@@ -869,6 +880,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Rejects inconsistent run arrays and reports a missing projected history.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        RejectsInvalidArraysAndReportsUnmatchedProjectionPrimary) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
@@ -930,6 +942,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Rejects a workload with no stable source slots before allocating transport
+// state.
 TEST_F(GGEMSDummyTransportWorkloadTest, RejectsZeroStableSourceCount) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
@@ -937,7 +951,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RejectsZeroStableSourceCount) {
 
   auto &context = GetContext();
 
-  auto construct_workload = [&]() -> void {
+  auto construct_workload = [&] -> void {
     ggems::core::transport::GGEMSDummyTransportWorkload workload{
       context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
       *random, 1U,
@@ -951,6 +965,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RejectsZeroStableSourceCount) {
 // =============================================================================
 // =============================================================================
 
+// Rejects run arrays whose lengths disagree with the workload's source slots.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        RejectsArraysThatDoNotMatchStableSourceCount) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
@@ -990,6 +1005,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks repeated device execution for each supported random engine.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        RunsEveryRandomEngineAcrossSuccessiveCalls) {
   constexpr std::array<std::string_view, 3U> k_engine_names{"philox", "pcg32",
@@ -1104,6 +1120,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Keeps source and primary identity on every descendant particle record.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        PropagatesSourceProvenanceToEverySecondaryRecord) {
   constexpr std::uint32_t k_primary_count{128U};
@@ -1209,6 +1226,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks birth times use the current window start for all source-local
+// histories.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        UsesWindowStartForEverySourceLocalPrimaryId) {
   constexpr std::uint64_t k_time_start_ps{100ULL};
@@ -1280,6 +1299,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Prevents wide energy thresholds from wrapping into unintended secondary
+// creation.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        LargeEnergyThresholdCannotWrapIntoBranching) {
   ggems::core::random::GGEMSRandom random{};
@@ -1308,6 +1329,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks track step counts survive stack transfers beyond an eight-bit range.
 TEST_F(GGEMSDummyTransportWorkloadTest,
        PreservesPerTrackStepCountsAcrossStackBeyondByteRange) {
   constexpr std::uint32_t k_primary_count{128U};

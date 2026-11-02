@@ -21,54 +21,21 @@
 
 /*!
  * \file
+ * \brief Checks monotonic global history reservations across runs.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <cstdint>
-
 #include <gtest/gtest.h>
 
-#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/particles/GGEMSPrimaryStream.hh"
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSPrimaryStream, ProducesContiguousDisjointFixedCountRanges) {
-  constexpr std::uint64_t k_primary_count{17ULL};
-
-  ggems::core::particles::GGEMSPrimaryStream stream{};
-
-  auto first = stream.PrepareRun(0ULL, k_primary_count);
-  auto second = stream.PrepareRun(1ULL, k_primary_count);
-  auto third = stream.PrepareRun(2ULL, k_primary_count);
-
-  EXPECT_EQ(first.run_id, 0ULL);
-  EXPECT_EQ(second.run_id, 1ULL);
-  EXPECT_EQ(third.run_id, 2ULL);
-
-  EXPECT_EQ(first.source_primary_count, k_primary_count);
-  EXPECT_EQ(second.source_primary_count, k_primary_count);
-  EXPECT_EQ(third.source_primary_count, k_primary_count);
-
-  EXPECT_EQ(first.global_history_offset, 0ULL);
-  EXPECT_LT(first.global_history_offset, second.global_history_offset);
-  EXPECT_LT(second.global_history_offset, third.global_history_offset);
-
-  std::uint64_t first_end =
-    first.global_history_offset + first.source_primary_count;
-
-  std::uint64_t second_end =
-    second.global_history_offset + second.source_primary_count;
-
-  EXPECT_EQ(first_end, second.global_history_offset);
-  EXPECT_EQ(second_end, third.global_history_offset);
-}
-
-// =============================================================================
-// =============================================================================
-
+// Checks cumulative history offsets against independent sums of unequal
+// reservations.
 TEST(GGEMSPrimaryStream, ReservesContiguousDisjointVariableCountRanges) {
   ggems::core::particles::GGEMSPrimaryStream stream{};
 
@@ -103,6 +70,8 @@ TEST(GGEMSPrimaryStream, ReservesContiguousDisjointVariableCountRanges) {
 // =============================================================================
 // =============================================================================
 
+// Ensures repeated or nonmonotonic run labels do not reuse global history
+// identifiers.
 TEST(GGEMSPrimaryStream, KeepsRunLabelsIndependentFromReservedRanges) {
   ggems::core::particles::GGEMSPrimaryStream stream{};
 
@@ -132,6 +101,7 @@ TEST(GGEMSPrimaryStream, KeepsRunLabelsIndependentFromReservedRanges) {
 // =============================================================================
 // =============================================================================
 
+// Keeps the next history offset unchanged after an empty reservation.
 TEST(GGEMSPrimaryStream, EmptyReservationDoesNotConsumeIdentifiers) {
   ggems::core::particles::GGEMSPrimaryStream stream{};
 

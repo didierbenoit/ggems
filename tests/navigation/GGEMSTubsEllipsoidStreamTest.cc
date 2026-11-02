@@ -35,15 +35,16 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <iostream>
 #include <limits>
-#include <memory>
 #include <numbers>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
@@ -114,9 +115,9 @@ auto Rotate(Vec const &value, unsigned int pose) -> Vec {
             half_sqrt_two * (value[0] + value[1]), value[2]};
   }
   if (pose == 4U) {
-    double const half_sqrt_three = std::sqrt(3.0) / 2;
-    return {half_sqrt_three * value[0] + 0.5 * value[2], value[1],
-            -0.5 * value[0] + half_sqrt_three * value[2]};
+    double const half_sqrt_three = std::numbers::sqrt3 / 2;
+    return {(half_sqrt_three * value[0]) + (0.5 * value[2]), value[1],
+            (-0.5 * value[0]) + (half_sqrt_three * value[2])};
   }
   if (pose == 5U) {
     return {-value[2], value[1], value[0]};
@@ -269,7 +270,7 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
     terminal.position_x_pm, terminal.position_y_pm, terminal.position_z_pm};
   for (std::size_t axis = 0; axis < 3; ++axis) {
     EXPECT_LE(std::abs(static_cast<double>(terminal_position[axis]) -
-                       (start[axis] + world_exit * direction[axis])),
+                       (start[axis] + (world_exit * direction[axis]))),
               8 * band);
   }
   if (!capture) {
@@ -334,7 +335,7 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   double max_parameter_bands{0};
   auto owner = fixture.initial_owner;
   for (std::size_t index = 0; index <= fixture.crossings.size(); ++index) {
-    auto const offset = 1U + test::k_trace_stride * index;
+    auto const offset = 1U + (test::k_trace_stride * index);
     bool const escape = index == fixture.crossings.size();
     auto const arrival = escape ? k_exterior : 1U - owner;
     double const parameter =
@@ -362,18 +363,13 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
     for (std::size_t axis = 0; axis < 3; ++axis) {
       double const error =
         std::abs(coordinate(offset + 3U + axis) -
-                 (start[axis] + parameter * direction[axis]));
+                 (start[axis] + (parameter * direction[axis])));
       EXPECT_LE(error, budget);
       max_position_bands = std::max(max_position_bands, error / band);
     }
     previous = parameter;
     owner = arrival;
   }
-  std::cout << std::format(
-    "N1 '{}': {} events, T={} pm, maximum position/T={}, "
-    "segment-error/T={}, budget/T={}\n",
-    fixture.name, result.trace[0], band, max_position_bands,
-    max_parameter_bands, 8 * fixture.conditioning);
 }
 
 auto RunCases(std::vector<Case> const &cases, Shape kind) -> void {
@@ -433,7 +429,8 @@ __kernel void n1_query(__global GGEMSWorldRecord const *world,
   answer[6] = as_uint(witness.parameter);
 }
 )cl";
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231U);
@@ -442,15 +439,9 @@ __kernel void n1_query(__global GGEMSWorldRecord const *world,
                   root.generic_string(), random.GetKernelBuildDefinition());
     auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
       context, root / "transport", "particle_stream_transport", options);
-    cl::Program program{context.GetContextNative(), source};
-    auto const device = context.GetDevice().GetDeviceNative();
-    std::cout << "N1 device: " << context.GetDevice().GetName()
-              << "; driver=" << device.getInfo<CL_DRIVER_VERSION>()
-              << "; runtime=" << device.getInfo<CL_DEVICE_VERSION>() << '\n';
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(source, production.GetBuildOptions());
+
     std::array<std::uint64_t, 31> layout{};
     auto buffer = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     ocl::GGEMSOpenCLKernel kernel{context, cl::Kernel(program, "n1_layout"),
@@ -470,11 +461,11 @@ __kernel void n1_query(__global GGEMSWorldRecord const *world,
               kind, false);
     // Physical volume identity remains distinct when both media have ID zero.
     CheckCase(context, program, random, cases.front(), kind, true, 0U);
-    std::cout << "N1 options: " << production.GetBuildOptions() << '\n';
   }
 }
 } // namespace
 
+// Checks filled and hollow cylinder chords in transformed placements.
 TEST_F(GGEMSNavigationDeviceTest, N1TubsFilledHollowAndPoseChords) {
   double const radial = std::sqrt(12.0);
   RunCases(
@@ -528,21 +519,22 @@ TEST_F(GGEMSNavigationDeviceTest, N1TubsFilledHollowAndPoseChords) {
     Shape::Tubs);
 }
 
+// Checks cylinder cap and wall ownership at the tolerance-band boundaries.
 TEST_F(GGEMSNavigationDeviceTest, N1TubsDirectionalSurfacesAndTolerance) {
   Case base{"band probe", {-8, 0, 0}, {1, 0, 0}, {}};
   double const band =
     Scene(base, Shape::Tubs).GetVolumeNavigationTolerancePM() / k_mm;
-  double const near = 4 - 64 * band;
-  double const half_chord = std::sqrt(16 - near * near);
-  double const shallow_bore = 2 - band / 2;
-  double const shallow_outer = std::sqrt(16 - shallow_bore * shallow_bore);
-  double const resolved_bore = 2 - 64 * band;
-  double const resolved_inner = std::sqrt(4 - resolved_bore * resolved_bore);
-  double const resolved_outer = std::sqrt(16 - resolved_bore * resolved_bore);
+  double const near = 4 - (64 * band);
+  double const half_chord = std::sqrt(16 - (near * near));
+  double const shallow_bore = 2 - (band / 2);
+  double const shallow_outer = std::sqrt(16 - (shallow_bore * shallow_bore));
+  double const resolved_bore = 2 - (64 * band);
+  double const resolved_inner = std::sqrt(4 - (resolved_bore * resolved_bore));
+  double const resolved_outer = std::sqrt(16 - (resolved_bore * resolved_bore));
   RunCases(
     {
       {"outer tangent", {-8, 4, 0}, {1, 0, 0}, {}},
-      {"outer shallow sub-band chord", {-8, 4 - band / 2, 0}, {1, 0, 0}, {}},
+      {"outer shallow sub-band chord", {-8, 4 - (band / 2), 0}, {1, 0, 0}, {}},
       {"outer resolved near tangent",
        {-8, near, 0},
        {1, 0, 0},
@@ -607,9 +599,10 @@ TEST_F(GGEMSNavigationDeviceTest, N1TubsDirectionalSurfacesAndTolerance) {
     Shape::Tubs);
 }
 
+// Checks ellipsoid intersections against independent quadratic geometry.
 TEST_F(GGEMSNavigationDeviceTest, N1EllipsoidIndependentChordsAndPoses) {
-  double const chord = 2 * std::sqrt(3.0);
-  double const oblique = 1 / std::sqrt(1.0 / 16 + 1.0 / 36);
+  double const chord = 2 * std::numbers::sqrt3;
+  double const oblique = 1 / std::sqrt((1.0 / 16) + (1.0 / 36));
   RunCases(
     {
       {"unequal axes central", {-8, 0, 0}, {1, 0, 0}, {4, 12}},
@@ -654,17 +647,18 @@ TEST_F(GGEMSNavigationDeviceTest, N1EllipsoidIndependentChordsAndPoses) {
     Shape::Ellipsoid);
 }
 
+// Checks directional ellipsoid ownership at represented surface bands.
 TEST_F(GGEMSNavigationDeviceTest, N1EllipsoidDirectionalSurfacesAndTolerance) {
   Case base{"band probe", {-8, 0, 0}, {1, 0, 0}, {}};
   double const band =
     Scene(base, Shape::Ellipsoid).GetVolumeNavigationTolerancePM() / k_mm;
-  double const near = 3 - 64 * band;
-  double const half_chord = 4 * std::sqrt(1 - near * near / 9);
+  double const near = 3 - (64 * band);
+  double const half_chord = 4 * std::sqrt(1 - ((near * near) / 9));
   RunCases(
     {
       {"ordinary tangent", {-8, 3, 0}, {1, 0, 0}, {}},
       {"surface tangent birth", {0, 3, 0}, {1, 0, 0}, {}},
-      {"shallow sub-band chord", {-8, 3 - band / 2, 0}, {1, 0, 0}, {}},
+      {"shallow sub-band chord", {-8, 3 - (band / 2), 0}, {1, 0, 0}, {}},
       {"resolved near tangent",
        {-8, near, 0},
        {1, 0, 0},
@@ -684,15 +678,16 @@ TEST_F(GGEMSNavigationDeviceTest, N1EllipsoidDirectionalSurfacesAndTolerance) {
       {"closed Z band inward", {0, 0, 6 + band}, {0, 0, -1}, {12 + band}, 1},
       {"closed Z contracted band outward", {0, 0, 6 - band}, {0, 0, 1}, {}},
       {"outside band inward birth",
-       {4 + band / 2, 0, 0},
+       {4 + (band / 2), 0, 0},
        {-1, 0, 0},
-       {8 + band / 2},
+       {8 + (band / 2)},
        1},
-      {"inside band outward birth", {4 - band / 2, 0, 0}, {1, 0, 0}, {}},
+      {"inside band outward birth", {4 - (band / 2), 0, 0}, {1, 0, 0}, {}},
     },
     Shape::Ellipsoid);
 }
 
+// Checks trapezoid intervals against independently inclined face planes.
 TEST_F(GGEMSNavigationDeviceTest, N1TrdIndependentInclinedFacesAndPoses) {
   // |x| <= 3+z/6, |y| <= 3-z/6, |z| <= 6, in mm.
   RunCases(
@@ -798,6 +793,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1TrdIndependentInclinedFacesAndPoses) {
     Shape::Trd);
 }
 
+// Checks trapezoid face ownership at represented tolerance-band boundaries.
 TEST_F(GGEMSNavigationDeviceTest, N1TrdDirectionalSurfacesAndTolerance) {
   Case const base{
     .name = "Trd band probe",
@@ -923,6 +919,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1TrdDirectionalSurfacesAndTolerance) {
     Shape::Trd);
 }
 
+// Checks trap intervals with independent skew, inclination, and global pose.
 TEST_F(GGEMSNavigationDeviceTest, N1TrapIndependentSkewInclinationAndPoses) {
   RunCases(
     {
@@ -1021,6 +1018,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1TrapIndependentSkewInclinationAndPoses) {
     Shape::Trap);
 }
 
+// Checks skewed trap ownership at faces and tolerance-band boundaries.
 TEST_F(GGEMSNavigationDeviceTest, N1TrapDirectionalSurfacesAndTolerance) {
   Case const base{
     .name = "Trap band probe",
@@ -1152,6 +1150,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1TrapDirectionalSurfacesAndTolerance) {
     Shape::Trap);
 }
 
+// Checks Run ownership and shape dispatch for each additional analytic family.
 TEST_F(GGEMSNavigationDeviceTest, N1TubsEllipsoidTrdTrapRunOwnsPosedSnapshot) {
   for (auto const kind :
        {Shape::Tubs, Shape::Ellipsoid, Shape::Trd, Shape::Trap}) {

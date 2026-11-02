@@ -35,20 +35,30 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <ios>
 #include <iterator>
+#include <map>
+#include <memory>
 #include <optional>
+#include <random>
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <system_error>
+#include <utility>
 #include <vector>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
+#include "GGEMS/opencl/GGEMSOpenCLCacheFingerprint.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
+#include "GGEMS/opencl/GGEMSOpenCLProgram.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
@@ -148,6 +158,87 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
     "    }\n\n"
     "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {");
   return source;
+}
+
+/*!
+ * \brief Reuses an immutable trace program on the launch-selected device.
+ * \param[in] source Complete instrumented kernel source, including any ABI
+ * probe.
+ * \param[in] options Exact production build options for this trace variant.
+ * \return Program retained until the test process exits.
+ * \throws std::runtime_error If a published source has different contents.
+ * \throws std::ios_base::failure If generated source cannot be written.
+ * \throws ggems::core::GGEMSFatal If the device compiler rejects the source.
+ *
+ * Generated sources live in the build tree. GGEMSOpenCLProgram supplies its
+ * existing transitive-include, device, driver, and build-option binary cache.
+ * Its extra include root contains only these generated trace sources; the
+ * original production include roots and mathematical options are preserved.
+ */
+inline auto GetAnalyticTraceProgram(std::string const &source,
+                                    std::string_view options)
+  -> cl::Program const & {
+  static std::map<std::pair<std::string, std::string>,
+                  std::unique_ptr<ocl::GGEMSOpenCLProgram>>
+    programs;
+  auto key = std::pair{source, std::string{options}};
+  if (auto const found = programs.find(key); found != programs.end()) {
+    return found->second->GetProgramNative();
+  }
+
+  std::filesystem::path const root{GGEMS_TEST_TRACE_ROOT};
+  std::filesystem::create_directories(root);
+  auto const name =
+    std::format("analytic_trace_{:016x}", ocl::detail::HashFNV1a64(source));
+  auto const path = root / (name + ".cl");
+  auto const matches_source = [&] -> bool {
+    std::ifstream input{path, std::ios::binary};
+    return input &&
+           std::string{std::istreambuf_iterator<char>{input}, {}} == source;
+  };
+
+  if (std::filesystem::exists(path)) {
+    if (!matches_source()) {
+      throw std::runtime_error("Analytic trace source fingerprint collision: " +
+                               path.string());
+    }
+  } else {
+    std::random_device entropy;
+    auto const temporary =
+      root / std::format("{}.{:08x}{:08x}.tmp", name, entropy(), entropy());
+    std::ofstream output;
+    output.exceptions(std::ios::failbit | std::ios::badbit);
+    output.open(temporary,
+                std::ios::binary | std::ios::out | std::ios::noreplace);
+    try {
+      output << source;
+      output.close();
+      std::error_code publication_error;
+      std::filesystem::rename(temporary, path, publication_error);
+      if (publication_error && !matches_source()) {
+        throw std::filesystem::filesystem_error(
+          "Cannot publish analytic trace source", temporary, path,
+          publication_error);
+      }
+      std::error_code ignored;
+      std::filesystem::remove(temporary, ignored);
+    } catch (...) {
+      output.exceptions(std::ios::goodbit);
+      if (output.is_open()) {
+        output.close();
+      }
+      std::error_code ignored;
+      std::filesystem::remove(temporary, ignored);
+      throw;
+    }
+  }
+
+  auto &context = GetSelectedOpenCLContext();
+  auto program =
+    std::make_unique<ocl::GGEMSOpenCLProgram>(context, root, name, key.second);
+  auto const &native = program->GetProgramNative();
+  programs.emplace(std::move(key), std::move(program));
+  return native;
 }
 
 /*! \brief Evidence from one real worker history; no geometric oracle here. */

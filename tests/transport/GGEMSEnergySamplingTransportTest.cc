@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks device energy sampling and random-consumption order.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -37,13 +39,13 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSSource.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -172,16 +174,13 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto Context() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -190,6 +189,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Checks mixed energy distributions across source boundaries and padded work
+// items.
 TEST_F(GGEMSEnergySamplingTransportTest,
        SamplesMixedModesAcrossSourceBoundaryPaddingAndAllEngines) {
   constexpr std::array<std::string_view, 3U> k_engines{
@@ -298,6 +299,7 @@ TEST_F(GGEMSEnergySamplingTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Protects the documented random-consumption order of source sampling.
 TEST_F(GGEMSEnergySamplingTransportTest,
        SamplesEnergyAfterGeometryAndDirectionForEveryEngine) {
   constexpr std::array<std::string_view, 3U> k_engines{

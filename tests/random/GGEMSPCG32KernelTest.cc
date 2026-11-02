@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks pcg32kernel behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -43,7 +45,7 @@
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/random/GGEMSRandomState.hh"
-#include "GGEMSOpenCLCompilerDeviceInventory.hh"
+#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
 
 namespace {
@@ -113,132 +115,186 @@ auto AreStatesEqual(PCG32State const &lhs, PCG32State const &rhs) noexcept
 // =============================================================================
 // =============================================================================
 
+// Sampling must respect its interval endpoints and advance the persistent
+// random state.
 TEST(GGEMSPCG32KernelTest, UniformValuesAreInsideUnitInterval) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
 
-  std::size_t tested_device_count{0U};
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
+  std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
+  std::filesystem::path kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+  std::string build_options = std::format("-I{}", kernel_root.generic_string());
 
-    ++tested_device_count;
+  auto const &program = opencl.GetOrCreateProgram(
+    context, kernel_test_root, "random_pcg32_uniform", build_options);
 
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+  cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
 
-    std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path kernel_test_root = kernel_root / "tests";
+  ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                       "random_pcg32_uniform"};
 
-    std::string build_options =
-      std::format("-I{}", kernel_root.generic_string());
+  std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
+  std::size_t value_bytes = k_value_count * sizeof(float);
 
-    auto const &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "random_pcg32_uniform", build_options);
+  auto states_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+  auto values_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
-    cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
+  auto *states = static_cast<PCG32State *>(states_buffer.GetData());
+  auto *values = static_cast<float *>(values_buffer.GetData());
 
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "random_pcg32_uniform"};
+  states_buffer.Map(CL_MAP_WRITE);
+  values_buffer.Map(CL_MAP_WRITE);
 
-    std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
-    std::size_t value_bytes = k_value_count * sizeof(float);
-
-    auto states_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
-    auto values_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
-
-    auto *states = static_cast<PCG32State *>(states_buffer.GetData());
-    auto *values = static_cast<float *>(values_buffer.GetData());
-
-    states_buffer.Map(CL_MAP_WRITE);
-    values_buffer.Map(CL_MAP_WRITE);
-
-    for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      states[i] = MakePCG32State(k_seed, static_cast<std::uint32_t>(i));
-      ASSERT_EQ(states[i].increment & 1ULL, 1ULL);
-    }
-
-    std::fill(values, values + k_value_count, -1.0F);
-
-    values_buffer.Unmap();
-    states_buffer.Unmap();
-
-    kernel.SetArgSVMPointer(0U, states);
-    kernel.SetArgSVMPointer(1U, values);
-    kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
-    kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
-
-    kernel.Run({k_global_work_size}, {k_local_size});
-
-    values_buffer.Map(CL_MAP_READ);
-
-    for (std::size_t i = 0U; i < k_value_count; ++i) {
-      EXPECT_GE(values[i], 0.0F);
-      EXPECT_LT(values[i], 1.0F);
-    }
-
-    values_buffer.Unmap();
+  for (std::size_t i = 0U; i < k_particle_count; ++i) {
+    states[i] = MakePCG32State(k_seed, static_cast<std::uint32_t>(i));
+    ASSERT_EQ(states[i].increment & 1ULL, 1ULL);
   }
 
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
+  std::fill(values, values + k_value_count, -1.0F);
+
+  values_buffer.Unmap();
+  states_buffer.Unmap();
+
+  kernel.SetArgSVMPointer(0U, states);
+  kernel.SetArgSVMPointer(1U, values);
+  kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
+  kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
+
+  kernel.Run({k_global_work_size}, {k_local_size});
+
+  values_buffer.Map(CL_MAP_READ);
+
+  for (std::size_t i = 0U; i < k_value_count; ++i) {
+    EXPECT_GE(values[i], 0.0F);
+    EXPECT_LT(values[i], 1.0F);
   }
+
+  values_buffer.Unmap();
 }
 
 // =============================================================================
 // =============================================================================
 
+// A fixed stream must replay within its contract and continue without
+// unintended reset.
 TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
 
-  std::size_t tested_device_count{0U};
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
+  std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
+  std::filesystem::path kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
+
+  std::string build_options = std::format("-I{}", kernel_root.generic_string());
+
+  auto const &program = opencl.GetOrCreateProgram(
+    context, kernel_test_root, "random_pcg32_uniform", build_options);
+
+  cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
+
+  ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                       "random_pcg32_uniform"};
+
+  std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
+  std::size_t value_bytes = k_value_count * sizeof(float);
+
+  auto states_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+  auto values_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+
+  auto *states = static_cast<PCG32State *>(states_buffer.GetData());
+  auto *values = static_cast<float *>(values_buffer.GetData());
+
+  states_buffer.Map(CL_MAP_WRITE);
+  values_buffer.Map(CL_MAP_WRITE);
+
+  for (std::size_t i = 0U; i < k_particle_count; ++i) {
+    states[i] = MakePCG32State(k_seed, static_cast<std::uint64_t>(i));
+  }
+
+  std::fill(values, values + k_value_count, -1.0F);
+
+  values_buffer.Unmap();
+  states_buffer.Unmap();
+
+  kernel.SetArgSVMPointer(0U, states);
+  kernel.SetArgSVMPointer(1U, values);
+  kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
+  kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
+
+  kernel.Run({k_global_work_size}, {k_local_size});
+
+  std::vector<float> first_values(k_value_count);
+  values_buffer.Map(CL_MAP_READ);
+  std::copy(values, values + k_value_count, first_values.begin());
+  values_buffer.Unmap();
+
+  kernel.Run({k_global_work_size}, {k_local_size});
+
+  values_buffer.Map(CL_MAP_READ);
+
+  bool sequence_has_advanced{false};
+
+  for (std::size_t i = 0U; i < k_value_count; ++i) {
+    EXPECT_GE(values[i], 0.0F);
+    EXPECT_LT(values[i], 1.0F);
+
+    if (values[i] != first_values[i]) {
+      sequence_has_advanced = true;
     }
+  }
 
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+  values_buffer.Unmap();
 
-    ++tested_device_count;
+  EXPECT_TRUE(sequence_has_advanced);
+}
 
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+// =============================================================================
+// =============================================================================
 
-    std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path kernel_test_root = kernel_root / "tests";
+// A fixed stream must replay within its contract and continue without
+// unintended reset.
+TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
 
-    std::string build_options =
-      std::format("-I{}", kernel_root.generic_string());
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-    auto const &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "random_pcg32_uniform", build_options);
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
+  std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
+  std::filesystem::path kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "random_pcg32_uniform"};
+  std::string build_options = std::format("-I{}", kernel_root.generic_string());
 
-    std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
-    std::size_t value_bytes = k_value_count * sizeof(float);
+  auto const &program = opencl.GetOrCreateProgram(
+    context, kernel_test_root, "random_pcg32_uniform", build_options);
 
-    auto states_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
-    auto values_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+  cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
 
-    auto *states = static_cast<PCG32State *>(states_buffer.GetData());
-    auto *values = static_cast<float *>(values_buffer.GetData());
+  ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                       "random_pcg32_uniform"};
 
+  std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
+  std::size_t value_bytes = k_value_count * sizeof(float);
+
+  auto states_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+  auto values_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+
+  auto *states = static_cast<PCG32State *>(states_buffer.GetData());
+  auto *values = static_cast<float *>(values_buffer.GetData());
+
+  auto initialize_states = [&] -> void {
     states_buffer.Map(CL_MAP_WRITE);
     values_buffer.Map(CL_MAP_WRITE);
 
@@ -250,524 +306,359 @@ TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
 
     values_buffer.Unmap();
     states_buffer.Unmap();
+  };
 
-    kernel.SetArgSVMPointer(0U, states);
-    kernel.SetArgSVMPointer(1U, values);
-    kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
-    kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
+  kernel.SetArgSVMPointer(0U, states);
+  kernel.SetArgSVMPointer(1U, values);
+  kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
+  kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-    kernel.Run({k_global_work_size}, {k_local_size});
+  initialize_states();
 
-    std::vector<float> first_values(k_value_count);
-    values_buffer.Map(CL_MAP_READ);
-    std::copy(values, values + k_value_count, first_values.begin());
-    values_buffer.Unmap();
+  kernel.Run({k_global_work_size}, {k_local_size});
 
-    kernel.Run({k_global_work_size}, {k_local_size});
+  std::vector<float> first_values(k_value_count);
 
-    values_buffer.Map(CL_MAP_READ);
+  values_buffer.Map(CL_MAP_READ);
+  std::copy(values, values + k_value_count, first_values.begin());
+  values_buffer.Unmap();
 
-    bool sequence_has_advanced{false};
+  initialize_states();
 
-    for (std::size_t i = 0U; i < k_value_count; ++i) {
-      EXPECT_GE(values[i], 0.0F);
-      EXPECT_LT(values[i], 1.0F);
+  kernel.Run({k_global_work_size}, {k_local_size});
 
-      if (values[i] != first_values[i]) {
-        sequence_has_advanced = true;
-      }
-    }
+  values_buffer.Map(CL_MAP_READ);
 
-    values_buffer.Unmap();
-
-    EXPECT_TRUE(sequence_has_advanced);
+  for (std::size_t i = 0U; i < k_value_count; ++i) {
+    EXPECT_EQ(values[i], first_values[i]);
   }
 
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
-  }
+  values_buffer.Unmap();
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
-
-  std::size_t tested_device_count{0U};
-
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
-
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
-
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
-
-    ++tested_device_count;
-
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path kernel_test_root = kernel_root / "tests";
-
-    std::string build_options =
-      std::format("-I{}", kernel_root.generic_string());
-
-    auto const &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "random_pcg32_uniform", build_options);
-
-    cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
-
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "random_pcg32_uniform"};
-
-    std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
-    std::size_t value_bytes = k_value_count * sizeof(float);
-
-    auto states_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
-    auto values_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
-
-    auto *states = static_cast<PCG32State *>(states_buffer.GetData());
-    auto *values = static_cast<float *>(values_buffer.GetData());
-
-    auto initialize_states = [&] -> void {
-      states_buffer.Map(CL_MAP_WRITE);
-      values_buffer.Map(CL_MAP_WRITE);
-
-      for (std::size_t i = 0U; i < k_particle_count; ++i) {
-        states[i] = MakePCG32State(k_seed, static_cast<std::uint64_t>(i));
-      }
-
-      std::fill(values, values + k_value_count, -1.0F);
-
-      values_buffer.Unmap();
-      states_buffer.Unmap();
-    };
-
-    kernel.SetArgSVMPointer(0U, states);
-    kernel.SetArgSVMPointer(1U, values);
-    kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
-    kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
-
-    initialize_states();
-
-    kernel.Run({k_global_work_size}, {k_local_size});
-
-    std::vector<float> first_values(k_value_count);
-
-    values_buffer.Map(CL_MAP_READ);
-    std::copy(values, values + k_value_count, first_values.begin());
-    values_buffer.Unmap();
-
-    initialize_states();
-
-    kernel.Run({k_global_work_size}, {k_local_size});
-
-    values_buffer.Map(CL_MAP_READ);
-
-    for (std::size_t i = 0U; i < k_value_count; ++i) {
-      EXPECT_EQ(values[i], first_values[i]);
-    }
-
-    values_buffer.Unmap();
-  }
-
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
+// Seed and stream identity must control the expected random sequence.
 TEST(GGEMSPCG32KernelTest, DifferentSeedsProduceDifferentFirstSequence) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
 
-  std::size_t tested_device_count{0U};
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
+  std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
+  std::filesystem::path kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
+
+  std::string build_options = std::format("-I{}", kernel_root.generic_string());
+
+  auto const &program = opencl.GetOrCreateProgram(
+    context, kernel_test_root, "random_pcg32_uniform", build_options);
+
+  cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
+
+  ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                       "random_pcg32_uniform"};
+
+  std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
+  std::size_t value_bytes = k_value_count * sizeof(float);
+
+  auto states_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+  auto values_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+
+  auto *states = static_cast<PCG32State *>(states_buffer.GetData());
+  auto *values = static_cast<float *>(values_buffer.GetData());
+
+  auto initialize_states = [&](std::uint64_t seed) -> void {
+    states_buffer.Map(CL_MAP_WRITE);
+    values_buffer.Map(CL_MAP_WRITE);
+
+    for (std::size_t i = 0U; i < k_particle_count; ++i) {
+      states[i] = MakePCG32State(seed, static_cast<std::uint64_t>(i));
     }
 
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    std::fill(values, values + k_value_count, -1.0F);
 
-    ++tested_device_count;
-
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path kernel_test_root = kernel_root / "tests";
-
-    std::string build_options =
-      std::format("-I{}", kernel_root.generic_string());
-
-    auto const &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "random_pcg32_uniform", build_options);
-
-    cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
-
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "random_pcg32_uniform"};
-
-    std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
-    std::size_t value_bytes = k_value_count * sizeof(float);
-
-    auto states_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
-    auto values_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
-
-    auto *states = static_cast<PCG32State *>(states_buffer.GetData());
-    auto *values = static_cast<float *>(values_buffer.GetData());
-
-    auto initialize_states = [&](std::uint64_t seed) -> void {
-      states_buffer.Map(CL_MAP_WRITE);
-      values_buffer.Map(CL_MAP_WRITE);
-
-      for (std::size_t i = 0U; i < k_particle_count; ++i) {
-        states[i] = MakePCG32State(seed, static_cast<std::uint64_t>(i));
-      }
-
-      std::fill(values, values + k_value_count, -1.0F);
-
-      values_buffer.Unmap();
-      states_buffer.Unmap();
-    };
-
-    kernel.SetArgSVMPointer(0U, states);
-    kernel.SetArgSVMPointer(1U, values);
-    kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
-    kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
-
-    initialize_states(k_seed);
-
-    kernel.Run({k_global_work_size}, {k_local_size});
-
-    std::vector<float> first_seed_values(k_value_count);
-
-    values_buffer.Map(CL_MAP_READ);
-    std::copy(values, values + k_value_count, first_seed_values.begin());
     values_buffer.Unmap();
+    states_buffer.Unmap();
+  };
 
-    initialize_states(k_alternative_seed);
+  kernel.SetArgSVMPointer(0U, states);
+  kernel.SetArgSVMPointer(1U, values);
+  kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
+  kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-    kernel.Run({k_global_work_size}, {k_local_size});
+  initialize_states(k_seed);
 
-    values_buffer.Map(CL_MAP_READ);
+  kernel.Run({k_global_work_size}, {k_local_size});
 
-    std::size_t different_value_count{0U};
+  std::vector<float> first_seed_values(k_value_count);
 
-    for (std::size_t i = 0U; i < k_value_count; ++i) {
-      EXPECT_GE(values[i], 0.0F);
-      EXPECT_LT(values[i], 1.0F);
+  values_buffer.Map(CL_MAP_READ);
+  std::copy(values, values + k_value_count, first_seed_values.begin());
+  values_buffer.Unmap();
 
-      if (values[i] != first_seed_values[i]) {
-        ++different_value_count;
-      }
+  initialize_states(k_alternative_seed);
+
+  kernel.Run({k_global_work_size}, {k_local_size});
+
+  values_buffer.Map(CL_MAP_READ);
+
+  std::size_t different_value_count{0U};
+
+  for (std::size_t i = 0U; i < k_value_count; ++i) {
+    EXPECT_GE(values[i], 0.0F);
+    EXPECT_LT(values[i], 1.0F);
+
+    if (values[i] != first_seed_values[i]) {
+      ++different_value_count;
     }
-
-    values_buffer.Unmap();
-
-    EXPECT_GT(different_value_count, k_value_count / 2U);
   }
 
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
-  }
+  values_buffer.Unmap();
+
+  EXPECT_GT(different_value_count, k_value_count / 2U);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Sampling must respect its interval endpoints and advance the persistent
+// random state.
 TEST(GGEMSPCG32KernelTest, RandomStatesAreAdvancedByKernelExecution) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
 
-  std::size_t tested_device_count{0U};
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
+  std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
+  std::filesystem::path kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+  std::string build_options = std::format("-I{}", kernel_root.generic_string());
 
-    ++tested_device_count;
+  auto const &program = opencl.GetOrCreateProgram(
+    context, kernel_test_root, "random_pcg32_uniform", build_options);
 
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+  cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
 
-    std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path kernel_test_root = kernel_root / "tests";
+  ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                       "random_pcg32_uniform"};
 
-    std::string build_options =
-      std::format("-I{}", kernel_root.generic_string());
+  std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
+  std::size_t value_bytes = k_value_count * sizeof(float);
 
-    auto const &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "random_pcg32_uniform", build_options);
+  auto states_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+  auto values_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
-    cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
+  auto *states = static_cast<PCG32State *>(states_buffer.GetData());
+  auto *values = static_cast<float *>(values_buffer.GetData());
 
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "random_pcg32_uniform"};
+  std::vector<PCG32State> initial_states(k_particle_count);
 
-    std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
-    std::size_t value_bytes = k_value_count * sizeof(float);
+  states_buffer.Map(CL_MAP_WRITE);
+  values_buffer.Map(CL_MAP_WRITE);
 
-    auto states_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
-    auto values_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+  for (std::size_t i = 0U; i < k_particle_count; ++i) {
+    PCG32State state = MakePCG32State(k_seed, static_cast<std::uint64_t>(i));
 
-    auto *states = static_cast<PCG32State *>(states_buffer.GetData());
-    auto *values = static_cast<float *>(values_buffer.GetData());
-
-    std::vector<PCG32State> initial_states(k_particle_count);
-
-    states_buffer.Map(CL_MAP_WRITE);
-    values_buffer.Map(CL_MAP_WRITE);
-
-    for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      PCG32State state = MakePCG32State(k_seed, static_cast<std::uint64_t>(i));
-
-      states[i] = state;
-      initial_states[i] = state;
-    }
-
-    std::fill(values, values + k_value_count, -1.0F);
-
-    values_buffer.Unmap();
-    states_buffer.Unmap();
-
-    kernel.SetArgSVMPointer(0U, states);
-    kernel.SetArgSVMPointer(1U, values);
-    kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
-    kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
-
-    kernel.Run({k_global_work_size}, {k_local_size});
-
-    states_buffer.Map(CL_MAP_READ);
-    values_buffer.Map(CL_MAP_READ);
-
-    std::size_t changed_state_count{0U};
-
-    for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      if (!AreStatesEqual(states[i], initial_states[i])) {
-        ++changed_state_count;
-      }
-
-      EXPECT_NE(states[i].state, initial_states[i].state);
-      EXPECT_EQ(states[i].increment, initial_states[i].increment);
-    }
-
-    for (std::size_t i = 0U; i < k_value_count; ++i) {
-      EXPECT_GE(values[i], 0.0F);
-      EXPECT_LT(values[i], 1.0F);
-    }
-
-    values_buffer.Unmap();
-    states_buffer.Unmap();
-
-    EXPECT_EQ(changed_state_count, k_particle_count);
+    states[i] = state;
+    initial_states[i] = state;
   }
 
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
+  std::fill(values, values + k_value_count, -1.0F);
+
+  values_buffer.Unmap();
+  states_buffer.Unmap();
+
+  kernel.SetArgSVMPointer(0U, states);
+  kernel.SetArgSVMPointer(1U, values);
+  kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
+  kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
+
+  kernel.Run({k_global_work_size}, {k_local_size});
+
+  states_buffer.Map(CL_MAP_READ);
+  values_buffer.Map(CL_MAP_READ);
+
+  std::size_t changed_state_count{0U};
+
+  for (std::size_t i = 0U; i < k_particle_count; ++i) {
+    if (!AreStatesEqual(states[i], initial_states[i])) {
+      ++changed_state_count;
+    }
+
+    EXPECT_NE(states[i].state, initial_states[i].state);
+    EXPECT_EQ(states[i].increment, initial_states[i].increment);
   }
+
+  for (std::size_t i = 0U; i < k_value_count; ++i) {
+    EXPECT_GE(values[i], 0.0F);
+    EXPECT_LT(values[i], 1.0F);
+  }
+
+  values_buffer.Unmap();
+  states_buffer.Unmap();
+
+  EXPECT_EQ(changed_state_count, k_particle_count);
 }
 
 // =============================================================================
 // =============================================================================
 
+// The configured engine must drive the actual device random-number
+// implementation.
 TEST(GGEMSPCG32KernelTest, GenericRandomUniformUsesSelectedPCG32Engine) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
 
-  std::size_t tested_device_count{0U};
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
+  std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
+  std::filesystem::path kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+  std::string build_options =
+    std::format("-I{} -DGGEMS_RANDOM_ENGINE=2", kernel_root.generic_string());
 
-    ++tested_device_count;
+  auto const &program = opencl.GetOrCreateProgram(
+    context, kernel_test_root, "random_generic_uniform", build_options);
 
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+  cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform");
 
-    std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path kernel_test_root = kernel_root / "tests";
+  ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                       "random_generic_uniform"};
 
-    std::string build_options =
-      std::format("-I{} -DGGEMS_RANDOM_ENGINE=2", kernel_root.generic_string());
+  std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
+  std::size_t value_bytes = k_value_count * sizeof(float);
 
-    auto const &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "random_generic_uniform", build_options);
+  auto states_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+  auto values_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
-    cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform");
+  auto *states = static_cast<PCG32State *>(states_buffer.GetData());
+  auto *values = static_cast<float *>(values_buffer.GetData());
 
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "random_generic_uniform"};
+  std::vector<PCG32State> initial_states(k_particle_count);
 
-    std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
-    std::size_t value_bytes = k_value_count * sizeof(float);
+  states_buffer.Map(CL_MAP_WRITE);
+  values_buffer.Map(CL_MAP_WRITE);
 
-    auto states_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
-    auto values_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+  for (std::size_t i = 0U; i < k_particle_count; ++i) {
+    PCG32State state = MakePCG32State(k_seed, static_cast<std::uint64_t>(i));
 
-    auto *states = static_cast<PCG32State *>(states_buffer.GetData());
-    auto *values = static_cast<float *>(values_buffer.GetData());
-
-    std::vector<PCG32State> initial_states(k_particle_count);
-
-    states_buffer.Map(CL_MAP_WRITE);
-    values_buffer.Map(CL_MAP_WRITE);
-
-    for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      PCG32State state = MakePCG32State(k_seed, static_cast<std::uint64_t>(i));
-
-      states[i] = state;
-      initial_states[i] = state;
-    }
-
-    std::fill(values, values + k_value_count, -1.0F);
-
-    values_buffer.Unmap();
-    states_buffer.Unmap();
-
-    kernel.SetArgSVMPointer(0U, states);
-    kernel.SetArgSVMPointer(1U, values);
-    kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
-    kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
-
-    kernel.Run({k_global_work_size}, {k_local_size});
-
-    states_buffer.Map(CL_MAP_READ);
-    values_buffer.Map(CL_MAP_READ);
-
-    for (std::size_t i = 0U; i < k_value_count; ++i) {
-      EXPECT_GE(values[i], 0.0F);
-      EXPECT_LT(values[i], 1.0F);
-    }
-
-    for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      EXPECT_NE(states[i].state, initial_states[i].state);
-      EXPECT_EQ(states[i].increment, initial_states[i].increment);
-    }
-
-    values_buffer.Unmap();
-    states_buffer.Unmap();
+    states[i] = state;
+    initial_states[i] = state;
   }
 
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
+  std::fill(values, values + k_value_count, -1.0F);
+
+  values_buffer.Unmap();
+  states_buffer.Unmap();
+
+  kernel.SetArgSVMPointer(0U, states);
+  kernel.SetArgSVMPointer(1U, values);
+  kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
+  kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
+
+  kernel.Run({k_global_work_size}, {k_local_size});
+
+  states_buffer.Map(CL_MAP_READ);
+  values_buffer.Map(CL_MAP_READ);
+
+  for (std::size_t i = 0U; i < k_value_count; ++i) {
+    EXPECT_GE(values[i], 0.0F);
+    EXPECT_LT(values[i], 1.0F);
   }
+
+  for (std::size_t i = 0U; i < k_particle_count; ++i) {
+    EXPECT_NE(states[i].state, initial_states[i].state);
+    EXPECT_EQ(states[i].increment, initial_states[i].increment);
+  }
+
+  values_buffer.Unmap();
+  states_buffer.Unmap();
 }
 
 // =============================================================================
 // =============================================================================
 
+// The configured engine must drive the actual device random-number
+// implementation.
 TEST(GGEMSPCG32KernelTest, GenericRandomUniform4UsesSelectedPCG32Engine) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
 
-  std::size_t tested_device_count{0U};
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
+  std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
+  std::filesystem::path kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+  std::string build_options =
+    std::format("-I{} -DGGEMS_RANDOM_ENGINE=2", kernel_root.generic_string());
 
-    ++tested_device_count;
+  auto const &program = opencl.GetOrCreateProgram(
+    context, kernel_test_root, "random_generic_uniform4", build_options);
 
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+  cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform4");
 
-    std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path kernel_test_root = kernel_root / "tests";
+  ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                       "random_generic_uniform4"};
 
-    std::string build_options =
-      std::format("-I{} -DGGEMS_RANDOM_ENGINE=2", kernel_root.generic_string());
+  std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
+  std::size_t value_bytes = k_uniform4_value_count * sizeof(float);
 
-    auto const &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "random_generic_uniform4", build_options);
+  auto states_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+  auto values_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
-    cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform4");
+  auto *states = static_cast<PCG32State *>(states_buffer.GetData());
+  auto *values = static_cast<float *>(values_buffer.GetData());
 
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "random_generic_uniform4"};
+  std::vector<PCG32State> initial_states(k_particle_count);
 
-    std::size_t state_bytes = k_particle_count * sizeof(PCG32State);
-    std::size_t value_bytes = k_uniform4_value_count * sizeof(float);
+  states_buffer.Map(CL_MAP_WRITE);
+  values_buffer.Map(CL_MAP_WRITE);
 
-    auto states_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
-    auto values_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+  for (std::size_t i = 0U; i < k_particle_count; ++i) {
+    PCG32State state = MakePCG32State(k_seed, static_cast<std::uint64_t>(i));
 
-    auto *states = static_cast<PCG32State *>(states_buffer.GetData());
-    auto *values = static_cast<float *>(values_buffer.GetData());
-
-    std::vector<PCG32State> initial_states(k_particle_count);
-
-    states_buffer.Map(CL_MAP_WRITE);
-    values_buffer.Map(CL_MAP_WRITE);
-
-    for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      PCG32State state = MakePCG32State(k_seed, static_cast<std::uint64_t>(i));
-
-      states[i] = state;
-      initial_states[i] = state;
-    }
-
-    std::fill(values, values + k_uniform4_value_count, -1.0F);
-
-    values_buffer.Unmap();
-    states_buffer.Unmap();
-
-    kernel.SetArgSVMPointer(0U, states);
-    kernel.SetArgSVMPointer(1U, values);
-    kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
-    kernel.SetArg(3U, static_cast<cl_uint>(k_uniform4_blocks_per_particle));
-
-    kernel.Run({k_global_work_size}, {k_local_size});
-
-    states_buffer.Map(CL_MAP_READ);
-    values_buffer.Map(CL_MAP_READ);
-
-    for (std::size_t i = 0U; i < k_uniform4_value_count; ++i) {
-      EXPECT_GE(values[i], 0.0F);
-      EXPECT_LT(values[i], 1.0F);
-    }
-
-    for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      EXPECT_NE(states[i].state, initial_states[i].state);
-      EXPECT_EQ(states[i].increment, initial_states[i].increment);
-    }
-
-    values_buffer.Unmap();
-    states_buffer.Unmap();
+    states[i] = state;
+    initial_states[i] = state;
   }
 
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
+  std::fill(values, values + k_uniform4_value_count, -1.0F);
+
+  values_buffer.Unmap();
+  states_buffer.Unmap();
+
+  kernel.SetArgSVMPointer(0U, states);
+  kernel.SetArgSVMPointer(1U, values);
+  kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
+  kernel.SetArg(3U, static_cast<cl_uint>(k_uniform4_blocks_per_particle));
+
+  kernel.Run({k_global_work_size}, {k_local_size});
+
+  states_buffer.Map(CL_MAP_READ);
+  values_buffer.Map(CL_MAP_READ);
+
+  for (std::size_t i = 0U; i < k_uniform4_value_count; ++i) {
+    EXPECT_GE(values[i], 0.0F);
+    EXPECT_LT(values[i], 1.0F);
   }
+
+  for (std::size_t i = 0U; i < k_particle_count; ++i) {
+    EXPECT_NE(states[i].state, initial_states[i].state);
+    EXPECT_EQ(states[i].increment, initial_states[i].increment);
+  }
+
+  values_buffer.Unmap();
+  states_buffer.Unmap();
 }

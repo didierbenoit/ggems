@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks particle defaults, field widths, and shared ABI codes.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -37,17 +39,8 @@
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSParticleState, IsKernelFriendly) {
-  EXPECT_TRUE(
-    std::is_standard_layout_v<ggems::core::particles::GGEMSParticleState>);
-  EXPECT_TRUE(
-    std::is_trivially_copyable_v<ggems::core::particles::GGEMSParticleState>);
-  EXPECT_EQ(sizeof(ggems::core::particles::GGEMSParticleState), 80U);
-}
-
-// =============================================================================
-// =============================================================================
-
+// Ensures unused particle slots carry inactive status and invalid owner
+// identifiers.
 TEST(GGEMSParticleState, DefaultStateIsInactive) {
   ggems::core::particles::GGEMSParticleState particle{};
 
@@ -84,6 +77,7 @@ TEST(GGEMSParticleState, DefaultStateIsInactive) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+// Protects stable species and status codes exchanged with OpenCL kernels.
 TEST(GGEMSParticleState, ParticleTypeValuesAreKernelCompatible) {
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
               ggems::core::particles::GGEMSParticleType::Unknown),
@@ -141,8 +135,11 @@ TEST(GGEMSParticleState, ParticleTypeValuesAreKernelCompatible) {
 // =============================================================================
 // =============================================================================
 
+// Protects particle field widths, scalar layout, and the shared 80-byte ABI.
 TEST(GGEMSParticleState, MicroElectronVoltEnergyPreservesLayoutAndWidth) {
   using State = ggems::core::particles::GGEMSParticleState;
+  EXPECT_TRUE(std::is_standard_layout_v<State>);
+  EXPECT_TRUE(std::is_trivially_copyable_v<State>);
   EXPECT_EQ(sizeof(State), 80U);
   EXPECT_EQ(alignof(State), 8U);
   EXPECT_EQ(offsetof(State, position_x_pm), 48U);

@@ -34,6 +34,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMSLongDoubleAssertions.hh"
+#include "GGEMSRadionuclideAssertions.hh"
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
@@ -52,6 +53,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSRb82Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildRb82Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Rb-82");
@@ -156,6 +159,8 @@ TEST(GGEMSRb82Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus7252Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -217,6 +222,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus7252Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus8193Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -278,6 +285,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus8193Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus8247Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -339,6 +348,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus8247Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus872Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -400,6 +411,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus872Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus9013Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -461,6 +474,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus9013Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus9309Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -522,6 +537,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus9309Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus12093Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -583,6 +600,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus12093Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus14242Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -644,6 +663,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus14242Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus15604Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -705,6 +726,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus15604Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus18934Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -766,6 +789,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus18934Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus19061Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -827,6 +852,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus19061Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus26045Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -888,6 +915,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus26045Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb82Test, PreservesBetaPlus3381Kev) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -949,6 +978,8 @@ TEST(GGEMSRb82Test, PreservesBetaPlus3381Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRb82Test, PreservesNuclearGamma) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -1006,6 +1037,8 @@ TEST(GGEMSRb82Test, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRb82Test, PreservesAtomicXray) {
   auto const definition = BuildRb82Radionuclide();
   auto const &distribution =
@@ -1071,131 +1104,71 @@ TEST(GGEMSRb82Test, PreservesAtomicXray) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRb82Test, PreservesConversion77652Kev) {
+// Every evaluated conversion line must retain its intensity and quantized
+// sampling probability.
+TEST(GGEMSRb82Test, PreservesConversionLineCatalog) {
   auto const definition = BuildRb82Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[15U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Raw LNHB PenNuc shell records; each line retains its energy and absolute
-  // yield.
-  // Independent evaluated line energies.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    {
-      762'196'000'000ULL,
-      774'601'000'000ULL,
-      774'795'000'000ULL,
-      774'847'000'000ULL,
-      776'339'000'000ULL,
-      776'508'000'000ULL,
-    },
-  };
+  auto const emissions = definition.GetEmissions();
+  ASSERT_GT(emissions.size(), 16U);
 
-  // Independent evaluated absolute line yields.
-  constexpr std::array<double, 6U> expected_weights{
-    {
-      0.000123,
-      0.00001259,
-      3.6E-7,
-      3.39E-7,
-      0.000002148,
-      2.157E-7,
-    },
-  };
+  {
+    SCOPED_TRACE("PreservesConversion77652Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      {
+        762'196'000'000ULL,
+        774'601'000'000ULL,
+        774'795'000'000ULL,
+        774'847'000'000ULL,
+        776'339'000'000ULL,
+        776'508'000'000ULL,
+      },
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      {
+        0.000123,
+        0.00001259,
+        3.6E-7,
+        3.39E-7,
+        0.000002148,
+        2.157E-7,
+      },
+    };
 
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
+    ggems::test::ExpectRadionuclideLines(emissions[15U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         0.0001386527L, 763.62741490501087L,
+                                         2.0093633031845093e-8L);
   }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.0001386527L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 763.62741490501087L, 1.0e-9L);
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       763.62741490501087L, 2.0093633031845093e-8L);
+
+  {
+    SCOPED_TRACE("PreservesConversion147488Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 4U> expected_energies{
+      {
+        1'460'568'000'000ULL,
+        1'472'973'000'000ULL,
+        1'473'167'000'000ULL,
+        1'473'219'000'000ULL,
+      },
+    };
+    constexpr std::array<double, 4U> expected_weights{
+      {
+        1.72E-7,
+        1.76E-8,
+        2.33E-10,
+        2.47E-10,
+      },
+    };
+
+    ggems::test::ExpectRadionuclideLines(emissions[16U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         1.90080E-7L, 1461.7484943392256L,
+                                         1.1882161891460419e-8L);
+  }
 }
 
 // =============================================================================
 // =============================================================================
-
-TEST(GGEMSRb82Test, PreservesConversion147488Kev) {
-  auto const definition = BuildRb82Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[16U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Raw LNHB PenNuc shell records; each line retains its energy and absolute
-  // yield.
-  // Independent evaluated line energies.
-  constexpr std::array<std::uint64_t, 4U> expected_energies{
-    {
-      1'460'568'000'000ULL,
-      1'472'973'000'000ULL,
-      1'473'167'000'000ULL,
-      1'473'219'000'000ULL,
-    },
-  };
-
-  // Independent evaluated absolute line yields.
-  constexpr std::array<double, 4U> expected_weights{
-    {
-      1.72E-7,
-      1.76E-8,
-      2.33E-10,
-      2.47E-10,
-    },
-  };
-
-  ASSERT_EQ(energies.size(), 4U);
-  EXPECT_EQ(distribution.GetTableCount(), 4U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
-  }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.90080E-7L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1461.7484943392256L, 1.0e-9L);
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       1461.7484943392256L, 1.1882161891460419e-8L);
-}
 
 } // namespace

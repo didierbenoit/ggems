@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks built-in radioactive emissions through device transport.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -53,6 +55,7 @@
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -309,16 +312,13 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -327,6 +327,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Checks emitted F18 species and exact lines alongside its sampled positron
+// spectrum.
 TEST_F(GGEMSBuiltInRadionuclideTransportTest,
        F18PreservesAllThreeDeviceSignaturesWithoutPlaceholders) {
   constexpr std::uint64_t k_f18_endpoint_micro_eV{633'900'000'000ULL};
@@ -483,6 +485,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Checks the built-in C11 emission yield and sampled device spectrum.
 TEST_F(GGEMSBuiltInRadionuclideTransportTest,
        C11SamplesItsSinglePositronGridOnDevice) {
   constexpr std::uint64_t k_endpoint_micro_eV{960'500'000'000ULL};
@@ -533,6 +536,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Checks the built-in O15 emission yield and sampled device spectrum.
 TEST_F(GGEMSBuiltInRadionuclideTransportTest,
        O15SamplesItsSinglePositronGridOnDevice) {
   constexpr std::uint64_t k_endpoint_micro_eV{1'732'180'000'000ULL};
@@ -583,6 +587,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Ensures discrete emission energies remain exact after device sampling.
 TEST_F(GGEMSBuiltInRadionuclideTransportTest,
        SyntheticDiscreteLinesRemainExactOnDevice) {
   constexpr std::array<double, 3U> k_line_energies_keV{10.0, 20.0, 40.0};

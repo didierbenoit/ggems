@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks radionuclide definition behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -93,6 +95,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndTotalYield) {
   std::string canonical_name{"Synthetic-Mixed"};
   std::vector<GGEMSRadionuclideEmission> emissions;
@@ -132,6 +136,8 @@ TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndTotalYield) {
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSRadionuclideDefinitionTest, RejectsInvalidNameHalfLifeAndEmissions) {
   std::vector<GGEMSRadionuclideEmission> valid_emissions;
   valid_emissions.push_back(
@@ -140,9 +146,12 @@ TEST(GGEMSRadionuclideDefinitionTest, RejectsInvalidNameHalfLifeAndEmissions) {
   EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"", 1.0L, valid_emissions}),
                ggems::core::GGEMSRecoverable);
 
-  for (long double half_life :
-       {0.0L, -1.0L, std::numeric_limits<long double>::quiet_NaN(),
-        -std::numeric_limits<long double>::infinity()}) {
+  for (long double half_life : {
+         0.0L,
+         -1.0L,
+         std::numeric_limits<long double>::quiet_NaN(),
+         -std::numeric_limits<long double>::infinity(),
+       }) {
     SCOPED_TRACE(static_cast<double>(half_life));
     EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic", half_life,
                                                     valid_emissions}),
@@ -156,6 +165,8 @@ TEST(GGEMSRadionuclideDefinitionTest, RejectsInvalidNameHalfLifeAndEmissions) {
 // =============================================================================
 // =============================================================================
 
+// Independent marginal emissions must stay distinct even when they share a
+// particle type.
 TEST(GGEMSRadionuclideDefinitionTest,
      PreservesOrderAndDoesNotMergeMatchingParticleTypes) {
   std::vector<GGEMSRadionuclideEmission> emissions;
@@ -180,6 +191,8 @@ TEST(GGEMSRadionuclideDefinitionTest,
 // =============================================================================
 // =============================================================================
 
+// Values around a canonical half quantum must follow the specified rounding
+// rule.
 TEST(GGEMSRadionuclideDefinitionTest,
      PreservesTinyPositiveYieldWithoutEnergyTicketQuantization) {
   constexpr long double tiny_yield{1.0e-12L};
@@ -203,6 +216,8 @@ TEST(GGEMSRadionuclideDefinitionTest,
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSRadionuclideDefinitionTest,
      FailedConstructionLeavesCallerOwnedInputsUnchanged) {
   std::string canonical_name{"Synthetic-Stable"};

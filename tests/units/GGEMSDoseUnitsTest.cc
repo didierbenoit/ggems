@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks dose units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -53,6 +55,8 @@ constexpr long double k_gray_per_canonical_unit = 1.602176634e-7L;
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSDoseUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
     std::string_view unit;
@@ -79,6 +83,8 @@ TEST(GGEMSDoseUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Dose export must preserve the physical scale of the canonical integer
+// value.
 TEST(GGEMSDoseUnitsTest, ConvertsIntegerCanonicalDoseBackToGray) {
   auto const gray = ConvertTo(Dose{6'241'509ULL}, "Gy");
 
@@ -89,6 +95,8 @@ TEST(GGEMSDoseUnitsTest, ConvertsIntegerCanonicalDoseBackToGray) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSDoseUnitsTest, RejectsNegativeDose) {
   auto const converted = MakeQuantity<Dose>(-1.0L, "Gy");
 
@@ -99,6 +107,8 @@ TEST(GGEMSDoseUnitsTest, RejectsNegativeDose) {
 // =============================================================================
 // =============================================================================
 
+// Dose formatting must distinguish ASCII input vocabulary from Unicode
+// presentation.
 TEST(GGEMSDoseUnitsTest, PresentsMicrograyInAsciiAndUnicode) {
   Dose const quantum{1ULL};
 
@@ -115,6 +125,8 @@ TEST(GGEMSDoseUnitsTest, PresentsMicrograyInAsciiAndUnicode) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSDoseUnitsTest, GrayLiteralUsesCanonicalIntegerQuantization) {
   using namespace ggems::units;
 

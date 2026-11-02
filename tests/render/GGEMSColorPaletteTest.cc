@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks palette lookup, shade boundaries, and diagnostic particle
+ * colors.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -45,6 +47,8 @@ namespace render = ggems::render;
 // =============================================================================
 // =============================================================================
 
+// The shade selector must expose all palette entries without accidental
+// duplicate colors.
 TEST(GGEMSColorPaletteTest, EveryFamilyContains64DistinctShades) {
   ASSERT_EQ(render::base_palette.size(), 9U);
   for (auto const &family : render::base_palette) {
@@ -60,6 +64,8 @@ TEST(GGEMSColorPaletteTest, EveryFamilyContains64DistinctShades) {
 // =============================================================================
 // =============================================================================
 
+// The grayscale palette must stay neutral and increase without reversed or
+// duplicate steps.
 TEST(GGEMSColorPaletteTest, GrayRampIsMonotoneFromBlackToNeutral252) {
   auto const &gray =
     render::base_palette[static_cast<std::size_t>(render::ColorFamily::Gray)];
@@ -78,6 +84,8 @@ TEST(GGEMSColorPaletteTest, GrayRampIsMonotoneFromBlackToNeutral252) {
 // =============================================================================
 // =============================================================================
 
+// Byte-sized shade indices must address the palette or clamp at its upper
+// endpoint.
 TEST(GGEMSColorPaletteTest, EveryShadeIsAccessibleAndOutOfRangeClampsToLast) {
   for (std::size_t family = 0U; family < 9U; ++family) {
     SCOPED_TRACE(family);
@@ -98,6 +106,8 @@ TEST(GGEMSColorPaletteTest, EveryShadeIsAccessibleAndOutOfRangeClampsToLast) {
 // =============================================================================
 // =============================================================================
 
+// Representative named colors must match independent RGB byte triples across
+// families.
 TEST(GGEMSColorPaletteTest, NamedCssColorsResolveToTheirDeclaredRgb) {
   struct ColorCase {
     render::ColorKey key;
@@ -127,6 +137,8 @@ TEST(GGEMSColorPaletteTest, NamedCssColorsResolveToTheirDeclaredRgb) {
 // =============================================================================
 // =============================================================================
 
+// Particle identity must select the intended diagnostic color, including
+// unknown particles.
 TEST(GGEMSColorPaletteTest, ParticleColorsUseCurrentNamedPalette) {
   using Particle = ggems::core::particles::GGEMSParticleType;
   constexpr std::array particles{

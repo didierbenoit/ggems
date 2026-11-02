@@ -51,6 +51,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSNa22Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildNa22Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Na-22");
@@ -92,6 +94,8 @@ TEST(GGEMSNa22Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSNa22Test, PreservesBetaPlus54645Kev) {
   auto const definition = BuildNa22Radionuclide();
   auto const &distribution =
@@ -153,6 +157,8 @@ TEST(GGEMSNa22Test, PreservesBetaPlus54645Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSNa22Test, PreservesBetaPlus182102Kev) {
   auto const definition = BuildNa22Radionuclide();
   auto const &distribution =
@@ -214,6 +220,8 @@ TEST(GGEMSNa22Test, PreservesBetaPlus182102Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSNa22Test, PreservesNuclearGamma) {
   auto const definition = BuildNa22Radionuclide();
   auto const &distribution =
@@ -226,6 +234,8 @@ TEST(GGEMSNa22Test, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSNa22Test, PreservesAtomicXray) {
   auto const definition = BuildNa22Radionuclide();
   auto const &distribution =
@@ -237,6 +247,8 @@ TEST(GGEMSNa22Test, PreservesAtomicXray) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSNa22Test, PreservesConversion1274537Kev) {
   auto const definition = BuildNa22Radionuclide();
   auto const &distribution =

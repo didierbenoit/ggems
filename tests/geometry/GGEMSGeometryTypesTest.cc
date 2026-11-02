@@ -21,12 +21,15 @@
 
 /*!
  * \file
+ * \brief Checks canonical coordinates and normalized physical directions.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <optional>
+#include <array>
 #include <limits>
+#include <optional>
 
 #include <gtest/gtest.h>
 
@@ -35,6 +38,7 @@
 // =============================================================================
 // =============================================================================
 
+// Protects the defined physical direction of a default geometry vector.
 TEST(GGEMSGeometryTypes, DefaultDirectionIsPositiveZ) {
   ggems::geometry::Direction3 const direction{};
 
@@ -46,6 +50,7 @@ TEST(GGEMSGeometryTypes, DefaultDirectionIsPositiveZ) {
 // =============================================================================
 // =============================================================================
 
+// Preserves negative and asymmetric coordinates without unsigned conversion.
 TEST(GGEMSGeometryTypes, PositionStoresSignedPicometerCoordinates) {
   auto const position = ggems::geometry::MakePositionPM(-10, 20, -30);
 
@@ -57,6 +62,7 @@ TEST(GGEMSGeometryTypes, PositionStoresSignedPicometerCoordinates) {
 // =============================================================================
 // =============================================================================
 
+// Checks signed coordinate addition using independently specified endpoints.
 TEST(GGEMSGeometryTypes, DisplacementCanMovePosition) {
   auto const position = ggems::geometry::MakePositionPM(100, 200, 300);
   auto const displacement = ggems::geometry::MakeDisplacementPM(-10, 20, -30);
@@ -69,6 +75,7 @@ TEST(GGEMSGeometryTypes, DisplacementCanMovePosition) {
 // =============================================================================
 // =============================================================================
 
+// Checks subtraction signs independently on all three axes.
 TEST(GGEMSGeometryTypes, DifferenceBetweenPositionsIsSignedDisplacement) {
   auto const lhs = ggems::geometry::MakePositionPM(100, 200, 300);
   auto const rhs = ggems::geometry::MakePositionPM(150, 150, 350);
@@ -80,6 +87,7 @@ TEST(GGEMSGeometryTypes, DifferenceBetweenPositionsIsSignedDisplacement) {
 // =============================================================================
 // =============================================================================
 
+// Uses the exact 3-4-5 triangle to verify normalized components.
 TEST(GGEMSGeometryTypes, DirectionIsNormalizedWhenCreated) {
   auto const direction = ggems::geometry::TryMakeDirection3(3.0F, 4.0F, 0.0F);
 
@@ -93,6 +101,7 @@ TEST(GGEMSGeometryTypes, DirectionIsNormalizedWhenCreated) {
 // =============================================================================
 // =============================================================================
 
+// Rejects a vector that cannot define a physical propagation direction.
 TEST(GGEMSGeometryTypes, DirectionRejectsZeroVector) {
   auto const direction = ggems::geometry::TryMakeDirection3(0.0F, 0.0F, 0.0F);
 
@@ -102,17 +111,28 @@ TEST(GGEMSGeometryTypes, DirectionRejectsZeroVector) {
 // =============================================================================
 // =============================================================================
 
+// Rejects NaN and both infinities in every direction component.
 TEST(GGEMSGeometryTypes, DirectionRejectsNonFiniteValues) {
-  float const infinity = std::numeric_limits<float>::infinity();
-  auto const direction =
-    ggems::geometry::TryMakeDirection3(1.0F, infinity, 0.0F);
+  std::array const nonfinite{
+    std::numeric_limits<float>::infinity(),
+    -std::numeric_limits<float>::infinity(),
+    std::numeric_limits<float>::quiet_NaN(),
+  };
 
-  EXPECT_FALSE(direction.has_value());
+  for (auto const component : nonfinite) {
+    EXPECT_FALSE(
+      ggems::geometry::TryMakeDirection3(component, 1.0F, 0.0F).has_value());
+    EXPECT_FALSE(
+      ggems::geometry::TryMakeDirection3(0.0F, component, 1.0F).has_value());
+    EXPECT_FALSE(
+      ggems::geometry::TryMakeDirection3(1.0F, 0.0F, component).has_value());
+  }
 }
 
 // =============================================================================
 // =============================================================================
 
+// Ensures normalization avoids overflow for large finite inputs.
 TEST(GGEMSGeometryTypes, DirectionHandlesLargeFiniteComponents) {
   auto const large = static_cast<double>(std::numeric_limits<float>::max());
   auto const direction = ggems::geometry::TryMakeDirection3(large, large, 0.0);
@@ -127,6 +147,7 @@ TEST(GGEMSGeometryTypes, DirectionHandlesLargeFiniteComponents) {
 // =============================================================================
 // =============================================================================
 
+// Uses mixed signs to check all scalar-product terms.
 TEST(GGEMSGeometryTypes, DotComputesScalarProduct) {
   ggems::geometry::Direction3 const lhs{
     .x = 1.0F,

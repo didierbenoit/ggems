@@ -35,7 +35,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <iostream>
 #include <limits>
 #include <numbers>
 #include <span>
@@ -44,6 +43,8 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/geometry/GGEMSCons.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
@@ -200,7 +201,6 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
               (direction[2] * direction[2]));
   double previous{0};
   double accumulated{0};
-  double max_error{0};
   auto owner = fixture.initial_owner;
   // Frozen before execution: eight automatic half-bands, with explicit
   // inverse-incidence conditioning only for declared shallow/tangent cases.
@@ -223,7 +223,6 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
     accumulated += measured;
     double const error = std::abs((measured - (parameter - previous)) * norm);
     EXPECT_LE(error, budget);
-    max_error = std::max(max_error, error / band);
     EXPECT_LE(std::abs((accumulated - parameter) * norm),
               static_cast<double>(index + 1U) * budget);
     for (std::size_t axis = 0; axis < 3; ++axis) {
@@ -234,10 +233,6 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
     previous = parameter;
     owner = arrival;
   }
-  std::cout << std::format("N1 Cons '{}': {} events, T={} pm, "
-                           "maximum segment-error/T={}, budget/T={}\n",
-                           fixture.name, result.trace[0], band, max_error,
-                           8 * fixture.conditioning);
 }
 
 auto RunCases(std::vector<Case> const &cases) -> void {
@@ -260,7 +255,8 @@ __kernel void cons_layout(__global ulong *layout) {
   layout[13] = sizeof(GGEMSParticleState);
 }
 )cl";
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231U);
@@ -269,12 +265,8 @@ __kernel void cons_layout(__global ulong *layout) {
                   root.generic_string(), random.GetKernelBuildDefinition());
     auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
       context, root / "transport", "particle_stream_transport", options);
-    cl::Program program{context.GetContextNative(), source};
-    auto const device = context.GetDevice().GetDeviceNative();
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(source, production.GetBuildOptions());
     std::array<std::uint64_t, 14> layout{};
     auto buffer = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     ocl::GGEMSOpenCLKernel kernel{context, cl::Kernel(program, "cons_layout"),
@@ -290,9 +282,6 @@ __kernel void cons_layout(__global ulong *layout) {
     CheckCase(context, production.GetProgramNative(), random, cases.front(),
               false);
     CheckCase(context, program, random, cases.front(), true, 0U);
-    std::cout << "N1 Cons device=" << context.GetDevice().GetName()
-              << "; driver=" << device.getInfo<CL_DRIVER_VERSION>()
-              << "; options=" << production.GetBuildOptions() << '\n';
   }
 }
 auto IndependentConsCrossings(Case const &fixture) -> std::vector<double> {
@@ -369,6 +358,7 @@ auto IndependentConsCrossings(Case const &fixture) -> std::vector<double> {
 
 } // namespace
 
+// Checks cone wall and bore intersections against independent analytic chords.
 TEST_F(GGEMSNavigationDeviceTest, N1ConsIndependentFrustumAndBoreChords) {
   RunCases({
     {"transverse frustum", {-8, 0, 0}, {1, 0, 0}, {3, 13}},
@@ -454,6 +444,8 @@ TEST_F(GGEMSNavigationDeviceTest, N1ConsIndependentFrustumAndBoreChords) {
   });
 }
 
+// Checks cone directional ownership at closed surface bands, caps, and
+// tangencies.
 TEST_F(GGEMSNavigationDeviceTest, N1ConsDirectionalBandsTangentsAndCaps) {
   Case const base{"band reference", {-8, 0, 0}, {1, 0, 0}, {}};
   double const band = Scene(base).GetVolumeNavigationTolerancePM() / k_mm;
@@ -526,6 +518,8 @@ TEST_F(GGEMSNavigationDeviceTest, N1ConsDirectionalBandsTangentsAndCaps) {
   });
 }
 
+// Checks deterministic varied cone rays against an independent quadratic
+// oracle.
 TEST_F(GGEMSNavigationDeviceTest, N1ConsIndependentRandomQuadraticOracle) {
   std::vector<Case> cases;
   cases.reserve(250);

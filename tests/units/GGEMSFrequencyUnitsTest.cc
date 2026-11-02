@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks frequency units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -50,6 +52,8 @@ using ggems::units::UnitConversionError;
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSFrequencyUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
     std::string_view unit;
@@ -78,6 +82,8 @@ TEST(GGEMSFrequencyUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSFrequencyUnitsTest, RejectsNegativeFrequency) {
   auto const converted = MakeQuantity<Frequency>(-1, "Hz");
 
@@ -88,6 +94,8 @@ TEST(GGEMSFrequencyUnitsTest, RejectsNegativeFrequency) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSFrequencyUnitsTest, AutomaticallyDisplaysSIPrefixes) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
@@ -97,6 +105,8 @@ TEST(GGEMSFrequencyUnitsTest, AutomaticallyDisplaysSIPrefixes) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSFrequencyUnitsTest, LiteralStoresHertz) {
   using namespace ggems::units;
 

@@ -21,17 +21,22 @@
 
 /*!
  * \file
+ * \brief Checks species parsing and public display representations.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 
 // =============================================================================
 // =============================================================================
 
+// Checks supported aliases, documented normalization, and rejection of
+// unsupported names.
 TEST(GGEMSParticleTypes, ParsesLongShortAndSymbolicNames) {
   using ggems::core::particles::GGEMSParticleType;
   using ggems::core::particles::ParseParticleType;
@@ -59,11 +64,18 @@ TEST(GGEMSParticleTypes, ParsesLongShortAndSymbolicNames) {
 
   EXPECT_EQ(ParseParticleType("alpha"), GGEMSParticleType::Alpha);
   EXPECT_EQ(ParseParticleType("a"), GGEMSParticleType::Alpha);
+
+  EXPECT_EQ(ParseParticleType("  P_h_O_t_O_n  "), GGEMSParticleType::Gamma);
+  EXPECT_THROW(ParseParticleType(""), ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(ParseParticleType("Unknown"), ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(ParseParticleType("muon"), ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(ParseParticleType("gamma\t"), ggems::core::GGEMSRecoverable);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Preserves public species labels used in human-readable output.
 TEST(GGEMSParticleTypes, HasStableLongNames) {
   using ggems::core::particles::GGEMSParticleType;
   using ggems::core::particles::ToLongName;
@@ -81,6 +93,7 @@ TEST(GGEMSParticleTypes, HasStableLongNames) {
 // =============================================================================
 // =============================================================================
 
+// Preserves compact species labels and the unknown-species fallback.
 TEST(GGEMSParticleTypes, HasStableShortNames) {
   using ggems::core::particles::GGEMSParticleType;
   using ggems::core::particles::ToShortName;
@@ -98,6 +111,7 @@ TEST(GGEMSParticleTypes, HasStableShortNames) {
 // =============================================================================
 // =============================================================================
 
+// Keeps ASCII and Unicode species representations distinct and stable.
 TEST(GGEMSParticleTypes, HasStableAsciiAndUnicodeSymbols) {
   using ggems::core::particles::GGEMSParticleType;
   using ggems::core::particles::ToAsciiSymbol;

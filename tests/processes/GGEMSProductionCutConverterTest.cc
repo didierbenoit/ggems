@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks production cut converter behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -89,6 +91,7 @@ auto ChannelLabel(Channel channel) -> std::string_view {
 // =============================================================================
 // =============================================================================
 
+// The public converter must return the strong Energy type used by cut policies.
 TEST(GGEMSProductionCutConverterTest, ReturnsCanonicalEnergy) {
   static_assert(
     std::is_same_v<decltype(processes::ConvertProductionCutLength(
@@ -101,6 +104,7 @@ TEST(GGEMSProductionCutConverterTest, ReturnsCanonicalEnergy) {
 // =============================================================================
 // =============================================================================
 
+// Length cuts must produce the admitted material-specific energy thresholds.
 TEST(GGEMSProductionCutConverterTest,
      SameLengthIsMaterialDependentExceptProton) {
   auto const package = MakeMaterialPackage();
@@ -128,6 +132,7 @@ TEST(GGEMSProductionCutConverterTest,
 // =============================================================================
 // =============================================================================
 
+// Length cuts must produce the admitted material-specific energy thresholds.
 TEST(GGEMSProductionCutConverterTest, EnergyIncreasesWithCutLength) {
   auto const package = MakeMaterialPackage();
 
@@ -150,6 +155,7 @@ TEST(GGEMSProductionCutConverterTest, EnergyIncreasesWithCutLength) {
 // =============================================================================
 // =============================================================================
 
+// Length cuts must produce the admitted material-specific energy thresholds.
 TEST(GGEMSProductionCutConverterTest, ProtonIsExactLinearConvention) {
   auto const package = MakeMaterialPackage();
 
@@ -173,6 +179,8 @@ TEST(GGEMSProductionCutConverterTest, ProtonIsExactLinearConvention) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSProductionCutConverterTest, ProtonOverflowIsRejected) {
   auto const package = MakeMaterialPackage();
 
@@ -184,6 +192,8 @@ TEST(GGEMSProductionCutConverterTest, ProtonOverflowIsRejected) {
 // =============================================================================
 // =============================================================================
 
+// The converter must reject an unsupported physical domain instead of
+// clamping it.
 TEST(GGEMSProductionCutConverterTest, OutOfDomainLengthsAreRejected) {
   auto const package = MakeMaterialPackage();
 
@@ -209,6 +219,8 @@ TEST(GGEMSProductionCutConverterTest, OutOfDomainLengthsAreRejected) {
 // =============================================================================
 // =============================================================================
 
+// The converter must reject an unsupported physical domain instead of
+// clamping it.
 TEST(GGEMSProductionCutConverterTest, MatterlessMaterialIsRejected) {
   auto const package = MakeMaterialPackage();
 

@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Checks Unicode conversion boundaries and malformed input.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -196,6 +197,8 @@ constexpr std::array<ScalarEncodingCase, 29U> k_scalar_encoding_cases{
 // =============================================================================
 // =============================================================================
 
+// UTF-8 encoding must preserve independent byte sequences at scalar-width
+// boundaries and scientific symbols.
 TEST(GGEMSUTFTest, EncodesScalarBoundariesAndGgemsCharacters) {
   for (auto const &encoding_case : k_scalar_encoding_cases) {
     SCOPED_TRACE(std::string{encoding_case.name});
@@ -207,6 +210,7 @@ TEST(GGEMSUTFTest, EncodesScalarBoundariesAndGgemsCharacters) {
 // =============================================================================
 // =============================================================================
 
+// A scalar NUL must encode as one byte rather than an empty string.
 TEST(GGEMSUTFTest, EncodesScalarNullAsOneByte) {
   std::string const expected(1U, '\0');
   EXPECT_EQ(ggems::utf::UTF32ToUTF8(U'\0'), expected);
@@ -215,6 +219,8 @@ TEST(GGEMSUTFTest, EncodesScalarNullAsOneByte) {
 // =============================================================================
 // =============================================================================
 
+// Whole-string encoding must preserve mixed-width characters and embedded NUL
+// values.
 TEST(GGEMSUTFTest, EncodesUtf32StringViews) {
   EXPECT_EQ(ggems::utf::UTF32ToUTF8(std::u32string_view{}), "");
 
@@ -230,6 +236,7 @@ TEST(GGEMSUTFTest, EncodesUtf32StringViews) {
 // =============================================================================
 // =============================================================================
 
+// ASCII decoding must preserve empty strings and embedded NUL values.
 TEST(GGEMSUTFTest, DecodesPortableAsciiUtf8) {
   EXPECT_EQ(ggems::utf::UTF8ToUTF32(std::string_view{""}), std::u32string{});
   EXPECT_EQ(ggems::utf::UTF8ToUTF32("GGEMS 2.0"), U"GGEMS 2.0");
@@ -242,6 +249,8 @@ TEST(GGEMSUTFTest, DecodesPortableAsciiUtf8) {
 // =============================================================================
 // =============================================================================
 
+// Multibyte decoding must recover independent Unicode scalars across encoding
+// widths.
 TEST(GGEMSUTFTest, DecodesMultibyteUtf8) {
   EXPECT_EQ(ggems::utf::UTF8ToUTF32("\xC2\xB5"), U"µ");
   EXPECT_EQ(ggems::utf::UTF8ToUTF32("\xCE\xB3"), U"γ");
@@ -253,6 +262,7 @@ TEST(GGEMSUTFTest, DecodesMultibyteUtf8) {
 // =============================================================================
 // =============================================================================
 
+// Surrogate code points must become the documented replacement character.
 TEST(GGEMSUTFTest, RejectsUtf32Surrogates) {
   EXPECT_EQ(ggems::utf::UTF32ToUTF8(static_cast<char32_t>(0xD800)), "?");
   EXPECT_EQ(ggems::utf::UTF32ToUTF8(static_cast<char32_t>(0xDFFF)), "?");
@@ -261,6 +271,8 @@ TEST(GGEMSUTFTest, RejectsUtf32Surrogates) {
 // =============================================================================
 // =============================================================================
 
+// Malformed, truncated, overlong, surrogate, and out-of-range byte sequences
+// must be rejected.
 TEST(GGEMSUTFTest, RejectsInvalidUtf8) {
   EXPECT_EQ(ggems::utf::UTF8ToUTF32("\x80"), U"?");         // lone continuation
   EXPECT_EQ(ggems::utf::UTF8ToUTF32("\xC2"), U"?");         // truncated 2-byte
@@ -281,6 +293,8 @@ TEST(GGEMSUTFTest, RejectsInvalidUtf8) {
 // =============================================================================
 // =============================================================================
 
+// UTF-8 decoding must admit the exact endpoints of each valid scalar encoding
+// range.
 TEST(GGEMSUTFTest, DecodesUnicodeScalarBoundaries) {
   EXPECT_EQ(ggems::utf::UTF8ToUTF32("\x7F"),
             std::u32string{static_cast<char32_t>(0x007F)});

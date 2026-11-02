@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSCr51Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildCr51Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Cr-51");
@@ -84,6 +86,8 @@ TEST(GGEMSCr51Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCr51Test, PreservesNuclearGamma) {
   auto const definition = BuildCr51Radionuclide();
   auto const &distribution =
@@ -95,6 +99,8 @@ TEST(GGEMSCr51Test, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCr51Test, PreservesAtomicXray) {
   auto const definition = BuildCr51Radionuclide();
   auto const &distribution =
@@ -161,6 +167,8 @@ TEST(GGEMSCr51Test, PreservesAtomicXray) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCr51Test, PreservesConversion3200835Kev) {
   auto const definition = BuildCr51Radionuclide();
   auto const &distribution =

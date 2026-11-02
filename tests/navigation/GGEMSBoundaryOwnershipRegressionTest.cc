@@ -45,6 +45,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
+
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
@@ -153,6 +155,8 @@ auto CheckCompletion(test::StreamResult const &result,
 }
 } // namespace
 
+// Replays a captured near-edge ray that previously risked losing a child
+// interval.
 TEST_F(GGEMSNavigationDeviceTest,
        CapturedNearEdgeChildEntryPreservesPhysicalIntervals) {
   auto const source = BoundarySource();
@@ -162,7 +166,8 @@ TEST_F(GGEMSNavigationDeviceTest,
   ASSERT_EQ(std::bit_cast<std::uint32_t>(uploaded.position_z_pm), 0x4EF0FF41U);
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   auto const instrumented = test::InstrumentStream(root);
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("Philox").SetSeed(1U);
@@ -170,12 +175,8 @@ TEST_F(GGEMSNavigationDeviceTest,
       context, root / "transport", "particle_stream_transport",
       std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
                   root.generic_string(), random.GetKernelBuildDefinition()));
-    cl::Program program{context.GetContextNative(), instrumented};
-    auto const device = context.GetDevice().GetDeviceNative();
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(instrumented, production.GetBuildOptions());
 
     for (bool miss : {false, true}) {
       SCOPED_TRACE(miss);

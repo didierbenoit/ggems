@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks energy units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -56,6 +58,8 @@ using ggems::units::UnitConversionError;
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSEnergyUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
     std::string_view unit;
@@ -90,6 +94,8 @@ TEST(GGEMSEnergyUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 
 // =============================================================================
 // =============================================================================
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSEnergyUnitsTest, RejectsNegativeEnergy) {
   auto const converted = MakeQuantity<Energy>(-1, "eV");
 
@@ -100,6 +106,8 @@ TEST(GGEMSEnergyUnitsTest, RejectsNegativeEnergy) {
 // =============================================================================
 // =============================================================================
 
+// Values around a canonical half quantum must follow the specified rounding
+// rule.
 TEST(GGEMSEnergyUnitsTest, EnergyChangeSupportsSignedValuesAndRounding) {
   auto const positive = MakeQuantity<EnergyChange>(1.5L, "eV");
   auto const negative = MakeQuantity<EnergyChange>(-1.5L, "eV");
@@ -119,6 +127,8 @@ TEST(GGEMSEnergyUnitsTest, EnergyChangeSupportsSignedValuesAndRounding) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSEnergyUnitsTest, AutomaticallyDisplaysTheLargestApplicableUnit) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
@@ -128,6 +138,8 @@ TEST(GGEMSEnergyUnitsTest, AutomaticallyDisplaysTheLargestApplicableUnit) {
 
 // =============================================================================
 // =============================================================================
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSEnergyUnitsTest, LiteralStoresMicroElectronVolts) {
   using namespace ggems::units;
 
@@ -138,6 +150,8 @@ TEST(GGEMSEnergyUnitsTest, LiteralStoresMicroElectronVolts) {
 
 // =============================================================================
 // =============================================================================
+// Canonical energy quanta and table-free monochromatic sampling must remain
+// exact.
 TEST(GGEMSEnergyUnitsTest, ResolvesMicroElectronVoltQuantaAndThermalNeutrons) {
   struct Case {
     long double milli_electron_volts;
@@ -175,6 +189,8 @@ TEST(GGEMSEnergyUnitsTest, ResolvesMicroElectronVoltQuantaAndThermalNeutrons) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSEnergyUnitsTest, PreservesExactIntegralConversionAndRejectsOverflow) {
   constexpr auto maximum = std::numeric_limits<std::uint64_t>::max();
   constexpr Energy maximum_energy{maximum};
@@ -212,10 +228,13 @@ TEST(GGEMSEnergyUnitsTest, PreservesExactIntegralConversionAndRejectsOverflow) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSEnergyUnitsTest, PreservesSignedRangeAndExactNegativeOutput) {
   constexpr auto maximum = std::numeric_limits<std::int64_t>::max();
   constexpr EnergyChange minimum_change{
-    std::numeric_limits<std::int64_t>::min()};
+    std::numeric_limits<std::int64_t>::min(),
+  };
   EXPECT_EQ(minimum_change.value, (-9'223'372'036'854'775'807LL - 1LL));
   auto const exact = MakeQuantity<EnergyChange>(-(maximum / 1'000LL), "meV");
   ASSERT_TRUE(exact.has_value());
@@ -238,6 +257,8 @@ TEST(GGEMSEnergyUnitsTest, PreservesSignedRangeAndExactNegativeOutput) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSEnergyUnitsTest, PreservesRuntimeVocabularyAndSmallEnergyDisplay) {
   for (std::string_view const token : {
          "ueV",
@@ -268,6 +289,8 @@ TEST(GGEMSEnergyUnitsTest, PreservesRuntimeVocabularyAndSmallEnergyDisplay) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSEnergyUnitsTest, EveryLiteralPreservesItsPhysicalUnit) {
   using namespace ggems::units;
   constexpr std::array integral{1_meV, 1_eV, 1_keV, 1_MeV, 1_GeV, 1_TeV};

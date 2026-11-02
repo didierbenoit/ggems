@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks f18 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -56,6 +58,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSF18Test, BuildsExactIdentity) {
   GGEMSRadionuclideDefinition const definition = BuildF18Radionuclide();
 
@@ -66,6 +70,8 @@ TEST(GGEMSF18Test, BuildsExactIdentity) {
 // =============================================================================
 // =============================================================================
 
+// The parent source must preserve distinct marginal beta, photon, and
+// electron yields.
 TEST(GGEMSF18Test, UsesDeclaredThreeGroupSourceModel) {
   GGEMSRadionuclideDefinition const definition = BuildF18Radionuclide();
 
@@ -91,6 +97,8 @@ TEST(GGEMSF18Test, UsesDeclaredThreeGroupSourceModel) {
 // =============================================================================
 // =============================================================================
 
+// Selected evaluated lines and beta-spectrum data must survive source
+// compilation.
 TEST(GGEMSF18Test, PreservesExactEnergyDistributionsAndTabulatedSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildF18Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -149,6 +157,7 @@ TEST(GGEMSF18Test, PreservesExactEnergyDistributionsAndTabulatedSpectrum) {
 // =============================================================================
 // =============================================================================
 
+// Source decay data must not invent transport-produced annihilation photons.
 TEST(GGEMSF18Test, OmitsAnnihilationPhotonsAndPlaceholders) {
   GGEMSRadionuclideDefinition const definition = BuildF18Radionuclide();
   auto const emissions = definition.GetEmissions();

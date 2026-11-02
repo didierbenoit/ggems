@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source validation behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -39,6 +41,8 @@
 // =============================================================================
 // =============================================================================
 
+// The default source record must be admitted by the same validator used for
+// execution.
 TEST(GGEMSSourceValidation, AcceptsDefaultPointFixedRecord) {
   ggems::core::sources::GGEMSSource source{};
   EXPECT_NO_THROW(
@@ -48,6 +52,8 @@ TEST(GGEMSSourceValidation, AcceptsDefaultPointFixedRecord) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSourceValidation,
      RejectsUnsupportedGeometryUnknownAngularKindAndInvalidFrame) {
   ggems::core::sources::GGEMSSource source{};
@@ -73,6 +79,8 @@ TEST(GGEMSSourceValidation,
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSSourceValidation, ChecksExactSignedEnvelopeDistances) {
   using ggems::core::sources::HasSignedPicoMeterEnvelope;
 
@@ -90,6 +98,8 @@ TEST(GGEMSSourceValidation, ChecksExactSignedEnvelopeDistances) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST(GGEMSSourceValidation, EnforcesCanonicalGeometryDimensions) {
   using ggems::core::sources::GGEMSEmissionGeometryType;
   using ggems::core::sources::ToKernelEmissionGeometryType;
@@ -141,6 +151,8 @@ TEST(GGEMSSourceValidation, EnforcesCanonicalGeometryDimensions) {
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSSourceValidation, RejectsInvalidBinary32AngularRecords) {
   using ggems::core::sources::ValidateAnalyticSourceRecord;
 

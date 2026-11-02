@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSGd153Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildGd153Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Gd-153");
@@ -124,6 +126,8 @@ TEST(GGEMSGd153Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesNuclearGamma) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -200,6 +204,8 @@ TEST(GGEMSGd153Test, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesAtomicXray) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -268,6 +274,8 @@ TEST(GGEMSGd153Test, PreservesAtomicXray) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion1406383Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -336,6 +344,8 @@ TEST(GGEMSGd153Test, PreservesConversion1406383Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion1981296Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -404,6 +414,8 @@ TEST(GGEMSGd153Test, PreservesConversion1981296Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion69673Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -474,6 +486,8 @@ TEST(GGEMSGd153Test, PreservesConversion69673Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion7542213Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -544,6 +558,8 @@ TEST(GGEMSGd153Test, PreservesConversion7542213Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion8336717Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -614,6 +630,8 @@ TEST(GGEMSGd153Test, PreservesConversion8336717Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion8948595Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -684,6 +702,8 @@ TEST(GGEMSGd153Test, PreservesConversion8948595Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion97431Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -754,6 +774,8 @@ TEST(GGEMSGd153Test, PreservesConversion97431Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion10318012Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =
@@ -824,6 +846,8 @@ TEST(GGEMSGd153Test, PreservesConversion10318012Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGd153Test, PreservesConversion17285307Kev) {
   auto const definition = BuildGd153Radionuclide();
   auto const &distribution =

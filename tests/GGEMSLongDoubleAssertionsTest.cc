@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks the precision and failure diagnostics of numerical test
+ * assertions.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -34,6 +36,8 @@
 
 #include "GGEMSLongDoubleAssertions.hh"
 
+// Exact tolerance endpoints pass, while the next representable value outside
+// fails.
 TEST(GGEMSLongDoubleAssertionsTest, PreservesInclusiveAbsoluteTolerance) {
   GGEMS_EXPECT_NEAR_LD(1.0L, 1.25L, 0.25L);
   GGEMS_EXPECT_NEAR_LD(1.25L, 1.0L, 0.25L);
@@ -44,6 +48,8 @@ TEST(GGEMSLongDoubleAssertionsTest, PreservesInclusiveAbsoluteTolerance) {
     "absolute difference");
 }
 
+// The oracle must retain precision that a narrowing conversion to double would
+// erase.
 TEST(GGEMSLongDoubleAssertionsTest, DetectsDifferencesBelowDoubleResolution) {
   if (std::numeric_limits<long double>::digits <=
       std::numeric_limits<double>::digits) {
@@ -56,6 +62,8 @@ TEST(GGEMSLongDoubleAssertionsTest, DetectsDifferencesBelowDoubleResolution) {
   GGEMS_EXPECT_NEAR_LD(adjacent, 1.0L, adjacent - 1.0L);
 }
 
+// Extreme finite values must not overflow or underflow through an intermediate
+// double.
 TEST(GGEMSLongDoubleAssertionsTest, PreservesLongDoubleRange) {
   auto const largest = std::numeric_limits<long double>::max();
   auto const smallest = std::numeric_limits<long double>::min();
@@ -68,6 +76,8 @@ TEST(GGEMSLongDoubleAssertionsTest, PreservesLongDoubleRange) {
                           "absolute difference");
 }
 
+// Invalid budgets and NaN operands must never produce a false successful
+// comparison.
 TEST(GGEMSLongDoubleAssertionsTest, RejectsNaNsAndInvalidTolerances) {
   auto const nan_value = std::numeric_limits<long double>::quiet_NaN();
   auto const infinity = std::numeric_limits<long double>::infinity();
@@ -85,6 +95,8 @@ TEST(GGEMSLongDoubleAssertionsTest, RejectsNaNsAndInvalidTolerances) {
                           "absolute difference");
 }
 
+// Infinite operands follow the declared absolute-difference comparison
+// semantics.
 TEST(GGEMSLongDoubleAssertionsTest, HandlesInfinities) {
   auto const infinity = std::numeric_limits<long double>::infinity();
   GGEMS_EXPECT_NEAR_LD(infinity, infinity, 0.0L);
@@ -100,19 +112,20 @@ TEST(GGEMSLongDoubleAssertionsTest, HandlesInfinities) {
   GGEMS_EXPECT_NEAR_LD(-infinity, 1.0L, infinity);
 }
 
+// Assertion expressions with side effects must execute only once per argument.
 TEST(GGEMSLongDoubleAssertionsTest, EvaluatesEachArgumentOnce) {
   int actual_calls = 0;
   int expected_calls = 0;
   int tolerance_calls = 0;
-  auto const actual = [&]() -> long double {
+  auto const actual = [&] -> long double {
     ++actual_calls;
     return 1.0L;
   };
-  auto const expected = [&]() -> long double {
+  auto const expected = [&] -> long double {
     ++expected_calls;
     return 1.0L;
   };
-  auto const tolerance = [&]() -> long double {
+  auto const tolerance = [&] -> long double {
     ++tolerance_calls;
     return 0.0L;
   };
@@ -122,6 +135,8 @@ TEST(GGEMSLongDoubleAssertionsTest, EvaluatesEachArgumentOnce) {
   EXPECT_EQ(tolerance_calls, 1);
 }
 
+// A failed numerical assertion must explain its operands, budget, and caller
+// context.
 TEST(GGEMSLongDoubleAssertionsTest,
      ReportsExpressionsValuesAndStreamedContext) {
   auto const result = ggems::test::LongDoubleNear("measured", "reference",

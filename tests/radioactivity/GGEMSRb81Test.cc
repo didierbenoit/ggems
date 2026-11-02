@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSRb81Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildRb81Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Rb-81");
@@ -102,6 +104,8 @@ TEST(GGEMSRb81Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb81Test, PreservesBetaPlusAggregate) {
   auto const definition = BuildRb81Radionuclide();
   auto const &distribution =
@@ -169,6 +173,8 @@ TEST(GGEMSRb81Test, PreservesBetaPlusAggregate) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRb81Test, PreservesNuclearGamma) {
   auto const definition = BuildRb81Radionuclide();
   auto const &distribution =
@@ -230,6 +236,8 @@ TEST(GGEMSRb81Test, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRb81Test, PreservesAtomicXray) {
   auto const definition = BuildRb81Radionuclide();
   auto const &distribution =
@@ -307,6 +315,8 @@ TEST(GGEMSRb81Test, PreservesAtomicXray) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRb81Test, PreservesAtomicXrayWeak1) {
   auto const definition = BuildRb81Radionuclide();
   auto const &distribution =
@@ -318,6 +328,8 @@ TEST(GGEMSRb81Test, PreservesAtomicXrayWeak1) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRb81Test, PreservesAugerElectron) {
   auto const definition = BuildRb81Radionuclide();
   auto const &distribution =
@@ -395,6 +407,8 @@ TEST(GGEMSRb81Test, PreservesAugerElectron) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRb81Test, PreservesConversionElectron) {
   auto const definition = BuildRb81Radionuclide();
   auto const &distribution =
@@ -456,6 +470,8 @@ TEST(GGEMSRb81Test, PreservesConversionElectron) {
 // =============================================================================
 // =============================================================================
 
+// The direct-parent source must not acquire daughter emissions or unsupported
+// channels.
 TEST(GGEMSRb81Test, ExcludesNonParentSourceLines) {
   auto const definition = BuildRb81Radionuclide();
   // annihilation_photons
@@ -589,6 +605,8 @@ TEST(GGEMSRb81Test, ExcludesNonParentSourceLines) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRb81Test, UsesOneAggregateContinuousBetaLaw) {
   auto const definition = BuildRb81Radionuclide();
   auto const emissions = definition.GetEmissions();

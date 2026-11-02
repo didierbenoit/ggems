@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks device primary initialization and particle provenance.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -39,6 +41,7 @@
 #include "GGEMS/particles/GGEMSParticleState.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
@@ -62,17 +65,13 @@ protected:
   static void SetUpTestSuite() {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-    return opencl.GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -80,12 +79,14 @@ protected:
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+// Executes primary initialization and checks live state and source provenance.
 TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   auto &context = GetContext();
 
   std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path kernel_test_root = kernel_root / "tests";
+  std::filesystem::path kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
   std::string build_options = std::format("-I{}", kernel_root.generic_string());
 

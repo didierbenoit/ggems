@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks lossless aionino World transport and species dispatch.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -36,6 +38,8 @@
 #include <utility>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -205,7 +209,8 @@ auto ExpectEndpoint(ObserverRecord const &terminal, SourceRecord const &source,
 
 auto ExpectAioninoExits(World const &world, std::span<AioninoCase const> cases)
   -> void {
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
 
     std::vector<SourceRecord> records;
@@ -259,28 +264,14 @@ auto ExpectAioninoExits(World const &world, std::span<AioninoCase const> cases)
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSNavigationDeviceTest,
-       W01CenterToPlusXExitsAtOneHundredMillimeters) {
-  World const world = MakeCubicWorld();
-
-  // geometric travel = 100 mm, final position = (100 mm, 0, 0), +X face.
-  std::array<AioninoCase, 1U> const cases{
-    {
-      {.position_pm = {0, 0, 0}, .direction = {1.0, 0.0, 0.0}},
-    },
-  };
-
-  ExpectAioninoExits(world, cases);
-}
-
-// =============================================================================
-// =============================================================================
-
+// Checks actual transport escape on all six faces and tied diagonal exits.
 TEST_F(GGEMSNavigationDeviceTest, ExitsCubicWorldOnEveryFaceAndDiagonal) {
   World const world = MakeCubicWorld();
 
-  std::array<AioninoCase, 9U> const cases{
+  std::array<AioninoCase, 10U> const cases{
     {
+      // W01: 100 mm of travel from the center to the +X face.
+      {.position_pm = {0, 0, 0}, .direction = {1.0, 0.0, 0.0}},
       {.position_pm = {0, 0, 0}, .direction = {-1.0, 0.0, 0.0}},
       {.position_pm = {0, 0, 0}, .direction = {0.0, 1.0, 0.0}},
       {.position_pm = {0, 0, 0}, .direction = {0.0, -1.0, 0.0}},
@@ -314,6 +305,7 @@ TEST_F(GGEMSNavigationDeviceTest, ExitsCubicWorldOnEveryFaceAndDiagonal) {
 // =============================================================================
 // =============================================================================
 
+// Checks limiting World faces using asymmetric extents and uploaded directions.
 TEST_F(GGEMSNavigationDeviceTest,
        ExitsAsymmetricWorldWithStoredFP32Directions) {
   World const world = MakeVacuumWorld(200_mm, 400_mm, 100_mm);
@@ -338,6 +330,8 @@ TEST_F(GGEMSNavigationDeviceTest,
 // =============================================================================
 // =============================================================================
 
+// Checks transport births on faces and rays sliding along coincident
+// boundaries.
 TEST_F(GGEMSNavigationDeviceTest, HandlesBoundaryStartsAndCoincidentMovement) {
   World const world = MakeCubicWorld();
 
@@ -375,6 +369,7 @@ TEST_F(GGEMSNavigationDeviceTest, HandlesBoundaryStartsAndCoincidentMovement) {
 // =============================================================================
 // =============================================================================
 
+// Checks transport escape at a large supported medical World scale.
 TEST_F(GGEMSNavigationDeviceTest, ExitsThreeMeterWorld) {
   World const world = MakeVacuumWorld(3000_mm, 3000_mm, 3000_mm);
   constexpr std::int64_t k_half{1'500'000'000'000LL};
@@ -394,10 +389,11 @@ TEST_F(GGEMSNavigationDeviceTest, ExitsThreeMeterWorld) {
 // =============================================================================
 // =============================================================================
 
+// Rejects invalid aionino births before launching transport.
 TEST_F(GGEMSNavigationDeviceTest,
        RejectsAioninoSourcesOutsideTheWorldOrWithoutAWorld) {
   World const world = MakeCubicWorld();
-  auto &context = ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+  auto &context = ggems::test::GetSelectedOpenCLContext();
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(42ULL);
 
@@ -422,11 +418,13 @@ TEST_F(GGEMSNavigationDeviceTest,
 // =============================================================================
 // =============================================================================
 
+// Preserves diagnostic movement for non-aionino species in a configured World.
 TEST_F(GGEMSNavigationDeviceTest,
        KeepsTheDiagnosticProjectionForOtherParticlesWithAWorld) {
   World const world = MakeCubicWorld();
 
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
 
     ggems::core::random::GGEMSRandom random{};
@@ -458,6 +456,8 @@ TEST_F(GGEMSNavigationDeviceTest,
 // source slots must each keep their own one-meter projection. This exposed an
 // Intel CPU Release code-generation defect when the Aionino step was inlined
 // into the stream kernel (histories received each other's positions).
+// Checks each source keeps its own direction, provenance, and diagnostic
+// endpoint.
 TEST_F(GGEMSNavigationDeviceTest,
        GammaMultiSourceHistoriesKeepTheirOwnProjection) {
   World const world = MakeCubicWorld();
@@ -475,7 +475,8 @@ TEST_F(GGEMSNavigationDeviceTest,
     },
   };
 
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
 
     std::vector<SourceRecord> records;

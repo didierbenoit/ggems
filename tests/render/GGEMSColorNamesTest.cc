@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Checks named palette aliases and color authoring.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -68,6 +69,7 @@ static_assert(k_defined_color == render::ColorKey{
 // =============================================================================
 // =============================================================================
 
+// Typed shades must resolve to the intended palette family.
 TEST(GGEMSColorNamesTest, MapsRepresentativeShadeEnumsToFamilies) {
   EXPECT_EQ(render::FamilyOf(render::GreenShade::Acid),
             render::ColorFamily::Green);
@@ -80,6 +82,8 @@ TEST(GGEMSColorNamesTest, MapsRepresentativeShadeEnumsToFamilies) {
 // =============================================================================
 // =============================================================================
 
+// Color authoring must retain independently chosen shade, intensity, and output
+// layer.
 TEST(GGEMSColorNamesTest, DefineColorPreservesShadeVariantAndLayer) {
   constexpr auto color = render::DefineColor(render::MagentaShade::FleshSignal,
                                              render::ColorVariant::Bright,
@@ -95,6 +99,8 @@ TEST(GGEMSColorNamesTest, DefineColorPreservesShadeVariantAndLayer) {
 // =============================================================================
 // =============================================================================
 
+// Default foreground and background must preserve the project's readable
+// terminal palette.
 TEST(GGEMSColorNamesTest, DefaultsUseExpectedNamedColors) {
   EXPECT_EQ(render::DEFAULT_FG, render::WHITE_Eggshell);
   EXPECT_EQ(render::DEFAULT_BG, render::GRAY_Neutral48_BG);
@@ -103,6 +109,8 @@ TEST(GGEMSColorNamesTest, DefaultsUseExpectedNamedColors) {
 // =============================================================================
 // =============================================================================
 
+// Named color aliases must retain their requested intensity and
+// foreground/background roles.
 TEST(GGEMSColorNamesTest, RepresentativeNamedConstantsPreserveTheirKeys) {
   struct NamedColorCase {
     std::string_view label;

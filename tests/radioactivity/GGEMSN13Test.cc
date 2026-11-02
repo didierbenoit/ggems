@@ -51,6 +51,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSN13Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildN13Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "N-13");
@@ -71,6 +73,8 @@ TEST(GGEMSN13Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSN13Test, PreservesBetaPlus119847Kev) {
   auto const definition = BuildN13Radionuclide();
   auto const &distribution =

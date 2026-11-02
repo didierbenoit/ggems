@@ -68,6 +68,7 @@ auto World() -> GGEMSWorld {
 }
 } // namespace
 
+// Rejects incomplete cone authoring before a physical volume can be compiled.
 TEST(N1Cons, RequiresCompleteDimensionsAndOwnedMaterial) {
   GGEMSCons shape;
   EXPECT_THROW(shape.Validate(), GGEMSRecoverable);
@@ -85,6 +86,7 @@ TEST(N1Cons, RequiresCompleteDimensionsAndOwnedMaterial) {
   EXPECT_EQ(shape.GetHalfLengthPM(), 6'000'000'000U);
 }
 
+// Keeps valid cone dimensions intact after a rejected setter.
 TEST(N1Cons, RejectsInvalidRadiiAndLengthsWithoutMutatingAcceptedValues) {
   auto shape = Cons();
   EXPECT_THROW(shape.SetNegativeZRadii(4_mm, 4_mm), GGEMSRecoverable);
@@ -103,6 +105,7 @@ TEST(N1Cons, RejectsInvalidRadiiAndLengthsWithoutMutatingAcceptedValues) {
       .has_value());
 }
 
+// Preserves valid cone degeneracies without silently altering their radii.
 TEST(N1Cons, AdmitsSolidTipCylinderAndClosingBoreWithoutRadiusReplacement) {
   auto shape = Cons();
   shape.SetNegativeZRadii(0_pm, 0_pm).SetPositiveZRadii(0_pm, 6_mm);
@@ -126,6 +129,7 @@ TEST(N1Cons, AdmitsSolidTipCylinderAndClosingBoreWithoutRadiusReplacement) {
   EXPECT_THROW(shape.Validate(), GGEMSRecoverable);
 }
 
+// Verifies that copied solids retain independent placement and material values.
 TEST(N1Cons, CopiesPoseAndMaterial) {
   auto shape = Cons();
   shape.SetPosition(MakePositionPM(-5'000'000'000LL, 7'000'000'000LL, 0))
@@ -143,6 +147,7 @@ TEST(N1Cons, CopiesPoseAndMaterial) {
   EXPECT_TRUE(copy.BuildBoxPoseRecord().has_value());
 }
 
+// Separates unresolvable physical features from valid contact with the World.
 TEST(N1Cons, RejectsUnresolvedFeaturesButAdmitsWorldContact) {
   auto tiny_bore = Cons();
   tiny_bore.SetNegativeZRadii(1_pm, 4_mm).SetPositiveZRadii(1_pm, 6_mm);
@@ -162,6 +167,7 @@ TEST(N1Cons, RejectsUnresolvedFeaturesButAdmitsWorldContact) {
   EXPECT_NO_THROW(world.Validate());
 }
 
+// Applies canonical angle conversion and atomic rejection to cone placement.
 TEST(N1Cons, PreservesTheSharedRotationContract) {
   auto shape = Cons();
   shape.SetRotation(90_deg, 90_deg, 90_deg);
@@ -175,6 +181,7 @@ TEST(N1Cons, PreservesTheSharedRotationContract) {
   EXPECT_DOUBLE_EQ(shape.GetRotation().axis_z.x, 1.0);
 }
 
+// Protects the cone payload and analytic scene record ABI.
 TEST(N1Cons, CompactSharedRecordPreservesExistingSceneStride) {
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSConsRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSConsRecord>);
@@ -194,6 +201,7 @@ TEST(N1Cons, CompactSharedRecordPreservesExistingSceneStride) {
   EXPECT_EQ(offsetof(GGEMSAnalyticVolumeRecord, parameters), 4U);
 }
 
+// Rejects cones with no strict interior after normal-distance tolerance bands.
 TEST(N1Cons, RejectsConesWhoseNormalBandsConsumeTheEntireInterior) {
   auto world = World();
   auto const band =

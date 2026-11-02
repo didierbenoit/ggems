@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source run range behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -37,6 +39,8 @@
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSSourceRunRange, IsKernelFriendly) {
   using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 
@@ -53,6 +57,8 @@ TEST(GGEMSSourceRunRange, IsKernelFriendly) {
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceRunRange, SupportsZeroPrimarySourceRange) {
   ggems::core::sources::GGEMSSourceRunRange range{
     .projection_primary_begin = 3ULL,
@@ -66,6 +72,8 @@ TEST(GGEMSSourceRunRange, SupportsZeroPrimarySourceRange) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSSourceRunRange, SupportsMaximumValues) {
   constexpr std::uint64_t k_maximum = std::numeric_limits<std::uint64_t>::max();
 

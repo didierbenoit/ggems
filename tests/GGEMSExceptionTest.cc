@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Checks exception categories and throwing-call-site diagnostics.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -51,6 +52,8 @@ auto ExpectDiagnosticContains(std::string_view diagnostic,
 // =============================================================================
 // =============================================================================
 
+// Exception diagnostics must retain both severity and the caller-supplied
+// message.
 TEST(GGEMSExceptionTest, ReportsCategoryAndMessageInDiagnostic) {
   {
     ggems::core::GGEMSRecoverable const exception{"recoverable marker"};
@@ -80,6 +83,8 @@ TEST(GGEMSExceptionTest, ReportsCategoryAndMessageInDiagnostic) {
 // =============================================================================
 // =============================================================================
 
+// Failure reports must point to the throwing caller rather than the exception
+// constructor.
 TEST(GGEMSExceptionTest, CapturesDirectThrowSiteInDiagnostic) {
   std::int32_t expected_line = 0;
 

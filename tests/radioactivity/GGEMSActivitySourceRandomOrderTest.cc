@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks activity source random order behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -36,6 +38,8 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
@@ -82,12 +86,7 @@ constexpr std::array<RandomEngine, 3U> k_engines{
 class GGEMSActivitySourceRandomOrderTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 };
 
@@ -96,10 +95,12 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST_F(GGEMSActivitySourceRandomOrderTest,
        ConsumesTimeThenPositionThenDirectionThenEnergyForEveryEngine) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  auto &context = opencl.GetContext().front();
+  auto &context = ggems::test::GetSelectedOpenCLContext();
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
 
   Source source{};
@@ -119,18 +120,21 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
       ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven),
     .first_emission_index = 0U,
     .emission_count = 1U,
-    .scaled_decay = 0.125F};
+    .scaled_decay = 0.125F,
+  };
   EmissionRecord const emission{
     .particle_type =
       ggems::core::particles::ToKernelParticleType(ParticleType::Gamma),
     .energy_distribution_record_index = 0U,
-    .mono_energy_micro_eV = 0ULL};
+    .mono_energy_micro_eV = 0ULL,
+  };
   EnergyDistributionRecord const energy_distribution{
     .regular_bin_width_micro_eV = 0ULL,
     .table_offset = 0ULL,
     .distribution_type = ggems::core::sources::ToKernelEnergyDistributionType(
       EnergyType::DiscreteLines),
-    .table_count = 2U};
+    .table_count = 2U,
+  };
   constexpr std::array<std::uint64_t, 2U> k_energy_values{40'000ULL, 80'000ULL};
   constexpr std::array<std::uint64_t, 2U> k_ticket_upper{
     2'147'483'648ULL,
@@ -196,7 +200,8 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
     std::string const options = std::format("-I{} {}", root.generic_string(),
                                             random.GetKernelBuildDefinition());
     auto const &program = opencl.GetOrCreateProgram(
-      context, root / "tests", "activity_source_random_order_probe", options);
+      context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+      "activity_source_random_order_probe", options);
     ggems::ocl::GGEMSOpenCLKernel kernel{
       context, program.CreateKernel("activity_source_random_order_probe"),
       "activity_source_random_order_probe"};

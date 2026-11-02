@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks selected-device context and queue coherence.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -39,41 +41,34 @@ static_assert(!std::is_copy_assignable_v<ggems::ocl::GGEMSOpenCLContext>);
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSOpenCLContextTest,
-     CreatesCoherentOneDeviceContextAndQueueForEveryAvailableDevice) {
-  auto const inventories = ggems::test::GetOpenCLDeviceInventory();
-  ASSERT_FALSE(inventories.empty());
+// Context and profiling queue refer to the requested native device and
+// platform.
+TEST(GGEMSOpenCLContextTest, CreatesCoherentContextAndQueueForSelectedDevice) {
+  auto const &inventory = ggems::test::GetSelectedOpenCLDevice();
+  auto const description = ggems::test::DescribeOpenCLDevice(inventory);
+  SCOPED_TRACE(description);
 
-  for (auto const &inventory : inventories) {
-    auto const description = ggems::test::DescribeOpenCLDevice(inventory);
-    SCOPED_TRACE(description);
+  auto const &platform = inventory.platform.get();
+  auto const &device = inventory.device.get();
 
-    auto const &platform = inventory.platform.get();
-    auto const &device = inventory.device.get();
+  EXPECT_EQ(inventory.platform_index, platform.GetPlatformIndex());
+  EXPECT_EQ(inventory.platform_index, device.GetPlatformIndex());
+  EXPECT_EQ(inventory.device_index, device.GetDeviceIndex());
 
-    EXPECT_EQ(inventory.platform_index, platform.GetPlatformIndex());
-    EXPECT_EQ(inventory.platform_index, device.GetPlatformIndex());
-    EXPECT_EQ(inventory.device_index, device.GetDeviceIndex());
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-    if (device.GetAvailable() == CL_FALSE) {
-      continue;
-    }
+  EXPECT_EQ(&context.GetDevice(), &device);
+  EXPECT_NE(context.GetContextNative()(), nullptr);
+  EXPECT_NE(context.GetCommandQueueNative()(), nullptr);
+  EXPECT_EQ(context.GetNumDevices(), 1U);
 
-    ggems::ocl::GGEMSOpenCLContext context{device};
+  auto const native_devices = context.GetNativeDevices();
 
-    EXPECT_EQ(&context.GetDevice(), &device);
-    EXPECT_NE(context.GetContextNative()(), nullptr);
-    EXPECT_NE(context.GetCommandQueueNative()(), nullptr);
-    EXPECT_EQ(context.GetNumDevices(), 1U);
+  ASSERT_EQ(native_devices.size(), 1U);
+  EXPECT_EQ(native_devices.front()(), device.GetDeviceNative()());
 
-    auto const native_devices = context.GetNativeDevices();
-
-    ASSERT_EQ(native_devices.size(), 1U);
-    EXPECT_EQ(native_devices.front()(), device.GetDeviceNative()());
-
-    EXPECT_EQ(context.GetQueueContext()(), context.GetContextNative()());
-    EXPECT_EQ(context.GetQueueDevice()(), device.GetDeviceNative()());
-    EXPECT_NE(context.GetQueueProperties() & CL_QUEUE_PROFILING_ENABLE,
-              static_cast<cl_command_queue_properties>(0));
-  }
+  EXPECT_EQ(context.GetQueueContext()(), context.GetContextNative()());
+  EXPECT_EQ(context.GetQueueDevice()(), device.GetDeviceNative()());
+  EXPECT_NE(context.GetQueueProperties() & CL_QUEUE_PROFILING_ENABLE,
+            static_cast<cl_command_queue_properties>(0));
 }

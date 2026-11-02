@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks material description behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -55,6 +57,8 @@ using Registration = materials::GGEMSMaterialRegistration;
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSMaterialDescriptionTest, DescribesMaterial) {
   auto const material = builtins::BuildBuiltInMaterial("Water");
 
@@ -71,6 +75,8 @@ TEST(GGEMSMaterialDescriptionTest, DescribesMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSMaterialDescriptionTest, InspectsWaterFromTheMaterialAuthorities) {
   auto const material = builtins::BuildBuiltInMaterial("Water");
 
@@ -118,6 +124,8 @@ TEST(GGEMSMaterialDescriptionTest, InspectsWaterFromTheMaterialAuthorities) {
 // =============================================================================
 // =============================================================================
 
+// Prepared isotope and elemental densities must agree with the physical
+// composition.
 TEST(GGEMSMaterialDescriptionTest, DescribesIsotopesAndDerivedElementalView) {
   auto const material = builtins::BuildBuiltInMaterial("Water");
 
@@ -152,6 +160,8 @@ TEST(GGEMSMaterialDescriptionTest, DescribesIsotopesAndDerivedElementalView) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSMaterialDescriptionTest, DescribesSingleElementMaterial) {
   auto const inspection =
     materials::InspectMaterial(builtins::BuildBuiltInMaterial("Aluminum"));
@@ -165,6 +175,8 @@ TEST(GGEMSMaterialDescriptionTest, DescribesSingleElementMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSMaterialDescriptionTest, DescribesReferenceIsotopeAndIsomer) {
   auto const technetium =
     materials::DescribeMaterial(builtins::BuildBuiltInMaterial("Technetium"));
@@ -182,6 +194,8 @@ TEST(GGEMSMaterialDescriptionTest, DescribesReferenceIsotopeAndIsomer) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSMaterialDescriptionTest, DescribesExplicitIsotopicComposition) {
   auto const material = materials::GGEMSMaterial::FromIsotopicComposition(
     "explicit boron", 2.34_g_cm3,
@@ -209,6 +223,8 @@ TEST(GGEMSMaterialDescriptionTest, DescribesExplicitIsotopicComposition) {
 // =============================================================================
 // =============================================================================
 
+// Vacuum must remain exactly matterless rather than an artificial low-density
+// material.
 TEST(GGEMSMaterialDescriptionTest, DescribesVacuum) {
   auto const inspection =
     materials::InspectMaterial(builtins::BuildBuiltInMaterial("Vacuum"));
@@ -230,6 +246,8 @@ TEST(GGEMSMaterialDescriptionTest, DescribesVacuum) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSMaterialDescriptionTest, InspectsRegisteredCustomMaterial) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
@@ -260,6 +278,8 @@ TEST(GGEMSMaterialDescriptionTest, InspectsRegisteredCustomMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Definition, inspection, and registration must have the documented
+// observable side effects.
 TEST(GGEMSMaterialDescriptionTest, InspectingAvailableBuiltInDoesNotRegister) {
   auto const &manager = materials::GGEMSMaterialManager::GetInstance();
 
@@ -281,6 +301,8 @@ TEST(GGEMSMaterialDescriptionTest, InspectingAvailableBuiltInDoesNotRegister) {
 // =============================================================================
 // =============================================================================
 
+// Registry identity must remain separate from deduplicated scientific
+// snapshot identity.
 TEST(GGEMSMaterialDescriptionTest,
      DistinctManagerEntriesCanShareOneSnapshotMaterialId) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
@@ -318,6 +340,8 @@ TEST(GGEMSMaterialDescriptionTest,
 // =============================================================================
 // =============================================================================
 
+// Unsupported identities must fail explicitly without approximate lookup or
+// substitution.
 TEST(GGEMSMaterialDescriptionTest, UnknownMaterialsAreRejected) {
   auto const &manager = materials::GGEMSMaterialManager::GetInstance();
   auto const registered_count = manager.GetMaterials().size();

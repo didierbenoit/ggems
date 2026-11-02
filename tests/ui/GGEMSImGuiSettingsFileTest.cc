@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Checks settings persistence and atomic publication failures.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -47,6 +76,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Settings paths must obey the platform's user-directory policy and reject
+// missing roots.
 TEST(GGEMSImGuiSettingsPath, UsesThePerUserConfigurationDirectory) {
   std::filesystem::path const base =
     std::filesystem::temp_directory_path() / "user";
@@ -81,6 +112,8 @@ TEST(GGEMSImGuiSettingsPath, UsesThePerUserConfigurationDirectory) {
 // =============================================================================
 // =============================================================================
 
+// First launch without saved layout must report missing settings without
+// inventing content.
 TEST_F(GGEMSImGuiSettingsFileTest, MissingFileIsNotAnError) {
   GGEMSSettingsFileRead const settings =
     ReadImGuiSettingsFile(root_ / "GGEMS" / "imgui.ini");
@@ -92,6 +125,8 @@ TEST_F(GGEMSImGuiSettingsFileTest, MissingFileIsNotAnError) {
 // =============================================================================
 // =============================================================================
 
+// Saving a layout must create parent directories and preserve the exact
+// payload.
 TEST_F(GGEMSImGuiSettingsFileTest, WriteCreatesDirectoriesAndRoundTrips) {
   std::filesystem::path const path = root_ / "GGEMS" / "imgui.ini";
   std::string const text = "[Window][###GGEMS.Viewport]\nPos=0,0\n";
@@ -108,6 +143,7 @@ TEST_F(GGEMSImGuiSettingsFileTest, WriteCreatesDirectoriesAndRoundTrips) {
 // =============================================================================
 // =============================================================================
 
+// A second save must replace the previous layout completely.
 TEST_F(GGEMSImGuiSettingsFileTest, WriteReplacesTheExistingFile) {
   std::filesystem::path const path = root_ / "imgui.ini";
 
@@ -120,6 +156,8 @@ TEST_F(GGEMSImGuiSettingsFileTest, WriteReplacesTheExistingFile) {
 // =============================================================================
 // =============================================================================
 
+// A directory at the settings filename must remain intact and cause a clear
+// read/write failure.
 TEST_F(GGEMSImGuiSettingsFileTest, NonRegularSettingsPathFailsBothWays) {
   std::filesystem::path const path = root_ / "imgui.ini";
   std::filesystem::create_directories(path);
@@ -137,6 +175,7 @@ TEST_F(GGEMSImGuiSettingsFileTest, NonRegularSettingsPathFailsBothWays) {
 // =============================================================================
 // =============================================================================
 
+// A file blocking the parent directory must fail without replacing that file.
 TEST_F(GGEMSImGuiSettingsFileTest, UnwritableDestinationLeavesNothingBehind) {
   std::filesystem::path const blocking_file = root_ / "GGEMS";
 
@@ -153,6 +192,8 @@ TEST_F(GGEMSImGuiSettingsFileTest, UnwritableDestinationLeavesNothingBehind) {
 // =============================================================================
 // =============================================================================
 
+// Unicode user paths must support layout persistence and readable failure
+// paths.
 TEST_F(GGEMSImGuiSettingsFileTest, UnicodeDirectoriesNeverThrow) {
   std::filesystem::path const user =
     root_ / std::filesystem::path{u8"\u6d4b\u8bd5_\U0001F52C_\u00e9"};
@@ -173,6 +214,8 @@ TEST_F(GGEMSImGuiSettingsFileTest, UnicodeDirectoriesNeverThrow) {
 // =============================================================================
 // =============================================================================
 
+// An unrelated stale temporary file must not prevent publication of a valid
+// layout.
 TEST_F(GGEMSImGuiSettingsFileTest, StaleTemporaryFileDoesNotBlockSaving) {
   std::filesystem::path const path = root_ / "imgui.ini";
 
@@ -185,6 +228,8 @@ TEST_F(GGEMSImGuiSettingsFileTest, StaleTemporaryFileDoesNotBlockSaving) {
 // =============================================================================
 // =============================================================================
 
+// Concurrent saves must expose only complete payloads and leave no temporary
+// files behind.
 TEST_F(GGEMSImGuiSettingsFileTest,
        ConcurrentWritersPublishOnlyCompletePayloads) {
   std::filesystem::path const path = root_ / "imgui.ini";

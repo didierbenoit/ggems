@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source and emission-group lookup across transport slices.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -51,10 +53,12 @@
 #include "GGEMS/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/sources/GGEMSSource.hh"
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -437,16 +441,13 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -455,6 +456,7 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Checks activity-group lookup across disjoint slices on the selected device.
 TEST_F(GGEMSRadionuclideMixedLookupTransportTest,
        ResolvesMixedSourcesGroupsAndDisjointDeviceSlices) {
   auto sources = MakeSources();

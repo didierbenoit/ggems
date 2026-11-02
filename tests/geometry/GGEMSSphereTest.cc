@@ -38,7 +38,7 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
-#include "GGEMS/geometry/GGEMSBox.hh"
+
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -66,6 +66,7 @@ auto World() -> GGEMSWorld {
 }
 } // namespace
 
+// Rejects an incomplete sphere while accepting a positive physical radius.
 TEST(GGEMSSphere, RequiresPositiveRadiusAndExplicitMaterial) {
   GGEMSSphere sphere;
   EXPECT_EQ(sphere.GetPositionPM(), MakePositionPM(0, 0, 0));
@@ -84,6 +85,7 @@ TEST(GGEMSSphere, RequiresPositiveRadiusAndExplicitMaterial) {
   EXPECT_EQ(sphere.GetPositionPM(), MakePositionPM(-1, 2, -3));
 }
 
+// Preserves sphere ownership and compatibility of the World volume view.
 TEST(GGEMSSphere, CopiesTheAuthoredValueAndKeepsTheBoxViewCompatible) {
   auto world = World();
   {
@@ -110,12 +112,14 @@ TEST(GGEMSSphere, CopiesTheAuthoredValueAndKeepsTheBoxViewCompatible) {
   EXPECT_EQ(copy.GetMaterial().GetName(), "Vacuum");
 }
 
+// Ensures rejected insertion does not publish a partial World occurrence.
 TEST(GGEMSSphere, RejectsIncompleteVolumeAndPreservesTheEmptyWorld) {
   auto empty = World();
   EXPECT_THROW(empty.AddVolume(GGEMSSphere{}), GGEMSRecoverable);
   EXPECT_EQ(empty.BuildAnalyticVolumeRecord(0U).kind, GGEMSAnalyticKind::None);
 }
 
+// Checks sphere containment symmetrically at every signed World face.
 TEST(GGEMSSphere, AdmitsContactAndPositiveGapsOnAllSixWorldFaces) {
   std::array<std::int64_t, 3> const half{10, 20, 30};
   for (std::size_t axis = 0; axis < 3; ++axis) {
@@ -133,6 +137,7 @@ TEST(GGEMSSphere, AdmitsContactAndPositiveGapsOnAllSixWorldFaces) {
   }
 }
 
+// Checks containment arithmetic near the signed coordinate limits.
 TEST(GGEMSSphere, ContainmentDoesNotOverflowAtIntegerLimits) {
   for (auto center : {std::numeric_limits<std::int64_t>::min(),
                       std::numeric_limits<std::int64_t>::max()}) {
@@ -154,6 +159,7 @@ TEST(GGEMSSphere, ContainmentDoesNotOverflowAtIntegerLimits) {
   EXPECT_NO_THROW(large.Validate());
 }
 
+// Protects the public host record layout shared with OpenCL.
 TEST(GGEMSSphere, ScalarHostLayoutMatchesTheDocumentedDeviceABI) {
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSAnalyticVolumeRecord>);
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSAnalyticVolumeRecord>);
@@ -169,6 +175,7 @@ TEST(GGEMSSphere, ScalarHostLayoutMatchesTheDocumentedDeviceABI) {
   EXPECT_EQ(offsetof(GGEMSAnalyticVolumeRecord, parameters), 4U);
 }
 
+// Keeps radius authoring consistent with the central units conversion contract.
 TEST(GGEMSSphere, UsesTheCentralLengthConversionWithoutASeparateRadiusPolicy) {
   EXPECT_FALSE(MakeQuantity<Length>(-1.0, "pm").has_value());
   auto const zero = MakeQuantity<Length>(0.49, "pm");

@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks isotope profile behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -119,6 +121,8 @@ auto IsReferenceElement(std::uint32_t atomic_number) -> bool {
 // =============================================================================
 // =============================================================================
 
+// Scientific values must agree with the independent pinned reference rather
+// than a self-generated expectation.
 TEST(GGEMSIsotopeProfileTest, ResolvesNist41ValidationFixtures) {
   ExpectProfile(1U, {
                       {.isotope = {1U, 1U, 0U}, .fraction = 0.999885L},
@@ -151,6 +155,8 @@ TEST(GGEMSIsotopeProfileTest, ResolvesNist41ValidationFixtures) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSIsotopeProfileTest, ResolvesHeavyMultiIsotopeElements) {
   ExpectProfile(82U, {
                        {.isotope = {82U, 204U, 0U}, .fraction = 0.014L},
@@ -168,6 +174,8 @@ TEST(GGEMSIsotopeProfileTest, ResolvesHeavyMultiIsotopeElements) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSIsotopeProfileTest, MapsNaturalTantalum180ToItsIsomer) {
   ExpectProfile(73U, {
                        {.isotope = {73U, 180U, 1U}, .fraction = 0.0001201L},
@@ -178,6 +186,8 @@ TEST(GGEMSIsotopeProfileTest, MapsNaturalTantalum180ToItsIsomer) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSIsotopeProfileTest, DefaultsAreCanonicalAndMassResolvable) {
   auto const &masses = materials::GetIsotopeMassAuthority();
 
@@ -228,6 +238,8 @@ TEST(GGEMSIsotopeProfileTest, DefaultsAreCanonicalAndMassResolvable) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSIsotopeProfileTest, ResolvesExplicitDefaultReferenceIsotopes) {
   for (auto const &isotope : k_reference_isotopes) {
     auto const atomic_number = isotope.GetAtomicNumber();
@@ -246,6 +258,8 @@ TEST(GGEMSIsotopeProfileTest, ResolvesExplicitDefaultReferenceIsotopes) {
 // =============================================================================
 // =============================================================================
 
+// Unsupported identities must fail explicitly without approximate lookup or
+// substitution.
 TEST(GGEMSIsotopeProfileTest, RejectsElementsOutsideMaterialsDomain) {
   for (std::uint32_t const atomic_number : {0U, 100U, 118U}) {
     SCOPED_TRACE(atomic_number);

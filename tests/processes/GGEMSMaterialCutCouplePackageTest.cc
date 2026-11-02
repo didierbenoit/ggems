@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks material cut couple package behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -124,6 +126,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Resolved cuts and material identities must produce the correct compact
+// context-to-couple mapping.
 TEST_F(GGEMSMaterialCutCouplePackageTest, ResolvesConvertsAndInternsContexts) {
   auto const policy = MakePolicy();
   std::vector<processes::GGEMSProductionCutContext> const contexts{
@@ -152,6 +156,8 @@ TEST_F(GGEMSMaterialCutCouplePackageTest, ResolvesConvertsAndInternsContexts) {
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST_F(GGEMSMaterialCutCouplePackageTest, OneDifferentThresholdGivesNewCouple) {
   auto const policy = MakePolicy();
   std::vector<processes::GGEMSProductionCutContext> const contexts{
@@ -190,6 +196,8 @@ TEST_F(GGEMSMaterialCutCouplePackageTest, OneDifferentThresholdGivesNewCouple) {
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST_F(GGEMSMaterialCutCouplePackageTest,
        DifferentMaterialsWithEqualThresholdsStayDistinct) {
   auto const policy = MakePolicy();
@@ -218,6 +226,8 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST_F(GGEMSMaterialCutCouplePackageTest,
        DisplayNameAndProvenanceDoNotDefineIdentity) {
   auto policy = MakePolicy();
@@ -269,6 +279,8 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
 // =============================================================================
 // =============================================================================
 
+// Cut resolution must preserve per-channel precedence and the origin of the
+// selected value.
 TEST_F(GGEMSMaterialCutCouplePackageTest,
        ProvenanceStaysVisibleWithoutDefiningTheCouple) {
   using Scope = processes::GGEMSProductionCutScope;
@@ -332,6 +344,8 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
 // =============================================================================
 // =============================================================================
 
+// Cut resolution must preserve per-channel precedence and the origin of the
+// selected value.
 TEST_F(GGEMSMaterialCutCouplePackageTest,
        ProvenanceOutlivesTheAuthoringInputs) {
   auto policy =
@@ -359,6 +373,7 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
 // =============================================================================
 // =============================================================================
 
+// Snapshot couple IDs must not depend on accidental context discovery order.
 TEST_F(GGEMSMaterialCutCouplePackageTest, IdsAreIndependentOfContextOrder) {
   auto policy = MakePolicy();
   policy.materials.push_back({
@@ -428,6 +443,8 @@ TEST_F(GGEMSMaterialCutCouplePackageTest, IdsAreIndependentOfContextOrder) {
 // =============================================================================
 // =============================================================================
 
+// The converter must reject an unsupported physical domain instead of
+// clamping it.
 TEST_F(GGEMSMaterialCutCouplePackageTest, RejectsCutBelowConversionDomain) {
   std::vector<processes::GGEMSProductionCutContext> const below_domain{
     {

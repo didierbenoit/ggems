@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks lu177 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -134,6 +136,8 @@ constexpr std::array<double, 6U> k_expected_gamma_line_yields{
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSLu177Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildLu177Radionuclide();
 
@@ -172,6 +176,8 @@ TEST(GGEMSLu177Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSLu177Test, PreservesFourTabulatedBetaShapeSpectra) {
   GGEMSRadionuclideDefinition const definition = BuildLu177Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -231,6 +237,8 @@ TEST(GGEMSLu177Test, PreservesFourTabulatedBetaShapeSpectra) {
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSLu177Test, PreservesSixExactGammaLinesAndGlobalYields) {
   GGEMSRadionuclideDefinition const definition = BuildLu177Radionuclide();
   auto const &emission = definition.GetEmissions()[4U];
@@ -267,6 +275,8 @@ TEST(GGEMSLu177Test, PreservesSixExactGammaLinesAndGlobalYields) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSLu177Test,
      PreservesLaraAndMirdAtomicRadiationsAsReachableDiscreteLines) {
   GGEMSRadionuclideDefinition const definition = BuildLu177Radionuclide();

@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks energy distribution record kernel behavior and observable
+ * contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -35,6 +38,10 @@
 #include <utility>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
+
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 
 #include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
@@ -64,14 +71,7 @@ struct AlignmentProbe {
 class GGEMSEnergyDistributionRecordKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 };
 
@@ -80,10 +80,12 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST_F(GGEMSEnergyDistributionRecordKernelTest,
        HostAndKernelLayoutStrideAndValuesMatch) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  auto &context = opencl.GetContext().front();
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
   std::array<EnergyRecord, 2U> records{{
     {
@@ -110,7 +112,8 @@ TEST_F(GGEMSEnergyDistributionRecordKernelTest,
   ggems::ocl::WriteSVMFromHost(values_buffer, std::span{host_values});
 
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path const kernel_test_root = kernel_root / "tests";
+  std::filesystem::path const kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
   std::string const build_options =
     std::format("-I{}", kernel_root.generic_string());
 

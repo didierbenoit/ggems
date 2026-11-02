@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks particle host-device layout and array stride agreement.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -36,6 +38,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
@@ -68,16 +71,13 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -86,12 +86,14 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Executes device field probes to verify shared ABI offsets and array strides.
 TEST_F(GGEMSParticleStateKernelTest, HostAndKernelLayoutsMatch) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   auto &context = GetContext();
 
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path const kernel_test_root = kernel_root / "tests";
+  std::filesystem::path const kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
   std::string const build_options =
     std::format("-I{}", kernel_root.generic_string());

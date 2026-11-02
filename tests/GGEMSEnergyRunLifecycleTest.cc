@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source energy finalization, retry, and immutable Run assets.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -47,6 +49,8 @@
 #include "GGEMS/sources/GGEMSSource.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
+#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
@@ -166,29 +170,15 @@ auto ExpectEnergyState(Source const &source, EnergyState const &expected)
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto GetTotalOpenCLAllocationCount() -> std::size_t {
-  std::size_t allocation_count{0U};
-
-  for (auto const &context :
-       ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
-    allocation_count += context.GetAllocationCountVRAM();
-  }
-
-  return allocation_count;
+[[nodiscard]] auto GetSelectedOpenCLAllocationCount() -> std::size_t {
+  return ggems::test::GetSelectedOpenCLContext().GetAllocationCountVRAM();
 }
 
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto GetTotalOpenCLAllocatedBytes() -> std::uint64_t {
-  std::uint64_t allocated_bytes{0ULL};
-
-  for (auto const &context :
-       ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
-    allocated_bytes += context.GetAllocatedVRAM().value;
-  }
-
-  return allocated_bytes;
+[[nodiscard]] auto GetSelectedOpenCLAllocatedBytes() -> std::uint64_t {
+  return ggems::test::GetSelectedOpenCLContext().GetAllocatedVRAM().value;
 }
 
 // =============================================================================
@@ -214,10 +204,7 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"all"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
@@ -242,6 +229,8 @@ private:
 // =============================================================================
 // =============================================================================
 
+// Keeps energy authoring mutable after failed initialization and freezes it
+// after retry.
 TEST_F(GGEMSEnergyRunLifecycleTest,
        FailedInitializeLeavesEnergyMutableAndRetryable) {
   constexpr std::array<double, 2U> k_lines{1.0, 3.0};
@@ -275,6 +264,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 // =============================================================================
 // =============================================================================
 
+// Preserves the finalized spectrum after every rejected energy mutation path.
 TEST_F(GGEMSEnergyRunLifecycleTest,
        SuccessfulInitializeRejectsEveryEnergySetterWithoutMutation) {
   constexpr std::array<double, 2U> k_initial_centers{10.0, 12.0};
@@ -335,6 +325,8 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 // =============================================================================
 // =============================================================================
 
+// Freezes the source population mode while permitting the next run count to
+// change.
 TEST_F(GGEMSEnergyRunLifecycleTest,
        SuccessfulInitializeFreezesPopulationModeButKeepsCountMutable) {
   auto source = MakeSource();
@@ -366,6 +358,8 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 // =============================================================================
 // =============================================================================
 
+// Allows shared sources to finalize once across duplicate slots and compatible
+// runs.
 TEST_F(GGEMSEnergyRunLifecycleTest,
        DuplicateSlotsAndCompatibleRunsFinalizeIdempotently) {
   constexpr std::array<double, 2U> k_lines{2.0, 6.0};
@@ -387,13 +381,15 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   EnergyState const finalized = CaptureEnergyState(*source);
   ExpectFinalizedRejection(
-    [&]() -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
+    [&] -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
   ExpectEnergyState(*source, finalized);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Reuses documented immutable assets while each run owns its updated pose and
+// counts.
 TEST_F(GGEMSEnergyRunLifecycleTest,
        RepeatedRunsReuseImmutableEnergyWithMutablePoseAndCount) {
   constexpr std::array<double, 3U> k_centers{10.0, 12.0, 14.0};
@@ -410,8 +406,8 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   run.AddSource(source);
   ASSERT_NO_THROW(run.Initialize());
 
-  std::size_t const allocation_count = GetTotalOpenCLAllocationCount();
-  std::uint64_t const allocated_bytes = GetTotalOpenCLAllocatedBytes();
+  std::size_t const allocation_count = GetSelectedOpenCLAllocationCount();
+  std::uint64_t const allocated_bytes = GetSelectedOpenCLAllocatedBytes();
 
   ASSERT_NO_THROW(run.Run());
   auto first = run.GetLastSourceRunSnapshot();
@@ -420,8 +416,8 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   ASSERT_EQ(first->GetRanges().size(), 1U);
   EXPECT_EQ(first->GetRanges()[0U].primary_count, 2ULL);
   EXPECT_EQ(first->GetRecords()[0U].position_x_pm, 1LL);
-  EXPECT_EQ(GetTotalOpenCLAllocationCount(), allocation_count);
-  EXPECT_EQ(GetTotalOpenCLAllocatedBytes(), allocated_bytes);
+  EXPECT_EQ(GetSelectedOpenCLAllocationCount(), allocation_count);
+  EXPECT_EQ(GetSelectedOpenCLAllocatedBytes(), allocated_bytes);
 
   source->SetPrimaryCount(3ULL)
     .SetPositionPicoMeter(-4LL, 5LL, -6LL)
@@ -455,6 +451,6 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
             second->GetRelativeWeights().data());
   EXPECT_EQ(first->GetCumulativeTicketUpperBounds().data(),
             second->GetCumulativeTicketUpperBounds().data());
-  EXPECT_EQ(GetTotalOpenCLAllocationCount(), allocation_count);
-  EXPECT_EQ(GetTotalOpenCLAllocatedBytes(), allocated_bytes);
+  EXPECT_EQ(GetSelectedOpenCLAllocationCount(), allocation_count);
+  EXPECT_EQ(GetSelectedOpenCLAllocatedBytes(), allocated_bytes);
 }

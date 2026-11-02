@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks human-readable OpenCL information formatting.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -81,22 +83,20 @@ auto SetName(cl_name_version &name_version, std::string_view name) -> void {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSOpenCLInfoTraitsTest, ReportsUnavailableClockFrequency) {
-  EXPECT_EQ(ClockFrequencyTraits::ToString(0U), "N/A");
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSOpenCLInfoTraitsTest, FormatsReportedClockFrequency) {
+// Diagnostic clock output distinguishes unavailable data from a reported
+// frequency.
+TEST(GGEMSOpenCLInfoTraitsTest, FormatsKnownAndUnavailableClockFrequency) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
+  EXPECT_EQ(ClockFrequencyTraits::ToString(0U), "N/A");
   EXPECT_EQ(ClockFrequencyTraits::ToString(2'000U), "  2.0 GHz");
 }
 
 // =============================================================================
 // =============================================================================
 
+// Driver strings, booleans, counts, and version fields keep their displayed
+// meanings.
 TEST(GGEMSOpenCLInfoTraitsTest, FormatsRepresentativeScalarCategories) {
   EXPECT_EQ(PlatformNameTraits::ToString("Portable platform"),
             "Portable platform");
@@ -112,6 +112,8 @@ TEST(GGEMSOpenCLInfoTraitsTest, FormatsRepresentativeScalarCategories) {
 // =============================================================================
 // =============================================================================
 
+// Memory and alignment diagnostics retain their units and queue capability
+// meanings.
 TEST(GGEMSOpenCLInfoTraitsTest, FormatsMemoryAndFlagCategories) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
@@ -129,6 +131,8 @@ TEST(GGEMSOpenCLInfoTraitsTest, FormatsMemoryAndFlagCategories) {
 // =============================================================================
 // =============================================================================
 
+// Vector and named-version diagnostics preserve element order and version
+// fields.
 TEST(GGEMSOpenCLInfoTraitsTest, FormatsVectorAndStructuredCategories) {
   auto const work_item_sizes =
     WorkItemSizesTraits::ToString(std::vector<std::size_t>{4U, 8U, 16U});
@@ -144,4 +148,3 @@ TEST(GGEMSOpenCLInfoTraitsTest, FormatsVectorAndStructuredCategories) {
   EXPECT_NE(structured.find("opencl_c_feature"), std::string::npos);
   EXPECT_NE(structured.find("3.0.1"), std::string::npos);
 }
-/// \endcond

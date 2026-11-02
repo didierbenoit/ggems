@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks tc99m behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -91,6 +93,8 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSTc99mTest, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildTc99mRadionuclide();
 
@@ -129,6 +133,8 @@ TEST(GGEMSTc99mTest, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSTc99mTest, PreservesCombinedBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildTc99mRadionuclide();
   auto const &emission = definition.GetEmissions()[0U];
@@ -179,6 +185,8 @@ TEST(GGEMSTc99mTest, PreservesCombinedBetaShapeSpectrum) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSTc99mTest, PreservesLaraGammaAndXRayEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildTc99mRadionuclide();
   auto const emissions = definition.GetEmissions();
@@ -255,6 +263,8 @@ TEST(GGEMSTc99mTest, PreservesLaraGammaAndXRayEmissions) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSTc99mTest, PreservesMirdAugerCatalog) {
   GGEMSRadionuclideDefinition const definition = BuildTc99mRadionuclide();
   GGEMSRadionuclideEmission const &auger = definition.GetEmissions()[4U];
@@ -278,6 +288,8 @@ TEST(GGEMSTc99mTest, PreservesMirdAugerCatalog) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSTc99mTest, PreservesLaraConversionElectronCatalog) {
   GGEMSRadionuclideDefinition const definition = BuildTc99mRadionuclide();
   GGEMSRadionuclideEmission const &conversion = definition.GetEmissions()[5U];

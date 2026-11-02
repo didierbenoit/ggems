@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks host random stream behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -47,7 +49,7 @@
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
-#include "GGEMSOpenCLCompilerDeviceInventory.hh"
+#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
 
 namespace {
@@ -89,6 +91,8 @@ auto SequenceDiffers(GGEMSHostRandomStream &lhs,
 // =============================================================================
 // =============================================================================
 
+// Stream diagnostics must report the identity captured when that stream was
+// created.
 TEST(GGEMSHostRandomStreamTest, ReportsCapturedEngineAndStreamId) {
   GGEMSRandom random{};
   random.SetEngine(GGEMSRandomEngine::PCG32).SetSeed(123ULL);
@@ -102,6 +106,8 @@ TEST(GGEMSHostRandomStreamTest, ReportsCapturedEngineAndStreamId) {
 // =============================================================================
 // =============================================================================
 
+// A fixed stream must replay within its contract and continue without
+// unintended reset.
 TEST(GGEMSHostRandomStreamTest, SameSeedAndStreamProduceSameSequence) {
   for (GGEMSRandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -120,6 +126,7 @@ TEST(GGEMSHostRandomStreamTest, SameSeedAndStreamProduceSameSequence) {
 // =============================================================================
 // =============================================================================
 
+// Seed and stream identity must control the expected random sequence.
 TEST(GGEMSHostRandomStreamTest, DifferentSeedChangesSequence) {
   for (GGEMSRandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -138,6 +145,7 @@ TEST(GGEMSHostRandomStreamTest, DifferentSeedChangesSequence) {
 // =============================================================================
 // =============================================================================
 
+// Seed and stream identity must control the expected random sequence.
 TEST(GGEMSHostRandomStreamTest, DifferentStreamChangesSequence) {
   for (GGEMSRandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -154,6 +162,8 @@ TEST(GGEMSHostRandomStreamTest, DifferentStreamChangesSequence) {
 // =============================================================================
 // =============================================================================
 
+// A fixed stream must replay within its contract and continue without
+// unintended reset.
 TEST(GGEMSHostRandomStreamTest, SequenceContinuesAcrossRepeatedCalls) {
   for (GGEMSRandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -177,6 +187,8 @@ TEST(GGEMSHostRandomStreamTest, SequenceContinuesAcrossRepeatedCalls) {
 // =============================================================================
 // =============================================================================
 
+// An existing stream must retain its captured engine and seed after
+// configuration changes.
 TEST(GGEMSHostRandomStreamTest,
      LaterRandomConfigurationChangesDoNotAffectExistingStream) {
   GGEMSRandom random{};
@@ -197,6 +209,8 @@ TEST(GGEMSHostRandomStreamTest,
 // =============================================================================
 // =============================================================================
 
+// The limited stream-ID domain must fail clearly instead of aliasing another
+// random stream.
 TEST(GGEMSHostRandomStreamTest, JKISSRejectsOutOfRangeStreamId) {
   GGEMSRandom random{};
   random.SetEngine(GGEMSRandomEngine::JKISS);
@@ -211,6 +225,8 @@ TEST(GGEMSHostRandomStreamTest, JKISSRejectsOutOfRangeStreamId) {
 // =============================================================================
 // =============================================================================
 
+// Sampling must respect its interval endpoints and advance the persistent
+// random state.
 TEST(GGEMSHostRandomStreamTest, UniformFloatStaysInsideHalfOpenUnitInterval) {
   for (GGEMSRandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -230,6 +246,8 @@ TEST(GGEMSHostRandomStreamTest, UniformFloatStaysInsideHalfOpenUnitInterval) {
 // =============================================================================
 // =============================================================================
 
+// Sampling must respect its interval endpoints and advance the persistent
+// random state.
 TEST(GGEMSHostRandomStreamTest, UniformDoubleStaysInsideOpenUnitInterval) {
   for (GGEMSRandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -249,6 +267,8 @@ TEST(GGEMSHostRandomStreamTest, UniformDoubleStaysInsideOpenUnitInterval) {
 // =============================================================================
 // =============================================================================
 
+// Sampling must respect its interval endpoints and advance the persistent
+// random state.
 TEST(GGEMSHostRandomStreamTest,
      UniformDoubleUsesSpecifiedWordsAndConsumesExactlyTwo) {
   for (GGEMSRandomEngine engine : k_engines) {
@@ -277,110 +297,89 @@ TEST(GGEMSHostRandomStreamTest,
 // =============================================================================
 // =============================================================================
 
+// Device sampling must consume the specified random words and preserve the
+// observable stream progression.
 TEST(GGEMSHostRandomStreamTest,
      ScalarHostProgressionMatchesScalarOpenCLProgression) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
-
-  if (compiler_devices.empty()) {
-    GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
-  }
-
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path const kernel_test_root = kernel_root / "tests";
+  std::filesystem::path const kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
-  std::size_t tested_device_count{0U};
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
+  for (GGEMSRandomEngine engine : k_engines) {
+    GGEMSRandom random{};
+    random.SetEngine(engine);
 
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
+    std::string const build_options =
+      std::format("-I{} {}", kernel_root.generic_string(),
+                  random.GetKernelBuildDefinition());
+    auto const &program = opencl.GetOrCreateProgram(
+      context, kernel_test_root, "random_host_stream_probe", build_options);
+    cl::Kernel raw_kernel = program.CreateKernel("random_host_stream_probe");
+    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                         "random_host_stream_probe"};
 
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    std::array<std::uint64_t, 2> const seeds{0ULL, 77'777ULL};
+    std::array<std::uint64_t, 2> const stream_ids{
+      0ULL,
+      engine == GGEMSRandomEngine::JKISS ? 42ULL : (1ULL << 40U) + 42ULL,
+    };
 
-    ++tested_device_count;
+    for (std::uint64_t seed : seeds) {
+      for (std::uint64_t stream_id : stream_ids) {
+        SCOPED_TRACE(std::format("engine={} seed={} stream={}",
+                                 static_cast<std::uint32_t>(engine), seed,
+                                 stream_id));
 
-    for (GGEMSRandomEngine engine : k_engines) {
-      GGEMSRandom random{};
-      random.SetEngine(engine);
+        random.SetSeed(seed);
+        auto raw_state_buffer =
+          context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
+        auto uniform_state_buffer =
+          context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
+        auto raw_values_buffer = context.CreateSVMBuffer(
+          ggems::units::Bytes{k_probe_sample_count * sizeof(std::uint32_t)});
+        auto uniform_values_buffer = context.CreateSVMBuffer(
+          ggems::units::Bytes{k_probe_sample_count * sizeof(float)});
 
-      std::string const build_options =
-        std::format("-I{} {}", kernel_root.generic_string(),
-                    random.GetKernelBuildDefinition());
-      auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_host_stream_probe", build_options);
-      cl::Kernel raw_kernel = program.CreateKernel("random_host_stream_probe");
-      ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                           "random_host_stream_probe"};
+        raw_state_buffer.Map(CL_MAP_WRITE);
+        uniform_state_buffer.Map(CL_MAP_WRITE);
+        random.InitializeStates(
+          stream_id, std::span<std::byte>{
+                       static_cast<std::byte *>(raw_state_buffer.GetData()),
+                       random.GetStateSize()});
+        random.InitializeStates(
+          stream_id, std::span<std::byte>{
+                       static_cast<std::byte *>(uniform_state_buffer.GetData()),
+                       random.GetStateSize()});
+        uniform_state_buffer.Unmap();
+        raw_state_buffer.Unmap();
 
-      std::array<std::uint64_t, 2> const seeds{0ULL, 77'777ULL};
-      std::array<std::uint64_t, 2> const stream_ids{
-        0ULL,
-        engine == GGEMSRandomEngine::JKISS ? 42ULL : (1ULL << 40U) + 42ULL,
-      };
+        kernel.SetArgSVMPointer(0U, raw_state_buffer.GetData());
+        kernel.SetArgSVMPointer(1U, uniform_state_buffer.GetData());
+        kernel.SetArgSVMPointer(2U, raw_values_buffer.GetData());
+        kernel.SetArgSVMPointer(3U, uniform_values_buffer.GetData());
+        kernel.SetArg(4U, static_cast<cl_uint>(k_probe_sample_count));
+        kernel.Run({1U}, {1U});
 
-      for (std::uint64_t seed : seeds) {
-        for (std::uint64_t stream_id : stream_ids) {
-          SCOPED_TRACE(std::format("engine={} seed={} stream={}",
-                                   static_cast<std::uint32_t>(engine), seed,
-                                   stream_id));
+        GGEMSHostRandomStream host_raw{random, stream_id};
+        GGEMSHostRandomStream host_uniform{random, stream_id};
+        auto const *raw_values =
+          static_cast<std::uint32_t const *>(raw_values_buffer.GetData());
+        auto const *uniform_values =
+          static_cast<float const *>(uniform_values_buffer.GetData());
 
-          random.SetSeed(seed);
-          auto raw_state_buffer =
-            context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
-          auto uniform_state_buffer =
-            context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
-          auto raw_values_buffer = context.CreateSVMBuffer(
-            ggems::units::Bytes{k_probe_sample_count * sizeof(std::uint32_t)});
-          auto uniform_values_buffer = context.CreateSVMBuffer(
-            ggems::units::Bytes{k_probe_sample_count * sizeof(float)});
-
-          raw_state_buffer.Map(CL_MAP_WRITE);
-          uniform_state_buffer.Map(CL_MAP_WRITE);
-          random.InitializeStates(
-            stream_id, std::span<std::byte>{
-                         static_cast<std::byte *>(raw_state_buffer.GetData()),
-                         random.GetStateSize()});
-          random.InitializeStates(
-            stream_id, std::span<std::byte>{static_cast<std::byte *>(
-                                              uniform_state_buffer.GetData()),
-                                            random.GetStateSize()});
-          uniform_state_buffer.Unmap();
-          raw_state_buffer.Unmap();
-
-          kernel.SetArgSVMPointer(0U, raw_state_buffer.GetData());
-          kernel.SetArgSVMPointer(1U, uniform_state_buffer.GetData());
-          kernel.SetArgSVMPointer(2U, raw_values_buffer.GetData());
-          kernel.SetArgSVMPointer(3U, uniform_values_buffer.GetData());
-          kernel.SetArg(4U, static_cast<cl_uint>(k_probe_sample_count));
-          kernel.Run({1U}, {1U});
-
-          GGEMSHostRandomStream host_raw{random, stream_id};
-          GGEMSHostRandomStream host_uniform{random, stream_id};
-          auto const *raw_values =
-            static_cast<std::uint32_t const *>(raw_values_buffer.GetData());
-          auto const *uniform_values =
-            static_cast<float const *>(uniform_values_buffer.GetData());
-
-          raw_values_buffer.Map(CL_MAP_READ);
-          uniform_values_buffer.Map(CL_MAP_READ);
-          for (std::size_t index = 0U; index < k_probe_sample_count; ++index) {
-            EXPECT_EQ(host_raw.NextUInt32(), raw_values[index]);
-            EXPECT_EQ(
-              std::bit_cast<std::uint32_t>(host_uniform.UniformFloat01()),
-              std::bit_cast<std::uint32_t>(uniform_values[index]));
-          }
-          uniform_values_buffer.Unmap();
-          raw_values_buffer.Unmap();
+        raw_values_buffer.Map(CL_MAP_READ);
+        uniform_values_buffer.Map(CL_MAP_READ);
+        for (std::size_t index = 0U; index < k_probe_sample_count; ++index) {
+          EXPECT_EQ(host_raw.NextUInt32(), raw_values[index]);
+          EXPECT_EQ(std::bit_cast<std::uint32_t>(host_uniform.UniformFloat01()),
+                    std::bit_cast<std::uint32_t>(uniform_values[index]));
         }
+        uniform_values_buffer.Unmap();
+        raw_values_buffer.Unmap();
       }
     }
-  }
-
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }

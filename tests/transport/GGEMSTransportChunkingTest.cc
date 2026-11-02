@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks host-only launch partition arithmetic at integer boundaries.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -56,6 +58,8 @@ using WorkloadPlan = ggems::core::transport::GGEMSTransportWorkloadPlan;
 // =============================================================================
 // =============================================================================
 
+// Checks empty, exact, and partial chunks using independently specified
+// offsets.
 TEST(GGEMSTransportChunking, IteratesBoundaryTotalsWithoutMaterializedPlan) {
   constexpr std::uint32_t k_limit{7U};
   constexpr std::uint64_t k_offset{101ULL};
@@ -91,6 +95,7 @@ TEST(GGEMSTransportChunking, IteratesBoundaryTotalsWithoutMaterializedPlan) {
 // =============================================================================
 // =============================================================================
 
+// Preserves wide populations and rejects iteration after the final chunk.
 TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsExhaustedIterator) {
   constexpr std::uint32_t k_workers{64U};
   std::uint32_t const safe_limit =
@@ -114,6 +119,8 @@ TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsExhaustedIterator) {
 // =============================================================================
 // =============================================================================
 
+// Checks host-only range partition arithmetic without enumerating OpenCL
+// devices.
 TEST(GGEMSTransportChunking, DeviceSlicesAreDisjointExhaustiveAndUint64) {
   std::uint64_t const total =
     (2ULL * std::numeric_limits<std::uint32_t>::max()) + 17ULL;
@@ -139,6 +146,7 @@ TEST(GGEMSTransportChunking, DeviceSlicesAreDisjointExhaustiveAndUint64) {
   }
 }
 
+// Checks the final valid history identifier at the uint64 boundary.
 TEST(GGEMSTransportChunking, FinishesAtTheUint64BoundaryWithoutWrapping) {
   constexpr auto maximum = std::numeric_limits<std::uint64_t>::max();
   auto chunks = CollectChunks(maximum - 8ULL, 9ULL, 4U);

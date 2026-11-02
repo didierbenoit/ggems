@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks time units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -86,6 +88,8 @@ static_assert(!std::convertible_to<TimePoint, Duration>);
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSTimeUnits, ConvertsEveryRegisteredTimeTokenToPicoseconds) {
   constexpr std::array<ToPicosecondCase, 7U> cases{
     {
@@ -115,6 +119,8 @@ TEST(GGEMSTimeUnits, ConvertsEveryRegisteredTimeTokenToPicoseconds) {
 // =============================================================================
 // =============================================================================
 
+// Values around a canonical half quantum must follow the specified rounding
+// rule.
 TEST(GGEMSTimeUnits, RoundsToTheNearestPicosecond) {
   constexpr std::array<ToPicosecondCase, 5U> cases{
     {
@@ -142,6 +148,8 @@ TEST(GGEMSTimeUnits, RoundsToTheNearestPicosecond) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSTimeUnits, RejectsInvalidInputAndUnsupportedUnits) {
   ExpectConversionError<Duration>(std::numeric_limits<long double>::quiet_NaN(),
                                   "ps", UnitConversionError::NonFinite);
@@ -161,6 +169,8 @@ TEST(GGEMSTimeUnits, RejectsInvalidInputAndUnsupportedUnits) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSTimeUnits, ProtectsTheUint64PicosecondRange) {
   long double const upper_exclusive = std::ldexp(1.0L, 64);
 
@@ -178,6 +188,8 @@ TEST(GGEMSTimeUnits, ProtectsTheUint64PicosecondRange) {
 // =============================================================================
 // =============================================================================
 
+// Time export must preserve the physical scale for every supported output
+// token.
 TEST(GGEMSTimeUnits, ConvertsPicosecondsToEveryRegisteredTimeToken) {
   constexpr std::uint64_t k_one_hour_ps{3'600'000'000'000'000ULL};
   constexpr std::array<FromPicosecondCase, 7U> cases{
@@ -204,6 +216,8 @@ TEST(GGEMSTimeUnits, ConvertsPicosecondsToEveryRegisteredTimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSTimeUnits, RejectsUnsupportedOutputUnit) {
   auto const conversion = ConvertTo(TimePoint{.value = 1ULL}, "fortnight");
 

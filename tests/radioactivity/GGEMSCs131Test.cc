@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSCs131Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildCs131Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Cs-131");
@@ -72,6 +74,8 @@ TEST(GGEMSCs131Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCs131Test, PreservesAtomicXray) {
   auto const definition = BuildCs131Radionuclide();
   auto const &distribution =

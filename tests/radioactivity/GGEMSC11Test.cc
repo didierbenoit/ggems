@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks c11 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -55,6 +57,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSC11Test, BuildsExactIdentityAndSinglePositronEmission) {
   GGEMSRadionuclideDefinition const definition = BuildC11Radionuclide();
 
@@ -77,6 +81,8 @@ TEST(GGEMSC11Test, BuildsExactIdentityAndSinglePositronEmission) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSC11Test, PreservesTabulatedBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildC11Radionuclide();
   auto const &distribution =

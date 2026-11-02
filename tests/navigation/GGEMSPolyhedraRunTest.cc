@@ -54,6 +54,8 @@ using namespace ggems;
 using namespace ggems::core;
 using namespace ggems::units;
 
+// Checks variable profile uploads through Run and preserved lossless particle
+// state.
 TEST_F(GGEMSNavigationDeviceTest, N1PolyhedraRunUploadsVariableAuxiliaryData) {
   for (bool observed : {false, true}) {
     for (std::int64_t sections : {1, 4}) {

@@ -40,6 +40,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
@@ -58,16 +59,14 @@ class GGEMSDiagnosticProjectionKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 };
 
 } // namespace
 
+// Allows finite FP32 movement beyond the observer's integer export range.
 TEST(GGEMSDiagnosticProjection, DoesNotImposeIntegerEndpointRangeOnFP32Flight) {
   std::array<ggems::core::sources::GGEMSSourceRecord, 1U> sources{};
   sources[0].position_z_pm = std::numeric_limits<std::int64_t>::max();
@@ -78,6 +77,7 @@ TEST(GGEMSDiagnosticProjection, DoesNotImposeIntegerEndpointRangeOnFP32Flight) {
     sources, ranges));
 }
 
+// Checks device projection commits atomically and preserves FP32 coordinates.
 TEST_F(GGEMSDiagnosticProjectionKernelTest,
        MovesInFP32AndRejectsInvalidTransactionsWithoutPartialWrite) {
   constexpr auto distance = static_cast<float>(
@@ -129,7 +129,7 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest,
   std::array<std::uint32_t, parameters.size() + 1U> success{};
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  auto &context = opencl.GetContext().front();
+  auto &context = ggems::test::GetSelectedOpenCLContext();
   auto state_buffer =
     context.CreateSVMBuffer(ggems::units::Bytes{sizeof(states)});
   auto parameter_buffer =
@@ -142,7 +142,8 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest,
 
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
   auto const &program = opencl.GetOrCreateProgram(
-    context, kernel_root / "tests", "diagnostic_projection_probe",
+    context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+    "diagnostic_projection_probe",
     std::format("-I{}", kernel_root.generic_string()));
   cl::Kernel raw_kernel = program.CreateKernel("diagnostic_projection_probe");
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),

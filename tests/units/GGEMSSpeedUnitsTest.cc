@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks speed units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -51,6 +53,8 @@ using ggems::units::UnitConversionError;
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSSpeedUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
     std::string_view unit;
@@ -76,6 +80,8 @@ TEST(GGEMSSpeedUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSSpeedUnitsTest, RejectsNegativeSpeed) {
   auto const converted = MakeQuantity<Speed>(-1.0L, "m/s");
 
@@ -86,6 +92,8 @@ TEST(GGEMSSpeedUnitsTest, RejectsNegativeSpeed) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSSpeedUnitsTest, UsesFixedMetersPerSecondDisplay) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
@@ -95,6 +103,8 @@ TEST(GGEMSSpeedUnitsTest, UsesFixedMetersPerSecondDisplay) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSSpeedUnitsTest, LiteralsUseEquivalentCanonicalScales) {
   using namespace ggems::units;
 
@@ -108,6 +118,8 @@ TEST(GGEMSSpeedUnitsTest, LiteralsUseEquivalentCanonicalScales) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSSpeedUnitsTest, MakeSpeedComputesOneMeterPerSecond) {
   auto const speed = MakeSpeed(ggems::units::Length{1'000'000'000'000ULL},
                                ggems::units::Time{1'000'000'000'000ULL});

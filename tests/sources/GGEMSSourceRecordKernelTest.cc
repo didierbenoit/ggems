@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source record kernel behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -36,6 +38,10 @@
 #include <utility>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
+
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 
 #include "GGEMS/sources/GGEMSSourceDeviceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
@@ -83,80 +89,84 @@ constexpr std::size_t k_source_range_count{2U};
 // =============================================================================
 
 [[nodiscard]] auto MakeHostSourceRecord() -> SourceRecord {
-  return {.source_id = 101ULL,
-          .time_start_ps = 102ULL,
-          .time_stop_ps = 103ULL,
-          .energy_micro_eV = 104ULL,
-          .position_x_pm = -105LL,
-          .position_y_pm = 106LL,
-          .position_z_pm = -107LL,
-          .source_type = 108U,
-          .emitted_particle_type = 109U,
-          .flags = 110U,
-          .reserved_0 = 111U,
-          .axis_x_x = -0.125F,
-          .axis_x_y = 0.25F,
-          .axis_x_z = -0.5F,
-          .axis_y_x = 1.25F,
-          .axis_y_y = -2.5F,
-          .axis_y_z = 3.75F,
-          .axis_z_x = -4.125F,
-          .axis_z_y = 5.25F,
-          .axis_z_z = -6.5F,
-          .emission_geometry_type = 112U,
-          .angular_distribution_type = 113U,
-          .geometry_size_x_pm = 114ULL,
-          .geometry_size_y_pm = 115ULL,
-          .focus_position_x_pm = -116LL,
-          .focus_position_y_pm = 117LL,
-          .focus_position_z_pm = -118LL,
-          .geometry_size_z_pm = 119ULL,
-          .isotropic_cos_theta_lower = -0.625F,
-          .isotropic_cos_theta_upper = 0.75F,
-          .isotropic_phi_min_rad = -1.125F,
-          .isotropic_phi_max_rad = 2.25F};
+  return {
+    .source_id = 101ULL,
+    .time_start_ps = 102ULL,
+    .time_stop_ps = 103ULL,
+    .energy_micro_eV = 104ULL,
+    .position_x_pm = -105LL,
+    .position_y_pm = 106LL,
+    .position_z_pm = -107LL,
+    .source_type = 108U,
+    .emitted_particle_type = 109U,
+    .flags = 110U,
+    .reserved_0 = 111U,
+    .axis_x_x = -0.125F,
+    .axis_x_y = 0.25F,
+    .axis_x_z = -0.5F,
+    .axis_y_x = 1.25F,
+    .axis_y_y = -2.5F,
+    .axis_y_z = 3.75F,
+    .axis_z_x = -4.125F,
+    .axis_z_y = 5.25F,
+    .axis_z_z = -6.5F,
+    .emission_geometry_type = 112U,
+    .angular_distribution_type = 113U,
+    .geometry_size_x_pm = 114ULL,
+    .geometry_size_y_pm = 115ULL,
+    .focus_position_x_pm = -116LL,
+    .focus_position_y_pm = 117LL,
+    .focus_position_z_pm = -118LL,
+    .geometry_size_z_pm = 119ULL,
+    .isotropic_cos_theta_lower = -0.625F,
+    .isotropic_cos_theta_upper = 0.75F,
+    .isotropic_phi_min_rad = -1.125F,
+    .isotropic_phi_max_rad = 2.25F,
+  };
 }
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] auto MakeDeviceSourceRecord() -> SourceRecord {
-  return {.source_id = 201ULL,
-          .time_start_ps = 202ULL,
-          .time_stop_ps = 203ULL,
-          .energy_micro_eV = 204ULL,
-          .position_x_pm = -205LL,
-          .position_y_pm = 206LL,
-          .position_z_pm = -207LL,
-          .source_type = 208U,
-          .emitted_particle_type = 209U,
-          .flags = 210U,
-          .reserved_0 = 211U,
-          .axis_x_x = -7.25F,
-          .axis_x_y = 8.5F,
-          .axis_x_z = -9.75F,
-          .axis_y_x = 10.125F,
-          .axis_y_y = -11.25F,
-          .axis_y_z = 12.5F,
-          .axis_z_x = -13.75F,
-          .axis_z_y = 14.875F,
-          .axis_z_z = -15.5F,
-          .emission_geometry_type =
-            ggems::core::sources::ToKernelEmissionGeometryType(
-              ggems::core::sources::GGEMSEmissionGeometryType::Ellipse),
-          .angular_distribution_type =
-            ggems::core::sources::ToKernelAngularDistributionType(
-              ggems::core::sources::GGEMSAngularDistributionType::Focused),
-          .geometry_size_x_pm = 212ULL,
-          .geometry_size_y_pm = 213ULL,
-          .focus_position_x_pm = -214LL,
-          .focus_position_y_pm = 215LL,
-          .focus_position_z_pm = -216LL,
-          .geometry_size_z_pm = 217ULL,
-          .isotropic_cos_theta_lower = -0.75F,
-          .isotropic_cos_theta_upper = 0.875F,
-          .isotropic_phi_min_rad = -1.25F,
-          .isotropic_phi_max_rad = 2.5F};
+  return {
+    .source_id = 201ULL,
+    .time_start_ps = 202ULL,
+    .time_stop_ps = 203ULL,
+    .energy_micro_eV = 204ULL,
+    .position_x_pm = -205LL,
+    .position_y_pm = 206LL,
+    .position_z_pm = -207LL,
+    .source_type = 208U,
+    .emitted_particle_type = 209U,
+    .flags = 210U,
+    .reserved_0 = 211U,
+    .axis_x_x = -7.25F,
+    .axis_x_y = 8.5F,
+    .axis_x_z = -9.75F,
+    .axis_y_x = 10.125F,
+    .axis_y_y = -11.25F,
+    .axis_y_z = 12.5F,
+    .axis_z_x = -13.75F,
+    .axis_z_y = 14.875F,
+    .axis_z_z = -15.5F,
+    .emission_geometry_type =
+      ggems::core::sources::ToKernelEmissionGeometryType(
+        ggems::core::sources::GGEMSEmissionGeometryType::Ellipse),
+    .angular_distribution_type =
+      ggems::core::sources::ToKernelAngularDistributionType(
+        ggems::core::sources::GGEMSAngularDistributionType::Focused),
+    .geometry_size_x_pm = 212ULL,
+    .geometry_size_y_pm = 213ULL,
+    .focus_position_x_pm = -214LL,
+    .focus_position_y_pm = 215LL,
+    .focus_position_z_pm = -216LL,
+    .geometry_size_z_pm = 217ULL,
+    .isotropic_cos_theta_lower = -0.75F,
+    .isotropic_cos_theta_upper = 0.875F,
+    .isotropic_phi_min_rad = -1.25F,
+    .isotropic_phi_max_rad = 2.5F,
+  };
 }
 
 // =============================================================================
@@ -263,18 +273,11 @@ auto ExpectSourceRecordsEqual(SourceRecord const &actual,
 class GGEMSSourceRecordKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -283,6 +286,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   auto &context = GetContext();
@@ -313,7 +318,8 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
   ggems::ocl::WriteSVMFromHost(host_values_buffer, std::span{host_values});
 
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path const kernel_test_root = kernel_root / "tests";
+  std::filesystem::path const kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
   std::string const build_options =
     std::format("-I{}", kernel_root.generic_string());
 

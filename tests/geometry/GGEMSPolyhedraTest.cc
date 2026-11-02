@@ -73,6 +73,7 @@ auto World() -> GGEMSWorld {
 }
 } // namespace
 
+// Rejects incomplete polygonal solids before compiling their profile.
 TEST(N1Polyhedra, RequiresDimensionsSideCountAndMaterial) {
   GGEMSPolyhedra shape;
   EXPECT_THROW(shape.Validate(), GGEMSRecoverable);
@@ -94,6 +95,7 @@ TEST(N1Polyhedra, RequiresDimensionsSideCountAndMaterial) {
   EXPECT_EQ(shape.GetZProfilePM()[1].outer_radius_pm, 6'000'000'000ULL);
 }
 
+// Retains the previous profile when a new authored profile is rejected.
 TEST(N1Polyhedra, RejectsInvalidAndUnsupportedProfilesAtomically) {
   auto shape = Shape();
   std::array const z{
@@ -127,6 +129,7 @@ TEST(N1Polyhedra, RejectsInvalidAndUnsupportedProfilesAtomically) {
   EXPECT_EQ(shape.GetZProfilePM()[1].z_pm, 0);
 }
 
+// Preserves supported polygon counts and nonconvex axial profiles.
 TEST(N1Polyhedra, AdmitsGenericCountsConcavityAndClosingBore) {
   for (std::uint32_t sides : {3U, 4U, 6U, 17U, 64U}) {
     auto shape = Shape();
@@ -149,6 +152,7 @@ TEST(N1Polyhedra, AdmitsGenericCountsConcavityAndClosingBore) {
   EXPECT_NO_THROW(world.Validate());
 }
 
+// Ensures polygon snapshots own profile data and placement values.
 TEST(N1Polyhedra, OwnsProfilePoseAndMaterial) {
   auto shape = Shape();
   shape.SetPosition(MakePositionPM(4'000'000'000LL, -2'000'000'000LL, 0))
@@ -167,6 +171,7 @@ TEST(N1Polyhedra, OwnsProfilePoseAndMaterial) {
   EXPECT_FALSE(copy.BuildAnalyticAuxiliaryData().empty());
 }
 
+// Rejects profiles that fail physical resolution or World containment.
 TEST(N1Polyhedra, RejectsUnresolvedProfilesAndWorldClearance) {
   std::array const z{
     PositionCoordinate{-6'000'000'000LL},

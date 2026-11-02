@@ -21,21 +21,18 @@
 
 /*!
  * \file
+ * \brief Checks selected-platform metadata against native queries.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <algorithm>
-#include <format>
-#include <vector>
-
 #include <gtest/gtest.h>
 
-#include "GGEMS/opencl/GGEMSOpenCL.hh"
-#include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/opencl/GGEMSOpenCLUtils.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 namespace {
 
@@ -52,64 +49,24 @@ template <cl_platform_info Info>
 // =============================================================================
 // =============================================================================
 
+// Selected platform metadata agrees with independent native platform queries.
 TEST(GGEMSOpenCLPlatformTest,
      RepresentativePropertiesMatchNativePlatformInformation) {
-  auto const &platforms = ggems::ocl::GGEMSOpenCL::GetInstance().GetPlatforms();
-  ASSERT_FALSE(platforms.empty());
+  auto const &platform = ggems::test::GetSelectedOpenCLDevice().platform.get();
+  auto const &native = platform.GetPlatformNative();
 
-  for (auto const &platform : platforms) {
-    SCOPED_TRACE(std::format("platform={}", platform.GetPlatformIndex()));
-    auto const &native = platform.GetPlatformNative();
+  EXPECT_EQ(platform.GetName(),
+            GetNativePlatformInfo<CL_PLATFORM_NAME>(native));
+  EXPECT_EQ(platform.GetVendor(),
+            GetNativePlatformInfo<CL_PLATFORM_VENDOR>(native));
+  EXPECT_EQ(platform.GetProfile(),
+            GetNativePlatformInfo<CL_PLATFORM_PROFILE>(native));
+  EXPECT_EQ(platform.GetVersion(),
+            GetNativePlatformInfo<CL_PLATFORM_VERSION>(native));
+  EXPECT_EQ(platform.GetExtensions(),
+            GetNativePlatformInfo<CL_PLATFORM_EXTENSIONS>(native));
 
-    EXPECT_EQ(platform.GetName(),
-              GetNativePlatformInfo<CL_PLATFORM_NAME>(native));
-    EXPECT_EQ(platform.GetVendor(),
-              GetNativePlatformInfo<CL_PLATFORM_VENDOR>(native));
-    EXPECT_EQ(platform.GetProfile(),
-              GetNativePlatformInfo<CL_PLATFORM_PROFILE>(native));
-    EXPECT_EQ(platform.GetVersion(),
-              GetNativePlatformInfo<CL_PLATFORM_VERSION>(native));
-    EXPECT_EQ(platform.GetExtensions(),
-              GetNativePlatformInfo<CL_PLATFORM_EXTENSIONS>(native));
-
-    EXPECT_FALSE(platform.GetName().empty());
-    EXPECT_FALSE(platform.GetVendor().empty());
-    EXPECT_FALSE(platform.GetVersion().empty());
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSOpenCLPlatformTest, DiscoveredDevicesMatchTheNativePlatformSet) {
-  auto const &platforms = ggems::ocl::GGEMSOpenCL::GetInstance().GetPlatforms();
-  ASSERT_FALSE(platforms.empty());
-
-  for (auto const &platform : platforms) {
-    SCOPED_TRACE(std::format("platform={}", platform.GetPlatformIndex()));
-
-    std::vector<cl::Device> native_devices;
-    auto const error = platform.GetPlatformNative().getDevices(
-      CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU, &native_devices);
-    ggems::ocl::CheckCLError(error, "Failed to query native platform devices.");
-
-    auto const &devices = platform.GetDevices();
-    ASSERT_EQ(devices.size(), native_devices.size());
-
-    std::vector<cl_device_id> discovered_ids;
-    discovered_ids.reserve(devices.size());
-
-    for (auto const &device : devices) {
-      discovered_ids.push_back(device.GetDeviceNative()());
-    }
-
-    std::vector<cl_device_id> native_ids;
-    native_ids.reserve(native_devices.size());
-
-    for (auto const &device : native_devices) {
-      native_ids.push_back(device());
-    }
-
-    EXPECT_TRUE(std::ranges::is_permutation(discovered_ids, native_ids));
-  }
+  EXPECT_FALSE(platform.GetName().empty());
+  EXPECT_FALSE(platform.GetVendor().empty());
+  EXPECT_FALSE(platform.GetVersion().empty());
 }

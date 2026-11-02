@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks unit registry contract behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -471,6 +473,8 @@ static_assert((1_Gy).value == 6'241'509ULL);
 // =============================================================================
 // =============================================================================
 
+// Configuration tokens are strict public input; aliases and unintended
+// normalization must not slip in.
 TEST(GGEMSUnitRegistryContractTest, ParsesOnlyOfficialAsciiSymbols) {
   EXPECT_TRUE(MakeQuantity<Length>(1.0L, "pm").has_value());
   EXPECT_TRUE(MakeQuantity<Length>(1.0L, "nm").has_value());
@@ -524,6 +528,8 @@ TEST(GGEMSUnitRegistryContractTest, ParsesOnlyOfficialAsciiSymbols) {
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSUnitRegistryContractTest, ConvertsThroughCanonicalRepresentations) {
   auto const centimeter = MakeQuantity<Length>(1, "cm");
   auto const square_centimeter = MakeQuantity<Area>(1.0L, "cm2");
@@ -556,6 +562,8 @@ TEST(GGEMSUnitRegistryContractTest, ConvertsThroughCanonicalRepresentations) {
 // =============================================================================
 // =============================================================================
 
+// Values around a canonical half quantum must follow the specified rounding
+// rule.
 TEST(GGEMSUnitRegistryContractTest, AppliesTheNumericBoundaryContract) {
   auto const positive_below_half = MakeQuantity<Length>(0.49L, "pm");
   auto const positive_half = MakeQuantity<Length>(0.5L, "pm");
@@ -601,6 +609,8 @@ TEST(GGEMSUnitRegistryContractTest, AppliesTheNumericBoundaryContract) {
 // =============================================================================
 // =============================================================================
 
+// Exact conversion must distinguish representable output from a lossy or
+// invalid request.
 TEST(GGEMSUnitRegistryContractTest, ReportsEveryConversionErrorCategory) {
   auto const unsupported = MakeQuantity<Length>(1.0L, "parsec");
   auto const non_finite =
@@ -625,6 +635,8 @@ TEST(GGEMSUnitRegistryContractTest, ReportsEveryConversionErrorCategory) {
 // =============================================================================
 // =============================================================================
 
+// Exact conversion must distinguish representable output from a lossy or
+// invalid request.
 TEST(GGEMSUnitRegistryContractTest, BridgesBitsAndBytesExplicitlyAndExactly) {
   auto const bits = TryConvertBytesToBits(Bytes{2ULL});
   auto const bytes = TryConvertBitsToBytes(Bits{16ULL});
@@ -645,6 +657,8 @@ TEST(GGEMSUnitRegistryContractTest, BridgesBitsAndBytesExplicitlyAndExactly) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSUnitRegistryContractTest, SelectsEveryAsciiUnitSymbol) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
@@ -654,6 +668,8 @@ TEST(GGEMSUnitRegistryContractTest, SelectsEveryAsciiUnitSymbol) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSUnitRegistryContractTest, SelectsEveryUnicodeUnitSymbol) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
 
@@ -663,6 +679,8 @@ TEST(GGEMSUnitRegistryContractTest, SelectsEveryUnicodeUnitSymbol) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSUnitRegistryContractTest, UsesEncodingForHumanReadable) {
   {
     ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
@@ -682,6 +700,8 @@ TEST(GGEMSUnitRegistryContractTest, UsesEncodingForHumanReadable) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSUnitRegistryContractTest, UsesEncodingForQuantityFormatter) {
   {
     ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
@@ -697,6 +717,8 @@ TEST(GGEMSUnitRegistryContractTest, UsesEncodingForQuantityFormatter) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSUnitRegistryContractTest, AppliesQuantitySpecificDisplayPolicies) {
   ScopedLoggerEncoding const encoding(ggems::core::Encoding::Unicode);
 

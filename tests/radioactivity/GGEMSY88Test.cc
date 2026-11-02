@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSY88Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildY88Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Y-88");
@@ -120,6 +122,8 @@ TEST(GGEMSY88Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSY88Test, PreservesBetaPlus7645Kev) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -186,6 +190,8 @@ TEST(GGEMSY88Test, PreservesBetaPlus7645Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesNuclearGamma) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -258,6 +264,8 @@ TEST(GGEMSY88Test, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesAtomicXray) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -326,6 +334,8 @@ TEST(GGEMSY88Test, PreservesAtomicXray) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesConversion484352Kev) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -396,6 +406,8 @@ TEST(GGEMSY88Test, PreservesConversion484352Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesConversion850643Kev) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -466,6 +478,8 @@ TEST(GGEMSY88Test, PreservesConversion850643Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesConversion898042Kev) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -536,6 +550,8 @@ TEST(GGEMSY88Test, PreservesConversion898042Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesConversion1382387Kev) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -606,6 +622,8 @@ TEST(GGEMSY88Test, PreservesConversion1382387Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesConversion183607Kev) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -676,6 +694,8 @@ TEST(GGEMSY88Test, PreservesConversion183607Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesConversion2734092Kev) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -746,6 +766,8 @@ TEST(GGEMSY88Test, PreservesConversion2734092Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY88Test, PreservesConversion3218426Kev) {
   auto const definition = BuildY88Radionuclide();
   auto const &distribution =
@@ -816,6 +838,8 @@ TEST(GGEMSY88Test, PreservesConversion3218426Kev) {
 // =============================================================================
 // =============================================================================
 
+// The direct-parent source must not acquire daughter emissions or unsupported
+// channels.
 TEST(GGEMSY88Test, ExcludesNonParentSourceLines) {
   auto const definition = BuildY88Radionuclide();
   // annihilation_photons

@@ -35,6 +35,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMSLongDoubleAssertions.hh"
+#include "GGEMSRadionuclideAssertions.hh"
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
@@ -50,6 +51,8 @@ using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::builtins::BuildRe186Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistributionType;
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSRe186Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildRe186Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Re-186");
@@ -136,6 +139,8 @@ TEST(GGEMSRe186Test, PreservesIdentityAndOrderedMarginalYields) {
                        1.0e-14L);
 }
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRe186Test, PreservesBetaMinus159Kev) {
   auto const definition = BuildRe186Radionuclide();
   auto const &distribution =
@@ -193,6 +198,8 @@ TEST(GGEMSRe186Test, PreservesBetaMinus159Kev) {
   }
 }
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRe186Test, PreservesBetaMinus302Kev) {
   auto const definition = BuildRe186Radionuclide();
   auto const &distribution =
@@ -250,6 +257,8 @@ TEST(GGEMSRe186Test, PreservesBetaMinus302Kev) {
   }
 }
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRe186Test, PreservesBetaMinus9323Kev) {
   auto const definition = BuildRe186Radionuclide();
   auto const &distribution =
@@ -307,6 +316,8 @@ TEST(GGEMSRe186Test, PreservesBetaMinus9323Kev) {
   }
 }
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSRe186Test, PreservesBetaMinus10695Kev) {
   auto const definition = BuildRe186Radionuclide();
   auto const &distribution =
@@ -364,6 +375,8 @@ TEST(GGEMSRe186Test, PreservesBetaMinus10695Kev) {
   }
 }
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRe186Test, PreservesNuclearGamma) {
   auto const definition = BuildRe186Radionuclide();
   auto const &distribution =
@@ -413,6 +426,8 @@ TEST(GGEMSRe186Test, PreservesNuclearGamma) {
                        139.75048276229847L, 1.3651337864100933e-06L);
 }
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSRe186Test, PreservesAtomicXray) {
   auto const definition = BuildRe186Radionuclide();
   auto const &distribution =
@@ -462,428 +477,163 @@ TEST(GGEMSRe186Test, PreservesAtomicXray) {
                        44.70242860876558L, 1.5013314953446389e-07L);
 }
 
-TEST(GGEMSRe186Test, PreservesConversion12233Kev) {
+// Every evaluated conversion line must retain its intensity and quantized
+// sampling probability.
+TEST(GGEMSRe186Test, PreservesConversionLineCatalog) {
   auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[6U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    52'800'000'000ULL,  110'230'000'000ULL, 110'790'000'000ULL,
-    112'120'000'000ULL, 120'060'000'000ULL, 122'030'000'000ULL,
-  };
-  constexpr std::array<double, 6U> expected_weights{
-    0.00353, 0.000377, 0.00283, 0.00238, 0.001411, 0.000393,
-  };
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
-  }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.010921L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 93.918547752037355L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       93.918547752037355L, 9.7713192760944361e-08L);
-}
+  auto const emissions = definition.GetEmissions();
+  ASSERT_GT(emissions.size(), 14U);
 
-TEST(GGEMSRe186Test, PreservesConversion137157Kev) {
-  auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[7U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    63'286'000'000ULL,  124'189'000'000ULL, 124'772'000'000ULL,
-    126'286'000'000ULL, 134'699'000'000ULL, 136'823'000'000ULL,
-  };
-  constexpr std::array<double, 6U> expected_weights{
-    0.0408, 0.00462, 0.0316, 0.0246, 0.01552, 0.00443,
-  };
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
-  }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.12157L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 106.12739286008062L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       106.12739286008062L, 1.0373000225424766e-07L);
-}
+  {
+    SCOPED_TRACE("PreservesConversion12233Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      52'800'000'000ULL,  110'230'000'000ULL, 110'790'000'000ULL,
+      112'120'000'000ULL, 120'060'000'000ULL, 122'030'000'000ULL,
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      0.00353, 0.000377, 0.00283, 0.00238, 0.001411, 0.000393,
+    };
 
-TEST(GGEMSRe186Test, PreservesConversion143Kev) {
-  auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[8U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    69'129'000'000ULL,  130'032'000'000ULL, 130'615'000'000ULL,
-    132'129'000'000ULL, 140'542'000'000ULL, 142'666'000'000ULL,
-  };
-  constexpr std::array<double, 6U> expected_weights{
-    1.03e-08, 1.5e-09, 6.7e-10, 4.3e-10, 6.2e-10, 1.8e-10,
-  };
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
+    ggems::test::ExpectRadionuclideLines(emissions[6U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         0.010921L, 93.918547752037355L,
+                                         9.7713192760944361e-08L);
   }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.370E-8L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 84.979572262773729L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       84.979572262773729L, 1.0373000225424766e-07L);
-}
 
-TEST(GGEMSRe186Test, PreservesConversion29693Kev) {
-  auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[9U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    223'062'000'000ULL, 283'965'000'000ULL, 284'548'000'000ULL,
-    286'062'000'000ULL, 294'475'000'000ULL, 296'599'000'000ULL,
-  };
-  constexpr std::array<double, 6U> expected_weights{
-    3.2e-08, 4.1e-09, 6.2e-09, 3.5e-09, 3.4e-09, 9.9e-10,
-  };
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
-  }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 5.019E-8L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 246.3140687387926L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       246.3140687387926L, 1.0373000225424766e-07L);
-}
+  {
+    SCOPED_TRACE("PreservesConversion137157Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      63'286'000'000ULL,  124'189'000'000ULL, 124'772'000'000ULL,
+      126'286'000'000ULL, 134'699'000'000ULL, 136'823'000'000ULL,
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      0.0408, 0.00462, 0.0316, 0.0246, 0.01552, 0.00443,
+    };
 
-TEST(GGEMSRe186Test, PreservesConversion33339Kev) {
-  auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[10U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    259'519'000'000ULL, 320'422'000'000ULL, 321'005'000'000ULL,
-    322'519'000'000ULL, 330'932'000'000ULL, 333'056'000'000ULL,
-  };
-  constexpr std::array<double, 6U> expected_weights{
-    2.8e-08, 3.7e-09, 4.5e-09, 2.4e-09, 2.6e-09, 7.5e-10,
-  };
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
+    ggems::test::ExpectRadionuclideLines(
+      emissions[7U].GetEnergyDistribution(), expected_energies,
+      expected_weights, 0.12157L, 106.12739286008062L, 1.0373000225424766e-07L);
   }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 4.195E-8L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 280.83138736591178L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       280.83138736591178L, 1.0373000225424766e-07L);
-}
 
-TEST(GGEMSRe186Test, PreservesConversion47639Kev) {
-  auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[11U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    402'519'000'000ULL, 463'422'000'000ULL, 464'005'000'000ULL,
-    465'519'000'000ULL, 473'932'000'000ULL, 476'056'000'000ULL,
-  };
-  constexpr std::array<double, 6U> expected_weights{
-    2.9e-10, 3.9e-11, 2.6e-11, 1.16e-11, 1.9e-11, 5.4e-12,
-  };
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
-  }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 3.910E-10L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 419.03715805626598L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       419.03715805626598L, 1.0373000225424766e-07L);
-}
+  {
+    SCOPED_TRACE("PreservesConversion143Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      69'129'000'000ULL,  130'032'000'000ULL, 130'615'000'000ULL,
+      132'129'000'000ULL, 140'542'000'000ULL, 142'666'000'000ULL,
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      1.03e-08, 1.5e-09, 6.7e-10, 4.3e-10, 6.2e-10, 1.8e-10,
+    };
 
-TEST(GGEMSRe186Test, PreservesConversion63032Kev) {
-  auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[12U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    556'452'000'000ULL, 617'355'000'000ULL, 617'938'000'000ULL,
-    619'452'000'000ULL, 627'865'000'000ULL, 629'989'000'000ULL,
-  };
-  constexpr std::array<double, 6U> expected_weights{
-    3.08e-06, 4.19e-07, 1.76e-07, 7.03e-08, 1.58e-07, 4.62e-08,
-  };
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
+    ggems::test::ExpectRadionuclideLines(emissions[8U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         1.370E-8L, 84.979572262773729L,
+                                         1.0373000225424766e-07L);
   }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.0000039495L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 570.49161422964937L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       570.49161422964937L, 1.0373000225424766e-07L);
-}
 
-TEST(GGEMSRe186Test, PreservesConversion767478Kev) {
-  auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[13U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 6U> expected_energies{
-    693'609'000'000ULL, 754'512'000'000ULL, 755'095'000'000ULL,
-    756'609'000'000ULL, 765'022'000'000ULL, 767'146'000'000ULL,
-  };
-  constexpr std::array<double, 6U> expected_weights{
-    2.26e-06, 3.09e-07, 9.55e-08, 3.49e-08, 1.03e-07, 3.04e-08,
-  };
-  ASSERT_EQ(energies.size(), 6U);
-  EXPECT_EQ(distribution.GetTableCount(), 6U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
-  }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.0000028328L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 706.48696660547864L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       706.48696660547864L, 1.0373000225424766e-07L);
-}
+  {
+    SCOPED_TRACE("PreservesConversion29693Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      223'062'000'000ULL, 283'965'000'000ULL, 284'548'000'000ULL,
+      286'062'000'000ULL, 294'475'000'000ULL, 296'599'000'000ULL,
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      3.2e-08, 4.1e-09, 6.2e-09, 3.5e-09, 3.4e-09, 9.9e-10,
+    };
 
-TEST(GGEMSRe186Test, PreservesConversion77332Kev) {
-  auto const definition = BuildRe186Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[14U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 2U> expected_energies{
-    699'452'000'000ULL,
-    761'248'000'000ULL,
-  };
-  constexpr std::array<double, 2U> expected_weights{
-    4.2e-09,
-    6.4e-10,
-  };
-  ASSERT_EQ(energies.size(), 2U);
-  EXPECT_EQ(distribution.GetTableCount(), 2U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
+    ggems::test::ExpectRadionuclideLines(
+      emissions[9U].GetEnergyDistribution(), expected_energies,
+      expected_weights, 5.019E-8L, 246.3140687387926L, 1.0373000225424766e-07L);
   }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 4.84E-9L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 707.62337190082644L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       707.62337190082644L, 2.9776004910469054e-08L);
+
+  {
+    SCOPED_TRACE("PreservesConversion33339Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      259'519'000'000ULL, 320'422'000'000ULL, 321'005'000'000ULL,
+      322'519'000'000ULL, 330'932'000'000ULL, 333'056'000'000ULL,
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      2.8e-08, 3.7e-09, 4.5e-09, 2.4e-09, 2.6e-09, 7.5e-10,
+    };
+
+    ggems::test::ExpectRadionuclideLines(emissions[10U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         4.195E-8L, 280.83138736591178L,
+                                         1.0373000225424766e-07L);
+  }
+
+  {
+    SCOPED_TRACE("PreservesConversion47639Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      402'519'000'000ULL, 463'422'000'000ULL, 464'005'000'000ULL,
+      465'519'000'000ULL, 473'932'000'000ULL, 476'056'000'000ULL,
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      2.9e-10, 3.9e-11, 2.6e-11, 1.16e-11, 1.9e-11, 5.4e-12,
+    };
+
+    ggems::test::ExpectRadionuclideLines(emissions[11U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         3.910E-10L, 419.03715805626598L,
+                                         1.0373000225424766e-07L);
+  }
+
+  {
+    SCOPED_TRACE("PreservesConversion63032Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      556'452'000'000ULL, 617'355'000'000ULL, 617'938'000'000ULL,
+      619'452'000'000ULL, 627'865'000'000ULL, 629'989'000'000ULL,
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      3.08e-06, 4.19e-07, 1.76e-07, 7.03e-08, 1.58e-07, 4.62e-08,
+    };
+
+    ggems::test::ExpectRadionuclideLines(emissions[12U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         0.0000039495L, 570.49161422964937L,
+                                         1.0373000225424766e-07L);
+  }
+
+  {
+    SCOPED_TRACE("PreservesConversion767478Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 6U> expected_energies{
+      693'609'000'000ULL, 754'512'000'000ULL, 755'095'000'000ULL,
+      756'609'000'000ULL, 765'022'000'000ULL, 767'146'000'000ULL,
+    };
+    constexpr std::array<double, 6U> expected_weights{
+      2.26e-06, 3.09e-07, 9.55e-08, 3.49e-08, 1.03e-07, 3.04e-08,
+    };
+
+    ggems::test::ExpectRadionuclideLines(emissions[13U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         0.0000028328L, 706.48696660547864L,
+                                         1.0373000225424766e-07L);
+  }
+
+  {
+    SCOPED_TRACE("PreservesConversion77332Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 2U> expected_energies{
+      699'452'000'000ULL,
+      761'248'000'000ULL,
+    };
+    constexpr std::array<double, 2U> expected_weights{
+      4.2e-09,
+      6.4e-10,
+    };
+
+    ggems::test::ExpectRadionuclideLines(
+      emissions[14U].GetEnergyDistribution(), expected_energies,
+      expected_weights, 4.84E-9L, 707.62337190082644L, 2.9776004910469054e-08L);
+  }
 }
 
 } // namespace

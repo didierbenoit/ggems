@@ -51,6 +51,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSY90Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildY90Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Y-90");
@@ -88,6 +90,8 @@ TEST(GGEMSY90Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSY90Test, PreservesBetaMinus924Kev) {
   auto const definition = BuildY90Radionuclide();
   auto const &distribution =
@@ -153,6 +157,8 @@ TEST(GGEMSY90Test, PreservesBetaMinus924Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSY90Test, PreservesBetaMinus5180Kev) {
   auto const definition = BuildY90Radionuclide();
   auto const &distribution =
@@ -218,6 +224,8 @@ TEST(GGEMSY90Test, PreservesBetaMinus5180Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSY90Test, PreservesBetaMinus22787Kev) {
   auto const definition = BuildY90Radionuclide();
   auto const &distribution =
@@ -283,6 +291,8 @@ TEST(GGEMSY90Test, PreservesBetaMinus22787Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSY90Test, PreservesNuclearGamma) {
   auto const definition = BuildY90Radionuclide();
   auto const &distribution =
@@ -295,6 +305,8 @@ TEST(GGEMSY90Test, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// The direct-parent source must not acquire daughter emissions or unsupported
+// channels.
 TEST(GGEMSY90Test, ExcludesNonParentSourceLines) {
   auto const definition = BuildY90Radionuclide();
   // annihilation_photons

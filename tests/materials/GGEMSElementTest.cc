@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks element behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -37,6 +39,8 @@ namespace materials = ggems::core::materials;
 // =============================================================================
 // =============================================================================
 
+// Identity lookup must preserve the complete supported key independently of
+// optional properties.
 TEST(GGEMSElementTest, StoresElementData) {
   constexpr materials::GGEMSElement iron{26U, "Fe", "iron", 55.845L};
 
@@ -49,6 +53,8 @@ TEST(GGEMSElementTest, StoresElementData) {
 // =============================================================================
 // =============================================================================
 
+// Unsupported identities must fail explicitly without approximate lookup or
+// substitution.
 TEST(GGEMSElementTest, RejectsAtomicNumbersOutsideCatalogRange) {
   EXPECT_THROW(
     static_cast<void>(materials::GGEMSElement{0U, "H", "Hydrogen", 1.0080L}),
@@ -62,6 +68,8 @@ TEST(GGEMSElementTest, RejectsAtomicNumbersOutsideCatalogRange) {
 // =============================================================================
 // =============================================================================
 
+// Identity lookup must preserve the complete supported key independently of
+// optional properties.
 TEST(GGEMSElementTest, AcceptsHighestCatalogAtomicNumber) {
   constexpr materials::GGEMSElement einsteinium{99U, "Es", "Einsteinium",
                                                 252.082979173L};

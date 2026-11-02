@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source description behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -47,7 +49,7 @@
 
 namespace {
 
-using GGEMSSource = ggems::core::sources::GGEMSSource;
+using ggems::core::sources::GGEMSSource;
 using GGEMSSourcePtr = std::shared_ptr<GGEMSSource>;
 using ggems::test::ScopedLoggerEncoding;
 
@@ -136,6 +138,8 @@ auto ExpectContains(std::string const &description, std::string_view expected)
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSSourceDescription, DescribesPositivePrimaryCountSource) {
   auto source = MakeConfiguredSource(7ULL);
 
@@ -149,6 +153,8 @@ TEST(GGEMSSourceDescription, DescribesPositivePrimaryCountSource) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSSourceDescription,
      DescribesStandaloneActivityDrivenConfigurationWithoutRunFacts) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
@@ -195,6 +201,8 @@ TEST(GGEMSSourceDescription,
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceDescription, DescribesZeroPrimarySource) {
   auto source = MakeConfiguredSource(0ULL);
 
@@ -206,6 +214,8 @@ TEST(GGEMSSourceDescription, DescribesZeroPrimarySource) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSSourceDescription, DescribesSnapshotSlot) {
   std::array<GGEMSSourcePtr, 3U> const sources{
     MakeConfiguredSource(3ULL),
@@ -225,6 +235,8 @@ TEST(GGEMSSourceDescription, DescribesSnapshotSlot) {
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceDescription, PreservesZeroPrimarySlotWithoutCompaction) {
   std::array<GGEMSSourcePtr, 3U> const sources{
     MakeConfiguredSource(3ULL),
@@ -255,6 +267,8 @@ TEST(GGEMSSourceDescription, PreservesZeroPrimarySlotWithoutCompaction) {
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourceDescription, DistinguishesDuplicateSourceSlots) {
   auto source = MakeConfiguredSource(7ULL);
   std::array<GGEMSSourcePtr, 2U> const sources{source, source};
@@ -282,6 +296,8 @@ TEST(GGEMSSourceDescription, DistinguishesDuplicateSourceSlots) {
 // =============================================================================
 // ============================================================================
 
+// A fresh description must show current authoring state after a sequential
+// update.
 TEST(GGEMSSourceDescription, ReflectsSequentialSourceMutation) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
   auto source = MakeConfiguredSource(7ULL);
@@ -302,6 +318,8 @@ TEST(GGEMSSourceDescription, ReflectsSequentialSourceMutation) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSSourceDescription, DescribesOwnedSnapshotAfterSourceMutation) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
   auto source = MakeConfiguredSource(7ULL);
@@ -325,6 +343,8 @@ TEST(GGEMSSourceDescription, DescribesOwnedSnapshotAfterSourceMutation) {
 // =============================================================================
 // =============================================================================
 
+// Source populations must respect the exact run window and its persistent
+// chronology.
 TEST(GGEMSSourceDescription, DistinguishesStaticSourceFromRunWindow) {
   auto source = MakeConfiguredSource(7ULL);
 
@@ -346,6 +366,8 @@ TEST(GGEMSSourceDescription, DistinguishesStaticSourceFromRunWindow) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSSourceDescription, DescribesGeometryAndFocusedDistribution) {
   auto source = MakeConfiguredSource(7ULL);
   source->SetEllipseEmissionPicoMeter(10'000'000'000ULL, 5'000'000'000ULL)
@@ -364,6 +386,8 @@ TEST(GGEMSSourceDescription, DescribesGeometryAndFocusedDistribution) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSSourceDescription, DescribesVolumeGeometryMetadata) {
   auto source = MakeConfiguredSource(7ULL);
 
@@ -389,6 +413,8 @@ TEST(GGEMSSourceDescription, DescribesVolumeGeometryMetadata) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSSourceDescription, DescribesFullAndBoundedIsotropicDomainsInDegrees) {
   constexpr long double k_pi{std::numbers::pi_v<long double>};
   auto source = MakeConfiguredSource(7ULL);

@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Provides independent arithmetic references and bounded FP32
+ * comparisons.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

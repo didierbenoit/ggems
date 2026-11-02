@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks device World intersections against independent FP32 bounds.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -36,6 +38,8 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
@@ -135,7 +139,8 @@ auto RunCases(ggems::ocl::GGEMSOpenCLContext &context, WorldRecord const &world,
 
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
   auto const &program = opencl.GetOrCreateProgram(
-    context, kernel_root / "tests", "world_navigation_probe",
+    context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+    "world_navigation_probe",
     std::format("-I{}", kernel_root.generic_string()));
   cl::Kernel raw_kernel = program.CreateKernel("world_navigation_probe");
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
@@ -182,18 +187,12 @@ auto RunCases(ggems::ocl::GGEMSOpenCLContext &context, WorldRecord const &world,
   }
 }
 
-auto ForEachContext(auto &&body) -> void {
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
-    SCOPED_TRACE(context.GetDevice().GetName());
-    body(context);
-  }
-}
-
 } // namespace
 
 // =============================================================================
 // =============================================================================
 
+// Checks navigation status, exact exit-face masks, and independent endpoints.
 TEST_F(GGEMSNavigationDeviceTest, ExitsTheCubicWorldAlongAxesAndDiagonals) {
   WorldRecord const world{
     .half_extent_x_pm = static_cast<float>(k_100_mm),
@@ -271,13 +270,13 @@ TEST_F(GGEMSNavigationDeviceTest, ExitsTheCubicWorldAlongAxesAndDiagonals) {
     },
   };
 
-  ForEachContext(
-    [&](auto &context) -> void { RunCases(context, world, cases); });
+  RunCases(ggems::test::GetSelectedOpenCLContext(), world, cases);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Checks helper intersections against represented asymmetric World planes.
 TEST_F(GGEMSNavigationDeviceTest,
        ExitsAsymmetricWorldAlongStoredFP32Directions) {
   WorldRecord const world{
@@ -334,13 +333,13 @@ TEST_F(GGEMSNavigationDeviceTest,
     },
   };
 
-  ForEachContext(
-    [&](auto &context) -> void { RunCases(context, world, cases); });
+  RunCases(ggems::test::GetSelectedOpenCLContext(), world, cases);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Preserves fractional transverse motion on ordinary oblique rays.
 TEST_F(GGEMSNavigationDeviceTest,
        MovesAlongOrdinaryObliqueRaysWithoutIntegerRounding) {
   WorldRecord const world{
@@ -389,10 +388,11 @@ TEST_F(GGEMSNavigationDeviceTest,
       },
     },
   };
-  ForEachContext(
-    [&](auto &context) -> void { RunCases(context, world, cases); });
+  RunCases(ggems::test::GetSelectedOpenCLContext(), world, cases);
 }
 
+// Checks zero-distance exits, boundary sliding, and rejection without endpoint
+// writes.
 TEST_F(GGEMSNavigationDeviceTest, HandlesBoundaryStartsAndInvalidInputs) {
   WorldRecord const world{
     .half_extent_x_pm = static_cast<float>(k_100_mm),
@@ -466,13 +466,13 @@ TEST_F(GGEMSNavigationDeviceTest, HandlesBoundaryStartsAndInvalidInputs) {
     },
   };
 
-  ForEachContext(
-    [&](auto &context) -> void { RunCases(context, world, cases); });
+  RunCases(ggems::test::GetSelectedOpenCLContext(), world, cases);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Preserves small transverse movement at large World scales.
 TEST_F(GGEMSNavigationDeviceTest,
        HandlesThreeMeterWorldAndSmallDirectionComponents) {
   constexpr std::int64_t half{1500 * k_mm};
@@ -530,9 +530,8 @@ TEST_F(GGEMSNavigationDeviceTest,
   };
   // Extreme integer Worlds and subnormal directions are retired here.
   // Normal small components still require the expected nonzero transverse
-  // motion, exact exit status and exact limiting face on every context.
-  ForEachContext([&](auto &context) -> void {
-    RunCases(context, world, cases);
-    RunCases(context, cube, small_component_cases);
-  });
+  // motion, exact exit status and exact limiting face on the selected device.
+  auto &context = ggems::test::GetSelectedOpenCLContext();
+  RunCases(context, world, cases);
+  RunCases(context, cube, small_component_cases);
 }

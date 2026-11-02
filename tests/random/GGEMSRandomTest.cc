@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks random behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -49,6 +51,8 @@ using ggems::core::random::ToString;
 // =============================================================================
 // =============================================================================
 
+// An unmodified random configuration must select the documented default
+// engine.
 TEST(GGEMSRandomTest, DefaultsToPhilox) {
   GGEMSRandom random{};
 
@@ -60,6 +64,8 @@ TEST(GGEMSRandomTest, DefaultsToPhilox) {
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSRandomTest, EngineNamesAndKernelIdsAreStable) {
   EXPECT_EQ(ToString(GGEMSRandomEngine::JKISS), "JKISS");
   EXPECT_EQ(ToString(GGEMSRandomEngine::PCG32), "PCG32");
@@ -73,6 +79,8 @@ TEST(GGEMSRandomTest, EngineNamesAndKernelIdsAreStable) {
 // =============================================================================
 // =============================================================================
 
+// Configuration tokens are strict public input; aliases and unintended
+// normalization must not slip in.
 TEST(GGEMSRandomTest, ParsesCanonicalEngineNames) {
   EXPECT_EQ(ParseRandomEngine("JKISS"), GGEMSRandomEngine::JKISS);
   EXPECT_EQ(ParseRandomEngine("PCG32"), GGEMSRandomEngine::PCG32);
@@ -86,6 +94,8 @@ TEST(GGEMSRandomTest, ParsesCanonicalEngineNames) {
 // =============================================================================
 // =============================================================================
 
+// An unrecognized engine token must fail rather than silently selecting a
+// default.
 TEST(GGEMSRandomTest, RejectsUnknownEngineName) {
   EXPECT_THROW((void)ParseRandomEngine("unknown"),
                ggems::core::GGEMSExceptionBase);
@@ -94,6 +104,8 @@ TEST(GGEMSRandomTest, RejectsUnknownEngineName) {
 // =============================================================================
 // =============================================================================
 
+// The configured engine must drive the actual device random-number
+// implementation.
 TEST(GGEMSRandomTest, KernelBuildDefinitionTracksSelectedEngine) {
   GGEMSRandom random{};
 
@@ -109,6 +121,8 @@ TEST(GGEMSRandomTest, KernelBuildDefinitionTracksSelectedEngine) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSRandomTest, SummaryReflectsCurrentConfiguration) {
   constexpr std::uint64_t test_seed{123'456ULL};
 

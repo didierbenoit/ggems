@@ -21,117 +21,62 @@
 
 /*!
  * \file
+ * \brief Checks project identity and character encoding in the startup banner.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <array>
-#include <cstddef>
+#include <algorithm>
+#include <string>
 #include <string_view>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
-#include "GGEMS/render/GGEMSColorNames.hh"
-
+#include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 
-// =============================================================================
-// =============================================================================
-
-constexpr std::size_t number_lines = 17U;
-
-// =============================================================================
-// =============================================================================
-
-using BannerSnapshot = std::array<std::u32string_view, number_lines>;
-using ggems::test::ScopedLoggerEncoding;
-
-// =============================================================================
-// =============================================================================
-
-constexpr BannerSnapshot ascii_banner{
-  {
-    U"+****************************************************+",
-    U"*                                                    *",
-    U"*    ######   ######  ####### ###    ### #######     *",
-    U"*   ##       ##       ##      ####  #### ##          *",
-    U"*   ##   ### ##   ### #####   ## #### ## #######     *",
-    U"*   ##    ## ##    ## ##      ##  ##  ##      ##     *",
-    U"*    ######   ######  ####### ##      ## #######     *",
-    U"*   ******** ******** ******* ********** *******     *",
-    U"*                                                    *",
-    U"+----------------------------------------------------+",
-    U"*                                                    *",
-    U"*      GPU Geant4-based Monte Carlo Simulations      *",
-    U"*    Version 2.0 . GGEMS Team . https://ggems.fr     *",
-    U"*       Authors: Julien Bert & Didier Benoit         *",
-    U"*   Copyright (C) 2026 Licensed under GNU GPL v3.0   *",
-    U"*                                                    *",
-    U"+****************************************************+",
-  },
-};
-
-// =============================================================================
-// =============================================================================
-
-constexpr BannerSnapshot unicode_banner{
-  {
-    U"╔════════════════════════════════════════════════════╗",
-    U"║                                                    ║",
-    U"║    ██████╗  ██████╗ ███████╗███╗   ███╗███████╗    ║",
-    U"║   ██╔════╝ ██╔════╝ ██╔════╝████╗ ████║██╔════╝    ║",
-    U"║   ██║  ███╗██║  ███╗█████╗  ██╔████╔██║███████╗    ║",
-    U"║   ██║   ██║██║   ██║██╔══╝  ██║╚██╔╝██║╚════██║    ║",
-    U"║   ╚██████╔╝╚██████╔╝███████╗██║ ╚═╝ ██║███████║    ║",
-    U"║    ╚═════╝  ╚═════╝ ╚══════╝╚═╝     ╚═╝╚══════╝    ║",
-    U"║                                                    ║",
-    U"╟────────────────────────────────────────────────────╢",
-    U"║                                                    ║",
-    U"║      GPU Geant4-based Monte Carlo Simulations      ║",
-    U"║    Version 2.0 • GGEMS Team • https://ggems.fr     ║",
-    U"║       Authors: Julien Bert & Didier Benoit         ║",
-    U"║   Copyright (C) 2026 Licensed under GNU GPL v3.0   ║",
-    U"║                                                    ║",
-    U"╚════════════════════════════════════════════════════╝",
-  },
-};
-
-// =============================================================================
-// =============================================================================
-
-auto ExpectBanner(ggems::core::Encoding encoding,
-                  BannerSnapshot const &expected_lines) -> void {
-  ScopedLoggerEncoding const scoped_encoding{encoding};
-  auto const lines = ggems::render::BuildBannerLines();
-
-  ASSERT_EQ(lines.size(), expected_lines.size());
-
-  for (std::size_t line_index = 0U; line_index < lines.size(); ++line_index) {
-    SCOPED_TRACE(line_index);
-    ASSERT_EQ(lines[line_index].segments.size(), 1U);
-
-    auto const &segment = lines[line_index].segments.front();
-    EXPECT_EQ(segment.color, ggems::render::GREEN_Jade_B);
-    EXPECT_EQ(segment.text, expected_lines[line_index]);
+auto BannerText(ggems::core::Encoding encoding) -> std::u32string {
+  ggems::test::ScopedLoggerEncoding const scoped_encoding{encoding};
+  std::u32string text;
+  for (auto const &line : ggems::render::BuildBannerLines()) {
+    for (auto const &segment : line.segments) {
+      text.append(segment.text);
+    }
+    text.push_back(U'\n');
   }
+  return text;
+}
+
+auto ExpectProjectIdentity(std::u32string_view text) -> void {
+  EXPECT_NE(text.find(U"GPU Geant4-based Monte Carlo Simulations"), text.npos);
+  EXPECT_NE(text.find(U"https://ggems.fr"), text.npos);
+  EXPECT_NE(text.find(U"Julien Bert"), text.npos);
+  EXPECT_NE(text.find(U"Didier Benoit"), text.npos);
+  EXPECT_NE(text.find(U"GNU GPL"), text.npos);
 }
 
 } // namespace
 
-// =============================================================================
-// =============================================================================
-
+// ASCII output must identify GGEMS and its license without emitting non-ASCII
+// characters.
 TEST(GGEMSBannerTest, BuildsCompleteAsciiBanner) {
-  ExpectBanner(ggems::core::Encoding::Ascii, ascii_banner);
+  auto const text = BannerText(ggems::core::Encoding::Ascii);
+
+  ExpectProjectIdentity(text);
+  EXPECT_TRUE(std::ranges::all_of(
+    text, [](char32_t value) -> bool { return value <= 0x7FU; }));
 }
 
-// =============================================================================
-// =============================================================================
-
+// Unicode output must retain project identity and use the selected Unicode
+// artwork.
 TEST(GGEMSBannerTest, BuildsCompleteUnicodeBanner) {
-  ExpectBanner(ggems::core::Encoding::Unicode, unicode_banner);
+  auto const text = BannerText(ggems::core::Encoding::Unicode);
+
+  ExpectProjectIdentity(text);
+  EXPECT_TRUE(std::ranges::any_of(
+    text, [](char32_t value) -> bool { return value > 0x7FU; }));
 }

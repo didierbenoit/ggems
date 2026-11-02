@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks cross section units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -59,6 +61,8 @@ struct CrossSectionConversionCase {
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSCrossSectionUnits, ConvertsEveryOfficialRuntimeToken) {
   constexpr std::array<CrossSectionConversionCase, 6U> cases{
     {
@@ -83,6 +87,8 @@ TEST(GGEMSCrossSectionUnits, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSCrossSectionUnits, BarnHasExactlyOneTrillionPicobarns) {
   auto const barn = MakeQuantity<CrossSection>(1ULL, "barn");
 
@@ -93,6 +99,8 @@ TEST(GGEMSCrossSectionUnits, BarnHasExactlyOneTrillionPicobarns) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSCrossSectionUnits, RejectsNegativeValues) {
   auto const converted = MakeQuantity<CrossSection>(-1, "pb");
 
@@ -103,6 +111,8 @@ TEST(GGEMSCrossSectionUnits, RejectsNegativeValues) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSCrossSectionUnits, UsesAsciiAndUnicodeMicrobarnDisplay) {
   using namespace ggems::units;
 
@@ -120,6 +130,8 @@ TEST(GGEMSCrossSectionUnits, UsesAsciiAndUnicodeMicrobarnDisplay) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSCrossSectionUnits, ConvenienceBarnLiteralsMatchRuntimeUnits) {
   using namespace ggems::units;
 

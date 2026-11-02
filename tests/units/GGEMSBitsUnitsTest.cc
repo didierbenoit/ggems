@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks bits units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -60,6 +62,8 @@ struct BitsConversionCase {
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSBitsUnits, ConvertsEveryOfficialRuntimeToken) {
   constexpr std::array<BitsConversionCase, 9U> cases{
     {
@@ -87,6 +91,8 @@ TEST(GGEMSBitsUnits, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSBitsUnits, RejectsNegativeValues) {
   auto const converted = MakeQuantity<Bits>(-1, "bit");
 
@@ -97,6 +103,8 @@ TEST(GGEMSBitsUnits, RejectsNegativeValues) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSBitsUnits, AutomaticDisplayUsesDecimalUnitsForIecValues) {
   using namespace ggems::units;
 
@@ -107,6 +115,8 @@ TEST(GGEMSBitsUnits, AutomaticDisplayUsesDecimalUnitsForIecValues) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSBitsUnits, LiteralsPreserveDecimalBinaryAndShortSuffixes) {
   using namespace ggems::units;
 

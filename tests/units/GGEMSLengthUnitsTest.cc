@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks length units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -94,6 +96,8 @@ static_assert(!std::convertible_to<PositionCoordinate, Length>);
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
   constexpr std::array<LengthConversionCase, 8U> cases{
     {
@@ -120,6 +124,8 @@ TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
 // =============================================================================
 // =============================================================================
 
+// Signed canonical quantities must preserve arithmetic, direction, and
+// ordering.
 TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
   constexpr std::array<SignedConversionCase, 4U> cases{
     {
@@ -139,6 +145,8 @@ TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
   }
 }
 
+// Signed canonical quantities must preserve arithmetic, direction, and
+// ordering.
 TEST(GGEMSLengthUnits, ConvertsSignedDisplacements) {
   constexpr std::array<SignedConversionCase, 2U> cases{
     {
@@ -159,6 +167,8 @@ TEST(GGEMSLengthUnits, ConvertsSignedDisplacements) {
 // =============================================================================
 // =============================================================================
 
+// Values around a canonical half quantum must follow the specified rounding
+// rule.
 TEST(GGEMSLengthUnits, RoundsHalfPicometersAwayFromZero) {
   constexpr std::array<SignedConversionCase, 8U> cases{
     {
@@ -185,6 +195,8 @@ TEST(GGEMSLengthUnits, RoundsHalfPicometersAwayFromZero) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSLengthUnits, EnforcesSignedCanonicalRange) {
   long double const upper_exclusive = std::ldexp(1.0L, 63);
   long double const lower_inclusive = -upper_exclusive;
@@ -213,6 +225,8 @@ TEST(GGEMSLengthUnits, EnforcesSignedCanonicalRange) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSLengthUnits, EnforcesNonNegativeCanonicalRange) {
   long double const upper_exclusive = std::ldexp(1.0L, 64);
 
@@ -240,6 +254,8 @@ TEST(GGEMSLengthUnits, EnforcesNonNegativeCanonicalRange) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSLengthUnits, RejectsNonFiniteValuesAndUnknownTokens) {
   ExpectConversionError<Length>(std::numeric_limits<long double>::quiet_NaN(),
                                 "pm", UnitConversionError::NonFinite);
@@ -257,6 +273,8 @@ TEST(GGEMSLengthUnits, RejectsNonFiniteValuesAndUnknownTokens) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSLengthUnits, FormatsSignedLengthThroughPublicHelper) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 

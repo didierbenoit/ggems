@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks random state kernel behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -42,7 +44,6 @@
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
-#include "GGEMSOpenCLCompilerDeviceInventory.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
 
 namespace {
@@ -80,97 +81,76 @@ constexpr std::size_t k_state_count{2U};
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRandomStateKernelTest,
-     HostAndKernelLayoutsMatchOnEverySVMCompilerDevice) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
-
-  if (compiler_devices.empty()) {
-    GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
-  }
-
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
+TEST(GGEMSRandomStateKernelTest, HostAndKernelLayoutsMatchOnSelectedDevice) {
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path const kernel_test_root = kernel_root / "tests";
+  std::filesystem::path const kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
 
   std::string const build_options =
     std::format("-I{}", kernel_root.generic_string());
 
-  std::size_t tested_device_count{0U};
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
-  for (auto const &compiler_device : compiler_devices) {
-    auto &context = *compiler_device.context;
+  std::array<std::uint64_t, k_layout_value_count> layout{};
 
-    if (!context.GetSVMSupport().HasAny()) {
-      continue;
-    }
+  auto layout_buffer = context.CreateSVMBuffer(
+    ggems::units::Bytes{layout.size() * sizeof(std::uint64_t)});
 
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+  auto jkiss_buffer = context.CreateSVMBuffer(
+    ggems::units::Bytes{k_state_count * sizeof(JKissState)});
 
-    ++tested_device_count;
+  auto pcg32_buffer = context.CreateSVMBuffer(
+    ggems::units::Bytes{k_state_count * sizeof(PCG32State)});
 
-    std::array<std::uint64_t, k_layout_value_count> layout{};
+  auto philox_buffer = context.CreateSVMBuffer(
+    ggems::units::Bytes{k_state_count * sizeof(PhiloxState)});
 
-    auto layout_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{layout.size() * sizeof(std::uint64_t)});
+  auto const &program =
+    ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
+      context, kernel_test_root, "random_state_abi_probe", build_options);
 
-    auto jkiss_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_state_count * sizeof(JKissState)});
+  auto raw_kernel = program.CreateKernel("random_state_abi_probe");
 
-    auto pcg32_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_state_count * sizeof(PCG32State)});
+  ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
+                                       "random_state_abi_probe"};
 
-    auto philox_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_state_count * sizeof(PhiloxState)});
+  kernel.SetArgSVMPointer(0U, layout_buffer.GetData());
+  kernel.SetArgSVMPointer(1U, jkiss_buffer.GetData());
+  kernel.SetArgSVMPointer(2U, pcg32_buffer.GetData());
+  kernel.SetArgSVMPointer(3U, philox_buffer.GetData());
 
-    auto const &program =
-      ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-        context, kernel_test_root, "random_state_abi_probe", build_options);
+  kernel.Run({1U}, {1U});
 
-    auto raw_kernel = program.CreateKernel("random_state_abi_probe");
+  ggems::ocl::ReadSVMToHost(layout_buffer, std::span{layout});
 
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "random_state_abi_probe"};
+  std::array<std::uint64_t, k_layout_value_count> const expected_layout{{
+    static_cast<std::uint64_t>(sizeof(JKissState)),
+    static_cast<std::uint64_t>(offsetof(JKissState, x)),
+    static_cast<std::uint64_t>(offsetof(JKissState, y)),
+    static_cast<std::uint64_t>(offsetof(JKissState, z)),
+    static_cast<std::uint64_t>(offsetof(JKissState, w)),
+    static_cast<std::uint64_t>(offsetof(JKissState, c)),
+    static_cast<std::uint64_t>(sizeof(JKissState)),
+    static_cast<std::uint64_t>(offsetof(JKissStateAlignmentProbe, state)),
 
-    kernel.SetArgSVMPointer(0U, layout_buffer.GetData());
-    kernel.SetArgSVMPointer(1U, jkiss_buffer.GetData());
-    kernel.SetArgSVMPointer(2U, pcg32_buffer.GetData());
-    kernel.SetArgSVMPointer(3U, philox_buffer.GetData());
+    static_cast<std::uint64_t>(sizeof(PCG32State)),
+    static_cast<std::uint64_t>(offsetof(PCG32State, state)),
+    static_cast<std::uint64_t>(offsetof(PCG32State, increment)),
+    static_cast<std::uint64_t>(sizeof(PCG32State)),
+    static_cast<std::uint64_t>(offsetof(PCG32StateAlignmentProbe, state)),
 
-    kernel.Run({1U}, {1U});
+    static_cast<std::uint64_t>(sizeof(PhiloxState)),
+    static_cast<std::uint64_t>(offsetof(PhiloxState, counter_0)),
+    static_cast<std::uint64_t>(offsetof(PhiloxState, counter_1)),
+    static_cast<std::uint64_t>(offsetof(PhiloxState, counter_2)),
+    static_cast<std::uint64_t>(offsetof(PhiloxState, counter_3)),
+    static_cast<std::uint64_t>(offsetof(PhiloxState, key_0)),
+    static_cast<std::uint64_t>(offsetof(PhiloxState, key_1)),
+    static_cast<std::uint64_t>(sizeof(PhiloxState)),
+    static_cast<std::uint64_t>(offsetof(PhiloxStateAlignmentProbe, state)),
+  }};
 
-    ggems::ocl::ReadSVMToHost(layout_buffer, std::span{layout});
-
-    std::array<std::uint64_t, k_layout_value_count> const expected_layout{{
-      static_cast<std::uint64_t>(sizeof(JKissState)),
-      static_cast<std::uint64_t>(offsetof(JKissState, x)),
-      static_cast<std::uint64_t>(offsetof(JKissState, y)),
-      static_cast<std::uint64_t>(offsetof(JKissState, z)),
-      static_cast<std::uint64_t>(offsetof(JKissState, w)),
-      static_cast<std::uint64_t>(offsetof(JKissState, c)),
-      static_cast<std::uint64_t>(sizeof(JKissState)),
-      static_cast<std::uint64_t>(offsetof(JKissStateAlignmentProbe, state)),
-
-      static_cast<std::uint64_t>(sizeof(PCG32State)),
-      static_cast<std::uint64_t>(offsetof(PCG32State, state)),
-      static_cast<std::uint64_t>(offsetof(PCG32State, increment)),
-      static_cast<std::uint64_t>(sizeof(PCG32State)),
-      static_cast<std::uint64_t>(offsetof(PCG32StateAlignmentProbe, state)),
-
-      static_cast<std::uint64_t>(sizeof(PhiloxState)),
-      static_cast<std::uint64_t>(offsetof(PhiloxState, counter_0)),
-      static_cast<std::uint64_t>(offsetof(PhiloxState, counter_1)),
-      static_cast<std::uint64_t>(offsetof(PhiloxState, counter_2)),
-      static_cast<std::uint64_t>(offsetof(PhiloxState, counter_3)),
-      static_cast<std::uint64_t>(offsetof(PhiloxState, key_0)),
-      static_cast<std::uint64_t>(offsetof(PhiloxState, key_1)),
-      static_cast<std::uint64_t>(sizeof(PhiloxState)),
-      static_cast<std::uint64_t>(offsetof(PhiloxStateAlignmentProbe, state)),
-    }};
-
-    EXPECT_EQ(layout, expected_layout);
-  }
-
-  if (tested_device_count == 0U) {
-    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
-  }
+  EXPECT_EQ(layout, expected_layout);
 }

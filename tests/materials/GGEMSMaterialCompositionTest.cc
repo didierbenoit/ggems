@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks material composition behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -302,6 +304,8 @@ auto ExpectIdentical(materials::GGEMSMaterialComposition const &actual,
 // =============================================================================
 // =============================================================================
 
+// Scientific values must agree with the independent pinned reference rather
+// than a self-generated expectation.
 TEST(GGEMSMaterialCompositionTest, BoronAtomFractionsReproduceAudit11) {
   auto const composition = MakeBoron(Basis::AtomFraction, 0.9L, 0.1L);
 
@@ -343,6 +347,8 @@ TEST(GGEMSMaterialCompositionTest, BoronAtomFractionsReproduceAudit11) {
 // =============================================================================
 // =============================================================================
 
+// Atom and mass authoring bases must produce the correct isotope population
+// and densities.
 TEST(GGEMSMaterialCompositionTest, BoronMassFractionsDifferFromAtomFractions) {
   auto const composition = MakeBoron(Basis::MassFraction, 0.9L, 0.1L);
 
@@ -398,6 +404,8 @@ TEST(GGEMSMaterialCompositionTest, BoronMassFractionsDifferFromAtomFractions) {
 // =============================================================================
 // =============================================================================
 
+// Scientific values must agree with the independent pinned reference rather
+// than a self-generated expectation.
 TEST(GGEMSMaterialCompositionTest, NormalizedEnrichedBoronMatchesOracle) {
   auto const composition = MakeBoron(Basis::AtomFraction, 0.9000045L, 0.1L);
 
@@ -434,6 +442,8 @@ TEST(GGEMSMaterialCompositionTest, NormalizedEnrichedBoronMatchesOracle) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSMaterialCompositionTest, EnrichedBoronDoesNotUseCatalogMolarMass) {
   materials::GGEMSMaterialComposition const composition{
     2.34_g_cm3,
@@ -459,6 +469,8 @@ TEST(GGEMSMaterialCompositionTest, EnrichedBoronDoesNotUseCatalogMolarMass) {
 // =============================================================================
 // =============================================================================
 
+// Scientific values must agree with the independent pinned reference rather
+// than a self-generated expectation.
 TEST(GGEMSMaterialCompositionTest, MultiElementMixedBasesMatchOracle) {
   materials::GGEMSMaterialComposition const composition{
     1.37_g_cm3, MakeMultiElementShares(), MakeFixtureTable()};
@@ -563,6 +575,8 @@ TEST(GGEMSMaterialCompositionTest, MultiElementMixedBasesMatchOracle) {
 // =============================================================================
 // =============================================================================
 
+// Stable semantic ordering must be independent of the order in which the
+// caller supplied data.
 TEST(GGEMSMaterialCompositionTest, InputPermutationDoesNotChangeResult) {
   materials::GGEMSMaterialComposition const reference{
     1.37_g_cm3, MakeMultiElementShares(), MakeFixtureTable()};
@@ -594,6 +608,8 @@ TEST(GGEMSMaterialCompositionTest, InputPermutationDoesNotChangeResult) {
 // =============================================================================
 // =============================================================================
 
+// Fraction admission and normalization must preserve supported constituents
+// and reject malformed totals.
 TEST(GGEMSMaterialCompositionTest, RemovesExplicitZeroShareWithoutMassData) {
   materials::GGEMSMaterialComposition const reference{
     1.37_g_cm3, MakeMultiElementShares(), MakeFixtureTable()};
@@ -613,6 +629,8 @@ TEST(GGEMSMaterialCompositionTest, RemovesExplicitZeroShareWithoutMassData) {
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSMaterialCompositionTest, RejectsInvalidInput) {
   auto const expect_rejected =
     [](units::Density density,

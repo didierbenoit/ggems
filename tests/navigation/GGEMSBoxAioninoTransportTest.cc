@@ -40,6 +40,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
+
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
@@ -211,7 +213,8 @@ auto ExpectWorldExit(ObserverRecord const &record, World const &world,
 /*! \brief Runs every history in one launch and checks completion and exit. */
 auto ExpectHistories(World const &world, std::span<BoxRecord const> boxes,
                      std::span<HistoryCase const> cases) -> void {
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
 
     std::vector<SourceRecord> records;
@@ -274,6 +277,8 @@ auto ExpectHistories(World const &world, std::span<BoxRecord const> boxes,
 // =============================================================================
 // =============================================================================
 
+// Checks physical entry, exit, and final World escape for box-crossing
+// histories.
 TEST_F(GGEMSNavigationDeviceTest, AioninoCrossesTheBoxThenExitsTheWorld) {
   World const world = MakeWorld().AddVolume(MakeBox());
   std::array<BoxRecord, 1U> const boxes{MakeBoxRecord(world)};
@@ -320,6 +325,7 @@ TEST_F(GGEMSNavigationDeviceTest, AioninoCrossesTheBoxThenExitsTheWorld) {
 // =============================================================================
 // =============================================================================
 
+// Verifies directional ownership for births inside and on a box surface.
 TEST_F(GGEMSNavigationDeviceTest, AioninoBornInsideOrOnTheBoxSurface) {
   World const world = MakeWorld().AddVolume(MakeBox());
   std::array<BoxRecord, 1U> const boxes{MakeBoxRecord(world)};
@@ -359,11 +365,14 @@ TEST_F(GGEMSNavigationDeviceTest, AioninoBornInsideOrOnTheBoxSurface) {
 // =============================================================================
 // =============================================================================
 
+// Checks species dispatch and World-only behavior when analytic boxes are
+// present.
 TEST_F(GGEMSNavigationDeviceTest, WorldOnlyAndOtherSpeciesAreUnchangedByBoxes) {
   World const world = MakeWorld().AddVolume(MakeBox());
   std::array<BoxRecord, 1U> const boxes{MakeBoxRecord(world)};
 
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     ggems::core::random::GGEMSRandom random{};
     random.SetEngine("pcg32").SetSeed(7ULL);
@@ -410,6 +419,7 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOnlyAndOtherSpeciesAreUnchangedByBoxes) {
 // =============================================================================
 // =============================================================================
 
+// Verifies frozen World snapshots and rejection of invalid transport geometry.
 TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetAnalytic()
@@ -524,6 +534,8 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
                                   ParticleStatus::EscapedWorld));
 }
 
+// Checks transport against transformed box boundaries rather than an
+// axis-aligned proxy.
 TEST_F(GGEMSNavigationDeviceTest, AioninoUsesTheUploadedRotatedBoxPose) {
   auto world = MakeWorld();
   auto box = MakeBox();

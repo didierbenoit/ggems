@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Checks observer defaults and shared record ABI contracts.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cstddef>
 #include <type_traits>
 
@@ -10,6 +39,7 @@
 // =============================================================================
 // =============================================================================
 
+// Protects the observer configuration record layout exchanged with kernels.
 TEST(GGEMSObserverRecord, ConfigRecordIsKernelFriendly) {
   using ConfigRecord = ggems::core::observer::GGEMSObserverConfigRecord;
 
@@ -38,6 +68,7 @@ TEST(GGEMSObserverRecord, ConfigRecordIsKernelFriendly) {
 // =============================================================================
 // =============================================================================
 
+// Protects widths and offsets of observer counters shared with kernels.
 TEST(GGEMSObserverRecord, CountersAreKernelFriendly) {
   EXPECT_TRUE(
     std::is_standard_layout_v<ggems::core::observer::GGEMSObserverCounters>);
@@ -49,6 +80,7 @@ TEST(GGEMSObserverRecord, CountersAreKernelFriendly) {
 // =============================================================================
 // =============================================================================
 
+// Protects observer record field widths, alignment, and device stride.
 TEST(GGEMSObserverRecord, RecordIsKernelFriendly) {
   using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
 
@@ -89,6 +121,7 @@ TEST(GGEMSObserverRecord, RecordIsKernelFriendly) {
 // =============================================================================
 // =============================================================================
 
+// Ensures unused observer records cannot resemble completed particle histories.
 TEST(GGEMSObserverRecord, DefaultRecordIsEmptyAndInactive) {
   ggems::core::observer::GGEMSObserverRecord record{};
 
@@ -125,6 +158,7 @@ TEST(GGEMSObserverRecord, DefaultRecordIsEmptyAndInactive) {
 // =============================================================================
 // =============================================================================
 
+// Preserves numeric record-kind codes written by device kernels.
 TEST(GGEMSObserverTypes, RecordKindsAreKernelCompatible) {
   using ggems::core::observer::GGEMSObserverRecordKind;
   using ggems::core::observer::ToKernelObserverRecordKind;

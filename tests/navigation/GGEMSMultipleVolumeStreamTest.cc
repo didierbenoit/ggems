@@ -45,6 +45,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
+
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
@@ -360,8 +362,10 @@ auto CheckFixture(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   EXPECT_EQ(result.counts.outside_world_count, 0U);
   EXPECT_EQ(result.counts.overflow_count, 0U);
   auto material = [&](std::uint32_t owner) -> std::uint32_t {
-    return owner == k_exterior ? k_exterior
-                               : (owner == 0 ? 0U : ids[owner - 1U]);
+    if (owner == k_exterior || owner == 0U) {
+      return owner;
+    }
+    return ids[owner - 1U];
   };
   EXPECT_EQ(result.trace[test::k_initial_owner_index], fixture.initial_owner);
   EXPECT_EQ(result.trace[test::k_initial_owner_index + 1U],
@@ -387,7 +391,7 @@ auto CheckFixture(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   auto departure = fixture.initial_owner;
   for (std::size_t index = 0; index < expected.size(); ++index) {
     SCOPED_TRACE(index);
-    auto const offset = 1U + test::k_trace_stride * index;
+    auto const offset = 1U + (test::k_trace_stride * index);
     auto const &crossing = expected[index];
     EXPECT_EQ(result.trace[offset], departure);
     EXPECT_EQ(result.trace[offset + 1U], crossing.arrival);
@@ -407,7 +411,7 @@ auto CheckFixture(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
       double const endpoint = std::bit_cast<float>(
         static_cast<std::uint32_t>(result.trace[offset + 3U + axis]));
       double const ideal = (fixture.start[axis] +
-                            crossing.parameter_mm * fixture.direction[axis]) *
+                            (crossing.parameter_mm * fixture.direction[axis])) *
                            k_mm;
       EXPECT_LE(std::abs(endpoint - ideal), budget);
     }
@@ -428,12 +432,14 @@ auto CheckFixture(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
 }
 } // namespace
 
+// Checks owner transitions across distinct occurrences and shared profiles.
 TEST_F(GGEMSNavigationDeviceTest,
        MultipleOccurrencesPreservePhysicalIntervals) {
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   auto const instrumented = test::InstrumentStream(root);
   auto const cases = Cases();
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231U);
@@ -441,18 +447,15 @@ TEST_F(GGEMSNavigationDeviceTest,
       context, root / "transport", "particle_stream_transport",
       std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
                   root.generic_string(), random.GetKernelBuildDefinition()));
-    cl::Program program{context.GetContextNative(), instrumented};
-    auto const device = context.GetDevice().GetDeviceNative();
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(instrumented, production.GetBuildOptions());
     for (auto const &fixture : cases) {
       CheckFixture(context, program, random, fixture);
     }
   }
 }
 
+// Preserves a multi-volume Run snapshot independently of observer capture.
 TEST_F(GGEMSNavigationDeviceTest,
        MultipleOccurrenceRunOwnsSnapshotInBothObserverModes) {
   for (bool observed : {false, true}) {
@@ -486,7 +489,7 @@ TEST_F(GGEMSNavigationDeviceTest,
                 particles::ToKernelParticleStatus(
                   particles::GGEMSParticleStatus::EscapedWorld));
       EXPECT_LE(
-        std::abs(static_cast<double>(records[1].position_x_pm) - 100 * k_mm),
+        std::abs(static_cast<double>(records[1].position_x_pm) - (100 * k_mm)),
         8 * world.GetNavigationTolerancePM());
       EXPECT_EQ(records[0].global_primary_id, records[1].global_primary_id);
     }

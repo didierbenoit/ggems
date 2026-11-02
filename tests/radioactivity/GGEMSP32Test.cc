@@ -53,6 +53,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSP32Test, BuildsExactIdentityAndSingleBetaMinusEmission) {
   GGEMSRadionuclideDefinition const definition = BuildP32Radionuclide();
 
@@ -70,6 +72,8 @@ TEST(GGEMSP32Test, BuildsExactIdentityAndSingleBetaMinusEmission) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSP32Test, PreservesSelectedBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildP32Radionuclide();
   auto const &distribution =

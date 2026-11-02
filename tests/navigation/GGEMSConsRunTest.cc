@@ -50,6 +50,8 @@ using namespace ggems;
 using namespace ggems::core;
 using namespace ggems::units;
 
+// Checks owned cone geometry through Run with observer capture enabled and
+// disabled.
 TEST_F(GGEMSNavigationDeviceTest, N1ConsRunOwnsSnapshotWithObserverModes) {
   for (bool observed : {false, true}) {
     SCOPED_TRACE(observed);

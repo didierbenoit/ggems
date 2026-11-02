@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source run snapshot behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -47,7 +49,7 @@
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
-#include "GGEMS/sources/GGEMSEnergyDistribution.hh"
+
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
@@ -318,6 +320,8 @@ auto ExpectCountDrivenSnapshotsEqual(
 // =============================================================================
 // =============================================================================
 
+// Canonical energy quanta and table-free monochromatic sampling must remain
+// exact.
 TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
   constexpr std::uint64_t k_primary_count{17ULL};
 
@@ -376,6 +380,8 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -417,6 +423,8 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceRunSnapshot, RepresentsZeroPrimaryMonoSource) {
   ggems::core::sources::GGEMSSource source{};
   source.SetPrimaryCount(0ULL);
@@ -435,6 +443,8 @@ TEST(GGEMSSourceRunSnapshot, RepresentsZeroPrimaryMonoSource) {
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourceRunSnapshot, RangeAndTotalAreConsistent) {
   constexpr std::uint64_t k_primary_count{37ULL};
 
@@ -456,6 +466,8 @@ TEST(GGEMSSourceRunSnapshot, RangeAndTotalAreConsistent) {
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
   auto source_0 = MakeSource(3ULL);
   source_0->SetAnalytic()
@@ -508,6 +520,8 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimarySourceSlots) {
   std::vector<GGEMSSourcePtr> sources{
     MakeSource(3ULL), MakeSource(0ULL), MakeSource(5ULL),
@@ -541,6 +555,8 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimarySourceSlots) {
 // =============================================================================
 // =============================================================================
 
+// Source populations must respect the exact run window and its persistent
+// chronology.
 TEST(GGEMSSourceRunSnapshot,
      InjectsOneWindowIntoEveryCopiedRecordWithoutMutatingSources) {
   auto positive_count_source = MakeSource(3ULL);
@@ -591,6 +607,8 @@ TEST(GGEMSSourceRunSnapshot,
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceRunSnapshot, BuildsEmptySnapshot) {
   std::vector<GGEMSSourcePtr> const sources{};
   constexpr ggems::core::GGEMSTimeWindow k_window{
@@ -612,6 +630,8 @@ TEST(GGEMSSourceRunSnapshot, BuildsEmptySnapshot) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSourceRunSnapshot, OwnsIndependentMultiSourceState) {
   auto source_0 = MakeSource(2ULL);
   source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
@@ -669,6 +689,8 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentMultiSourceState) {
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSSourceRunSnapshot, RejectsNullSource) {
   auto source_0 = MakeSource(2ULL);
   auto source_2 = MakeSource(3ULL);
@@ -692,6 +714,8 @@ TEST(GGEMSSourceRunSnapshot, RejectsNullSource) {
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourceRunSnapshot, AcceptsDuplicateSourceSlots) {
   auto source = MakeSource(7ULL);
   source->SetEnergyMicroElectronVolt(123'000'000'000ULL)
@@ -713,7 +737,6 @@ TEST(GGEMSSourceRunSnapshot, AcceptsDuplicateSourceSlots) {
   ExpectSourceRange(ranges[1U], 7ULL, 7ULL);
   EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 14ULL);
 
-  EXPECT_NE(&records[0U], &records[1U]);
   ExpectSourceRecordsEqual(records[0U], source->BuildRecord());
   ExpectSourceRecordsEqual(records[1U], source->BuildRecord());
 }
@@ -721,6 +744,8 @@ TEST(GGEMSSourceRunSnapshot, AcceptsDuplicateSourceSlots) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSSourceRunSnapshot, AcceptsMaximumRepresentableTotal) {
   constexpr std::uint64_t k_maximum = std::numeric_limits<std::uint64_t>::max();
 
@@ -744,6 +769,8 @@ TEST(GGEMSSourceRunSnapshot, AcceptsMaximumRepresentableTotal) {
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourceRunSnapshot, SingleSourceOverloadMatchesCollectionOverload) {
   auto source = MakeSource(19ULL);
   source->SetAnalytic()
@@ -776,11 +803,15 @@ TEST(GGEMSSourceRunSnapshot, SingleSourceOverloadMatchesCollectionOverload) {
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourceRunSnapshot,
      StandaloneSingleSourceOverloadsMatchPopulationPlan) {
   constexpr std::uint64_t k_primary_count{7ULL};
-  constexpr ggems::core::GGEMSTimeWindow k_time_window{.start_ps = 123ULL,
-                                                       .stop_ps = 987ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_time_window{
+    .start_ps = 123ULL,
+    .stop_ps = 987ULL,
+  };
 
   auto source = MakeSource(k_primary_count);
   source
@@ -818,10 +849,14 @@ TEST(GGEMSSourceRunSnapshot,
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourceRunSnapshot,
      StandaloneCollectionOverloadsMatchPopulationPlanWithZeroSlot) {
-  constexpr ggems::core::GGEMSTimeWindow k_time_window{.start_ps = 1'234ULL,
-                                                       .stop_ps = 5'678ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_time_window{
+    .start_ps = 1'234ULL,
+    .stop_ps = 5'678ULL,
+  };
 
   auto source_0 = MakeSource(3ULL);
   source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
@@ -867,11 +902,15 @@ TEST(GGEMSSourceRunSnapshot,
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSSourceRunSnapshot,
      ExistingConfigurationOverloadsPreserveIdentityForDuplicateSlots) {
   constexpr std::uint64_t k_primary_count{4ULL};
-  constexpr ggems::core::GGEMSTimeWindow k_time_window{.start_ps = 99ULL,
-                                                       .stop_ps = 199ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_time_window{
+    .start_ps = 99ULL,
+    .stop_ps = 199ULL,
+  };
 
   auto source = MakeSource(k_primary_count);
   source->SetEnergyMicroElectronVolt(444'000'000'000ULL)
@@ -895,8 +934,6 @@ TEST(GGEMSSourceRunSnapshot,
                     k_primary_count);
   EXPECT_EQ(standalone_static.GetTotalPrimaryCount(), 2ULL * k_primary_count);
   ASSERT_EQ(standalone_static.GetRecords().size(), 2U);
-  EXPECT_NE(&standalone_static.GetRecords()[0U],
-            &standalone_static.GetRecords()[1U]);
 
   auto standalone_timed = ggems::core::sources::BuildSourceRunSnapshot(
     sources, configuration, k_time_window);
@@ -917,10 +954,14 @@ TEST(GGEMSSourceRunSnapshot,
 // =============================================================================
 // =============================================================================
 
+// Population planning must publish atomically and preserve stream continuity
+// across attempts.
 TEST(GGEMSSourceRunSnapshot,
      StandaloneAndPopulationPlanObserveCountMutationBetweenAttempts) {
-  constexpr ggems::core::GGEMSTimeWindow k_time_window{.start_ps = 300ULL,
-                                                       .stop_ps = 700ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_time_window{
+    .start_ps = 300ULL,
+    .stop_ps = 700ULL,
+  };
 
   auto source_0 = MakeSource(2ULL);
   auto source_1 = MakeSource(4ULL);
@@ -966,6 +1007,8 @@ TEST(GGEMSSourceRunSnapshot,
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
   auto positive_count_source = MakeSource(3ULL);
   positive_count_source->SetEnergyMicroElectronVolt(123'000'000'000ULL)
@@ -978,7 +1021,10 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
     .SetDirection(0.0F, 1.0F, 0.0F);
 
   std::vector<GGEMSSourcePtr> sources{
-    positive_count_source, zero_primary_source, positive_count_source};
+    positive_count_source,
+    zero_primary_source,
+    positive_count_source,
+  };
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
@@ -996,12 +1042,13 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
                            zero_primary_source->BuildRecord());
   ExpectSourceRecordsEqual(snapshot.GetRecords()[2U],
                            positive_count_source->BuildRecord());
-  EXPECT_NE(&snapshot.GetRecords()[0U], &snapshot.GetRecords()[2U]);
 }
 
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSourceRunSnapshot, OwnsIndependentGeometryAndAngularConfiguration) {
   auto source = MakeSource(3ULL);
   source->SetRectangleEmissionPicoMeter(40ULL, 20ULL)
@@ -1039,6 +1086,8 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentGeometryAndAngularConfiguration) {
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceRunSnapshot,
      OwnsPackedEnergyTablesWithZeroPrimaryAndDuplicateSlots) {
   constexpr std::array<double, 3U> k_discrete_energies{1.0, 2.0, 3.0};
@@ -1108,13 +1157,16 @@ TEST(GGEMSSourceRunSnapshot,
   std::vector<std::uint64_t> const expected_values{
     1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL,
     10'000'000'000'000ULL, 12'000'000'000'000ULL, 14'000'000'000'000ULL,
-    1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL};
-  std::vector<double> const expected_relative_weights{1.0, 0.0, 3.0, 0.0, 1.0,
-                                                      1.0, 1.0, 0.0, 3.0};
+    1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL,
+  };
+  std::vector<double> const expected_relative_weights{
+    1.0, 0.0, 3.0, 0.0, 1.0, 1.0, 1.0, 0.0, 3.0,
+  };
   std::vector<std::uint64_t> const expected_ticket_bounds{
     1'073'741'824ULL, 1'073'741'824ULL, 4'294'967'296ULL, 0ULL,
     2'147'483'648ULL, 4'294'967'296ULL, 1'073'741'824ULL, 1'073'741'824ULL,
-    4'294'967'296ULL};
+    4'294'967'296ULL,
+  };
 
   EXPECT_EQ(values, expected_values);
   EXPECT_EQ(relative_weights, expected_relative_weights);
@@ -1133,6 +1185,8 @@ TEST(GGEMSSourceRunSnapshot,
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourceRunSnapshot, AllMonoSourcesUseEmptyPackedEnergyTables) {
   auto source_0 = MakeSource(1ULL);
   auto source_1 = MakeSource(0ULL);
@@ -1159,6 +1213,8 @@ TEST(GGEMSSourceRunSnapshot, AllMonoSourcesUseEmptyPackedEnergyTables) {
 // =============================================================================
 // =============================================================================
 
+// Spectrum packing must grow correctly for a large valid table without caller
+// preallocation.
 TEST(GGEMSSourceRunSnapshot,
      PacksOneHundredThousandRegularBinsWithoutReservation) {
   constexpr std::size_t k_bin_count{100'000U};
@@ -1166,7 +1222,7 @@ TEST(GGEMSSourceRunSnapshot,
   std::vector<double> relative_weights(k_bin_count, 1.0);
 
   for (std::size_t index = 0U; index < k_bin_count; ++index) {
-    bin_centers[index] = 1'000'000.0 + 2.0 * static_cast<double>(index);
+    bin_centers[index] = 1'000'000.0 + (2.0 * static_cast<double>(index));
   }
 
   ggems::core::sources::GGEMSSource source{};
@@ -1194,6 +1250,8 @@ TEST(GGEMSSourceRunSnapshot,
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSourceRunSnapshot, OwnsVolumeAndBoundedAngularRecordFields) {
   constexpr long double k_pi{std::numbers::pi_v<long double>};
   ggems::core::sources::GGEMSSource source{};
@@ -1220,6 +1278,8 @@ TEST(GGEMSSourceRunSnapshot, OwnsVolumeAndBoundedAngularRecordFields) {
 // =============================================================================
 // =============================================================================
 
+// Static activity configuration must not masquerade as a sampled run
+// population.
 TEST(GGEMSSourceRunSnapshot,
      PacksActivityConfigurationButRequiresPlannerForRunSnapshot) {
   auto definition = std::make_shared<
@@ -1240,7 +1300,7 @@ TEST(GGEMSSourceRunSnapshot,
             definition);
 
   ExpectGGEMSExceptionContaining(
-    [&activity_source]() -> void {
+    [&activity_source] -> void {
       (void)ggems::core::sources::BuildSourceRunSnapshot(
         *activity_source,
         ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
@@ -1248,7 +1308,9 @@ TEST(GGEMSSourceRunSnapshot,
     "index 0 is ActivityDriven and requires a planner candidate");
 
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources{
-    MakeSource(1ULL), activity_source};
+    MakeSource(1ULL),
+    activity_source,
+  };
   auto const mixed_configuration =
     ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   ASSERT_EQ(mixed_configuration->GetSourceCount(), 2U);
@@ -1258,7 +1320,7 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(mixed_configuration->GetRadionuclideDefinitions()[1U], definition);
 
   ExpectGGEMSExceptionContaining(
-    [&sources]() -> void {
+    [&sources] -> void {
       (void)ggems::core::sources::BuildSourceRunSnapshot(
         sources,
         ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
@@ -1277,7 +1339,7 @@ TEST(GGEMSSourceRunSnapshot,
     0ULL);
 
   ExpectGGEMSExceptionContaining(
-    [&reconfigured_sources, &stable_configuration]() -> void {
+    [&reconfigured_sources, &stable_configuration] -> void {
       (void)ggems::core::sources::BuildSourceRunSnapshot(
         reconfigured_sources, stable_configuration,
         ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});

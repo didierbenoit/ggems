@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks angular units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -62,6 +64,7 @@ auto ExpectNearLongDouble(long double value, long double reference,
 // =============================================================================
 // =============================================================================
 
+// A default angle must represent no rotation in both public angular units.
 TEST(GGEMSAngularUnits, DefaultAngleIsZeroRadians) {
   ggems::units::Angle angle{};
   ExpectNearLongDouble(ggems::units::ToRadians(angle), 0.0L);
@@ -70,6 +73,8 @@ TEST(GGEMSAngularUnits, DefaultAngleIsZeroRadians) {
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSAngularUnits, ConvertsEveryRegisteredAngleToken) {
   using namespace ggems::units;
 
@@ -85,6 +90,8 @@ TEST(GGEMSAngularUnits, ConvertsEveryRegisteredAngleToken) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSAngularUnits, MakeRadiansStoresIntegerPicoradians) {
   ggems::units::Angle angle = ggems::units::MakeRadians(2.5L);
 
@@ -94,6 +101,8 @@ TEST(GGEMSAngularUnits, MakeRadiansStoresIntegerPicoradians) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSAngularUnits, MakeDegreesConvertsToRadians) {
   ggems::units::Angle angle = ggems::units::MakeDegrees(180.0L);
 
@@ -104,6 +113,8 @@ TEST(GGEMSAngularUnits, MakeDegreesConvertsToRadians) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSAngularUnits, RadiansAreConvertedToDegrees) {
   ggems::units::Angle const angle =
     ggems::units::MakeRadians(std::numbers::pi_v<long double>);
@@ -115,6 +126,8 @@ TEST(GGEMSAngularUnits, RadiansAreConvertedToDegrees) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSAngularUnits, DegreeLiteralStoresIntegerPicoradians) {
   using namespace ggems::units;
 
@@ -128,6 +141,8 @@ TEST(GGEMSAngularUnits, DegreeLiteralStoresIntegerPicoradians) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSAngularUnits, IntegerDegreeLiteralStoresIntegerPicoradians) {
   using namespace ggems::units;
 
@@ -141,6 +156,8 @@ TEST(GGEMSAngularUnits, IntegerDegreeLiteralStoresIntegerPicoradians) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSAngularUnits, RadianLiteralStoresIntegerPicoradians) {
   using namespace ggems::units;
 
@@ -152,6 +169,8 @@ TEST(GGEMSAngularUnits, RadianLiteralStoresIntegerPicoradians) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSAngularUnits, IntegerRadianLiteralStoresIntegerPicoradians) {
   using namespace ggems::units;
 
@@ -163,6 +182,8 @@ TEST(GGEMSAngularUnits, IntegerRadianLiteralStoresIntegerPicoradians) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSAngularUnits, SupportsNegativeAngles) {
   using namespace ggems::units;
 
@@ -176,6 +197,8 @@ TEST(GGEMSAngularUnits, SupportsNegativeAngles) {
 // =============================================================================
 // =============================================================================
 
+// Signed canonical quantities must preserve arithmetic, direction, and
+// ordering.
 TEST(GGEMSAngularUnits, AdditionPreservesAngleSemantics) {
   using namespace ggems::units;
 
@@ -188,6 +211,8 @@ TEST(GGEMSAngularUnits, AdditionPreservesAngleSemantics) {
 // =============================================================================
 // =============================================================================
 
+// Signed canonical quantities must preserve arithmetic, direction, and
+// ordering.
 TEST(GGEMSAngularUnits, SubtractionPreservesAngleSemantics) {
   using namespace ggems::units;
 
@@ -200,6 +225,8 @@ TEST(GGEMSAngularUnits, SubtractionPreservesAngleSemantics) {
 // =============================================================================
 // =============================================================================
 
+// Signed canonical quantities must preserve arithmetic, direction, and
+// ordering.
 TEST(GGEMSAngularUnits, UnaryMinusPreservesAngleSemantics) {
   using namespace ggems::units;
 
@@ -211,10 +238,14 @@ TEST(GGEMSAngularUnits, UnaryMinusPreservesAngleSemantics) {
 // =============================================================================
 // =============================================================================
 
+// Values around a canonical half quantum must follow the specified rounding
+// rule.
 TEST(GGEMSAngularUnits, QuantizesSubPicoradianRadianInputs) {
   using namespace ggems::units;
-  constexpr std::array input{0.49e-12L,  0.51e-12L,  1.49e-12L,  1.51e-12L,
-                             -0.49e-12L, -0.51e-12L, -1.49e-12L, -1.51e-12L};
+  constexpr std::array input{
+    0.49e-12L,  0.51e-12L,  1.49e-12L,  1.51e-12L,
+    -0.49e-12L, -0.51e-12L, -1.49e-12L, -1.51e-12L,
+  };
   constexpr std::array<std::int64_t, 8> expected{0, 1, 1, 2, 0, -1, -1, -2};
   for (std::size_t index = 0; index < input.size(); ++index) {
     auto const angle = MakeQuantity<Angle>(input[index], "rad");
@@ -223,10 +254,14 @@ TEST(GGEMSAngularUnits, QuantizesSubPicoradianRadianInputs) {
   }
 }
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSAngularUnits, PreservesExactCanonicalIntegerRange) {
   using namespace ggems::units;
-  for (auto value : {std::numeric_limits<std::int64_t>::min(),
-                     std::numeric_limits<std::int64_t>::max()}) {
+  for (auto value : {
+         std::numeric_limits<std::int64_t>::min(),
+         std::numeric_limits<std::int64_t>::max(),
+       }) {
     Angle const angle{value};
     EXPECT_EQ(angle.value, value);
   }
@@ -237,11 +272,15 @@ TEST(GGEMSAngularUnits, PreservesExactCanonicalIntegerRange) {
   }
 }
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSAngularUnits, RejectsNonfiniteAndUnsupportedInputs) {
   using namespace ggems::units;
-  for (long double value : {std::numeric_limits<long double>::quiet_NaN(),
-                            std::numeric_limits<long double>::infinity(),
-                            -std::numeric_limits<long double>::infinity()}) {
+  for (long double value : {
+         std::numeric_limits<long double>::quiet_NaN(),
+         std::numeric_limits<long double>::infinity(),
+         -std::numeric_limits<long double>::infinity(),
+       }) {
     auto const angle = MakeQuantity<Angle>(value, "rad");
     ASSERT_FALSE(angle.has_value());
     EXPECT_EQ(angle.error(), UnitConversionError::NonFinite);
@@ -261,6 +300,8 @@ TEST(GGEMSAngularUnits, RejectsNonfiniteAndUnsupportedInputs) {
                std::bad_expected_access<UnitConversionError>);
 }
 
+// Exact conversion must distinguish representable output from a lossy or
+// invalid request.
 TEST(GGEMSAngularUnits, ConvertsIntegralOutputsOnlyWhenExact) {
   using namespace ggems::units;
   EXPECT_EQ(ConvertTo<std::int64_t>(-2_rad, "rad").value(), -2);
@@ -271,17 +312,22 @@ TEST(GGEMSAngularUnits, ConvertsIntegralOutputsOnlyWhenExact) {
   EXPECT_EQ(ConvertTo(one_picoradian, "rad").value(), 1.0e-12L);
 }
 
+// Values around a canonical half quantum must follow the specified rounding
+// rule.
 TEST(GGEMSAngularUnits, QuantizesEachCardinalAngleIndependently) {
   using namespace ggems::units;
-  constexpr std::array degrees{0.0L,   90.0L,  180.0L, 270.0L,
-                               360.0L, 450.0L, 720.0L};
-  constexpr std::array<std::int64_t, 7> picoradians{0,
-                                                    1'570'796'326'795,
-                                                    3'141'592'653'590,
-                                                    4'712'388'980'385,
-                                                    6'283'185'307'180,
-                                                    7'853'981'633'974,
-                                                    12'566'370'614'359};
+  constexpr std::array degrees{
+    0.0L, 90.0L, 180.0L, 270.0L, 360.0L, 450.0L, 720.0L,
+  };
+  constexpr std::array<std::int64_t, 7> picoradians{
+    0,
+    1'570'796'326'795,
+    3'141'592'653'590,
+    4'712'388'980'385,
+    6'283'185'307'180,
+    7'853'981'633'974,
+    12'566'370'614'359,
+  };
   for (std::size_t index = 0; index < degrees.size(); ++index) {
     EXPECT_EQ(MakeDegrees(degrees[index]).value, picoradians[index]);
     EXPECT_EQ(MakeDegrees(-degrees[index]).value, -picoradians[index]);
@@ -291,6 +337,8 @@ TEST(GGEMSAngularUnits, QuantizesEachCardinalAngleIndependently) {
 // =============================================================================
 // =============================================================================
 
+// Signed canonical quantities must preserve arithmetic, direction, and
+// ordering.
 TEST(GGEMSAngularUnits, SpaceshipComparisonUsesCanonicalPicoradians) {
   using namespace ggems::units;
 
@@ -302,6 +350,8 @@ TEST(GGEMSAngularUnits, SpaceshipComparisonUsesCanonicalPicoradians) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSAngularUnits, HumanReadableUsesDegreesByDefault) {
   using namespace ggems::units;
 
@@ -313,6 +363,8 @@ TEST(GGEMSAngularUnits, HumanReadableUsesDegreesByDefault) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSAngularUnits, HumanReadableSupportsPrecision) {
   using namespace ggems::units;
 
@@ -327,6 +379,8 @@ TEST(GGEMSAngularUnits, HumanReadableSupportsPrecision) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSAngularUnits, HumanReadableSupportsWidth) {
   using namespace ggems::units;
 
@@ -338,6 +392,8 @@ TEST(GGEMSAngularUnits, HumanReadableSupportsWidth) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSAngularUnits, StdFormatterUsesDefaultHumanReadableDegrees) {
   using namespace ggems::units;
 

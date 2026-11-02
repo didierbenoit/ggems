@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSTb161Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildTb161Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Tb-161");
@@ -103,6 +105,8 @@ TEST(GGEMSTb161Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSTb161Test, PreservesBetaMinusAggregate) {
   auto const definition = BuildTb161Radionuclide();
   auto const &distribution =
@@ -169,6 +173,8 @@ TEST(GGEMSTb161Test, PreservesBetaMinusAggregate) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSTb161Test, PreservesNuclearGamma) {
   auto const definition = BuildTb161Radionuclide();
   auto const &distribution =
@@ -230,6 +236,8 @@ TEST(GGEMSTb161Test, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSTb161Test, PreservesAtomicXray) {
   auto const definition = BuildTb161Radionuclide();
   auto const &distribution =
@@ -292,6 +300,8 @@ TEST(GGEMSTb161Test, PreservesAtomicXray) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSTb161Test, PreservesAugerElectron) {
   auto const definition = BuildTb161Radionuclide();
   auto const &distribution =
@@ -381,6 +391,8 @@ TEST(GGEMSTb161Test, PreservesAugerElectron) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSTb161Test, PreservesConversionElectron) {
   auto const definition = BuildTb161Radionuclide();
   auto const &distribution =
@@ -442,6 +454,8 @@ TEST(GGEMSTb161Test, PreservesConversionElectron) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSTb161Test, PreservesConversionElectronWeak1) {
   auto const definition = BuildTb161Radionuclide();
   auto const &distribution =
@@ -453,6 +467,8 @@ TEST(GGEMSTb161Test, PreservesConversionElectronWeak1) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSTb161Test, UsesOneAggregateContinuousBetaLaw) {
   auto const definition = BuildTb161Radionuclide();
   auto const emissions = definition.GetEmissions();

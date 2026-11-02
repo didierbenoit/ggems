@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks radioactive time random progression behavior and observable
+ * contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -34,6 +37,10 @@
 #include <string>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
+
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 
 #include "GGEMS/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
@@ -67,12 +74,7 @@ constexpr std::array<RandomEngine, 3U> k_engines{
 class GGEMSRadioactiveTimeRandomProgressionTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 };
 
@@ -81,10 +83,12 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Birth-time sampling must consume its dedicated random word for every
+// supported engine.
 TEST_F(GGEMSRadioactiveTimeRandomProgressionTest,
        EveryEngineConsumesExactlyOneDedicatedTimeWord) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  auto &context = opencl.GetContext().front();
+  auto &context = ggems::test::GetSelectedOpenCLContext();
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
 
   for (RandomEngine engine : k_engines) {
@@ -118,7 +122,8 @@ TEST_F(GGEMSRadioactiveTimeRandomProgressionTest,
     std::string const options = std::format("-I{} {}", root.generic_string(),
                                             random.GetKernelBuildDefinition());
     auto const &program = opencl.GetOrCreateProgram(
-      context, root / "tests", "radioactive_time_random_probe", options);
+      context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+      "radioactive_time_random_probe", options);
     ggems::ocl::GGEMSOpenCLKernel kernel{
       context, program.CreateKernel("radioactive_time_random_probe"),
       "radioactive_time_random_probe"};

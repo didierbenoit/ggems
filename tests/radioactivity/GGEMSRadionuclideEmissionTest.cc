@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks radionuclide emission behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -68,6 +70,7 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// All supported physical emission species must remain valid source inputs.
 TEST(GGEMSRadionuclideEmissionTest, AcceptsEveryCurrentPhysicalParticleType) {
   constexpr std::array<GGEMSParticleType, 6U> particle_types{
     GGEMSParticleType::Gamma,    GGEMSParticleType::Electron,
@@ -86,6 +89,8 @@ TEST(GGEMSRadionuclideEmissionTest, AcceptsEveryCurrentPhysicalParticleType) {
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSRadionuclideEmissionTest, RejectsNonPhysicalParticleTypes) {
   for (GGEMSParticleType particle_type : {
          GGEMSParticleType::Unknown,
@@ -104,10 +109,15 @@ TEST(GGEMSRadionuclideEmissionTest, RejectsNonPhysicalParticleTypes) {
 // =============================================================================
 // =============================================================================
 
+// Absolute emission yield may exceed one; it must not be treated as a branch
+// probability.
 TEST(GGEMSRadionuclideEmissionTest, ValidatesYieldWithoutProbabilityCeiling) {
-  for (long double yield :
-       {0.0L, -1.0L, std::numeric_limits<long double>::quiet_NaN(),
-        -std::numeric_limits<long double>::infinity()}) {
+  for (long double yield : {
+         0.0L,
+         -1.0L,
+         std::numeric_limits<long double>::quiet_NaN(),
+         -std::numeric_limits<long double>::infinity(),
+       }) {
     SCOPED_TRACE(static_cast<double>(yield));
     EXPECT_THROW(((void)GGEMSRadionuclideEmission{
                    GGEMSParticleType::Gamma, yield,
@@ -124,6 +134,8 @@ TEST(GGEMSRadionuclideEmissionTest, ValidatesYieldWithoutProbabilityCeiling) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSRadionuclideEmissionTest, OwnsEverySupportedEnergyDistribution) {
   GGEMSRadionuclideEmission const mono{
     GGEMSParticleType::Gamma, 1.0L,
@@ -148,6 +160,8 @@ TEST(GGEMSRadionuclideEmissionTest, OwnsEverySupportedEnergyDistribution) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSRadionuclideEmissionTest, OwnsCallerProvidedEnergyData) {
   std::vector<double> energies{10.0, 20.0, 30.0};
   std::vector<double> weights{1.0, 2.0, 1.0};

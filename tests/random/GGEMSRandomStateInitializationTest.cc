@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks random state initialization behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -88,6 +90,8 @@ class GGEMSRandomStateInitializationTest
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSRandomStateInitializationContractTest,
      EngineIdsAndStateSizesMatchKernelContracts) {
   GGEMSRandom random{};
@@ -108,6 +112,7 @@ TEST(GGEMSRandomStateInitializationContractTest,
 // =============================================================================
 // =============================================================================
 
+// Pinned initial state words protect compatible seeded random-stream replay.
 TEST(GGEMSRandomStateInitializationContractTest,
      ExistingInitialStateContractsArePreserved) {
   GGEMSRandom random{};
@@ -145,6 +150,8 @@ TEST(GGEMSRandomStateInitializationContractTest,
 // =============================================================================
 // =============================================================================
 
+// A fixed stream must replay within its contract and continue without
+// unintended reset.
 TEST_P(GGEMSRandomStateInitializationTest,
        SameSeedAndStreamProduceIdenticalStateBytes) {
   GGEMSRandom random{};
@@ -159,6 +166,7 @@ TEST_P(GGEMSRandomStateInitializationTest,
 // =============================================================================
 // =============================================================================
 
+// Seed and stream identity must control the expected random sequence.
 TEST_P(GGEMSRandomStateInitializationTest,
        DifferentStreamsProduceDifferentStateBytes) {
   GGEMSRandom random{};
@@ -173,6 +181,7 @@ TEST_P(GGEMSRandomStateInitializationTest,
 // =============================================================================
 // =============================================================================
 
+// Seed and stream identity must control the expected random sequence.
 TEST_P(GGEMSRandomStateInitializationTest,
        DifferentSeedsProduceDifferentStateBytes) {
   GGEMSRandom random{};
@@ -188,6 +197,8 @@ TEST_P(GGEMSRandomStateInitializationTest,
 // =============================================================================
 // =============================================================================
 
+// State initialization must preserve per-stream values and reject invalid
+// storage before writing.
 TEST_P(GGEMSRandomStateInitializationTest,
        BatchInitializationMatchesIndividualStates) {
   constexpr std::uint64_t k_first_stream_id{123ULL};
@@ -214,6 +225,8 @@ TEST_P(GGEMSRandomStateInitializationTest,
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST_P(GGEMSRandomStateInitializationTest,
        AcceptsBoundaryStreamRangeWithoutOverflow) {
   GGEMSRandom random{};
@@ -233,6 +246,8 @@ TEST_P(GGEMSRandomStateInitializationTest,
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST_P(GGEMSRandomStateInitializationTest,
        RejectsOverflowingStreamRangeBeforeWriting) {
   GGEMSRandom random{};
@@ -255,6 +270,8 @@ TEST_P(GGEMSRandomStateInitializationTest,
 // =============================================================================
 // =============================================================================
 
+// The limited stream-ID domain must fail clearly instead of aliasing another
+// random stream.
 TEST(GGEMSRandomStateInitializationContractTest,
      JKISSRejectsStreamIdentifiersOutsideUInt32) {
   GGEMSRandom random{};
@@ -276,6 +293,7 @@ TEST(GGEMSRandomStateInitializationContractTest,
 // =============================================================================
 // =============================================================================
 
+// Seed and stream identity must control the expected random sequence.
 TEST(GGEMSRandomStateInitializationContractTest,
      JKISSUsesTheLow32BitsOfTheSeed) {
   GGEMSRandom random{};
@@ -291,6 +309,8 @@ TEST(GGEMSRandomStateInitializationContractTest,
 // =============================================================================
 // =============================================================================
 
+// State initialization must preserve per-stream values and reject invalid
+// storage before writing.
 TEST(GGEMSRandomStateInitializationContractTest,
      RejectsStorageWithPartialStateBeforeWriting) {
   GGEMSRandom random{};
@@ -310,6 +330,8 @@ TEST(GGEMSRandomStateInitializationContractTest,
 // =============================================================================
 // =============================================================================
 
+// State initialization must preserve per-stream values and reject invalid
+// storage before writing.
 TEST(GGEMSRandomStateInitializationContractTest,
      RejectsInvalidEngineBeforeWriting) {
   GGEMSRandom random{};

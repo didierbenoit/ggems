@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Provides independent represented-plane box intersection bounds.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

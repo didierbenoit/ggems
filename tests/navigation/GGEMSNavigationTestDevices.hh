@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Shares the all-device OpenCL fixture of the Navigation tests.
+ * \brief Shares the selected OpenCL context of the Navigation tests.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -30,27 +30,17 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <cstdlib>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
-/*!
- * \brief Initializes every available OpenCL device once for the test binary.
- *
- * Navigation kernels must behave identically on OpenCL CPU and GPU devices, so
- * GGEMS_TEST_DEVICE selects one device for isolated qualification. Without it,
- * the fixture selects all devices and every test iterates over the contexts.
- */
+/*! \brief Initializes the launch-selected device for Navigation tests. */
 class GGEMSNavigationDeviceTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      char const *selected = std::getenv("GGEMS_TEST_DEVICE");
-      opencl.SelectDevices({selected != nullptr ? selected : "all"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }

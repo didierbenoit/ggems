@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks emmaterial package behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -118,6 +120,8 @@ auto Compile(std::vector<materials::GGEMSMaterial> const &materials)
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSEMMaterialPackageTest, InternsIdenticalMaterialsUnderAnyName) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(
@@ -158,6 +162,8 @@ TEST(GGEMSEMMaterialPackageTest, InternsIdenticalMaterialsUnderAnyName) {
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSEMMaterialPackageTest, SeparatesPhysicallyDifferentMaterials) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(MakeMaterial(
@@ -189,6 +195,8 @@ TEST(GGEMSEMMaterialPackageTest, SeparatesPhysicallyDifferentMaterials) {
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSEMMaterialPackageTest, EquivalentAuthoringRoutesShareOneIdentity) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(
@@ -214,6 +222,8 @@ TEST(GGEMSEMMaterialPackageTest, EquivalentAuthoringRoutesShareOneIdentity) {
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSEMMaterialPackageTest,
      PublishesTheDerivedElementalViewOfTheIdentity) {
   auto const first =
@@ -256,6 +266,8 @@ TEST(GGEMSEMMaterialPackageTest,
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSEMMaterialPackageTest, DeduplicatesVacuumAndKeepsItEmpty) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(builtins::BuildBuiltInMaterial("Vacuum"));
@@ -281,6 +293,8 @@ TEST(GGEMSEMMaterialPackageTest, DeduplicatesVacuumAndKeepsItEmpty) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSEMMaterialPackageTest, CompilesEveryBuiltInIntoADenseFlatPackage) {
   std::vector<materials::GGEMSMaterial> authored;
   for (auto const name : builtins::GetAvailableMaterialNames()) {
@@ -342,6 +356,8 @@ TEST(GGEMSEMMaterialPackageTest, CompilesEveryBuiltInIntoADenseFlatPackage) {
 // =============================================================================
 // =============================================================================
 
+// Prepared isotope and elemental densities must agree with the physical
+// composition.
 TEST(GGEMSEMMaterialPackageTest, CarriesElementalRowsOnlyAndNoIsotopes) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(builtins::BuildBuiltInMaterial("Water"));
@@ -357,6 +373,7 @@ TEST(GGEMSEMMaterialPackageTest, CarriesElementalRowsOnlyAndNoIsotopes) {
 // =============================================================================
 // =============================================================================
 
+// Equivalent authoring must produce a deterministic compact snapshot.
 TEST(GGEMSEMMaterialPackageTest, RebuildsIdenticalPackageFromTheSameInput) {
   std::vector<materials::GGEMSMaterial> authored;
   for (auto const name : builtins::GetAvailableMaterialNames()) {
@@ -401,6 +418,7 @@ TEST(GGEMSEMMaterialPackageTest, RebuildsIdenticalPackageFromTheSameInput) {
 // =============================================================================
 // =============================================================================
 
+// Equivalent authoring must produce a deterministic compact snapshot.
 TEST(GGEMSEMMaterialPackageTest, CompilesManyAuthoredEntriesIntoFewIdentities) {
   constexpr std::size_t k_authored_entries{4096U};
   constexpr std::size_t k_distinct_materials{8U};
@@ -429,6 +447,8 @@ TEST(GGEMSEMMaterialPackageTest, CompilesManyAuthoredEntriesIntoFewIdentities) {
 // =============================================================================
 // =============================================================================
 
+// Definition, inspection, and registration must have the documented
+// observable side effects.
 TEST(GGEMSEMMaterialPackageTest, CompilesTheAuthoringRegistrySnapshot) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
   static_cast<void>(manager.GetOrAdd("Water"));

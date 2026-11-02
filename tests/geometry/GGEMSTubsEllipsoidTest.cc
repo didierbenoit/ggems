@@ -77,6 +77,7 @@ auto World() -> GGEMSWorld {
 }
 } // namespace
 
+// Rejects incomplete cylindrical authoring before World insertion.
 TEST(N1Tubs, RequiresDimensionsAndOwnedMaterial) {
   GGEMSTubs shape;
   EXPECT_THROW(shape.Validate(), GGEMSRecoverable);
@@ -101,6 +102,7 @@ TEST(N1Tubs, RequiresDimensionsAndOwnedMaterial) {
   EXPECT_EQ(shape.GetHalfLengthPM(), 6'000'000'000U);
 }
 
+// Requires positive ellipsoid semi-axes and an explicitly owned material.
 TEST(N1Ellipsoid, RequiresPositiveSemiAxesAndOwnedMaterial) {
   GGEMSEllipsoid shape;
   EXPECT_THROW(shape.Validate(), GGEMSRecoverable);
@@ -119,6 +121,7 @@ TEST(N1Ellipsoid, RequiresPositiveSemiAxesAndOwnedMaterial) {
   EXPECT_NO_THROW(shape.SetSemiAxes(1_pm, 3_pm, 5_pm));
 }
 
+// Preserves the uploaded solid after the caller changes its authored values.
 TEST(N1Tubs, CopiesPoseDimensionsAndMaterialIntoWorld) {
   auto shape = Tubs();
   shape.SetPosition(MakePositionPM(-5'000'000'000LL, 7'000'000'000LL, 0))
@@ -145,6 +148,7 @@ TEST(N1Tubs, CopiesPoseDimensionsAndMaterialIntoWorld) {
   EXPECT_TRUE(copy.BuildBoxRecords({}).empty());
 }
 
+// Preserves the uploaded solid after the caller changes its authored values.
 TEST(N1Ellipsoid, CopiesPoseDimensionsAndMaterialIntoWorld) {
   auto shape = Ellipsoid();
   shape.SetPosition(MakePositionPM(-5'000'000'000LL, 7'000'000'000LL, 0))
@@ -169,6 +173,7 @@ TEST(N1Ellipsoid, CopiesPoseDimensionsAndMaterialIntoWorld) {
   EXPECT_TRUE(copy.GetBoxes().empty());
 }
 
+// Checks angle rejection and canonical placement for curved solids.
 TEST(N1TubsEllipsoid, PoseValidationUsesTheSharedRotationContract) {
   auto tubs = Tubs();
   auto ellipsoid = Ellipsoid();
@@ -187,6 +192,7 @@ TEST(N1TubsEllipsoid, PoseValidationUsesTheSharedRotationContract) {
   EXPECT_DOUBLE_EQ(ellipsoid.GetRotation().axis_z.x, 1.0);
 }
 
+// Rejects physically unresolved shapes and those outside the World.
 TEST(N1TubsEllipsoid, RejectsUnresolvedFeaturesAndWorldProtrusion) {
   auto tiny_bore = Tubs();
   tiny_bore.SetRadii(4_mm, 1_pm);
@@ -229,6 +235,7 @@ TEST(N1TubsEllipsoid, RejectsUnresolvedFeaturesAndWorldProtrusion) {
   EXPECT_THROW(posed.Validate(), GGEMSRecoverable);
 }
 
+// Checks curved-solid dimensions against the central units authority.
 TEST(N1TubsEllipsoid, CentralUnitsConvertDimensionsBeforeAuthoring) {
   EXPECT_FALSE(MakeQuantity<Length>(-1.0, "mm").has_value());
   EXPECT_FALSE(MakeQuantity<Length>(1.0, "MM").has_value());
@@ -240,6 +247,7 @@ TEST(N1TubsEllipsoid, CentralUnitsConvertDimensionsBeforeAuthoring) {
     1'250'000'000U);
 }
 
+// Protects the curved-solid record strides and payload offsets used on device.
 TEST(N1TubsEllipsoid, SharedRecordsPreserveTheirPayloadOffsets) {
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSTubsRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSTubsRecord>);
@@ -263,6 +271,7 @@ TEST(N1TubsEllipsoid, SharedRecordsPreserveTheirPayloadOffsets) {
   EXPECT_EQ(offsetof(GGEMSEllipsoidRecord, tolerance_pm), 20U);
 }
 
+// Accepts rotated curved surfaces using their actual containment envelope.
 TEST(N1TubsEllipsoid, AdmitsTheActualRotatedSurfaceEnvelope) {
   auto tubs = Tubs();
   tubs.SetRotation(0_deg, 0_deg, 45_deg);

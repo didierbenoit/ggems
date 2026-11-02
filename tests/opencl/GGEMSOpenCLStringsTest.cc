@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks semantic formatting of OpenCL diagnostics.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -48,6 +50,7 @@ auto SetName(cl_name_version &name_version, std::string_view name) -> void {
 // =============================================================================
 // =============================================================================
 
+// Structured diagnostics retain every version component and feature name.
 TEST(GGEMSOpenCLStringsTest, FormatsVersionsAndStructuredNameVersions) {
   EXPECT_EQ(ggems::ocl::ClVersionToString(CL_MAKE_VERSION(3, 1, 7)), "3.1.7");
 
@@ -63,6 +66,8 @@ TEST(GGEMSOpenCLStringsTest, FormatsVersionsAndStructuredNameVersions) {
 // =============================================================================
 // =============================================================================
 
+// Scalar diagnostics expose unknown and unavailable values without inventing
+// metadata.
 TEST(GGEMSOpenCLStringsTest, FormatsRepresentativeScalarAndFallbackValues) {
   EXPECT_EQ(ggems::ocl::ClBoolToString(CL_TRUE), "Yes");
   EXPECT_EQ(ggems::ocl::ClBoolToString(CL_FALSE), "No");
@@ -84,6 +89,8 @@ TEST(GGEMSOpenCLStringsTest, FormatsRepresentativeScalarAndFallbackValues) {
 // =============================================================================
 // =============================================================================
 
+// Bitfield diagnostics distinguish no capability, one capability, and combined
+// capabilities.
 TEST(GGEMSOpenCLStringsTest, FormatsZeroSingleAndCombinedFlags) {
   EXPECT_EQ(ggems::ocl::DeviceTypeToString(CL_DEVICE_TYPE_CPU), "CPU");
   EXPECT_EQ(
@@ -114,6 +121,7 @@ TEST(GGEMSOpenCLStringsTest, FormatsZeroSingleAndCombinedFlags) {
 // =============================================================================
 // =============================================================================
 
+// Identifier formatting preserves byte order and leading zeroes.
 TEST(GGEMSOpenCLStringsTest, FormatsUuidAndLuidBytes) {
   std::array<cl_uchar, CL_UUID_SIZE_KHR> uuid{};
   for (std::size_t index = 0; index < uuid.size(); ++index) {
@@ -132,6 +140,8 @@ TEST(GGEMSOpenCLStringsTest, FormatsUuidAndLuidBytes) {
 // =============================================================================
 // =============================================================================
 
+// Kernel argument diagnostics retain address, access, and combined type
+// qualifiers.
 TEST(GGEMSOpenCLStringsTest, FormatsRepresentativeKernelArgumentQualifiers) {
   EXPECT_EQ(
     ggems::ocl::ArgAddressQualifierToString(CL_KERNEL_ARG_ADDRESS_GLOBAL),

@@ -38,7 +38,6 @@
 #include <filesystem>
 #include <format>
 #include <memory>
-#include <ostream>
 #include <span>
 #include <string>
 #include <string_view>
@@ -57,6 +56,7 @@
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/observer/GGEMSTransportObserver.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
@@ -90,11 +90,6 @@ struct WorldCase {
   std::uint32_t faces;
   std::uint32_t outcome;
 };
-
-/*! \brief Gives deterministic, readable names to CTest parameter cases. */
-auto PrintTo(WorldCase const &value, std::ostream *output) -> void {
-  *output << value.name;
-}
 
 /*! \brief Cubic Vacuum World of the given full size. */
 auto MakeVacuumWorld(units::Length size) -> geometry::GGEMSWorld {
@@ -435,11 +430,7 @@ class GGEMSWorldTransportTest : public testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-    if (opencl.GetContext().empty()) {
-      char const *selected = std::getenv("GGEMS_TEST_DEVICE");
-      opencl.SelectDevices({selected != nullptr ? selected : "all"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 };
@@ -448,9 +439,12 @@ class GGEMSWorldRayTest : public GGEMSWorldTransportTest,
                           public testing::WithParamInterface<WorldCase> {};
 } // namespace
 
+// Checks the production transport kernel against independently specified World
+// rays.
 TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
   auto const &test = GetParam();
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     auto buffer = [&context](auto const &value) -> ocl::GGEMSOpenCLSVMBuffer {
       auto result = context.CreateSVMBuffer(units::Bytes{sizeof(value)});
@@ -614,6 +608,7 @@ INSTANTIATE_TEST_SUITE_P(World, GGEMSWorldRayTest, testing::ValuesIn(k_cases),
                            return std::string{case_info.param.name};
                          });
 
+// Preserves owned geometry and prior results after a rejected outside birth.
 TEST_F(GGEMSWorldTransportTest,
        RunOwnsWorldAndRejectsOutsideWithoutPublication) {
   using namespace units;
@@ -647,6 +642,8 @@ TEST_F(GGEMSWorldTransportTest,
             successful.back().position_x_pm);
 }
 
+// Checks rollback and successful recovery after a device-detected outside
+// birth.
 TEST_F(GGEMSWorldTransportTest,
        RunRejectsDeviceOutsideBirthWithoutPublishingAndRecovers) {
   using namespace units;
@@ -690,6 +687,7 @@ TEST_F(GGEMSWorldTransportTest,
               particles::GGEMSParticleStatus::EscapedWorld));
 }
 
+// Rejects active aionino transport when no physical World is configured.
 TEST_F(GGEMSWorldTransportTest, AioninoRequiresExplicitWorld) {
   auto source = std::make_shared<sources::GGEMSSource>();
   source->SetEmittedParticleType(particles::GGEMSParticleType::Aionino)
@@ -702,15 +700,17 @@ TEST_F(GGEMSWorldTransportTest, AioninoRequiresExplicitWorld) {
   EXPECT_FALSE(run.GetLastSourceRunSnapshot().has_value());
 }
 
+// Checks exact simultaneous face masks from the device navigation helper.
 TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
   std::size_t device_index{};
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     auto const current_device = device_index++;
     SCOPED_TRACE(context.GetDevice().GetName());
     std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
     auto const &program = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-      context, root / "tests", "world_navigation_probe",
-      std::format("-I{}", root.generic_string()));
+      context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+      "world_navigation_probe", std::format("-I{}", root.generic_string()));
     ocl::GGEMSOpenCLKernel kernel{
       context, program.CreateKernel("world_navigation_probe"),
       "world_navigation_probe"};
@@ -773,8 +773,11 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
   }
 }
 
+// Executes device ABI probes to verify shared record offsets and adjacent
+// elements.
 TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     std::array<geometry::GGEMSWorldRecord, 2> const worlds{
       {{.half_extent_x_pm = 11, .half_extent_y_pm = 23, .half_extent_z_pm = 37},
@@ -813,7 +816,7 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
     auto output = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
     auto const &program = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-      context, root / "tests", "world_abi_probe",
+      context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT}, "world_abi_probe",
       std::format("-I{}", root.generic_string()));
     ocl::GGEMSOpenCLKernel kernel{
       context, program.CreateKernel("world_abi_probe"), "world_abi_probe"};
@@ -873,6 +876,8 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
   }
 }
 
+// Preserves non-aionino diagnostic movement even when physical geometry is
+// configured.
 TEST_F(GGEMSWorldTransportTest, OtherSpeciesKeepDiagnosticMovementWithWorld) {
   using namespace units;
   for (auto type : {particles::GGEMSParticleType::Gamma,
@@ -907,6 +912,7 @@ TEST_F(GGEMSWorldTransportTest, OtherSpeciesKeepDiagnosticMovementWithWorld) {
   }
 }
 
+// Allows a disabled aionino slot without imposing an unused World requirement.
 TEST_F(GGEMSWorldTransportTest, DisabledAioninoDoesNotRequireWorld) {
   auto disabled = std::make_shared<sources::GGEMSSource>();
   disabled->SetEmittedParticleType(particles::GGEMSParticleType::Aionino)

@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks activity driven run behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -35,6 +37,8 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/GGEMSRun.hh"
@@ -160,14 +164,7 @@ protected:
   std::uint32_t saved_worker_count_{0U};
 
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 };
 
@@ -176,6 +173,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST_F(GGEMSActivityDrivenRunTest,
        RetriesDuplicateActivitySourceSlotsAfterInvalidReferenceTime) {
   auto radionuclide = MakeMonoRadionuclide();
@@ -215,6 +214,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
 // =============================================================================
 // =============================================================================
 
+// Canonical energy quanta and table-free monochromatic sampling must remain
+// exact.
 TEST_F(GGEMSActivityDrivenRunTest,
        InitializesFinalizesAndKeepsIdsMonotoneAcrossResetTime) {
   auto radionuclide = MakeMonoRadionuclide();
@@ -325,6 +326,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST_F(GGEMSActivityDrivenRunTest,
        EmptyWindowCommitsPlannerAndAdvancesWithoutConsumingPrimaryIds) {
   constexpr std::uint64_t k_empty_then_non_empty_seed{2ULL};
@@ -342,7 +345,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>>
     reference_sources{
-      MakeActivitySource(radionuclide, k_empty_then_non_empty_activity_bq)};
+      MakeActivitySource(radionuclide, k_empty_then_non_empty_activity_bq),
+  };
   auto reference_random = MakeRandom();
   reference_random->SetSeed(k_empty_then_non_empty_seed);
   ggems::core::sources::GGEMSSourcePopulationPlanner reference_planner{
@@ -415,6 +419,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
 // =============================================================================
 // =============================================================================
 
+// Preflight rejection must leave the last committed run state intact.
 TEST_F(GGEMSActivityDrivenRunTest,
        PreflightFailurePreservesPlannerSnapshotObserverClockAndIds) {
   auto radionuclide = MakeMonoRadionuclide();

@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks production workloads, capture policies, and repeated execution.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -54,6 +56,7 @@
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -285,16 +288,13 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -303,6 +303,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Checks diagnostic endpoints on all signed axes and unchanged particle
+// metadata.
 TEST_F(GGEMSTransportWorkloadTest,
        ProjectsSixCardinalSourcesAndPreservesState) {
   constexpr std::array<std::array<std::int64_t, 3U>, 6U> k_positions{
@@ -328,6 +330,7 @@ TEST_F(GGEMSTransportWorkloadTest,
   };
 
   std::vector<SourceRecord> source_records;
+  source_records.reserve(k_positions.size());
 
   for (std::size_t index = 0U; index < k_positions.size(); ++index) {
     source_records.push_back(
@@ -372,6 +375,8 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks diagonal projection against an independently propagated FP32 error
+// bound.
 TEST_F(GGEMSTransportWorkloadTest,
        ProjectsStoredBinary32DiagonalWithinArithmeticBudget) {
   SourceRecord const source =
@@ -407,6 +412,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks that source species survives primary initialization and transport.
 TEST_F(GGEMSTransportWorkloadTest,
        InitializesConfiguredParticleTypeGenerically) {
   SourceRecord const source =
@@ -438,6 +444,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Preserves slot identity for empty and repeated source records.
 TEST_F(GGEMSTransportWorkloadTest,
        PreservesZeroPrimaryAndDuplicateSourceSlots) {
   SourceRecord const source_a =
@@ -479,6 +486,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks overlapping observer policies retain each requested history once.
 TEST_F(GGEMSTransportWorkloadTest,
        CombinesObserverPoliciesWithoutDuplicateHistories) {
   SourceRecord const source_0 =
@@ -532,6 +540,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Separates record-retention overflow from transport execution failures.
 TEST_F(GGEMSTransportWorkloadTest,
        ObserverOverflowIsIndependentFromTransportOverflow) {
   SourceRecord const source =
@@ -566,6 +575,8 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks source-local identity when a synthetic selected-device slice crosses
+// sources.
 TEST_F(GGEMSTransportWorkloadTest,
        PreservesSourceLocalIdsAcrossADeviceSliceBoundary) {
   SourceRecord const source_0 =
@@ -600,6 +611,8 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Checks stable device memory use and repeated transport for every random
+// engine.
 TEST_F(GGEMSTransportWorkloadTest,
        RunsAllRandomEnginesTwiceWithoutAdditionalSVMAllocation) {
   constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
@@ -659,6 +672,8 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Validates only emitting slots while rejecting unsupported active particle
+// species.
 TEST_F(GGEMSTransportWorkloadTest,
        IgnoresUnsupportedZeroPrimarySlotButRejectsItWhenNonZero) {
   SourceRecord unsupported =
@@ -700,6 +715,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 // =============================================================================
 // =============================================================================
 
+// Separates finite physical endpoints from invalid population ranges.
 TEST_F(GGEMSTransportWorkloadTest,
        AcceptsFp32EndpointsOutsideIntegerExportRangeAndRejectsInvalidRanges) {
   SourceRecord const overflowing = MakeSourceRecord(
@@ -743,11 +759,13 @@ TEST_F(GGEMSTransportWorkloadTest,
                ggems::core::GGEMSRecoverable);
 }
 
+// Rejects a workload with no stable source slots before allocating transport
+// state.
 TEST_F(GGEMSTransportWorkloadTest, RejectsZeroStableSourceCount) {
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(10ULL);
 
-  auto construct = [&]() -> void {
+  auto construct = [&] -> void {
     TransportWorkload workload{GetContext(),
                                std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
                                random,
@@ -761,6 +779,7 @@ TEST_F(GGEMSTransportWorkloadTest, RejectsZeroStableSourceCount) {
   EXPECT_THROW(construct(), ggems::core::GGEMSExceptionBase);
 }
 
+// Checks wide source populations and bounds of the requested transport slice.
 TEST(GGEMSTransportRunRanges,
      PreservesFiniteUint64PopulationAndChecksDeviceSlice) {
   SourceRecord const source =
@@ -785,6 +804,7 @@ TEST(GGEMSTransportRunRanges,
   EXPECT_THROW(validate(), ggems::core::GGEMSRecoverable);
 }
 
+// Rejects source-count sums that would overflow the global history range.
 TEST(GGEMSTransportRunRanges, RejectsWrappedSourcePopulationTotal) {
   SourceRecord const source =
     MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});

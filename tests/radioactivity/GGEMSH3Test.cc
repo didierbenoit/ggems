@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks h3 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -55,6 +57,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSH3Test, BuildsExactIdentityAndSingleBetaMinusEmission) {
   GGEMSRadionuclideDefinition const definition = BuildH3Radionuclide();
 
@@ -77,6 +81,8 @@ TEST(GGEMSH3Test, BuildsExactIdentityAndSingleBetaMinusEmission) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSH3Test, PreservesExperimentalBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildH3Radionuclide();
   auto const &distribution =

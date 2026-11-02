@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks isotope mass authority behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -65,6 +67,8 @@ auto ExpectMolarMass(materials::GGEMSIsotope const &isotope,
 // =============================================================================
 // =============================================================================
 
+// Scientific values must agree with the independent pinned reference rather
+// than a self-generated expectation.
 TEST(GGEMSIsotopeMassAuthorityTest, ResolvesAme2020MolarMasses) {
   ExpectMolarMass({1U, 1U, 0U}, 1.007825031898L * k_molar_mass_constant);
   ExpectMolarMass({1U, 2U, 0U}, 2.014101777844L * k_molar_mass_constant);
@@ -82,6 +86,8 @@ TEST(GGEMSIsotopeMassAuthorityTest, ResolvesAme2020MolarMasses) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSIsotopeMassAuthorityTest, ResolvesTantalumGroundAndIsomerMasses) {
   ExpectMolarMass({73U, 180U, 0U}, 179.947467589L * k_molar_mass_constant);
 
@@ -93,6 +99,8 @@ TEST(GGEMSIsotopeMassAuthorityTest, ResolvesTantalumGroundAndIsomerMasses) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSIsotopeMassAuthorityTest, CoversEveryDefaultIsotopicComposition) {
   auto const &authority = materials::GetIsotopeMassAuthority();
 

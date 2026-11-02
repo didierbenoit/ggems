@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks element catalog behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -140,6 +142,8 @@ constexpr std::array<ExpectedElement, 12U> k_expected_elements{
 // =============================================================================
 // =============================================================================
 
+// Stable semantic ordering must be independent of the order in which the
+// caller supplied data.
 TEST(GGEMSElementCatalogTest, ProvidesAllElementsInAtomicNumberOrder) {
   auto const elements = materials::GetElements();
 
@@ -179,6 +183,8 @@ TEST(GGEMSElementCatalogTest, ProvidesAllElementsInAtomicNumberOrder) {
 // =============================================================================
 // =============================================================================
 
+// Unsupported identities must fail explicitly without approximate lookup or
+// substitution.
 TEST(GGEMSElementCatalogTest, RejectsInvalidOrInexactLookup) {
   EXPECT_EQ(materials::FindElementByAtomicNumber(0U), nullptr);
   EXPECT_EQ(materials::FindElementByAtomicNumber(100U), nullptr);
@@ -206,6 +212,8 @@ TEST(GGEMSElementCatalogTest, RejectsInvalidOrInexactLookup) {
 // =============================================================================
 // =============================================================================
 
+// Scientific values must agree with the independent pinned reference rather
+// than a self-generated expectation.
 TEST(GGEMSElementCatalogTest, PreservesRepresentativeScientificValues) {
   for (auto const &expected : k_expected_elements) {
     SCOPED_TRACE(expected.atomic_number);
@@ -222,6 +230,8 @@ TEST(GGEMSElementCatalogTest, PreservesRepresentativeScientificValues) {
 // =============================================================================
 // =============================================================================
 
+// Unsupported identities must fail explicitly without approximate lookup or
+// substitution.
 TEST(GGEMSElementCatalogTest, RejectsLegacyOrNonCanonicalElementNames) {
   EXPECT_EQ(materials::FindElementByName("Vandium"), nullptr);
   EXPECT_EQ(materials::FindElementByName("Phosphor"), nullptr);

@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks poisson sampler behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -36,7 +38,6 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/random/GGEMSPoissonSampler.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
@@ -72,6 +73,8 @@ static_assert(std::is_same_v<
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSPoissonSamplerTest, ZeroMeanReturnsZeroWithoutConsumingRandomState) {
   for (GGEMSRandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -89,6 +92,8 @@ TEST(GGEMSPoissonSamplerTest, ZeroMeanReturnsZeroWithoutConsumingRandomState) {
 // =============================================================================
 // =============================================================================
 
+// A fixed stream must replay within its contract and continue without
+// unintended reset.
 TEST(GGEMSPoissonSamplerTest,
      FixedConfigurationProducesDeterministicContinuation) {
   constexpr std::array<long double, 6> means{
@@ -114,36 +119,47 @@ TEST(GGEMSPoissonSamplerTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSPoissonSamplerTest, SamplesRepresentativeSmallMeansByInversion) {
+// Sampled populations must agree with the independent Poisson law over the
+// declared mean range.
+TEST(GGEMSPoissonSamplerTest, SmallMeanSamplesMatchIndependentPoissonCDF) {
   GGEMSRandom configuration{};
   configuration.SetEngine(GGEMSRandomEngine::PCG32).SetSeed(1'234ULL);
   GGEMSHostRandomStream random{configuration, 17ULL};
+  GGEMSHostRandomStream reference{configuration, 17ULL};
 
   for (long double mean : {0.1L, 1.0L, 10.0L, 29.999L}) {
+    SCOPED_TRACE(mean);
+
     for (std::size_t sample = 0U; sample < 128U; ++sample) {
-      EXPECT_NO_THROW((void)SamplePoisson(mean, random));
+      auto const value = SamplePoisson(mean, random);
+      auto const target =
+        static_cast<long double>(reference.UniformDoubleOpen01());
+
+      // Evaluate each PMF term independently from its closed logarithmic form.
+      long double lower_cdf{0.0L};
+      for (std::uint64_t count = 0ULL; count < value; ++count) {
+        auto const count_value = static_cast<long double>(count);
+        lower_cdf += std::exp(-mean + (count_value * std::log(mean)) -
+                              std::lgamma(count_value + 1.0L));
+      }
+      auto const value_as_real = static_cast<long double>(value);
+      long double const upper_cdf =
+        lower_cdf + std::exp(-mean + (value_as_real * std::log(mean)) -
+                             std::lgamma(value_as_real + 1.0L));
+
+      EXPECT_LT(lower_cdf, target);
+      EXPECT_GE(upper_cdf, target);
     }
   }
+
+  EXPECT_EQ(random.NextUInt32(), reference.NextUInt32());
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSPoissonSamplerTest, SamplesRepresentativeLargeMeansByPTRS) {
-  GGEMSRandom configuration{};
-  configuration.SetEngine(GGEMSRandomEngine::Philox).SetSeed(1'234ULL);
-  GGEMSHostRandomStream random{configuration, 17ULL};
-
-  for (long double mean : {30.0L, 1'000.0L, 1.0e8L}) {
-    for (std::size_t sample = 0U; sample < 128U; ++sample) {
-      EXPECT_NO_THROW((void)SamplePoisson(mean, random));
-    }
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSPoissonSamplerTest, SamplesLargeRepresentableMeanWithinUInt64Range) {
   GGEMSRandom configuration{};
   configuration.SetEngine(GGEMSRandomEngine::PCG32).SetSeed(1'234ULL);
@@ -151,6 +167,7 @@ TEST(GGEMSPoissonSamplerTest, SamplesLargeRepresentableMeanWithinUInt64Range) {
 
   for (std::size_t sample = 0U; sample < 128U; ++sample) {
     std::uint64_t const value = SamplePoisson(1.0e18L, random);
+    EXPECT_GT(value, std::numeric_limits<std::uint32_t>::max());
     EXPECT_LT(value, std::numeric_limits<std::uint64_t>::max());
   }
 }
@@ -158,9 +175,11 @@ TEST(GGEMSPoissonSamplerTest, SamplesLargeRepresentableMeanWithinUInt64Range) {
 // =============================================================================
 // =============================================================================
 
+// Sampled populations must agree with the independent Poisson law over the
+// declared mean range.
 TEST(GGEMSPoissonSamplerTest, AggregateMeanAndVarianceArePlausible) {
   constexpr std::size_t k_sample_count{20'000U};
-  constexpr std::array<long double, 3> means{1.0L, 30.0L, 1'000.0L};
+  constexpr std::array<long double, 4> means{1.0L, 30.0L, 1'000.0L, 1.0e8L};
 
   for (long double expected_mean : means) {
     SCOPED_TRACE(static_cast<double>(expected_mean));

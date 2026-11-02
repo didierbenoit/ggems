@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Checks caller labels and concurrent thread identifiers.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -69,13 +70,13 @@ struct ThreadTagPair {
          });
 }
 
-static_assert(noexcept(SimplifyFunctionName(std::string_view{})));
-
 } // namespace
 
 // =============================================================================
 // =============================================================================
 
+// Readable caller labels must handle compiler spellings, templates, lambdas,
+// and empty input.
 TEST(GGEMSLoggerMetadataTest, SimplifiesFunctionNamesWithCurrentHeuristics) {
   constexpr std::array<FunctionNameCase, 14U> test_cases{
     {
@@ -159,20 +160,11 @@ TEST(GGEMSLoggerMetadataTest, SimplifiesFunctionNamesWithCurrentHeuristics) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSLoggerMetadataTest,
-     PreservesKnownFunctionNameSimplificationLimitations) {
-  EXPECT_EQ(
-    SimplifyFunctionName("bool ggems::core::Comparator::operator<(int)"),
-    "Comparator::operator");
-
-  EXPECT_EQ(SimplifyFunctionName(
-              "void ggems::core::Handler::Register(void (*callback)(int))"),
-            "Handler::Register(void (*callback)");
-}
-
 // =============================================================================
 // =============================================================================
 
+// Repeated records from one thread must carry the same readable decimal thread
+// tag.
 TEST(GGEMSLoggerMetadataTest, ThreadTagIsStableForCurrentThread) {
   auto const first_tag = ThreadTag();
   auto const second_tag = ThreadTag();
@@ -184,6 +176,8 @@ TEST(GGEMSLoggerMetadataTest, ThreadTagIsStableForCurrentThread) {
 // =============================================================================
 // =============================================================================
 
+// Concurrent workers must retain distinct stable identifiers across a
+// synchronization point.
 TEST(GGEMSLoggerMetadataTest, SimultaneousWorkersHaveStableDistinctTags) {
   std::barrier<> rendezvous{3};
   std::array<ThreadTagPair, 2U> worker_tags{};

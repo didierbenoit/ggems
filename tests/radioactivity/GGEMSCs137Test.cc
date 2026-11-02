@@ -51,6 +51,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSCs137Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildCs137Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Cs-137");
@@ -81,6 +83,8 @@ TEST(GGEMSCs137Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSCs137Test, PreservesBetaMinus51397Kev) {
   auto const definition = BuildCs137Radionuclide();
   auto const &distribution =
@@ -142,6 +146,8 @@ TEST(GGEMSCs137Test, PreservesBetaMinus51397Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSCs137Test, PreservesBetaMinus89217Kev) {
   auto const definition = BuildCs137Radionuclide();
   auto const &distribution =
@@ -203,6 +209,8 @@ TEST(GGEMSCs137Test, PreservesBetaMinus89217Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSCs137Test, PreservesBetaMinus117563Kev) {
   auto const definition = BuildCs137Radionuclide();
   auto const &distribution =

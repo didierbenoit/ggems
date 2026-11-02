@@ -35,6 +35,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMSLongDoubleAssertions.hh"
+#include "GGEMSRadionuclideAssertions.hh"
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
@@ -50,6 +51,8 @@ using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::builtins::BuildCu64Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistributionType;
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSCu64Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildCu64Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Cu-64");
@@ -86,6 +89,8 @@ TEST(GGEMSCu64Test, PreservesIdentityAndOrderedMarginalYields) {
                        1.0e-14L);
 }
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSCu64Test, PreservesBetaMinus5794Kev) {
   auto const definition = BuildCu64Radionuclide();
   auto const &distribution =
@@ -143,6 +148,8 @@ TEST(GGEMSCu64Test, PreservesBetaMinus5794Kev) {
   }
 }
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSCu64Test, PreservesBetaPlus65303Kev) {
   auto const definition = BuildCu64Radionuclide();
   auto const &distribution =
@@ -200,6 +207,8 @@ TEST(GGEMSCu64Test, PreservesBetaPlus65303Kev) {
   }
 }
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCu64Test, PreservesNuclearGamma) {
   auto const definition = BuildCu64Radionuclide();
   auto const &distribution =
@@ -208,6 +217,8 @@ TEST(GGEMSCu64Test, PreservesNuclearGamma) {
             1'345'770'000'000ULL);
 }
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCu64Test, PreservesAtomicXray) {
   auto const definition = BuildCu64Radionuclide();
   auto const &distribution =
@@ -260,58 +271,38 @@ TEST(GGEMSCu64Test, PreservesAtomicXray) {
                        7.3772384819689547L, 7.9106929004192352e-09L);
 }
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCu64Test, PreservesConversion134577Kev) {
   auto const definition = BuildCu64Radionuclide();
-  auto const &distribution =
-    definition.GetEmissions()[4U].GetEnergyDistribution();
-  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-  auto const weights = distribution.GetRelativeWeights();
-  auto const tickets = distribution.GetCumulativeTicketUpperBounds();
-  // Independently selected LNHB line energies and absolute intensities.
-  constexpr std::array<std::uint64_t, 4U> expected_energies{
-    1'337'420'000'000ULL,
-    1'344'740'000'000ULL,
-    1'344'880'000'000ULL,
-    1'344'900'000'000ULL,
-  };
-  constexpr std::array<double, 4U> expected_weights{
-    5.28e-07,
-    5.08e-08,
-    3.85e-10,
-    4.7e-10,
-  };
-  ASSERT_EQ(energies.size(), 4U);
-  EXPECT_EQ(distribution.GetTableCount(), 4U);
-  ASSERT_EQ(weights.size(), energies.size());
-  ASSERT_EQ(tickets.size(), energies.size());
-  long double weight_sum{0.0L};
-  long double moment{0.0L};
-  long double ticket_moment{0.0L};
-  std::uint64_t previous_ticket{0ULL};
-  for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_TRUE(std::isfinite(weights[index]));
-    EXPECT_GT(weights[index], 0.0);
-    EXPECT_GT(tickets[index], previous_ticket);
-    EXPECT_EQ(energies[index], expected_energies[index]);
-    EXPECT_DOUBLE_EQ(weights[index], expected_weights[index]);
-    weight_sum += static_cast<long double>(weights[index]);
-    moment += static_cast<long double>(weights[index]) *
-              static_cast<long double>(energies[index]);
-    ticket_moment +=
-      static_cast<long double>(tickets[index] - previous_ticket) *
-      static_cast<long double>(energies[index]);
-    previous_ticket = tickets[index];
+  auto const emissions = definition.GetEmissions();
+  ASSERT_GT(emissions.size(), 4U);
+
+  {
+    SCOPED_TRACE("PreservesConversion134577Kev");
+    // Independent evaluated line energies and absolute intensities.
+    constexpr std::array<std::uint64_t, 4U> expected_energies{
+      1'337'420'000'000ULL,
+      1'344'740'000'000ULL,
+      1'344'880'000'000ULL,
+      1'344'900'000'000ULL,
+    };
+    constexpr std::array<double, 4U> expected_weights{
+      5.28e-07,
+      5.08e-08,
+      3.85e-10,
+      4.7e-10,
+    };
+
+    ggems::test::ExpectRadionuclideLines(emissions[4U].GetEnergyDistribution(),
+                                         expected_energies, expected_weights,
+                                         5.79655E-7L, 1338.0725324546497L,
+                                         7.9662928581237804e-09L);
   }
-  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
-  long double const keV =
-    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  GGEMS_EXPECT_NEAR_LD(weight_sum, 5.79655E-7L, 1.0e-14L);
-  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1338.0725324546497L, 1.0e-9L);
-  // At most one ticket of error per line from largest-remainder allocation.
-  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
-                       1338.0725324546497L, 7.9662928581237804e-09L);
 }
 
+// The direct-parent source must not acquire daughter emissions or unsupported
+// channels.
 TEST(GGEMSCu64Test, ExcludesUnsupportedDiscreteEmissions) {
   auto const definition = BuildCu64Radionuclide();
   for (auto const &emission : definition.GetEmissions()) {

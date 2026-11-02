@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Checks RGB variants and terminal color encoding.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -70,6 +71,8 @@ auto ExpectRGB(render::RGB const &color, std::uint8_t red, std::uint8_t green,
 // =============================================================================
 // =============================================================================
 
+// RGB construction and representative palette entries must retain each channel
+// independently.
 TEST(GGEMSColorTest, BuildsRgbAndRepresentativePaletteEntries) {
   ExpectRGB(render::MakeRGB(12U, 34U, 56U), 12U, 34U, 56U);
   ExpectRGB(render::base_palette[static_cast<std::size_t>(
@@ -89,6 +92,8 @@ TEST(GGEMSColorTest, BuildsRgbAndRepresentativePaletteEntries) {
 // =============================================================================
 // =============================================================================
 
+// Bright and faint variants must preserve channel endpoints and the documented
+// byte arithmetic.
 TEST(GGEMSColorTest, TransformsChannelsAndAppliesVariants) {
   EXPECT_EQ(render::BrightenChannel(0U), 85U);
   EXPECT_EQ(render::BrightenChannel(90U), 145U);
@@ -109,6 +114,7 @@ TEST(GGEMSColorTest, TransformsChannelsAndAppliesVariants) {
 // =============================================================================
 // =============================================================================
 
+// Palette lookup must return the requested shade and bound oversized indices.
 TEST(GGEMSColorTest, RetrievesPaletteColorsAndClampsShade) {
   ExpectRGB(
     render::GetColorRGB(render::ColorFamily::Green,
@@ -127,6 +133,8 @@ TEST(GGEMSColorTest, RetrievesPaletteColorsAndClampsShade) {
 // =============================================================================
 // =============================================================================
 
+// Terminal foreground and background colors must emit distinct, exact ANSI
+// control sequences.
 TEST(GGEMSColorTest, EncodesForegroundAndBackgroundAnsiColors) {
   auto const foreground = render::MakeColor(
     render::ColorFamily::Green,
@@ -144,6 +152,8 @@ TEST(GGEMSColorTest, EncodesForegroundAndBackgroundAnsiColors) {
 // =============================================================================
 // =============================================================================
 
+// Both color encoders must emit independently expected bytes and preserve
+// existing text.
 TEST(GGEMSColorTest, AppendAnsiColorMatchesAnsiColor) {
   constexpr std::array keys{
     render::MakeColor(render::ColorFamily::Red, 3U,
@@ -154,16 +164,25 @@ TEST(GGEMSColorTest, AppendAnsiColorMatchesAnsiColor) {
                       render::ColorLayer::Background),
   };
 
-  for (auto const &key : keys) {
+  constexpr std::array<std::string_view, 2U> expected{
+    "\033[38;2;231;98;125m",
+    "\033[48;2;68;136;113m",
+  };
+
+  for (std::size_t index = 0U; index < keys.size(); ++index) {
+    auto const &key = keys[index];
     std::string appended{"prefix"};
     render::AppendAnsiColor(appended, key);
-    EXPECT_EQ(appended, std::string{"prefix"} + render::AnsiColor(key));
+    EXPECT_EQ(render::AnsiColor(key), expected[index]);
+    EXPECT_EQ(appended, std::string{"prefix"} + std::string{expected[index]});
   }
 }
 
 // =============================================================================
 // =============================================================================
 
+// Formatting controls must encode exact terminal bytes and append without
+// losing the prefix.
 TEST(GGEMSColorTest, AnsiControlCodesMatchAppendOperation) {
   struct ControlCase {
     render::AnsiControl control;

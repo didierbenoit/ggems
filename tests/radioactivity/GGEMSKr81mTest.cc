@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSKr81mTest, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildKr81mRadionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Kr-81m");
@@ -97,6 +99,8 @@ TEST(GGEMSKr81mTest, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSKr81mTest, PreservesNuclearGamma) {
   auto const definition = BuildKr81mRadionuclide();
   auto const &distribution =
@@ -108,6 +112,8 @@ TEST(GGEMSKr81mTest, PreservesNuclearGamma) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSKr81mTest, PreservesAtomicXray) {
   auto const definition = BuildKr81mRadionuclide();
   auto const &distribution =
@@ -170,6 +176,8 @@ TEST(GGEMSKr81mTest, PreservesAtomicXray) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSKr81mTest, PreservesAtomicXrayWeak1) {
   auto const definition = BuildKr81mRadionuclide();
   auto const &distribution =
@@ -250,6 +258,8 @@ TEST(GGEMSKr81mTest, PreservesAtomicXrayWeak1) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSKr81mTest, PreservesAugerElectron) {
   auto const definition = BuildKr81mRadionuclide();
   auto const &distribution =
@@ -345,6 +355,8 @@ TEST(GGEMSKr81mTest, PreservesAugerElectron) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSKr81mTest, PreservesConversionElectron) {
   auto const definition = BuildKr81mRadionuclide();
   auto const &distribution =

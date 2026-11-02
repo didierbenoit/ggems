@@ -35,13 +35,14 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
@@ -328,13 +329,6 @@ auto CheckHistory(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   } else {
     EXPECT_GT(solid_parameter, 0.0);
   }
-  std::cout << std::format(
-    "TOLERANCE_CASE,{},{},initial={},events={},completed={},unresolved={},"
-    "solid_parameter_pm={}\n",
-    context.GetDevice().GetName(), scene.name,
-    result.trace[test::k_initial_owner_index], result.trace[0],
-    counts.completed_history_count, counts.unresolved_geometry_count,
-    solid_parameter);
 }
 
 // =============================================================================
@@ -345,19 +339,16 @@ auto RunScenes(std::vector<Scene> const &scenes) -> void {
   auto const source = test::InstrumentStream(root);
   random::GGEMSRandom random;
   random.SetEngine("philox").SetSeed(91231);
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     auto const options =
       std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
                   root.generic_string(), random.GetKernelBuildDefinition());
     auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
       context, root / "transport", "particle_stream_transport", options);
-    cl::Program program{context.GetContextNative(), source};
-    auto const device = context.GetDevice().GetDeviceNative();
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(source, production.GetBuildOptions());
     for (auto const &scene : scenes) {
       CheckHistory(context, program, production.GetProgramNative(), random,
                    scene);
@@ -369,6 +360,7 @@ auto RunScenes(std::vector<Scene> const &scenes) -> void {
 // =============================================================================
 // =============================================================================
 
+// Checks exact band endpoints and adjacent FP32 values at medical scales.
 TEST_F(GGEMSNavigationDeviceTest, SphereToleranceBandAndMedicalScales) {
   std::vector<Scene> scenes;
   std::array<std::int64_t, 3> const sizes{100 * k_mm, 1000 * k_mm, 3000 * k_mm};
@@ -381,10 +373,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereToleranceBandAndMedicalScales) {
     float const inner = radius - band;
     float const outer = radius + band;
     EXPECT_GT(band, 128.0F);
-    std::cout << std::format("TOLERANCE_POLICY,world_pm={},radius_pm={},"
-                             "half_band_nm={},radius_ulp_pm={}\n",
-                             sizes[scale], radius, band / 1000.0F,
-                             std::nextafter(radius, INFINITY) - radius);
+
     auto const name = [scale](char const *label) -> std::string {
       return std::format("scale{} {}", scale, label);
     };
@@ -432,6 +421,8 @@ TEST_F(GGEMSNavigationDeviceTest, SphereToleranceBandAndMedicalScales) {
 // =============================================================================
 // =============================================================================
 
+// Checks oblique surface ownership after large translations and with equal
+// materials.
 TEST_F(GGEMSNavigationDeviceTest, SphereToleranceTranslatedOblique) {
   std::vector<Scene> scenes;
   for (int exponent : {28, 30, 33}) {
@@ -465,6 +456,7 @@ TEST_F(GGEMSNavigationDeviceTest, SphereToleranceTranslatedOblique) {
 // =============================================================================
 // =============================================================================
 
+// Checks remote small features and World surface-band admission in transport.
 TEST_F(GGEMSNavigationDeviceTest,
        NavigationToleranceWorldBoxAndRemoteFeatures) {
   std::vector<Scene> scenes;

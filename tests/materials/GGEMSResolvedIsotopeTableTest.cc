@@ -21,11 +21,12 @@
 
 /*!
  * \file
+ * \brief Checks resolved isotope table behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <limits>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -39,6 +40,8 @@ namespace materials = ggems::core::materials;
 // =============================================================================
 // =============================================================================
 
+// Identity lookup must preserve the complete supported key independently of
+// optional properties.
 TEST(GGEMSResolvedIsotopeTableTest, FindsExactKeysOnly) {
   materials::GGEMSResolvedIsotopeTable const table{{
     {.isotope = {73U, 180U, 1U}, .molar_mass_grams_per_mole = 179.95L},
@@ -72,6 +75,8 @@ TEST(GGEMSResolvedIsotopeTableTest, FindsExactKeysOnly) {
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSResolvedIsotopeTableTest, PropertiesDoNotRedefineIdentity) {
   materials::GGEMSResolvedIsotope const first{
     .isotope = {5U, 10U, 0U},

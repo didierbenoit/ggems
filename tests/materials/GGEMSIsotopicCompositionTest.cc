@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks isotopic composition behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -67,6 +69,8 @@ auto MakeComposition(Basis basis,
 // =============================================================================
 // =============================================================================
 
+// Stable semantic ordering must be independent of the order in which the
+// caller supplied data.
 TEST(GGEMSIsotopicCompositionTest, CanonicalOrderIsIndependentOfInputOrder) {
   std::vector<materials::GGEMSIsotopeFraction> const entries{
     {.isotope = k_oxygen_18, .fraction = 0.00205L},
@@ -101,6 +105,8 @@ TEST(GGEMSIsotopicCompositionTest, CanonicalOrderIsIndependentOfInputOrder) {
 // =============================================================================
 // =============================================================================
 
+// Atom and mass authoring bases must produce the correct isotope population
+// and densities.
 TEST(GGEMSIsotopicCompositionTest, BasisIsPartOfTheComposition) {
   auto const atom = MakeComposition(Basis::AtomFraction,
                                     {
@@ -122,6 +128,8 @@ TEST(GGEMSIsotopicCompositionTest, BasisIsPartOfTheComposition) {
 // =============================================================================
 // =============================================================================
 
+// Fraction admission and normalization must preserve supported constituents
+// and reject malformed totals.
 TEST(GGEMSIsotopicCompositionTest, NormalizesAdmittedSumOnce) {
   long double const scale = 1.0L + 0x1p-18L;
 
@@ -142,6 +150,8 @@ TEST(GGEMSIsotopicCompositionTest, NormalizesAdmittedSumOnce) {
 // =============================================================================
 // =============================================================================
 
+// Fraction admission and normalization must preserve supported constituents
+// and reject malformed totals.
 TEST(GGEMSIsotopicCompositionTest, RemovesExplicitZeroEntries) {
   auto const with_zero = MakeComposition(
     Basis::AtomFraction, {
@@ -159,6 +169,8 @@ TEST(GGEMSIsotopicCompositionTest, RemovesExplicitZeroEntries) {
 // =============================================================================
 // =============================================================================
 
+// Fraction admission and normalization must preserve supported constituents
+// and reject malformed totals.
 TEST(GGEMSIsotopicCompositionTest, AppliesProvisionalSumAdmissionPolicy) {
   auto const make_single =
     [](long double fraction) -> materials::GGEMSIsotopicComposition {
@@ -177,6 +189,8 @@ TEST(GGEMSIsotopicCompositionTest, AppliesProvisionalSumAdmissionPolicy) {
 // =============================================================================
 // =============================================================================
 
+// Fraction admission and normalization must preserve supported constituents
+// and reject malformed totals.
 TEST(GGEMSIsotopicCompositionTest, RejectsInvalidKeysAndFractionSums) {
   auto const expect_rejected =
     [](std::vector<materials::GGEMSIsotopeFraction> fractions) -> void {

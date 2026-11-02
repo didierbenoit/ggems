@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks activity units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -58,6 +60,8 @@ static_assert(std::is_same_v<Activity::representation, std::uint64_t>);
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSActivityUnitsTest, ConvertsBecquerelSIPrefixesExactly) {
   struct Case {
     std::string_view unit;
@@ -85,6 +89,8 @@ TEST(GGEMSActivityUnitsTest, ConvertsBecquerelSIPrefixesExactly) {
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSActivityUnitsTest, ConvertsCurieFamilyExactly) {
   auto const curie = MakeQuantity<Activity>(1.0L, "Ci");
   auto const millicurie = MakeQuantity<Activity>(1.0L, "mCi");
@@ -101,6 +107,8 @@ TEST(GGEMSActivityUnitsTest, ConvertsCurieFamilyExactly) {
 // =============================================================================
 // =============================================================================
 
+// Zero activity is a valid inactive source rather than an invalid physical
+// input.
 TEST(GGEMSActivityUnitsTest, AcceptsZeroActivity) {
   auto const converted = MakeQuantity<Activity>(0.0L, "TBq");
 
@@ -111,6 +119,8 @@ TEST(GGEMSActivityUnitsTest, AcceptsZeroActivity) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSActivityUnitsTest, RejectsNegativeActivity) {
   auto const converted = MakeQuantity<Activity>(-1.0L, "Bq");
 
@@ -121,6 +131,8 @@ TEST(GGEMSActivityUnitsTest, RejectsNegativeActivity) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSActivityUnitsTest, RejectsNonFiniteActivity) {
   for (long double value : {
          std::numeric_limits<long double>::quiet_NaN(),
@@ -137,6 +149,8 @@ TEST(GGEMSActivityUnitsTest, RejectsNonFiniteActivity) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSActivityUnitsTest, RejectsUnsupportedUnit) {
   auto const converted = MakeQuantity<Activity>(1.0L, "dpm");
 
@@ -147,6 +161,8 @@ TEST(GGEMSActivityUnitsTest, RejectsUnsupportedUnit) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSActivityUnitsTest, RejectsConversionOverflow) {
   auto const converted =
     MakeQuantity<Activity>(std::numeric_limits<long double>::max(), "TBq");
@@ -158,6 +174,8 @@ TEST(GGEMSActivityUnitsTest, RejectsConversionOverflow) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSActivityUnitsTest, HumanReadableUsesBecquerelPrefixes) {
   EXPECT_EQ(ggems::units::HumanReadable(Activity{999'000ULL}, 2), "999.00 Bq");
   EXPECT_EQ(ggems::units::HumanReadable(Activity{1'250'000ULL}, 2), "1.25 kBq");
@@ -172,6 +190,8 @@ TEST(GGEMSActivityUnitsTest, HumanReadableUsesBecquerelPrefixes) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSActivityUnitsTest, HumanReadableSupportsMinimumWidth) {
   EXPECT_EQ(ggems::units::HumanReadable(Activity{1'240'000ULL}, 1, 6),
             "   1.2 kBq");
@@ -180,6 +200,8 @@ TEST(GGEMSActivityUnitsTest, HumanReadableSupportsMinimumWidth) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSActivityUnitsTest, LiteralsStoreIntegerMillibecquerels) {
   using namespace ggems::units;
 
@@ -205,11 +227,15 @@ TEST(GGEMSActivityUnitsTest, LiteralsStoreIntegerMillibecquerels) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSActivityUnitsTest, DirectConstructionUsesCanonicalMillibecquerels) {
   ggems::units::Activity const activity{42ULL};
   EXPECT_EQ(activity.value, 42ULL);
 }
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSActivityUnitsTest,
      QuantizesMillibecquerelsAndRejectsTinyNegativeInput) {
   using namespace ggems::units;
@@ -229,6 +255,8 @@ TEST(GGEMSActivityUnitsTest,
   static_assert((0.5_mBq).value == 1);
 }
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSActivityUnitsTest,
      PreservesExactCanonicalRangeAndIntegralConversions) {
   using namespace ggems::units;
@@ -256,6 +284,8 @@ TEST(GGEMSActivityUnitsTest,
   EXPECT_EQ(floating_overflow.error(), UnitConversionError::OutOfRange);
 }
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSActivityUnitsTest,
      PreservesBecquerelDisplayForZeroAndSubBecquerelValues) {
   using namespace ggems::units;

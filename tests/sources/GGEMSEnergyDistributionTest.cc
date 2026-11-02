@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks energy distribution behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -136,6 +138,8 @@ auto ExpectDistributionUnchanged(
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSEnergyDistributionTypes, StableIdentifiersAndNames) {
   using ggems::core::sources::FromKernelEnergyDistributionType;
   using ggems::core::sources::ToKernelEnergyDistributionType;
@@ -162,6 +166,8 @@ TEST(GGEMSEnergyDistributionTypes, StableIdentifiersAndNames) {
 // =============================================================================
 // =============================================================================
 
+// Canonical energy quanta and table-free monochromatic sampling must remain
+// exact.
 TEST(GGEMSEnergyUnits, GenericConversionUsesExactMicroElectronVolts) {
   auto const mev =
     ggems::units::MakeQuantity<ggems::units::Energy>(0.120L, "MeV");
@@ -201,6 +207,8 @@ TEST(GGEMSEnergyUnits, GenericConversionUsesExactMicroElectronVolts) {
 // =============================================================================
 // =============================================================================
 
+// Canonical energy quanta and table-free monochromatic sampling must remain
+// exact.
 TEST(GGEMSEnergyDistribution, MonoIsExactAndTableFree) {
   Distribution const distribution = Distribution::BuildMono(100'000'001'000ULL);
 
@@ -224,6 +232,8 @@ TEST(GGEMSEnergyDistribution, MonoIsExactAndTableFree) {
 // =============================================================================
 // =============================================================================
 
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST(GGEMSEnergyDistribution, DiscreteLinesNormalizeAndPreserveExactLines) {
   constexpr std::array<double, 4U> energies{40.0, 60.0, 80.0, 120.0};
   constexpr std::array<double, 4U> weights{1.0, 0.0, 2.0, 1.0};
@@ -252,6 +262,8 @@ TEST(GGEMSEnergyDistribution, DiscreteLinesNormalizeAndPreserveExactLines) {
 // =============================================================================
 // =============================================================================
 
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST(GGEMSEnergyDistribution, DiscreteLinesRejectInvalidInput) {
   constexpr std::array<double, 2U> valid_energy{40.0, 80.0};
   constexpr std::array<double, 2U> valid_weight{1.0, 1.0};
@@ -298,7 +310,9 @@ TEST(GGEMSEnergyDistribution, DiscreteLinesRejectInvalidInput) {
                GGEMSException);
 
   std::array<double, 2U> nonfinite_energy{
-    40.0, std::numeric_limits<double>::quiet_NaN()};
+    40.0,
+    std::numeric_limits<double>::quiet_NaN(),
+  };
 
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
                  nonfinite_energy, valid_weight, "keV")),
@@ -314,6 +328,8 @@ TEST(GGEMSEnergyDistribution, DiscreteLinesRejectInvalidInput) {
 
 // =============================================================================
 // =============================================================================
+// Equal allocation remainders must resolve deterministically and retain every
+// sampling ticket.
 TEST(GGEMSEnergyDistribution,
      LargestRemainderUsesStableIndexTieBreakingAndExactTotal) {
   constexpr std::array<double, 3U> energies{40.0, 80.0, 120.0};
@@ -333,7 +349,10 @@ TEST(GGEMSEnergyDistribution,
   ASSERT_EQ(bounds.size(), 3U);
 
   std::array<std::uint64_t, 3U> const ticket_counts{
-    bounds[0U], bounds[1U] - bounds[0U], bounds[2U] - bounds[1U]};
+    bounds[0U],
+    bounds[1U] - bounds[0U],
+    bounds[2U] - bounds[1U],
+  };
   EXPECT_EQ(ticket_counts,
             (std::array<std::uint64_t, 3U>{715'827'883ULL, 1'431'655'765ULL,
                                            2'147'483'648ULL}));
@@ -354,6 +373,8 @@ TEST(GGEMSEnergyDistribution,
 
 // =============================================================================
 // =============================================================================
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST(GGEMSEnergyDistribution,
      RejectsPositiveWeightWithoutTicketAndPreservesSourceState) {
   constexpr std::array<double, 3U> valid_energies{40.0, 80.0, 120.0};
@@ -382,6 +403,8 @@ TEST(GGEMSEnergyDistribution,
 
 // =============================================================================
 // =============================================================================
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST(GGEMSEnergyDistribution, RegularSpectrumUsesCenterDefinedEvenGrid) {
   constexpr std::array<double, 3U> centers{20.0, 22.0, 24.0};
   constexpr std::array<double, 3U> weights{1.0, 2.0, 1.0};
@@ -408,6 +431,8 @@ TEST(GGEMSEnergyDistribution, RegularSpectrumUsesCenterDefinedEvenGrid) {
 
 // =============================================================================
 // =============================================================================
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST(GGEMSEnergyDistribution, RegularSpectrumRejectsInvalidGridAndWeights) {
   constexpr std::array<double, 3U> valid_centers{20.0, 22.0, 24.0};
   constexpr std::array<double, 3U> valid_weights{1.0, 2.0, 1.0};
@@ -458,7 +483,10 @@ TEST(GGEMSEnergyDistribution, RegularSpectrumRejectsInvalidGridAndWeights) {
   constexpr std::array<double, 2U> nonpositive_lower_edge_meV{1.0, 3.0};
   constexpr std::array<double, 2U> two_weights{1.0, 1.0};
   std::array<double, 3U> nonfinite_center{
-    20.0, 22.0, std::numeric_limits<double>::quiet_NaN()};
+    20.0,
+    22.0,
+    std::numeric_limits<double>::quiet_NaN(),
+  };
 
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
                  odd_width_meV, two_weights, "meV")),
@@ -477,6 +505,7 @@ TEST(GGEMSEnergyDistribution, RegularSpectrumRejectsInvalidGridAndWeights) {
 
 // =============================================================================
 // =============================================================================
+// An invalid update must leave the last usable source configuration intact.
 TEST(GGEMSEnergyDistribution, InvalidSetterPreservesPreviousState) {
   constexpr std::array<double, 3U> energies{40.0, 80.0, 120.0};
   constexpr std::array<double, 3U> weights{1.0, 2.0, 1.0};
@@ -495,7 +524,7 @@ TEST(GGEMSEnergyDistribution, InvalidSetterPreservesPreviousState) {
   auto const relative_weights = CopyWeights(distribution);
   auto const ticket_bounds = CopyTicketBounds(distribution);
 
-  auto const expect_unchanged = [&]() -> void {
+  auto const expect_unchanged = [&] -> void {
     ExpectDistributionUnchanged(source, record, type, mono_energy,
                                 regular_width, values, relative_weights,
                                 ticket_bounds);
@@ -528,6 +557,8 @@ TEST(GGEMSEnergyDistribution, InvalidSetterPreservesPreviousState) {
 
 // =============================================================================
 // =============================================================================
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSEnergyDistribution, SourceOwnsCopiedCallerTables) {
   std::vector<double> line_energies{40.0, 80.0};
   std::vector<double> line_weights{1.0, 3.0};
@@ -569,6 +600,8 @@ TEST(GGEMSEnergyDistribution, SourceOwnsCopiedCallerTables) {
 
 // =============================================================================
 // =============================================================================
+// External spectrum input must preserve its declared units and report
+// malformed records precisely.
 TEST(GGEMSEnergyDistribution, ParserAcceptsWhitespaceCommentsAndExplicitUnit) {
   TemporarySpectrumFile const file{"ggems-energy-valid.dat",
                                    "# center weight\n"
@@ -590,6 +623,8 @@ TEST(GGEMSEnergyDistribution, ParserAcceptsWhitespaceCommentsAndExplicitUnit) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSEnergyDistribution, ParserReportsFilenameAndLine) {
   TemporarySpectrumFile const malformed{"ggems-energy-malformed.dat",
                                         "0.020 1.0\nheader value\n"};
@@ -645,6 +680,8 @@ TEST(GGEMSEnergyDistribution, ParserReportsFilenameAndLine) {
 // =============================================================================
 // =============================================================================
 
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST(GGEMSEnergyDistribution, Supplied120kVpSpectrumHasExpectedGrid) {
   std::filesystem::path const path =
     std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}.parent_path() / "validation" /
@@ -679,6 +716,8 @@ TEST(GGEMSEnergyDistribution, Supplied120kVpSpectrumHasExpectedGrid) {
 // =============================================================================
 // =============================================================================
 
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST(GGEMSEnergyDistributionTest, CanonicalLinesPreserveFullIntegerPrecision) {
   constexpr std::array<std::uint64_t, 3U> energies{
     1ULL,
@@ -701,6 +740,8 @@ TEST(GGEMSEnergyDistributionTest, CanonicalLinesPreserveFullIntegerPrecision) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSEnergyDistributionTest, CanonicalSpectrumPreservesBoundsNearMaximum) {
   constexpr auto maximum = std::numeric_limits<std::uint64_t>::max();
   constexpr std::array<std::uint64_t, 3U> centers{
@@ -720,6 +761,8 @@ TEST(GGEMSEnergyDistributionTest, CanonicalSpectrumPreservesBoundsNearMaximum) {
 // =============================================================================
 // =============================================================================
 
+// Energy tables must preserve independent line values, support boundaries,
+// and nonzero sampling mass.
 TEST(GGEMSEnergyDistributionTest,
      CanonicalBuildersEnforceGridAndWeightContracts) {
   constexpr std::array<double, 2U> weights{1.0, 1.0};

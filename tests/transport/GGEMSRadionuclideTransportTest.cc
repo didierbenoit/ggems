@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks activity provenance, chunking, and stable device resources.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -52,6 +54,7 @@
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -299,16 +302,13 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 
@@ -317,6 +317,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Preserves activity provenance through chunk boundaries without new SVM
+// allocations.
 TEST_F(GGEMSRadionuclideTransportTest,
        PreservesActivityGroupAcrossChunksAndReusesStableSVM) {
   Random const random = MakeRandom();
@@ -442,6 +444,7 @@ TEST_F(GGEMSRadionuclideTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Checks wide logical overflow aggregation across multiple transport chunks.
 TEST_F(GGEMSRadionuclideTransportTest,
        AggregatesExactObserverOverflowAcrossChunks) {
   constexpr std::uint32_t k_observer_capacity{7U};

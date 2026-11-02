@@ -21,55 +21,59 @@
 
 /*!
  * \file
+ * \brief Checks single-device launch syntax without OpenCL discovery.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#pragma once
+#include <array>
+#include <cstddef>
+#include <stdexcept>
+#include <string_view>
 
-#include <memory>
-#include <vector>
+#include <gtest/gtest.h>
 
-#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
-#include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
 
-namespace ggems::test {
+// Device type indices and overall indices remain distinct before OpenCL
+// discovery.
+TEST(GGEMSOpenCLTestDeviceTest, ParsesSingleDeviceRequestsWithoutOpenCL) {
+  struct Case {
+    std::string_view selector;
+    cl_device_type type;
+    std::size_t index;
+  };
+  constexpr std::array cases{
+    Case{.selector = "cpu", .type = CL_DEVICE_TYPE_CPU, .index = 0U},
+    Case{.selector = "gpu", .type = CL_DEVICE_TYPE_GPU, .index = 0U},
+    Case{.selector = "cpu:2", .type = CL_DEVICE_TYPE_CPU, .index = 2U},
+    Case{.selector = "gpu:1", .type = CL_DEVICE_TYPE_GPU, .index = 1U},
+    Case{.selector = "0", .type = 0, .index = 0U},
+    Case{.selector = "12", .type = 0, .index = 12U},
+  };
 
-// =============================================================================
-// =============================================================================
+  for (auto const &entry : cases) {
+    SCOPED_TRACE(entry.selector);
+    auto const request = ggems::test::ParseOpenCLDeviceRequest(entry.selector);
 
-struct OpenCLCompilerDeviceInventoryEntry {
-  OpenCLDeviceInventoryEntry inventory;
-  std::unique_ptr<ocl::GGEMSOpenCLContext> context;
-};
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] inline auto GetOpenCLCompilerDeviceInventory()
-  -> std::vector<OpenCLCompilerDeviceInventoryEntry> const & {
-  static auto const inventory =
-    [] -> std::vector<OpenCLCompilerDeviceInventoryEntry> {
-    std::vector<OpenCLCompilerDeviceInventoryEntry> result;
-
-    for (auto const &entry : GetOpenCLDeviceInventory()) {
-      auto const &device = entry.device.get();
-      if (device.GetAvailable() == CL_FALSE ||
-          device.GetCompilerAvailable() == CL_FALSE) {
-        continue;
-      }
-
-      result.push_back(OpenCLCompilerDeviceInventoryEntry{
-        .inventory = entry,
-        .context = std::make_unique<ocl::GGEMSOpenCLContext>(device),
-      });
-    }
-
-    return result;
-  }();
-
-  return inventory;
+    EXPECT_EQ(request.type, entry.type);
+    EXPECT_EQ(request.index, entry.index);
+  }
 }
-} // namespace ggems::test
+
+// Malformed, negative, overflowing, and multiple-device requests fail
+// explicitly.
+TEST(GGEMSOpenCLTestDeviceTest, RejectsAmbiguousOrMalformedRequests) {
+  constexpr std::array selectors{
+    "",       "all",     "igpu", "GPU", "cpu:",
+    "gpu:-1", "gpu:1:2", "-1",   "+1",  "0;1",
+    "0-1",    "1x",      " 1",   "1 ",  "18446744073709551616",
+  };
+
+  for (auto const *selector : selectors) {
+    SCOPED_TRACE(selector);
+    EXPECT_THROW((void)ggems::test::ParseOpenCLDeviceRequest(selector),
+                 std::invalid_argument);
+  }
+}

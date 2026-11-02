@@ -35,7 +35,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <iostream>
 #include <limits>
 #include <numbers>
 #include <span>
@@ -44,6 +43,8 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/geometry/GGEMSPolyhedra.hh"
 #include "GGEMS/geometry/GGEMSPolyhedraRecord.hh"
@@ -213,7 +214,6 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
               (direction[2] * direction[2]));
   double previous{0};
   double accumulated{0};
-  double max_error{0};
   auto owner = fixture.initial_owner;
   // Frozen before execution: eight automatic half-bands, with explicit
   // inverse-incidence conditioning only for declared shallow/tangent cases.
@@ -236,7 +236,6 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
     accumulated += measured;
     double const error = std::abs((measured - (parameter - previous)) * norm);
     EXPECT_LE(error, budget);
-    max_error = std::max(max_error, error / band);
     EXPECT_LE(std::abs((accumulated - parameter) * norm),
               static_cast<double>(index + 1U) * budget);
     for (std::size_t axis = 0; axis < 3; ++axis) {
@@ -247,10 +246,6 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
     previous = parameter;
     owner = arrival;
   }
-  std::cout << std::format("N1 Polyhedra '{}': {} events, T={} pm, "
-                           "maximum segment-error/T={}, budget/T={}\n",
-                           fixture.name, result.trace[0], band, max_error,
-                           8 * fixture.conditioning);
 }
 
 auto RunCases(std::vector<Case> const &cases) -> void {
@@ -281,7 +276,8 @@ __kernel void polyhedra_layout(__global ulong *layout) {
   layout[21] = __builtin_offsetof(GGEMSPolyhedraRecord, profile_offset_bytes);
 }
 )cl";
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231U);
@@ -290,12 +286,8 @@ __kernel void polyhedra_layout(__global ulong *layout) {
                   root.generic_string(), random.GetKernelBuildDefinition());
     auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
       context, root / "transport", "particle_stream_transport", options);
-    cl::Program program{context.GetContextNative(), source};
-    auto const device = context.GetDevice().GetDeviceNative();
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(source, production.GetBuildOptions());
     std::array<std::uint64_t, 22> layout{};
     auto layout_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     ocl::GGEMSOpenCLKernel layout_kernel{
@@ -334,9 +326,6 @@ __kernel void polyhedra_layout(__global ulong *layout) {
     CheckCase(context, production.GetProgramNative(), random, cases.front(),
               false);
     CheckCase(context, program, random, cases.front(), true, 0U);
-    std::cout << "N1 Polyhedra device=" << context.GetDevice().GetName()
-              << "; driver=" << device.getInfo<CL_DRIVER_VERSION>()
-              << "; options=" << production.GetBuildOptions() << '\n';
   }
 }
 auto IndependentCrossings(Case const &fixture) -> std::vector<double> {
@@ -435,6 +424,8 @@ auto IndependentCrossings(Case const &fixture) -> std::vector<double> {
 
 } // namespace
 
+// Checks polygon orientation and bore intervals against independent plane
+// geometry.
 TEST_F(GGEMSNavigationDeviceTest,
        N1PolyhedraApothemOrientationAndHollowChords) {
   double const vertex = 10 / std::numbers::sqrt3;
@@ -514,6 +505,7 @@ TEST_F(GGEMSNavigationDeviceTest,
   });
 }
 
+// Checks ordered intersections through continuous and nonconvex axial profiles.
 TEST_F(GGEMSNavigationDeviceTest,
        N1PolyhedraContinuousProfilesAndNonconvexIntervals) {
   RunCases({
@@ -716,6 +708,7 @@ TEST_F(GGEMSNavigationDeviceTest,
   });
 }
 
+// Checks directional ownership at polygon faces, edges, vertices, and bands.
 TEST_F(GGEMSNavigationDeviceTest, N1PolyhedraDirectionalBandsEdgesAndVertices) {
   Case const base{"band reference", {-8, 0, 0}, {1, 0, 0}, {}};
   double const band = Scene(base).GetVolumeNavigationTolerancePM() / k_mm;
@@ -779,6 +772,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1PolyhedraDirectionalBandsEdgesAndVertices) {
   });
 }
 
+// Checks deterministic varied polygon rays against independently solved planes.
 TEST_F(GGEMSNavigationDeviceTest, N1PolyhedraIndependentRandomPlaneOracle) {
   std::vector<Case> cases;
   cases.reserve(250);
@@ -807,6 +801,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1PolyhedraIndependentRandomPlaneOracle) {
   RunCases(cases);
 }
 
+// Checks ownership where surface bands meet adjacent profile sections.
 TEST_F(GGEMSNavigationDeviceTest, N1PolyhedraAdjacentProfileSurfaceBands) {
   Case const reference{
     .name = "adjacent surface band reference",

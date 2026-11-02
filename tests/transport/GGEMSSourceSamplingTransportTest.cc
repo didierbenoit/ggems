@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks sampled source geometry and direction on the selected device.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -55,6 +57,7 @@
 #include "GGEMS/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
@@ -221,17 +224,13 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      char const *selected = std::getenv("GGEMS_TEST_DEVICE");
-      opencl.SelectDevices({selected != nullptr ? selected : "all"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
   static auto Context() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 };
 } // namespace
@@ -239,6 +238,7 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Ensures deterministic source modes leave the random stream unchanged.
 TEST_F(GGEMSSourceSamplingTransportTest,
        PointFixedAndFocusedDoNotConsumeRandom) {
   constexpr std::array<std::string_view, 3U> k_engines{
@@ -310,9 +310,11 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Checks sampled positions remain inside each authored local emission shape.
 TEST_F(GGEMSSourceSamplingTransportTest,
        SamplesRectangleEllipseAndCircleInTheirLocalPlanes) {
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     ggems::core::sources::GGEMSSource rectangle{};
     rectangle.SetPositionPicoMeter(100'000'000'000LL, 0LL, 0LL)
@@ -467,6 +469,8 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Checks unit-length directions and full angular support for every random
+// engine.
 TEST_F(GGEMSSourceSamplingTransportTest,
        SamplesFullSphereIsotropicDirectionsForEveryEngine) {
   constexpr std::array<std::string_view, 3U> k_engines{
@@ -540,6 +544,8 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Aims each particle from its sampled position toward the authored global
+// focus.
 TEST_F(GGEMSSourceSamplingTransportTest,
        FocusedDirectionsUseEachSampledGlobalPosition) {
   constexpr std::array<std::int64_t, 3U> k_focus{
@@ -623,6 +629,8 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Checks repeated runs continue random state while reusing existing device
+// buffers.
 TEST_F(GGEMSSourceSamplingTransportTest,
        RandomStateContinuesWithoutPerRunAllocation) {
   constexpr std::array<std::string_view, 3U> k_engines{
@@ -681,6 +689,7 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Checks mixed source modes retain provenance and ignore padded launch items.
 TEST_F(GGEMSSourceSamplingTransportTest,
        MixedLegacyAndVolumeSourcesPreserveObserverAndPaddingContracts) {
   constexpr std::array<std::string_view, 3U> k_engines{
@@ -777,11 +786,13 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 // =============================================================================
 // =============================================================================
 
+// Reports an undefined focused direction without publishing a completed
+// history.
 TEST_F(GGEMSSourceSamplingTransportTest,
        ReportsExtendedFocusCollapseWithoutCompletingHistory) {
   // The focus lies outside canonical support, but both positions collapse to
   // the same binary32 coordinate. This is an invalid trajectory, not a flight.
-  constexpr std::int64_t origin{1LL << 60U};
+  constexpr std::int64_t origin{static_cast<std::int64_t>(1ULL << 60U)};
   ggems::core::sources::GGEMSSource source{};
   source.SetPositionPicoMeter(origin, origin, origin)
     .SetBoxEmissionPicoMeter(8ULL, 8ULL, 8ULL)

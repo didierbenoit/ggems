@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSSr82Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildSr82Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Sr-82");
@@ -72,6 +74,8 @@ TEST(GGEMSSr82Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSSr82Test, PreservesAtomicXray) {
   auto const definition = BuildSr82Radionuclide();
   auto const &distribution =

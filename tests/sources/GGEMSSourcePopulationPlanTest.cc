@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source population plan behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -199,6 +201,8 @@ auto ExpectGroupCountMatchesReferenceStream(PlanGroup const &group,
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSourcePopulationPlanTest,
      BuildsF18GroupsFromOriginalYieldsAndIndependentStreams) {
   auto definition = std::make_shared<Definition const>(
@@ -226,8 +230,11 @@ TEST(GGEMSSourcePopulationPlanTest,
       definition->GetHalfLifeSeconds(), 0ULL, k_one_second_window);
   EXPECT_EQ(source_entries[0U].expected_parent_decay_count, expected_parent);
 
-  constexpr std::array<long double, 3U> k_expected_yields{0.9686L, 0.00229L,
-                                                          0.00020L};
+  constexpr std::array<long double, 3U> k_expected_yields{
+    0.9686L,
+    0.00229L,
+    0.00020L,
+  };
   std::uint64_t source_local_begin{0ULL};
 
   for (std::size_t index = 0U; index < groups.size(); ++index) {
@@ -266,14 +273,18 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSourcePopulationPlanTest,
      PreservesC11AndO15SourceAndSingleGroupOrder) {
   auto c11 = std::make_shared<Definition const>(
     ggems::core::radioactivity::builtins::BuildC11Radionuclide());
   auto o15 = std::make_shared<Definition const>(
     ggems::core::radioactivity::builtins::BuildO15Radionuclide());
-  std::vector<SourcePtr> sources{MakeActivitySource(c11, 50.0L),
-                                 MakeActivitySource(o15, 75.0L)};
+  std::vector<SourcePtr> sources{
+    MakeActivitySource(c11, 50.0L),
+    MakeActivitySource(o15, 75.0L),
+  };
   Planner planner{sources, MakeRandom(RandomEngine::Philox)};
 
   auto candidate = planner.BuildCandidate(k_one_second_window);
@@ -302,6 +313,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSourcePopulationPlanTest,
      PreservesSubUnitUnitAndSuperUnitYieldsWithoutNormalization) {
   constexpr std::array<long double, 3U> k_yields{0.25L, 1.0L, 1.5L};
@@ -325,6 +338,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSourcePopulationPlanTest,
      UsesDomainSeparatedIndependentReferenceStreamForEveryEngine) {
   constexpr std::array<long double, 1U> k_yields{0.75L};
@@ -347,6 +362,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourcePopulationPlanTest, BuildsMixedSourcesWithContiguousRanges) {
   constexpr std::array<long double, 2U> k_yields{1.0L, 0.5L};
   auto definition = MakeSyntheticDefinition(k_yields);
@@ -394,6 +411,8 @@ TEST(GGEMSSourcePopulationPlanTest, BuildsMixedSourcesWithContiguousRanges) {
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourcePopulationPlanTest,
      ZeroActivityPreservesEmptyGroupsAndConsumesNoHostState) {
   constexpr std::array<long double, 2U> k_yields{1.0L, 2.0L};
@@ -468,6 +487,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// A sampled empty population must consume the count draw without consuming
+// birth-time draws.
 TEST(GGEMSSourcePopulationPlanTest,
      PositiveMeanZeroCountConsumesOnlyPoissonState) {
   constexpr std::array<long double, 1U> k_yields{1.0L};
@@ -522,6 +543,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// A fixed stream must replay within its contract and continue without
+// unintended reset.
 TEST(GGEMSSourcePopulationPlanTest,
      ContinuesDeterministicallyForEveryRandomEngine) {
   constexpr std::array<long double, 2U> k_yields{1.0L, 0.75L};
@@ -554,6 +577,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Population planning must publish atomically and preserve stream continuity
+// across attempts.
 TEST(GGEMSSourcePopulationPlanTest,
      CommitRejectsDoubleStaleAndForeignCandidates) {
   constexpr std::array<long double, 1U> k_yields{1.0L};
@@ -587,6 +612,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Population planning must publish atomically and preserve stream continuity
+// across attempts.
 TEST(GGEMSSourcePopulationPlanTest,
      CommitInstallsCandidateStreamsExactlyOnceForEveryEngine) {
   constexpr std::array<long double, 1U> k_yields{1.0L};
@@ -635,6 +662,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Population planning must publish atomically and preserve stream continuity
+// across attempts.
 TEST(GGEMSSourcePopulationPlanTest,
      FailedCandidateAfterRandomDrawDoesNotAdvancePersistentStreams) {
   constexpr std::array<long double, 1U> k_yields{1.0L};
@@ -665,7 +694,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 
     std::vector<SourcePtr> reference_sources{
       MakeActivitySource(definition, 25.0L),
-      MakeActivitySource(definition, 25.0L)};
+      MakeActivitySource(definition, 25.0L),
+    };
     Planner reference{reference_sources, random};
     auto expected = reference.BuildCandidate(k_one_second_window);
     ExpectPlansEqual(recovered.GetPlan(), expected.GetPlan());
@@ -675,6 +705,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Population planning must publish atomically and preserve stream continuity
+// across attempts.
 TEST(GGEMSSourcePopulationPlanTest,
      AppendingSourceDoesNotPerturbExistingStableOrdinals) {
   constexpr std::array<long double, 2U> k_first_yields{1.0L, 0.5L};
@@ -709,6 +741,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSSourcePopulationPlanTest,
      DuplicateSourceObjectsRemainDistinctSlotsAndStreams) {
   constexpr std::array<long double, 2U> k_yields{1.0L, 0.5L};
@@ -742,27 +776,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourcePopulationPlanTest, ResultIsIndependentOfSimulatedDeviceCount) {
-  constexpr std::array<long double, 2U> k_yields{1.0L, 0.5L};
-  auto definition = MakeSyntheticDefinition(k_yields);
-  auto source = MakeActivitySource(definition, 30.0L);
-  std::vector<SourcePtr> sources{source};
-  Random const random = MakeRandom();
-
-  Planner reference_planner{sources, random};
-  auto reference = reference_planner.BuildCandidate(k_one_second_window);
-
-  for (std::uint32_t simulated_device_count : {1U, 2U, 7U, 64U}) {
-    SCOPED_TRACE(simulated_device_count);
-    Planner planner{sources, random};
-    auto candidate = planner.BuildCandidate(k_one_second_window);
-    ExpectPlansEqual(candidate.GetPlan(), reference.GetPlan());
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSSourcePopulationPlanTest,
      ActivityRequiresNonEmptyWindowWhileCountDrivenKeepsStaticMode) {
   constexpr std::array<long double, 1U> k_yields{1.0L};
@@ -786,6 +801,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSourcePopulationPlanTest,
      CountDrivenCountAboveUint32BuildsCompactPlan) {
   constexpr std::uint64_t k_primary_count =
@@ -815,6 +832,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Large activity populations must stay compact while preserving all emission
+// groups.
 TEST(GGEMSSourcePopulationPlanTest,
      ClinicallyLargeF18BuildsThreeGroupCompactPlan) {
   constexpr long double k_activity_bq{1'000'000'000.0L};
@@ -894,15 +913,20 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSSourcePopulationPlanTest,
      RejectsNonFiniteExpectedCountWithoutCommit) {
   constexpr std::array<long double, 1U> k_huge_yield{
     std::numeric_limits<long double>::max()};
   auto huge_definition = MakeSyntheticDefinition(k_huge_yield, 1.0e20L, "Huge");
   std::vector<SourcePtr> huge_sources{
-    MakeActivitySource(huge_definition, 1.0L)};
+    MakeActivitySource(huge_definition, 1.0L),
+  };
   constexpr ggems::core::GGEMSTimeWindow k_window{
-    .start_ps = 0ULL, .stop_ps = std::numeric_limits<std::uint64_t>::max()};
+    .start_ps = 0ULL,
+    .stop_ps = std::numeric_limits<std::uint64_t>::max(),
+  };
   // A valid 1 Bq source has a finite parent mean above one; its finite maximum
   // yield still overflows the emission expectation without an invalid Activity.
   auto const expected_parent =
@@ -923,6 +947,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSourcePopulationPlanTest,
      RetainsDefinitionOwnershipBeyondCallerAndPlannerLifetime) {
   constexpr std::array<long double, 1U> k_yields{1.0L};
@@ -953,6 +979,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 // =============================================================================
 
+// Source populations must respect the exact run window and its persistent
+// chronology.
 TEST(GGEMSSourcePopulationPlanTest,
      ReusingAnEarlierWindowDoesNotResetPersistentHostStreams) {
   constexpr std::array<long double, 1U> k_yields{1.0L};

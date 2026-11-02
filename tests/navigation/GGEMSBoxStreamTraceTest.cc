@@ -43,10 +43,11 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <iostream>
 #include <string>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
@@ -220,6 +221,7 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
 // =============================================================================
 // =============================================================================
 
+// Checks the production worker's ordered physical ownership transitions.
 TEST_F(GGEMSNavigationDeviceTest, TracedStreamReportsOrderedOwnerTransitions) {
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   std::string const instrumented = InstrumentStream(root);
@@ -236,17 +238,16 @@ TEST_F(GGEMSNavigationDeviceTest, TracedStreamReportsOrderedOwnerTransitions) {
   for (auto const &test : k_box_cases) {
     if (!representable(test)) {
       ++excluded;
-      std::cout << "Excluded legacy odd-width Box scene: " << test.name << '\n';
     }
   }
-  std::cout << "Legacy Box fixtures: " << excluded << " excluded of "
-            << k_box_cases.size() << " (integer center/half-extent ABI).\n";
+
   if (excluded == k_box_cases.size()) {
     GTEST_SKIP() << "Frozen odd-width scenes cannot be represented by the "
                     "authored Box ABI.";
   }
 
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
 
     for (auto const *engine : {"philox", "pcg32", "jkiss"}) {
@@ -260,12 +261,8 @@ TEST_F(GGEMSNavigationDeviceTest, TracedStreamReportsOrderedOwnerTransitions) {
           std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
                       root.generic_string(),
                       random.GetKernelBuildDefinition()));
-      cl::Program program(context.GetContextNative(), instrumented);
-      auto const device = context.GetDevice().GetDeviceNative();
-      std::string const options{production.GetBuildOptions()};
-      auto const error = program.build({device}, options.c_str());
-      ASSERT_EQ(error, CL_SUCCESS)
-        << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+      auto const &program = test::GetAnalyticTraceProgram(
+        instrumented, production.GetBuildOptions());
 
       for (auto const &test : k_box_cases) {
         if (!representable(test)) {
@@ -289,6 +286,7 @@ TEST_F(GGEMSNavigationDeviceTest, TracedStreamReportsOrderedOwnerTransitions) {
   }
 }
 
+// Verifies transformed boundary intervals inside the actual transport worker.
 TEST_F(GGEMSNavigationDeviceTest, RotatedBoxTracedWorker) {
   using namespace ggems::units;
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
@@ -338,7 +336,8 @@ TEST_F(GGEMSNavigationDeviceTest, RotatedBoxTracedWorker) {
       },
     .count = 3,
   };
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231ULL);
@@ -347,16 +346,14 @@ TEST_F(GGEMSNavigationDeviceTest, RotatedBoxTracedWorker) {
                   root.generic_string(), random.GetKernelBuildDefinition());
     auto const &strict = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
       context, root / "transport", "particle_stream_transport", options);
-    auto const device = context.GetDevice().GetDeviceNative();
-    cl::Program strict_program(context.GetContextNative(), instrumented);
-    ASSERT_EQ(strict_program.build(
-                {device}, std::string{strict.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << strict_program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &strict_program =
+      test::GetAnalyticTraceProgram(instrumented, strict.GetBuildOptions());
     RunTracedHistory(context, strict_program, random, test, 1, &pose);
   }
 }
 
+// Checks initial ownership and subsequent transitions for surface-born
+// histories.
 TEST_F(GGEMSNavigationDeviceTest, BoxBirthHistoriesPreserveOwnerSequences) {
   // Companion of the five-history unmodified-workload test. In particular,
   // the authored edge in history 3 is 1024 pm outside the packed lower Y face.
@@ -400,7 +397,8 @@ TEST_F(GGEMSNavigationDeviceTest, BoxBirthHistoriesPreserveOwnerSequences) {
   std::array<std::uint32_t, 5> const counts{2, 2, 1, 3, 2};
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   auto const instrumented = InstrumentStream(root);
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(41ULL);
@@ -408,12 +406,8 @@ TEST_F(GGEMSNavigationDeviceTest, BoxBirthHistoriesPreserveOwnerSequences) {
       context, root / "transport", "particle_stream_transport",
       std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
                   root.generic_string(), random.GetKernelBuildDefinition()));
-    cl::Program program(context.GetContextNative(), instrumented);
-    auto const device = context.GetDevice().GetDeviceNative();
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(instrumented, production.GetBuildOptions());
     for (std::size_t index = 0; index < starts.size(); ++index) {
       SCOPED_TRACE(index);
       BoxCase const test{

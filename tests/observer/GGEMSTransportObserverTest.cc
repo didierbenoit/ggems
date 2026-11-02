@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Checks capture configuration and transactional result publication.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 #include <limits>
@@ -11,6 +40,7 @@
 // =============================================================================
 // =============================================================================
 
+// Ensures a default observer cannot accidentally select a specific history.
 TEST(GGEMSTransportObserver, DefaultsSpecificCaptureToInvalidCoordinates) {
   ggems::core::observer::GGEMSTransportObserver observer{};
 
@@ -28,6 +58,7 @@ TEST(GGEMSTransportObserver, DefaultsSpecificCaptureToInvalidCoordinates) {
 // =============================================================================
 // =============================================================================
 
+// Preserves both capture policies in the device configuration record.
 TEST(GGEMSTransportObserver, BuildsCombinedPerSourceAndSpecificCaptureConfig) {
   ggems::core::observer::GGEMSTransportObserver observer{};
 
@@ -57,6 +88,7 @@ TEST(GGEMSTransportObserver, BuildsCombinedPerSourceAndSpecificCaptureConfig) {
 // =============================================================================
 // =============================================================================
 
+// Keeps per-source capture enabled when clearing a specific-history request.
 TEST(GGEMSTransportObserver, ClearResetsOnlySpecificCapture) {
   ggems::core::observer::GGEMSTransportObserver observer{};
 
@@ -86,6 +118,7 @@ TEST(GGEMSTransportObserver, ClearResetsOnlySpecificCapture) {
 // =============================================================================
 // =============================================================================
 
+// Checks retained record order and saturating counters across incoming reports.
 TEST(GGEMSTransportObserver,
      AccumulatePreservesRetentionAndSaturationAcrossInputs) {
   using Observer = ggems::core::observer::GGEMSTransportObserver;
@@ -136,6 +169,7 @@ TEST(GGEMSTransportObserver,
 // =============================================================================
 // =============================================================================
 
+// Keeps published results unchanged until a complete candidate is committed.
 TEST(GGEMSTransportObserver,
      RunResultCandidateAccumulatesReportsAndCommitsTransactionally) {
   using Observer = ggems::core::observer::GGEMSTransportObserver;
@@ -228,6 +262,7 @@ TEST(GGEMSTransportObserver,
 // =============================================================================
 // =============================================================================
 
+// Checks wide run counters saturate safely in the published observer view.
 TEST(GGEMSTransportObserver, RunResultCandidateSaturatesWideLogicalCounters) {
   using Observer = ggems::core::observer::GGEMSTransportObserver;
   using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
@@ -257,6 +292,8 @@ TEST(GGEMSTransportObserver, RunResultCandidateSaturatesWideLogicalCounters) {
 // =============================================================================
 // =============================================================================
 
+// Allows successful empty results to clear records without changing capture
+// policies.
 TEST(GGEMSTransportObserver,
      EmptyRunResultCandidateClearsPublishedResultAndPreservesConfiguration) {
   using Observer = ggems::core::observer::GGEMSTransportObserver;

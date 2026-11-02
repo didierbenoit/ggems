@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks i123 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -230,6 +232,8 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSI123Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildI123Radionuclide();
 
@@ -262,6 +266,8 @@ TEST(GGEMSI123Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// Selected parent photon lines must retain their physical energies and
+// absolute yields.
 TEST(GGEMSI123Test, PreservesFortyPromptLaraGammaLines) {
   GGEMSRadionuclideDefinition const definition = BuildI123Radionuclide();
   GGEMSRadionuclideEmission const &gamma = definition.GetEmissions()[0U];
@@ -283,6 +289,8 @@ TEST(GGEMSI123Test, PreservesFortyPromptLaraGammaLines) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSI123Test, PreservesLaraAndMirdAtomicRadiations) {
   GGEMSRadionuclideDefinition const definition = BuildI123Radionuclide();
   auto const emissions = definition.GetEmissions();

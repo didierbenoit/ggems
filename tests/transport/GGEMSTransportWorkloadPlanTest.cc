@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks host-only equal workload partitioning and sparse populations.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -34,6 +36,7 @@
 // =============================================================================
 // =============================================================================
 
+// Checks host-only partition counts, remainder placement, and exact offsets.
 TEST(GGEMSTransportWorkloadPlan, SplitsPrimariesEquallyWithRemainder) {
   std::vector<ggems::core::transport::GGEMSTransportWorkloadPlan> plan =
     ggems::core::transport::BuildEqualTransportWorkloadPlan(10'000ULL, 4096U,
@@ -67,6 +70,7 @@ TEST(GGEMSTransportWorkloadPlan, SplitsPrimariesEquallyWithRemainder) {
 // =============================================================================
 // =============================================================================
 
+// Checks zero-length host partitions retain valid offsets when work is sparse.
 TEST(GGEMSTransportWorkloadPlan, AllowsMoreWorkloadsThanPrimaries) {
   std::vector<ggems::core::transport::GGEMSTransportWorkloadPlan> plan =
     ggems::core::transport::BuildEqualTransportWorkloadPlan(0ULL, 2U, 4U, 128U);

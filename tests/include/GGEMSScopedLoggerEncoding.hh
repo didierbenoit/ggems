@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Restores logger encoding after scoped diagnostic checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

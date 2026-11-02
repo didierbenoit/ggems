@@ -40,6 +40,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
+
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
@@ -166,8 +168,8 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   auto const &program =
     ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-      context, root / "tests", "box_navigation_probe",
-      std::format("-I{}", root.generic_string()));
+      context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+      "box_navigation_probe", std::format("-I{}", root.generic_string()));
   ggems::ocl::GGEMSOpenCLKernel kernel{
     context, program.CreateKernel("box_navigation_probe"),
     "box_navigation_probe"};
@@ -241,7 +243,8 @@ auto ExpectRays(std::span<RayCase const> cases) -> void {
     .half_extent_z_pm = static_cast<float>(k_world_half),
   };
   std::array<GGEMSBoxRecord, 1U> const boxes{k_box_record};
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     RunRays(context, world, boxes, cases);
   }
@@ -252,8 +255,10 @@ auto ExpectRays(std::span<RayCase const> cases) -> void {
 // =============================================================================
 // =============================================================================
 
+// Executes device field reads and writes to verify box layout and array stride.
 TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
-  for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     GGEMSBoxRecord const populated{
       .half_extent_x_pm = static_cast<float>(1'000'000'000'001ULL),
@@ -274,8 +279,8 @@ TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
     std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
     auto const &program =
       ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-        context, root / "tests", "box_navigation_probe",
-        std::format("-I{}", root.generic_string()));
+        context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+        "box_navigation_probe", std::format("-I{}", root.generic_string()));
     ggems::ocl::GGEMSOpenCLKernel kernel{
       context, program.CreateKernel("box_record_abi_probe"),
       "box_record_abi_probe"};
@@ -315,6 +320,7 @@ TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
 // =============================================================================
 // =============================================================================
 
+// Checks exact owners and limiting surfaces for ordinary box rays.
 TEST_F(GGEMSNavigationDeviceTest, LocatesOwnersAndFindsAxisAlignedBoundaries) {
   std::array<RayCase, 9U> const cases{
     {
@@ -429,6 +435,7 @@ TEST_F(GGEMSNavigationDeviceTest, LocatesOwnersAndFindsAxisAlignedBoundaries) {
 // =============================================================================
 // =============================================================================
 
+// Checks coincident surfaces and tangencies that can alter boundary ownership.
 TEST_F(GGEMSNavigationDeviceTest, HandlesEdgesCornersTangentsAndDiagonals) {
   std::array<RayCase, 8U> const cases{
     {
@@ -523,6 +530,7 @@ TEST_F(GGEMSNavigationDeviceTest, HandlesEdgesCornersTangentsAndDiagonals) {
 // =============================================================================
 // =============================================================================
 
+// Distinguishes unresolvable geometry from valid simultaneous boundary events.
 TEST_F(GGEMSNavigationDeviceTest, ReportsUnresolvedAndExactTies) {
   std::array<RayCase, 2U> const cases{
     {

@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -176,6 +178,8 @@ auto ExpectSourceRecordsEqual(
 // =============================================================================
 // =============================================================================
 
+// Default and explicitly configured source state must remain consistent at
+// the public boundary.
 TEST(GGEMSSource, DefaultSourceIsAnalyticGammaPointSource) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -229,6 +233,8 @@ TEST(GGEMSSource, DefaultSourceIsAnalyticGammaPointSource) {
 // =============================================================================
 // =============================================================================
 
+// Default and explicitly configured source state must remain consistent at
+// the public boundary.
 TEST(GGEMSSource, PrimaryCountDefaultTo4096) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -238,6 +244,8 @@ TEST(GGEMSSource, PrimaryCountDefaultTo4096) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSSource, PrimaryCountIsFluentAndAcceptsWholeUint64Range) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -256,6 +264,8 @@ TEST(GGEMSSource, PrimaryCountIsFluentAndAcceptsWholeUint64Range) {
 // =============================================================================
 // =============================================================================
 
+// Default and explicitly configured source state must remain consistent at
+// the public boundary.
 TEST(GGEMSSource, PrimaryCountDoesNotAlterSourceRecord) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -271,6 +281,8 @@ TEST(GGEMSSource, PrimaryCountDoesNotAlterSourceRecord) {
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSource, DefaultPopulationIsCountDriven) {
   using ggems::core::sources::GGEMSSourcePopulationMode;
 
@@ -283,6 +295,8 @@ TEST(GGEMSSource, DefaultPopulationIsCountDriven) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSource, BuildsOwnedActivityDrivenPopulationConfiguration) {
   using Configuration =
     ggems::core::sources::GGEMSActivityDrivenSourceConfiguration;
@@ -377,6 +391,8 @@ TEST(GGEMSSource, BuildsOwnedActivityDrivenPopulationConfiguration) {
 // =============================================================================
 // =============================================================================
 
+// Source populations must respect the exact run window and its persistent
+// chronology.
 TEST(GGEMSSource, CountDrivenPopulationAcceptsRunInitializationTimeDomains) {
   using ggems::core::GGEMSTimeWindow;
   using ggems::core::sources::GGEMSSourcePopulationMode;
@@ -401,6 +417,8 @@ TEST(GGEMSSource, CountDrivenPopulationAcceptsRunInitializationTimeDomains) {
 // =============================================================================
 // =============================================================================
 
+// Source populations must respect the exact run window and its persistent
+// chronology.
 TEST(GGEMSSource,
      ActivityDrivenPopulationValidatesRunInitializationTimeDomain) {
   using ggems::core::GGEMSTimeWindow;
@@ -488,6 +506,8 @@ TEST(GGEMSSource,
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSource, OwnsAtomicImmutableRadionuclideConfiguration) {
   using ggems::core::sources::GGEMSSourcePopulationMode;
 
@@ -520,6 +540,7 @@ TEST(GGEMSSource, OwnsAtomicImmutableRadionuclideConfiguration) {
 // =============================================================================
 // =============================================================================
 
+// An invalid update must leave the last usable source configuration intact.
 TEST(GGEMSSource, RejectsNullRadionuclideWithoutChangingConfiguration) {
   auto radionuclide = MakeTestRadionuclide();
   ggems::core::sources::GGEMSSource source{};
@@ -555,6 +576,8 @@ TEST(GGEMSSource, RejectsNullRadionuclideWithoutChangingConfiguration) {
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSource, ActivityDrivenRejectsSingleParticleConfiguration) {
   constexpr std::array<double, 2U> k_energies{1.0, 2.0};
   constexpr std::array<double, 2U> k_weights{1.0, 1.0};
@@ -594,6 +617,8 @@ TEST(GGEMSSource, ActivityDrivenRejectsSingleParticleConfiguration) {
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSource, ExplicitlySwitchesBackToCountDrivenBeforeInitialization) {
   using ggems::core::sources::GGEMSSourcePopulationMode;
 
@@ -615,6 +640,8 @@ TEST(GGEMSSource, ExplicitlySwitchesBackToCountDrivenBeforeInitialization) {
 // =============================================================================
 // =============================================================================
 
+// Finalization must freeze the documented configuration while preserving
+// permitted later updates.
 TEST(GGEMSSource,
      DirectFinalizationFreezesPopulationAndEnergyButKeepsCountMutable) {
   auto radionuclide = MakeTestRadionuclide();
@@ -624,7 +651,7 @@ TEST(GGEMSSource,
   source.FinalizeInitialization();
 
   ExpectGGEMSExceptionContaining(
-    [&source]() -> void { source.SetCountDrivenPopulation(7ULL); },
+    [&source] -> void { source.SetCountDrivenPopulation(7ULL); },
     k_population_finalized_diagnostic);
   ExpectGGEMSExceptionContaining(
     [&source, &radionuclide] -> void {
@@ -651,6 +678,8 @@ TEST(GGEMSSource,
 // =============================================================================
 // =============================================================================
 
+// Population modes must preserve absolute emission yields and their distinct
+// ownership rules.
 TEST(GGEMSSource,
      DirectActivityDrivenFinalizationPreservesConfigurationAndRejectsMutation) {
   auto radionuclide = MakeTestRadionuclide();
@@ -664,7 +693,7 @@ TEST(GGEMSSource,
   source.FinalizeInitialization();
 
   ExpectGGEMSExceptionContaining(
-    [&source]() -> void { source.SetCountDrivenPopulation(7ULL); },
+    [&source] -> void { source.SetCountDrivenPopulation(7ULL); },
     k_population_finalized_diagnostic);
   ExpectGGEMSExceptionContaining(
     [&source, &replacement] -> void {
@@ -719,6 +748,8 @@ TEST(GGEMSSource,
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSource, CopiesAndMovesActivityConfigurationByManagedOwnership) {
   auto radionuclide = MakeTestRadionuclide();
   ggems::core::sources::GGEMSSource source{};
@@ -745,6 +776,8 @@ TEST(GGEMSSource, CopiesAndMovesActivityConfigurationByManagedOwnership) {
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSSource, RejectsZeroEnergy) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -755,6 +788,8 @@ TEST(GGEMSSource, RejectsZeroEnergy) {
 // =============================================================================
 // =============================================================================
 
+// Source populations must respect the exact run window and its persistent
+// chronology.
 TEST(GGEMSSource, StandaloneRecordUsesCanonicalStaticTime) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -766,6 +801,8 @@ TEST(GGEMSSource, StandaloneRecordUsesCanonicalStaticTime) {
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSource, RejectsZeroDirection) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -776,6 +813,8 @@ TEST(GGEMSSource, RejectsZeroDirection) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSSource, RejectsNonFiniteDirectionComponents) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -793,6 +832,8 @@ TEST(GGEMSSource, RejectsNonFiniteDirectionComponents) {
 // =============================================================================
 // =============================================================================
 
+// Fraction admission and normalization must preserve supported constituents
+// and reject malformed totals.
 TEST(GGEMSSource, NormalizesDirection) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -808,6 +849,8 @@ TEST(GGEMSSource, NormalizesDirection) {
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSource, SetDirectionBuildsAutomaticCtFrame) {
   ggems::core::sources::GGEMSSource source{};
   source.SetDirection(1.0, 0.0, 0.0);
@@ -824,6 +867,8 @@ TEST(GGEMSSource, SetDirectionBuildsAutomaticCtFrame) {
   EXPECT_FLOAT_EQ(record.axis_z_z, 0.0F);
 }
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSource, SetOrientationStoresValidatedCompleteFrame) {
   ggems::core::sources::GGEMSSource source{};
   source.SetOrientation({1.0, 0.0, 0.0}, {1.0, 0.0, 2.0});
@@ -840,6 +885,8 @@ TEST(GGEMSSource, SetOrientationStoresValidatedCompleteFrame) {
   EXPECT_FLOAT_EQ(record.axis_z_z, 0.0F);
 }
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSource, RejectedOrientationDoesNotMutateExistingFrame) {
   ggems::core::sources::GGEMSSource source{};
   source.SetDirection(1.0, 0.0, 0.0);
@@ -856,6 +903,8 @@ TEST(GGEMSSource, RejectedOrientationDoesNotMutateExistingFrame) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -923,6 +972,8 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
 // =============================================================================
 // =============================================================================
 
+// Changing population mode must preserve the independently configured
+// emission state.
 TEST(GGEMSSource, ExecutionRecordPreservesSourceStateAcrossPopulationModes) {
   using ggems::core::particles::GGEMSParticleType;
 
@@ -956,6 +1007,7 @@ TEST(GGEMSSource, ExecutionRecordPreservesSourceStateAcrossPopulationModes) {
 // =============================================================================
 // =============================================================================
 
+// Planar source shape changes must retain the authored support dimensions.
 TEST(GGEMSSource, ConfiguresPointRectangleEllipseAndCircle) {
   using ggems::core::sources::FromKernelEmissionGeometryType;
   using ggems::core::sources::GGEMSEmissionGeometryType;
@@ -998,6 +1050,7 @@ TEST(GGEMSSource, ConfiguresPointRectangleEllipseAndCircle) {
 // =============================================================================
 // =============================================================================
 
+// An invalid update must leave the last usable source configuration intact.
 TEST(GGEMSSource, RejectsInvalidEmissionDimensionsAtomically) {
   ggems::core::sources::GGEMSSource source{};
   source.SetRectangleEmissionPicoMeter(40ULL, 20ULL);
@@ -1016,6 +1069,8 @@ TEST(GGEMSSource, RejectsInvalidEmissionDimensionsAtomically) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST(GGEMSSource, ConfiguresAngularDistributionsAndCanonicalizesFocus) {
   using ggems::core::sources::FromKernelAngularDistributionType;
   using ggems::core::sources::GGEMSAngularDistributionType;
@@ -1050,6 +1105,8 @@ TEST(GGEMSSource, ConfiguresAngularDistributionsAndCanonicalizesFocus) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST(GGEMSSource, RejectsDegenerateFocusedConfigurations) {
   ggems::core::sources::GGEMSSource point{};
 
@@ -1070,6 +1127,8 @@ TEST(GGEMSSource, RejectsDegenerateFocusedConfigurations) {
 // =============================================================================
 // =============================================================================
 
+// Moving a source must preserve its independently selected angular
+// distribution.
 TEST(GGEMSSource, PoseChangesDoNotSelectAnotherAngularMode) {
   ggems::core::sources::GGEMSSource source{};
   source.SetIsotropicAngularDistribution()
@@ -1084,6 +1143,8 @@ TEST(GGEMSSource, PoseChangesDoNotSelectAnotherAngularMode) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST(GGEMSSource, ConfiguresCanonicalVolumeDimensionsAndSwitching) {
   using ggems::core::sources::FromKernelEmissionGeometryType;
   using ggems::core::sources::GGEMSEmissionGeometryType;
@@ -1126,6 +1187,7 @@ TEST(GGEMSSource, ConfiguresCanonicalVolumeDimensionsAndSwitching) {
 // =============================================================================
 // =============================================================================
 
+// An invalid update must leave the last usable source configuration intact.
 TEST(GGEMSSource, RejectsInvalidVolumeDimensionsAtomically) {
   ggems::core::sources::GGEMSSource source{};
   source.SetRectangleEmissionPicoMeter(40ULL, 20ULL);
@@ -1150,6 +1212,8 @@ TEST(GGEMSSource, RejectsInvalidVolumeDimensionsAtomically) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST(GGEMSSource, ConfiguresBoundedAndCanonicalFullSphereIsotropicDomains) {
   constexpr long double k_pi{std::numbers::pi_v<long double>};
   using ggems::units::MakeRadians;
@@ -1193,6 +1257,7 @@ TEST(GGEMSSource, ConfiguresBoundedAndCanonicalFullSphereIsotropicDomains) {
 // =============================================================================
 // =============================================================================
 
+// An invalid update must leave the last usable source configuration intact.
 TEST(GGEMSSource, RejectsInvalidOrCollapsedAngularDomainsAtomically) {
   constexpr long double k_pi{std::numbers::pi_v<long double>};
   using ggems::units::MakeRadians;
@@ -1243,6 +1308,8 @@ TEST(GGEMSSource, RejectsInvalidOrCollapsedAngularDomainsAtomically) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST(GGEMSSource, CanonicalFullTurnBoundsPreserveDegreeAndRadianInputs) {
   using ggems::units::MakeDegrees;
   using ggems::units::MakeRadians;
@@ -1267,6 +1334,8 @@ TEST(GGEMSSource, CanonicalFullTurnBoundsPreserveDegreeAndRadianInputs) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSSource, RejectsCanonicalAngularOverflowAndExcessTicksAtomically) {
   using ggems::units::Angle;
   using ggems::units::MakeDegrees;
@@ -1292,6 +1361,8 @@ TEST(GGEMSSource, RejectsCanonicalAngularOverflowAndExcessTicksAtomically) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST(GGEMSSource, RejectsFocusedTargetsInsideVolumeSupport) {
   ggems::core::sources::GGEMSSource box{};
   box.SetBoxEmissionPicoMeter(100ULL, 80ULL, 60ULL);
@@ -1318,6 +1389,8 @@ TEST(GGEMSSource, RejectsFocusedTargetsInsideVolumeSupport) {
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSource, RejectedDirectionMovingFocusedBoxPreservesRecord) {
   ggems::core::sources::GGEMSSource source{};
   source.SetBoxEmissionPicoMeter(100ULL, 2ULL, 2ULL)

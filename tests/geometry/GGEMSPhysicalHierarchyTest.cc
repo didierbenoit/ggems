@@ -63,6 +63,7 @@ auto Box(Length x = 8_mm, Length y = 10_mm, Length z = 12_mm) -> GGEMSBox {
 }
 } // namespace
 
+// Preserves observable parentage and insertion order in compiled hierarchies.
 TEST(GGEMSPhysicalHierarchy, OwnsInsertionOrderedParentChildAndSiblingLinks) {
   auto world = World();
   world.AddVolume(Box(80_mm, 60_mm, 60_mm));
@@ -90,6 +91,7 @@ TEST(GGEMSPhysicalHierarchy, OwnsInsertionOrderedParentChildAndSiblingLinks) {
   EXPECT_EQ(owned.GetVolumeMaterial(1U)->GetName(), "Aluminum");
 }
 
+// Rejects invalid hierarchy references before publishing a scene.
 TEST(GGEMSPhysicalHierarchy, RejectsUnknownParentsAndUnsupportedDepth) {
   auto world = World();
   EXPECT_THROW(world.AddVolume(Box(), 1U), GGEMSRecoverable);
@@ -105,6 +107,7 @@ TEST(GGEMSPhysicalHierarchy, RejectsUnknownParentsAndUnsupportedDepth) {
   EXPECT_NO_THROW(world.Validate());
 }
 
+// Verifies a child's global pose includes its parent's full transform.
 TEST(GGEMSPhysicalHierarchy, ComposesParentLocalTranslationAndRotation) {
   auto world = World();
   auto mother = Box(80_mm, 40_mm, 30_mm);
@@ -148,6 +151,7 @@ TEST(GGEMSPhysicalHierarchy, ComposesParentLocalTranslationAndRotation) {
   EXPECT_FLOAT_EQ(sphere_child_pose->axis_y_x, -1.0F);
 }
 
+// Requires containment at every physical parent boundary.
 TEST(GGEMSPhysicalHierarchy, RejectsProtrudingDaughtersAtEveryLevel) {
   auto clipped = World();
   clipped.AddVolume(Box(40_mm, 40_mm, 40_mm));
@@ -176,6 +180,7 @@ TEST(GGEMSPhysicalHierarchy, RejectsProtrudingDaughtersAtEveryLevel) {
   EXPECT_THROW(rotated.Validate(), GGEMSRecoverable);
 }
 
+// Rejects intersecting siblings even when both fit within their mother.
 TEST(GGEMSPhysicalHierarchy, RejectsSiblingInteriorOverlapInsideAMother) {
   auto overlap = World();
   overlap.AddVolume(Box(80_mm, 60_mm, 60_mm))
@@ -195,6 +200,7 @@ TEST(GGEMSPhysicalHierarchy, RejectsSiblingInteriorOverlapInsideAMother) {
   EXPECT_THROW(mixed.Validate(), GGEMSRecoverable);
 }
 
+// Distinguishes a hollow mother's empty bore from its physical wall.
 TEST(GGEMSPhysicalHierarchy,
      RejectsHollowBoreIntrusionAndAdmitsContainedWalls) {
   GGEMSPolyhedra mother;
@@ -226,6 +232,7 @@ TEST(GGEMSPhysicalHierarchy,
   EXPECT_NO_THROW(contained.Validate());
 }
 
+// Applies closed containment to root volumes at the World boundary.
 TEST(GGEMSPhysicalHierarchy, AdmitsWorldContactAndRejectsRootProtrusion) {
   auto root = Box(40_mm, 20_mm, 30_mm);
   root.SetPosition(MakePositionPM(80'000'000'000LL, 0, 0));

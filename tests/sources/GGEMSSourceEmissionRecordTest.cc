@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source emission record behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -36,6 +38,8 @@
 #include <utility>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/sources/GGEMSSourceEmissionRecord.hh"
 #include "GGEMS/sources/GGEMSSourceEmissionRange.hh"
@@ -71,14 +75,7 @@ struct GroupAlignmentProbe {
 class GGEMSSourceEmissionRecordKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 };
 
@@ -87,6 +84,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSSourceEmissionRecord, HostLayoutsAndSentinelsAreExact) {
   EXPECT_TRUE(std::is_standard_layout_v<PopulationRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<PopulationRecord>);
@@ -134,22 +133,28 @@ TEST(GGEMSSourceEmissionRecord, HostLayoutsAndSentinelsAreExact) {
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST_F(GGEMSSourceEmissionRecordKernelTest,
        HostAndOpenCLLayoutsStridesAndValuesMatch) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  auto &context = opencl.GetContext().front();
+  auto &context = ggems::test::GetSelectedOpenCLContext();
 
   std::array<PopulationRecord, 2U> populations{{
-    {.population_mode = 7U,
-     .first_emission_index = 11U,
-     .emission_count = 13U,
-     .scaled_decay = 0.25F},
+    {
+      .population_mode = 7U,
+      .first_emission_index = 11U,
+      .emission_count = 13U,
+      .scaled_decay = 0.25F,
+    },
     {},
   }};
   std::array<EmissionRecord, 2U> emissions{{
-    {.particle_type = 17U,
-     .energy_distribution_record_index = 19U,
-     .mono_energy_micro_eV = 23ULL},
+    {
+      .particle_type = 17U,
+      .energy_distribution_record_index = 19U,
+      .mono_energy_micro_eV = 23ULL,
+    },
     {},
   }};
   std::array<GroupRange, 2U> groups{{
@@ -173,7 +178,8 @@ TEST_F(GGEMSSourceEmissionRecordKernelTest,
   ggems::ocl::WriteSVMFromHost(group_buffer, std::span{groups});
 
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-  std::filesystem::path const kernel_test_root = kernel_root / "tests";
+  std::filesystem::path const kernel_test_root =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
   std::string const build_options =
     std::format("-I{}", kernel_root.generic_string());
 

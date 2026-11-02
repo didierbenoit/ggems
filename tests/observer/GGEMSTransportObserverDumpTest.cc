@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Checks observer text formatting, sorting, and export boundaries.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 #include <span>
@@ -92,6 +121,7 @@ BuildObserverDump(std::span<GGEMSObserverRecord const> records) -> std::string {
 // =============================================================================
 // =============================================================================
 
+// Checks observer dump columns follow the caller's requested order.
 TEST(GGEMSTransportObserverDump, UsesRequestedColumnOrderAndHeaders) {
   std::array<GGEMSObserverRecord, 1U> const records{{
     MakeRecord(8ULL, 10ULL),
@@ -121,6 +151,7 @@ TEST(GGEMSTransportObserverDump, UsesRequestedColumnOrderAndHeaders) {
 // =============================================================================
 // =============================================================================
 
+// Checks ASCII particle symbols in exported observer text.
 TEST(GGEMSTransportObserverDump, DisplaysAsciiParticleSymbols) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
@@ -140,6 +171,7 @@ TEST(GGEMSTransportObserverDump, DisplaysAsciiParticleSymbols) {
 // =============================================================================
 // =============================================================================
 
+// Checks Unicode particle symbols survive observer text formatting.
 TEST(GGEMSTransportObserverDump, DisplaysUnicodeParticleSymbols) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
 
@@ -166,6 +198,8 @@ TEST(GGEMSTransportObserverDump, DisplaysUnicodeParticleSymbols) {
 // =============================================================================
 // =============================================================================
 
+// Checks independent units and precision settings for each physical output
+// field.
 TEST(GGEMSTransportObserverDump,
      FormatsEnergyDepositPositionAndDirectionIndependently) {
   GGEMSObserverRecord record = MakeRecord(8ULL, 10ULL);
@@ -196,6 +230,7 @@ TEST(GGEMSTransportObserverDump,
 // =============================================================================
 // =============================================================================
 
+// Ensures escape formatting does not alter the recorded physical endpoint.
 TEST(GGEMSTransportObserverDump,
      EscapedWorldRecordPreservesStoredPhysicalPosition) {
   GGEMSObserverRecord record = MakeRecord(8ULL, 10ULL);
@@ -216,6 +251,8 @@ TEST(GGEMSTransportObserverDump,
 // =============================================================================
 // =============================================================================
 
+// Reports coordinates that cannot be represented in the selected integer export
+// format.
 TEST(GGEMSTransportObserverDump, IdentifiesUnrepresentablePosition) {
   GGEMSObserverRecord record = MakeRecord(0ULL, 10ULL);
   record.position_valid = 0U;
@@ -228,6 +265,7 @@ TEST(GGEMSTransportObserverDump, IdentifiesUnrepresentablePosition) {
 // =============================================================================
 // =============================================================================
 
+// Preserves record identity when output sorting changes display order.
 TEST(GGEMSTransportObserverDump, KeepsOriginalRecordIndexAfterDisplaySorting) {
   std::array<GGEMSObserverRecord, 2U> const records{{
     MakeRecord(8ULL, 20ULL),
@@ -252,6 +290,7 @@ TEST(GGEMSTransportObserverDump, KeepsOriginalRecordIndexAfterDisplaySorting) {
 // =============================================================================
 // =============================================================================
 
+// Checks text export includes all retained records beyond presentation limits.
 TEST(GGEMSTransportObserverDump, DumpsEveryStoredRecordWithoutDisplayLimit) {
   constexpr std::size_t k_record_count{130U};
 

@@ -21,12 +21,13 @@
 
 /*!
  * \file
+ * \brief Checks OpenCL query and error-reporting boundaries.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #include <array>
-#include <cstddef>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -50,6 +51,8 @@ auto ExpectContains(std::string_view value, std::string_view expected) -> void {
 // =============================================================================
 // =============================================================================
 
+// Known and unknown OpenCL status codes retain useful diagnostic names and
+// descriptions.
 TEST(GGEMSOpenCLUtilsTest, ReportsRepresentativeErrorCodes) {
   struct ErrorNameCase {
     cl_int error_code;
@@ -58,10 +61,14 @@ TEST(GGEMSOpenCLUtilsTest, ReportsRepresentativeErrorCodes) {
 
   constexpr std::array test_cases{
     ErrorNameCase{.error_code = CL_SUCCESS, .expected_name = "CL_SUCCESS"},
-    ErrorNameCase{.error_code = CL_INVALID_VALUE,
-                  .expected_name = "CL_INVALID_VALUE"},
-    ErrorNameCase{.error_code = CL_INVALID_EVENT,
-                  .expected_name = "CL_INVALID_EVENT"},
+    ErrorNameCase{
+      .error_code = CL_INVALID_VALUE,
+      .expected_name = "CL_INVALID_VALUE",
+    },
+    ErrorNameCase{
+      .error_code = CL_INVALID_EVENT,
+      .expected_name = "CL_INVALID_EVENT",
+    },
     ErrorNameCase{.error_code = 123'456, .expected_name = "CL_UNKNOWN_ERROR"},
   };
 
@@ -79,6 +86,7 @@ TEST(GGEMSOpenCLUtilsTest, ReportsRepresentativeErrorCodes) {
 // =============================================================================
 // =============================================================================
 
+// Combined error diagnostics include both the OpenCL code name and its meaning.
 TEST(GGEMSOpenCLUtilsTest, BuildsLongErrorDescription) {
   auto const description = ggems::ocl::GetLongErrorString(CL_INVALID_EVENT);
   ExpectContains(description, "CL_INVALID_EVENT");
@@ -88,6 +96,8 @@ TEST(GGEMSOpenCLUtilsTest, BuildsLongErrorDescription) {
 // =============================================================================
 // =============================================================================
 
+// OpenCL failures retain their typed GGEMS exception and caller-provided
+// context.
 TEST(GGEMSOpenCLUtilsTest,
      CheckCLErrorAcceptsSuccessAndPreservesFailureContext) {
   EXPECT_NO_THROW(ggems::ocl::CheckCLError(CL_SUCCESS, "OpenCL success"));
@@ -111,9 +121,13 @@ TEST(GGEMSOpenCLUtilsTest,
 // =============================================================================
 // =============================================================================
 
+// Capability lookup rejects missing names, case changes, and empty extension
+// strings.
 TEST(GGEMSOpenCLUtilsTest, FindsOnlyExactExtensions) {
-  std::unordered_set<std::string> const extensions{"cl_khr_fp64",
-                                                   "cl_khr_device_uuid"};
+  std::unordered_set<std::string> const extensions{
+    "cl_khr_fp64",
+    "cl_khr_device_uuid",
+  };
 
   EXPECT_TRUE(ggems::ocl::HasExtension(extensions, "cl_khr_fp64"));
   EXPECT_FALSE(ggems::ocl::HasExtension(extensions, "cl_khr_fp16"));
@@ -124,50 +138,41 @@ TEST(GGEMSOpenCLUtilsTest, FindsOnlyExactExtensions) {
 // =============================================================================
 // =============================================================================
 
+// Native scalar, array, and extension queries preserve their driver-reported
+// values.
 TEST(GGEMSOpenCLUtilsTest, ReadsRepresentativeNativeInformation) {
-  auto const inventory = ggems::test::GetOpenCLDeviceInventory();
-  ASSERT_FALSE(inventory.empty());
+  auto const &entry = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(entry));
 
-  for (auto const &entry : inventory) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(entry));
+  auto const &device = entry.device.get();
+  auto const &native = device.GetDeviceNative();
 
-    auto const &device = entry.device.get();
-    auto const &native = device.GetDeviceNative();
+  auto const name = ggems::ocl::GetInfo<CL_DEVICE_NAME>(native);
+  EXPECT_EQ(name, device.GetName());
+  EXPECT_EQ(name.find('\0'), std::string::npos);
 
-    auto const name = ggems::ocl::GetInfo<CL_DEVICE_NAME>(native);
-    EXPECT_EQ(name, device.GetName());
-    EXPECT_EQ(name.find('\0'), std::string::npos);
-
-    EXPECT_EQ(ggems::ocl::GetInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>(native),
-              device.GetMaxWorkItemSizes());
-    EXPECT_EQ(ggems::ocl::ExtractExtensions<CL_DEVICE_EXTENSIONS>(native),
-              device.GetDeviceExtensions());
-  }
+  EXPECT_EQ(ggems::ocl::GetInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>(native),
+            device.GetMaxWorkItemSizes());
+  EXPECT_EQ(ggems::ocl::ExtractExtensions<CL_DEVICE_EXTENSIONS>(native),
+            device.GetDeviceExtensions());
 }
 
 // =============================================================================
 // =============================================================================
 
+// The fallback string query removes the terminal NUL from advertised SPIR
+// versions.
 TEST(GGEMSOpenCLUtilsTest,
      ReadsFallbackStringWithoutTerminalNullWhenSpirIsAdvertised) {
-  std::size_t compatible_device_count{0U};
+  auto const &entry = ggems::test::GetSelectedOpenCLDevice();
+  SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(entry));
 
-  for (auto const &entry : ggems::test::GetOpenCLDeviceInventory()) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(entry));
-
-    auto const &device = entry.device.get();
-    if (!ggems::ocl::HasExtension(device.GetDeviceExtensions(),
-                                  "cl_khr_spir")) {
-      continue;
-    }
-    ++compatible_device_count;
-
-    auto const versions =
-      ggems::ocl::GetInfo<CL_DEVICE_SPIR_VERSIONS>(device.GetDeviceNative());
-    EXPECT_EQ(versions.find('\0'), std::string::npos);
+  auto const &device = entry.device.get();
+  if (!ggems::ocl::HasExtension(device.GetDeviceExtensions(), "cl_khr_spir")) {
+    GTEST_SKIP() << "The selected device does not advertise cl_khr_spir.";
   }
 
-  if (compatible_device_count == 0U) {
-    GTEST_SKIP() << "No GGEMS-discovered device advertises cl_khr_spir.";
-  }
+  auto const versions =
+    ggems::ocl::GetInfo<CL_DEVICE_SPIR_VERSIONS>(device.GetDeviceNative());
+  EXPECT_EQ(versions.find('\0'), std::string::npos);
 }

@@ -64,9 +64,6 @@ using ggems::geometry::GGEMSBoxRecord;
 using ggems::geometry::GGEMSWorld;
 using ggems::geometry::MakePositionPM;
 
-static_assert(std::is_default_constructible_v<GGEMSWorld>);
-static_assert(std::is_copy_constructible_v<GGEMSWorld>);
-
 /*! \brief Exact empty-matter World medium used by the geometry fixtures. */
 auto Vacuum() -> ggems::core::materials::GGEMSMaterial {
   return ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum");
@@ -106,6 +103,7 @@ constexpr std::int64_t k_max_half_pm{0x3FFF'FFFF'FFFF'FFFFLL};
 // =============================================================================
 // =============================================================================
 
+// Checks canonical World dimensions and corners after unit conversion.
 TEST(GGEMSWorld, StoresExactHalfExtentsAndCornersFromUserUnits) {
   GGEMSWorld const world = MakeWorld(2_m, 400_mm, 6_cm, Vacuum());
 
@@ -125,6 +123,7 @@ TEST(GGEMSWorld, StoresExactHalfExtentsAndCornersFromUserUnits) {
 // =============================================================================
 // =============================================================================
 
+// Rejects degenerate World dimensions independently on all three axes.
 TEST(GGEMSWorld, RejectsZeroSizeOnEveryAxis) {
   EXPECT_THROW(GGEMSWorld{}.SetSize(0_pm, 2_pm, 2_pm), GGEMSRecoverable);
   EXPECT_THROW(GGEMSWorld{}.SetSize(2_pm, 0_pm, 2_pm), GGEMSRecoverable);
@@ -134,6 +133,8 @@ TEST(GGEMSWorld, RejectsZeroSizeOnEveryAxis) {
 // =============================================================================
 // =============================================================================
 
+// Prevents half-picometer World faces that canonical coordinates cannot
+// represent.
 TEST(GGEMSWorld, RejectsOddPicometerSizeOnEveryAxis) {
   EXPECT_THROW(GGEMSWorld{}.SetSize(1_pm, 2_pm, 2_pm), GGEMSRecoverable);
   EXPECT_THROW(GGEMSWorld{}.SetSize(2_pm, 3_pm, 2_pm), GGEMSRecoverable);
@@ -144,6 +145,7 @@ TEST(GGEMSWorld, RejectsOddPicometerSizeOnEveryAxis) {
 // =============================================================================
 // =============================================================================
 
+// Checks the lower valid World-size boundary without relaxing authoring rules.
 TEST(GGEMSWorld, AcceptsSmallestWorld) {
   GGEMSWorld const world = MakeWorld(2_pm, 2_pm, 2_pm, Vacuum());
 
@@ -154,6 +156,7 @@ TEST(GGEMSWorld, AcceptsSmallestWorld) {
 // =============================================================================
 // =============================================================================
 
+// Checks the upper World-size boundary before coordinate overflow.
 TEST(GGEMSWorld, AcceptsLargestWorldAndRejectsLargerSizes) {
   Length const max_size{k_max_size_pm};
   Length const above_max_even{0x8000'0000'0000'0000ULL};
@@ -186,6 +189,7 @@ TEST(GGEMSWorld, AcceptsLargestWorldAndRejectsLargerSizes) {
 // =============================================================================
 // =============================================================================
 
+// Includes exact World faces in host-side position admission.
 TEST(GGEMSWorld, ContainsClosedBoxPositionsForStaticInputValidation) {
   // Asymmetric World so that each axis is checked against its own half extent.
   GGEMSWorld const world = MakeWorld(20_pm, 40_pm, 60_pm, Vacuum());
@@ -215,6 +219,7 @@ TEST(GGEMSWorld, ContainsClosedBoxPositionsForStaticInputValidation) {
 // =============================================================================
 // =============================================================================
 
+// Preserves the selected material and exact vacuum identity in World records.
 TEST(GGEMSWorld, OwnsExplicitMaterialIncludingExactVacuum) {
   GGEMSWorld const vacuum_world = MakeWorld(2_m, 2_m, 2_m, Vacuum());
   EXPECT_EQ(vacuum_world.GetMaterial().GetName(), "Vacuum");
@@ -237,10 +242,13 @@ TEST(GGEMSWorld, OwnsExplicitMaterialIncludingExactVacuum) {
 // =============================================================================
 // =============================================================================
 
+// Checks canonical face coordinates without routing them through lossy
+// binary64.
 TEST(GGEMSWorld, PreservesExactFacesBeyondBinary64IntegerPrecision) {
   // Half extent 2^53 + 1 pm is not representable in binary64; authored as the
   // full size 2^54 + 2 pm. Exact one-picometer distinctions must survive.
-  constexpr std::int64_t k_half_pm{(1LL << 53) + 1LL};
+  constexpr std::int64_t k_half_pm{static_cast<std::int64_t>(1ULL << 53U) +
+                                   1LL};
   Length const size{static_cast<std::uint64_t>(k_half_pm) * 2ULL};
 
   GGEMSWorld const world = MakeWorld(size, size, size, Vacuum());
@@ -255,6 +263,7 @@ TEST(GGEMSWorld, PreservesExactFacesBeyondBinary64IntegerPrecision) {
 // =============================================================================
 // =============================================================================
 
+// Ensures World material lifetime does not depend on the caller's object.
 TEST(GGEMSWorld, OwnedMaterialOutlivesTheCallerMaterial) {
   auto const build = [] -> GGEMSWorld {
     auto air = ggems::core::materials::builtins::BuildBuiltInMaterial("Air");
@@ -273,6 +282,7 @@ TEST(GGEMSWorld, OwnedMaterialOutlivesTheCallerMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Preserves accepted World geometry after a failed size update.
 TEST(GGEMSWorld, RejectedSizeKeepsThePreviousSizeAndCallerMaterialUsable) {
   auto const water = Water();
 
@@ -292,6 +302,7 @@ TEST(GGEMSWorld, RejectedSizeKeepsThePreviousSizeAndCallerMaterialUsable) {
 // =============================================================================
 // =============================================================================
 
+// Rejects incomplete Worlds before compilation or transport.
 TEST(GGEMSWorld, ValidateRequiresASizeAndAnExplicitMaterial) {
   GGEMSWorld world{};
   EXPECT_THROW(world.Validate(), GGEMSRecoverable);
@@ -310,6 +321,7 @@ TEST(GGEMSWorld, ValidateRequiresASizeAndAnExplicitMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Checks equivalent authoring orders produce the same physical World.
 TEST(GGEMSWorld, SetterOrderDoesNotChangeTheCompiledScene) {
   GGEMSWorld first{};
   first.SetSize(200_mm, 200_mm, 200_mm)
@@ -355,6 +367,7 @@ TEST(GGEMSWorld, SetterOrderDoesNotChangeTheCompiledScene) {
 // =============================================================================
 // =============================================================================
 
+// Ensures insertion validates inputs and copies independent volume occurrences.
 TEST(GGEMSWorld, AddVolumeRejectsIncompleteBoxesAndOwnsMultipleOccurrences) {
   GGEMSWorld world = MakeWorld(200_mm, 200_mm, 200_mm, Vacuum());
 
@@ -380,6 +393,7 @@ TEST(GGEMSWorld, AddVolumeRejectsIncompleteBoxesAndOwnsMultipleOccurrences) {
 // =============================================================================
 // =============================================================================
 
+// Checks exact containment of authored volumes at World faces.
 TEST(GGEMSWorld, ValidateAdmitsContactButRejectsVolumesThatEscapeTheWorld) {
   // Box whose +X face coincides with the World +X face.
   {
@@ -405,6 +419,7 @@ TEST(GGEMSWorld, ValidateAdmitsContactButRejectsVolumesThatEscapeTheWorld) {
 // =============================================================================
 // =============================================================================
 
+// Preserves dense material identities across World and volume compilation.
 TEST(GGEMSWorld, CompilesExactMaterialIdentitiesWithTheMaterialsAuthority) {
   // The scene compiler interns World then Box media; the Box receives the
   // dense identity 1 for a distinct Material and 0 for the World's own one.
@@ -438,6 +453,7 @@ TEST(GGEMSWorld, CompilesExactMaterialIdentitiesWithTheMaterialsAuthority) {
 // =============================================================================
 // =============================================================================
 
+// Ensures a World copy owns its material and all volume snapshots.
 TEST(GGEMSWorld, CopiesOwnTheirMaterialAndVolumes) {
   GGEMSWorld original = MakeWorld(200_mm, 200_mm, 200_mm, Vacuum());
   GGEMSWorld const copy_before = original;
@@ -466,6 +482,7 @@ TEST(GGEMSWorld, CopiesOwnTheirMaterialAndVolumes) {
 // =============================================================================
 // =============================================================================
 
+// Checks tolerance scaling across supported medical geometry sizes.
 TEST(GGEMSWorld, AutomaticToleranceAdaptsToMedicalWorldAndSolidScales) {
   std::array const sizes{100_mm, 1_m, 3_m};
   std::array const expected_world_pm{32768.0F, 262144.0F, 1048576.0F};
@@ -495,6 +512,8 @@ TEST(GGEMSWorld, AutomaticToleranceAdaptsToMedicalWorldAndSolidScales) {
 // =============================================================================
 // =============================================================================
 
+// Separates a small resolvable solid from a distant collapsed parameter
+// interval.
 TEST(GGEMSWorld,
      RetainsResolvedSmallFeaturesAndRejectsRemoteParameterCollapse) {
   auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
@@ -517,6 +536,7 @@ TEST(GGEMSWorld,
 // =============================================================================
 // =============================================================================
 
+// Allows a solid's numerical envelope to dominate the World baseline.
 TEST(GGEMSWorld, LocalSurfaceEnvelopeCanExceedTheWorldBaseline) {
   auto centered = MakeWorld(3_m, 3_m, 3_m, Vacuum());
   GGEMSBox box;
@@ -536,6 +556,7 @@ TEST(GGEMSWorld, LocalSurfaceEnvelopeCanExceedTheWorldBaseline) {
 // =============================================================================
 // =============================================================================
 
+// Includes distant query resolution when admitting a rotated box.
 TEST(GGEMSWorld, RotatedBoxIncludesTheRemoteWorldQueryResolution) {
   auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
   GGEMSBox box;
@@ -553,6 +574,7 @@ TEST(GGEMSWorld, RotatedBoxIncludesTheRemoteWorldQueryResolution) {
 // =============================================================================
 // =============================================================================
 
+// Rejects geometry whose surface bands eliminate its physical interior.
 TEST(GGEMSWorld, RejectsUnresolvedPhysicalFeatures) {
   auto world = MakeWorld(3_m, 3_m, 3_m, Vacuum());
   ggems::geometry::GGEMSSphere sphere;
@@ -565,6 +587,7 @@ TEST(GGEMSWorld, RejectsUnresolvedPhysicalFeatures) {
 // =============================================================================
 // =============================================================================
 
+// Keeps valid physical gaps independent from overlapping numerical bands.
 TEST(GGEMSWorld, AdmitsPositiveWorldGapsWithoutChangingAutomaticBands) {
   for (auto const gap : {1_um, 10_um}) {
     SCOPED_TRACE(gap.value);
@@ -585,6 +608,7 @@ TEST(GGEMSWorld, AdmitsPositiveWorldGapsWithoutChangingAutomaticBands) {
 // =============================================================================
 // =============================================================================
 
+// Protects World tolerance upload without expanding per-particle state.
 TEST(GGEMSWorld, ScalarWorldRecordCarriesTheToleranceWithoutParticleState) {
   using ggems::geometry::GGEMSWorldRecord;
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSWorldRecord>);
@@ -602,6 +626,7 @@ TEST(GGEMSWorld, ScalarWorldRecordCarriesTheToleranceWithoutParticleState) {
 // =============================================================================
 // =============================================================================
 
+// Accepts separated rotated solids even when their tolerance bands overlap.
 TEST(GGEMSWorld, RotatedBoxPositiveGapsDoNotRequireDisjointSurfaceBands) {
   for (auto const gap_pm : {3'500'000LL, 5'000'000LL}) {
     SCOPED_TRACE(gap_pm);

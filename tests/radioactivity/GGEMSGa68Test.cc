@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks ga68 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -180,6 +182,8 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSGa68Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildGa68Radionuclide();
 
@@ -225,6 +229,8 @@ TEST(GGEMSGa68Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSGa68Test, PreservesThreeTabulatedBetaShapePositronSpectra) {
   GGEMSRadionuclideDefinition const definition = BuildGa68Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -285,6 +291,8 @@ TEST(GGEMSGa68Test, PreservesThreeTabulatedBetaShapePositronSpectra) {
 // =============================================================================
 // =============================================================================
 
+// Selected parent photon lines must retain their physical energies and
+// absolute yields.
 TEST(GGEMSGa68Test, PreservesThirteenLaraNuclearGammasWithoutAnnihilationLine) {
   GGEMSRadionuclideDefinition const definition = BuildGa68Radionuclide();
   GGEMSRadionuclideEmission const &gamma = definition.GetEmissions()[3U];
@@ -307,6 +315,8 @@ TEST(GGEMSGa68Test, PreservesThirteenLaraNuclearGammasWithoutAnnihilationLine) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGa68Test, PreservesLaraAndMirdAtomicRadiations) {
   GGEMSRadionuclideDefinition const definition = BuildGa68Radionuclide();
   auto const emissions = definition.GetEmissions();

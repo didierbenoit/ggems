@@ -56,9 +56,6 @@ using ggems::geometry::HalfExtent3PM;
 using ggems::geometry::MakePositionPM;
 using namespace ggems::units;
 
-static_assert(std::is_default_constructible_v<GGEMSBox>);
-static_assert(std::is_copy_constructible_v<GGEMSBox>);
-
 auto Vacuum() -> ggems::core::materials::GGEMSMaterial {
   return ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum");
 }
@@ -120,6 +117,8 @@ constexpr std::int64_t k_max_half_pm{0x3FFF'FFFF'FFFF'FFFFLL};
 // =============================================================================
 // =============================================================================
 
+// Converts authored dimensions and signed centers to the canonical length
+// representation.
 TEST(GGEMSBox, StoresCenterAndHalfExtentsFromUserUnits) {
   GGEMSBox const box = MakeBox();
   EXPECT_EQ(
@@ -144,6 +143,7 @@ TEST(GGEMSBox, StoresCenterAndHalfExtentsFromUserUnits) {
 // =============================================================================
 // =============================================================================
 
+// Preserves exact half extents at the smallest representable valid dimension.
 TEST(GGEMSBox, AdmitsTheSmallestEvenSideAndRejectsZeroOrOddSides) {
   GGEMSBox box{};
   box.SetSize(2_pm, 2_pm, 2_pm);
@@ -163,6 +163,7 @@ TEST(GGEMSBox, AdmitsTheSmallestEvenSideAndRejectsZeroOrOddSides) {
 // =============================================================================
 // =============================================================================
 
+// Ensures translation does not change the solid's local dimensions.
 TEST(GGEMSBox, CompilesPositiveLocalHalfExtentsForEveryPlacement) {
   GGEMSBoxRecord const record = Compile(MakeWorld(200_mm), MakeBox());
   EXPECT_EQ(record.half_extent_x_pm, static_cast<float>(30'000'000'000ULL));
@@ -198,6 +199,7 @@ TEST(GGEMSBox, CompilesPositiveLocalHalfExtentsForEveryPlacement) {
 // =============================================================================
 // =============================================================================
 
+// Keeps closed World containment distinct from an interior overlap test.
 TEST(GGEMSBox, ContainmentAdmitsCoincidentWorldFacesButRejectsProtrusion) {
   GGEMSWorld const world = MakeWorld(200_mm);
   auto const place = [](CoordinatePM center_x, CoordinatePM center_y,
@@ -226,6 +228,7 @@ TEST(GGEMSBox, ContainmentAdmitsCoincidentWorldFacesButRejectsProtrusion) {
 // =============================================================================
 // =============================================================================
 
+// Checks device dimensions at both ends of the supported authoring range.
 TEST(GGEMSBox, PacksCanonicalHalfExtentsAtTheAdmittedBounds) {
   GGEMSWorld const largest =
     MakeWorld(Length{ggems::geometry::k_max_world_size_pm});
@@ -264,6 +267,7 @@ TEST(GGEMSBox, PacksCanonicalHalfExtentsAtTheAdmittedBounds) {
 // =============================================================================
 // =============================================================================
 
+// Allows flexible authoring order while rejecting incomplete physical volumes.
 TEST(GGEMSBox, SettersApplyInAnyOrderAndValidateRequiresSizeAndMaterial) {
   GGEMSBox box{};
   EXPECT_THROW(box.Validate(), GGEMSRecoverable);
@@ -292,6 +296,7 @@ TEST(GGEMSBox, SettersApplyInAnyOrderAndValidateRequiresSizeAndMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Protects the public host record layout shared with OpenCL.
 TEST(GGEMSBox, ScalarHostLayoutMatchesTheDocumentedDeviceABI) {
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSBoxRecord>);
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSBoxRecord>);

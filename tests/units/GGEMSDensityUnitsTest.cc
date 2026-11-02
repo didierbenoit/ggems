@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks density units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -53,6 +55,8 @@ constexpr long double k_density_relative_tolerance =
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSDensityUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
     long double value;
@@ -93,6 +97,8 @@ TEST(GGEMSDensityUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSDensityUnitsTest, EnforcesFiniteNonNegativeInput) {
   auto const negative = MakeQuantity<Density>(-1.0L, "pg/pm3");
   auto const infinity = MakeQuantity<Density>(
@@ -111,6 +117,8 @@ TEST(GGEMSDensityUnitsTest, EnforcesFiniteNonNegativeInput) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSDensityUnitsTest, UsesFixedGramsPerCubicCentimeterDisplay) {
   Density const density{1.0e-18L};
 
@@ -127,6 +135,8 @@ TEST(GGEMSDensityUnitsTest, UsesFixedGramsPerCubicCentimeterDisplay) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSDensityUnitsTest, LiteralsStoreCanonicalDensity) {
   using namespace ggems::units;
 

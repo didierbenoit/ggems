@@ -51,6 +51,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSCa45Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildCa45Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Ca-45");
@@ -81,6 +83,8 @@ TEST(GGEMSCa45Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSCa45Test, PreservesBetaMinus2456Kev) {
   auto const definition = BuildCa45Radionuclide();
   auto const &distribution =
@@ -142,6 +146,8 @@ TEST(GGEMSCa45Test, PreservesBetaMinus2456Kev) {
 // =============================================================================
 // =============================================================================
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSCa45Test, PreservesBetaMinus2580Kev) {
   auto const definition = BuildCa45Radionuclide();
   auto const &distribution =
@@ -203,6 +209,8 @@ TEST(GGEMSCa45Test, PreservesBetaMinus2580Kev) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCa45Test, PreservesConversion1240Kev) {
   auto const definition = BuildCa45Radionuclide();
   auto const &distribution =

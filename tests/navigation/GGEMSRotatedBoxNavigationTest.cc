@@ -25,20 +25,19 @@
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
-#include <algorithm>
 #include <array>
 #include <bit>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <iostream>
 #include <string>
 #include <span>
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
@@ -251,23 +250,11 @@ auto Cases() -> std::vector<Case> {
   return cases;
 }
 
-/*! \brief Records the separately measured position, parameter and length
- * errors. */
-struct Errors {
-  double position{0};
-  double segment_parameter{0};
-  double accumulated_parameter{0};
-  double accumulated_length{0};
-  double world_position{0};
-  double world_parameter{0};
-  double world_length{0};
-};
-
 /*! \brief Executes production queries/transactions and checks the prescribed
  * sequence. */
 auto CheckCase(ocl::GGEMSOpenCLContext &context,
-               ocl::GGEMSOpenCLProgram const &program, Case const &test,
-               Errors &errors) -> void {
+               ocl::GGEMSOpenCLProgram const &program, Case const &test)
+  -> void {
   SCOPED_TRACE(test.name);
   auto const material = materials::builtins::BuildBuiltInMaterial("Vacuum");
   geometry::GGEMSBox box;
@@ -373,9 +360,6 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
   double accumulated_length = 0;
   fp32::Scalar parameter_sum{};
   fp32::Scalar length_sum{};
-  double maximum_position_error = 0;
-  double maximum_position_budget = 0;
-  double maximum_budget_fraction = 0;
   auto const norm = fp32::Sqrt(
     oracle::Dot(oracle::PackedPoint(test.direction), test.direction));
   for (std::size_t index = 0; index < test.planes.size(); ++index) {
@@ -425,64 +409,35 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
                          .value = original.value * norm.value,
                          .error = length_sum.error,
                        });
-    errors.segment_parameter = std::max(
-      errors.segment_parameter,
-      std::abs(static_cast<double>(parameters[2 * index]) - segment.value));
-    if (plane.event == 1) {
-      errors.world_parameter = std::max(errors.world_parameter,
-                                        std::abs(accumulated - original.value));
-      errors.world_length =
-        std::max(errors.world_length,
-                 std::abs(accumulated_length - (original.value * norm.value)));
-    } else {
-      errors.accumulated_parameter = std::max(
-        errors.accumulated_parameter, std::abs(accumulated - original.value));
-      errors.accumulated_length =
-        std::max(errors.accumulated_length,
-                 std::abs(accumulated_length - (original.value * norm.value)));
-    }
     reference = oracle::Advance(reference, test.direction, segment);
     for (std::size_t axis = 0; axis < 3; ++axis) {
       double const actual = static_cast<double>(std::bit_cast<float>(
         static_cast<std::uint32_t>(trace[offset + 5 + axis])));
       fp32::ExpectWithin(actual, reference[axis]);
-      double const discrepancy = std::abs(actual - reference[axis].value);
-      maximum_position_error = std::max(maximum_position_error, discrepancy);
-      maximum_position_budget =
-        std::max(maximum_position_budget, reference[axis].error);
-      if (reference[axis].error > 0) {
-        maximum_budget_fraction = std::max(maximum_budget_fraction,
-                                           discrepancy / reference[axis].error);
-      }
-      auto &maximum =
-        plane.event == 1 ? errors.world_position : errors.position;
-      maximum = std::max(maximum, discrepancy);
     }
     departure = arrival;
-  }
-  if (test.world_half >= 1'000'000'000LL) {
-    std::cout << std::format(
-      "Box oracle [{}]: max coordinate error {:.6f} pm ({:.6f} nm); "
-      "max propagated bound {:.6f} pm; max error/bound {:.6f}\n",
-      test.name, maximum_position_error, maximum_position_error / 1000.0,
-      maximum_position_budget, maximum_budget_fraction);
   }
 }
 } // namespace
 
+// Checks transformed plane intersections and continuity with propagated FP32
+// bounds.
 TEST_F(GGEMSNavigationDeviceTest,
        RotatedBoxAnalyticPlanesAndCanonicalContinuity) {
-  auto &contexts = ocl::GGEMSOpenCL::GetInstance().GetContext();
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
-  for (auto &context : contexts) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     auto const options = std::format("-I{}", root.generic_string());
     auto const &program = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-      context, root / "tests", "rotated_box_navigation_probe", options);
-    EXPECT_TRUE(program.Matches(context, root / "tests",
+      context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+      "rotated_box_navigation_probe", options);
+    EXPECT_TRUE(program.Matches(context,
+                                std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
                                 "rotated_box_navigation_probe", options));
     EXPECT_FALSE(
-      program.Matches(context, root / "tests", "rotated_box_navigation_probe",
+      program.Matches(context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+                      "rotated_box_navigation_probe",
                       options + " -DGGEMS_TEST_DIFFERENT_OPTIONS=1"));
     // Caller options contain only the include path: these are the default
     // program math options, not an explicit unsafe-math override test.
@@ -500,24 +455,9 @@ TEST_F(GGEMSNavigationDeviceTest,
     EXPECT_EQ(program.GetBuildOptions().find("-cl-opt-disable"),
               std::string::npos);
 #endif
-    Errors errors;
     auto const cases = Cases();
     for (auto const &test : cases) {
-      CheckCase(context, program, test, errors);
+      CheckCase(context, program, test);
     }
-    std::cout << std::format(
-      "Rotated Box: {} cases, max position {:.6f} pm, segment parameter {:.6f} "
-      "pm, "
-      "accumulated parameter {:.6f} pm, accumulated physical length {:.6f} "
-      "pm\n",
-      cases.size(), errors.position, errors.segment_parameter,
-      errors.accumulated_parameter, errors.accumulated_length);
-    std::cout << std::format(
-      "Through World exit: max position {:.6f} pm; medical-scene accumulated "
-      "parameter {:.6f} pm, length {:.6f} pm\n",
-      errors.world_position, errors.world_parameter, errors.world_length);
-    std::cout << "Device: " << context.GetDevice().GetName()
-              << "; driver: " << context.GetDevice().GetDriverVersion()
-              << "; options: " << program.GetBuildOptions() << '\n';
   }
 }

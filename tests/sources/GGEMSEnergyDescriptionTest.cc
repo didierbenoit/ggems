@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks energy description behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -65,6 +67,8 @@ auto ExpectContains(std::string const &description, std::string_view expected)
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSEnergyDescription, DescribesExactMonoEnergy) {
   ggems::core::sources::GGEMSSource source{};
   source.SetEnergyMicroElectronVolt(100'000'000'000ULL);
@@ -78,6 +82,8 @@ TEST(GGEMSEnergyDescription, DescribesExactMonoEnergy) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSEnergyDescription, DescribesDiscreteLinesWithoutDumpingTable) {
   constexpr std::array<double, 3U> energies{40.0, 80.0, 120.0};
   constexpr std::array<double, 3U> weights{1.0, 2.0, 1.0};
@@ -98,6 +104,8 @@ TEST(GGEMSEnergyDescription, DescribesDiscreteLinesWithoutDumpingTable) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSEnergyDescription, DescribesRegularCenterGridAndBinWidth) {
   constexpr std::array<double, 3U> centers{20.0, 22.0, 24.0};
   constexpr std::array<double, 3U> weights{1.0, 2.0, 1.0};
@@ -117,6 +125,8 @@ TEST(GGEMSEnergyDescription, DescribesRegularCenterGridAndBinWidth) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSEnergyDescription, OwnedSnapshotSurvivesSourceEnergyMutation) {
   constexpr std::array<double, 2U> first_energies{40.0, 80.0};
   constexpr std::array<double, 2U> first_weights{1.0, 1.0};

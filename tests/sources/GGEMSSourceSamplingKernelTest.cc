@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source sampling kernel behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -41,6 +43,10 @@
 #include <iterator>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
+
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSSource.hh"
@@ -141,18 +147,11 @@ struct SamplingResult {
 class GGEMSSourceSamplingKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 
   static auto Context() -> ggems::ocl::GGEMSOpenCLContext & {
-    return ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().front();
+    return ggems::test::GetSelectedOpenCLContext();
   }
 
   [[nodiscard]] static auto BuildOptions(Random const &random) -> std::string {
@@ -190,8 +189,8 @@ protected:
     ggems::ocl::WriteSVMFromHost(position_buffer, std::span{result.position});
     ggems::ocl::WriteSVMFromHost(direction_buffer, std::span{result.direction});
 
-    std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path const kernel_test_root = kernel_root / "tests";
+    std::filesystem::path const kernel_test_root =
+      std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
     auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "source_sampling_probe", FixedBuildOptions());
     cl::Kernel raw_kernel =
@@ -229,10 +228,13 @@ protected:
       .table_offset = 0ULL,
       .distribution_type = ggems::core::sources::ToKernelEnergyDistributionType(
         table_energy ? EnergyType::DiscreteLines : EnergyType::Mono),
-      .table_count = table_energy ? 2U : 0U};
+      .table_count = table_energy ? 2U : 0U,
+    };
     constexpr std::array<std::uint64_t, 2U> energy_values{40'000ULL, 80'000ULL};
-    constexpr std::array<std::uint64_t, 2U> ticket_upper{2'147'483'648ULL,
-                                                         4'294'967'296ULL};
+    constexpr std::array<std::uint64_t, 2U> ticket_upper{
+      2'147'483'648ULL,
+      4'294'967'296ULL,
+    };
     std::array<float, 6U> sampled_positions{};
     std::array<float, 6U> sampled_directions{};
     std::array<std::uint64_t, 4U> sampled_values{};
@@ -273,8 +275,8 @@ protected:
                                  std::span{sampled_directions});
     ggems::ocl::WriteSVMFromHost(value_buffer, std::span{sampled_values});
 
-    std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    std::filesystem::path const kernel_test_root = kernel_root / "tests";
+    std::filesystem::path const kernel_test_root =
+      std::filesystem::path{GGEMS_TEST_PROBE_ROOT};
     auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "source_sampling_probe", BuildOptions(random));
     cl::Kernel raw_kernel =
@@ -323,6 +325,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST_F(GGEMSSourceSamplingKernelTest,
        SamplesPlanarPositionsFromImposedVectors) {
   Source rectangle{};
@@ -346,6 +350,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// FP32 source initialization must not truncate valid fractional-picometer
+// positions.
 TEST_F(GGEMSSourceSamplingKernelTest,
        RetainsFractionalPicometerBirthPositions) {
   Source source{};
@@ -360,6 +366,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST_F(GGEMSSourceSamplingKernelTest,
        FocusedDirectionUsesImposedSampledPosition) {
   Source rectangle{};
@@ -380,6 +388,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST_F(GGEMSSourceSamplingKernelTest,
        SamplesVolumePositionsFromImposedVectors) {
   Source box{};
@@ -412,6 +422,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// An isotropic full sphere must remain independent of an arbitrary
+// source-frame rotation.
 TEST_F(GGEMSSourceSamplingKernelTest,
        DefaultFullSphereRemainsGlobalAndBitwiseFrameInvariant) {
   Source source_a{};
@@ -436,6 +448,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST_F(GGEMSSourceSamplingKernelTest,
        BoundedIsotropicUsesCosineAndStoredSourceFrame) {
   Source source{};
@@ -459,6 +473,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST_F(GGEMSSourceSamplingKernelTest, SamplesBoxCenterAndHalfOpenSides) {
   constexpr std::uint64_t k_size_pm{16'777'216ULL};
   constexpr std::int64_t k_half_size_pm{8'388'608LL};
@@ -494,6 +510,8 @@ TEST_F(GGEMSSourceSamplingKernelTest, SamplesBoxCenterAndHalfOpenSides) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST_F(GGEMSSourceSamplingKernelTest,
        SamplesSphereCubeRootRadiusAndKeepsPointsInside) {
   Source sphere{};
@@ -523,6 +541,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST_F(GGEMSSourceSamplingKernelTest,
        SamplesCylinderAreaAzimuthAndHalfOpenHeight) {
   Source cylinder{};
@@ -552,6 +572,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST_F(GGEMSSourceSamplingKernelTest,
        BoundedIsotropicUsesLocalCardinalConventionsAndVolumeSecondVector) {
   Source point{};
@@ -592,6 +614,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Source mode and shape must consume exactly their documented random-vector
+// plan.
 TEST_F(GGEMSSourceSamplingKernelTest,
        ExactSourceInitializationDrawPlanForEveryEngine) {
   constexpr std::array<std::string_view, 3U> k_engines{
@@ -645,6 +669,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 // =============================================================================
 
+// Device sampling must consume the specified random words and preserve the
+// observable stream progression.
 TEST(GGEMSSourceSamplingKernelSource,
      ProductionTransportDelegatesRandomSamplingToSource) {
   std::filesystem::path const transport_path =

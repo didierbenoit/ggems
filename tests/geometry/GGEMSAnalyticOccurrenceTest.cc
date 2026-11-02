@@ -85,6 +85,8 @@ auto Polygon() -> GGEMSPolyhedra {
 }
 } // namespace
 
+// Distinguishes forbidden interior overlap from exact contact and positive
+// gaps.
 TEST(GGEMSAnalyticOccurrences,
      RejectsOverlappingInteriorsAndAdmitsFaceContact) {
   auto overlap = World();
@@ -98,6 +100,7 @@ TEST(GGEMSAnalyticOccurrences,
   EXPECT_NO_THROW(separated.Validate());
 }
 
+// Preserves each occurrence's authored pose and material after caller mutation.
 TEST(GGEMSAnalyticOccurrences, CopiesOccurrencePoseAndMaterialIndependently) {
   auto world = World();
   auto shape = Box(-20'000'000'000LL);
@@ -127,6 +130,8 @@ TEST(GGEMSAnalyticOccurrences, CopiesOccurrencePoseAndMaterialIndependently) {
   EXPECT_GE(copy.BuildRecord().max_boundary_events, 5U);
 }
 
+// Checks uploaded profile coefficients without requiring a particular
+// deduplication layout.
 TEST(GGEMSAnalyticOccurrences,
      SharedPolygonProfileRetainsIndependentPosesAndMaterials) {
   auto world = World();
@@ -147,19 +152,32 @@ TEST(GGEMSAnalyticOccurrences,
   EXPECT_EQ(occurrences[0].record_index, 0U);
   EXPECT_EQ(occurrences[1].record_index, 1U);
   EXPECT_NE(occurrences[0].auxiliary_offset, occurrences[1].auxiliary_offset);
-  auto const first_profile =
-    occurrences[0].auxiliary_offset +
-    records[0].parameters.polyhedra.profile_offset_bytes;
-  auto const second_profile =
-    occurrences[1].auxiliary_offset +
-    records[1].parameters.polyhedra.profile_offset_bytes;
-  EXPECT_EQ(first_profile, second_profile);
-  EXPECT_LE(first_profile + 6U * sizeof(GGEMSPolyhedraSideRecord) +
-              2U * sizeof(GGEMSPolyhedraSectionRecord),
-            auxiliary.size());
   for (std::size_t index = 0; index < occurrences.size(); ++index) {
+    auto const &profile = records[index].parameters.polyhedra;
+    auto const profile_offset =
+      occurrences[index].auxiliary_offset + profile.profile_offset_bytes;
+    EXPECT_EQ(profile.side_count, 6U);
+    EXPECT_EQ(profile.section_count, 2U);
+    ASSERT_LE(profile_offset + (6U * sizeof(GGEMSPolyhedraSideRecord)) +
+                (2U * sizeof(GGEMSPolyhedraSectionRecord)),
+              auxiliary.size());
+
+    std::array<GGEMSPolyhedraSectionRecord, 2> sections;
+    std::memcpy(sections.data(),
+                auxiliary.data() + profile_offset +
+                  (6U * sizeof(GGEMSPolyhedraSideRecord)),
+                sizeof(sections));
+    EXPECT_FLOAT_EQ(sections[0].z_lower_pm, -6e9F);
+    EXPECT_FLOAT_EQ(sections[0].z_upper_pm, 0.0F);
+    EXPECT_FLOAT_EQ(sections[1].z_lower_pm, 0.0F);
+    EXPECT_FLOAT_EQ(sections[1].z_upper_pm, 6e9F);
+    EXPECT_FLOAT_EQ(sections[0].outer_radius_pm, 6e9F);
+    EXPECT_FLOAT_EQ(sections[1].outer_radius_pm, 4e9F);
+    EXPECT_FLOAT_EQ(sections[0].inner_radius_pm, 1e9F);
+    EXPECT_FLOAT_EQ(sections[1].inner_radius_pm, 2e9F);
+
     GGEMSAnalyticOccurrenceRecord uploaded;
-    std::memcpy(&uploaded, auxiliary.data() + index * sizeof(uploaded),
+    std::memcpy(&uploaded, auxiliary.data() + (index * sizeof(uploaded)),
                 sizeof(uploaded));
     EXPECT_EQ(uploaded.record_index, occurrences[index].record_index);
     EXPECT_EQ(uploaded.auxiliary_offset, occurrences[index].auxiliary_offset);
@@ -174,6 +192,7 @@ TEST(GGEMSAnalyticOccurrences,
   }
 }
 
+// Protects the scalar record strides and offsets consumed by OpenCL kernels.
 TEST(GGEMSAnalyticOccurrences, SharedRecordsRetainCompactScalarLayout) {
   EXPECT_TRUE(std::is_standard_layout_v<GGEMSAnalyticOccurrenceRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSAnalyticOccurrenceRecord>);

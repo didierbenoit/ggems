@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks radioactive time sampling behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -38,6 +40,8 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "GGEMSOpenCLDeviceInventory.hh"
 
 #include "GGEMS/radioactivity/GGEMSRadioactiveTimeSampling.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
@@ -205,12 +209,7 @@ static_assert(sizeof(OpenCLSamplingResult) == 16U);
 class GGEMSRadioactiveTimeSamplingKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
-    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
-      opencl.Initialize();
-    }
-    ASSERT_FALSE(opencl.GetContext().empty());
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
   }
 };
 
@@ -219,6 +218,8 @@ protected:
 // =============================================================================
 // =============================================================================
 
+// Decay-time quantization must retain the exact window bounds and declared
+// CDF mapping.
 TEST(GGEMSRadioactiveTimeSampling, HostBoundsScaleAndCDFContractAreExact) {
   for (SamplingCase const &sample : BuildSamplingGrid()) {
     SCOPED_TRACE(std::format("start={} stop={} x={} raw={}", sample.start_ps,
@@ -264,6 +265,8 @@ TEST(GGEMSRadioactiveTimeSampling, HostBoundsScaleAndCDFContractAreExact) {
 // =============================================================================
 // =============================================================================
 
+// Device birth times must follow the reference CDF inside the half-open run
+// window.
 TEST_F(GGEMSRadioactiveTimeSamplingKernelTest,
        OpenCLSatisfiesCurrentBuildModeCDFAndHalfOpenContract) {
   auto cases = BuildSamplingGrid();
@@ -284,7 +287,7 @@ TEST_F(GGEMSRadioactiveTimeSamplingKernelTest,
   }
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  auto &context = opencl.GetContext().front();
+  auto &context = ggems::test::GetSelectedOpenCLContext();
   auto starts_buffer = context.CreateSVMBuffer(
     ggems::units::Bytes{starts.size() * sizeof(std::uint64_t)});
   auto stops_buffer = context.CreateSVMBuffer(
@@ -304,7 +307,8 @@ TEST_F(GGEMSRadioactiveTimeSamplingKernelTest,
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   std::string const options = std::format("-I{}", root.generic_string());
   auto const &program = opencl.GetOrCreateProgram(
-    context, root / "tests", "radioactive_time_sampling_probe", options);
+    context, std::filesystem::path{GGEMS_TEST_PROBE_ROOT},
+    "radioactive_time_sampling_probe", options);
   ggems::ocl::GGEMSOpenCLKernel kernel{
     context, program.CreateKernel("radioactive_time_sampling_probe"),
     "radioactive_time_sampling_probe"};

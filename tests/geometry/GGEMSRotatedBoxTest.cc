@@ -56,6 +56,8 @@ using ggems::core::materials::GGEMSMaterial;
 using ggems::geometry::GGEMSBox;
 using ggems::geometry::GGEMSWorld;
 
+// Checks that rotation assignment replaces the prior pose instead of
+// accumulating it.
 TEST(GGEMSRotatedBox, IdentityAndAbsoluteAssignment) {
   GGEMSBox box;
   EXPECT_TRUE(box.GetRotation().IsIdentity());
@@ -70,6 +72,8 @@ TEST(GGEMSRotatedBox, IdentityAndAbsoluteAssignment) {
   EXPECT_TRUE(box.GetRotation().IsIdentity());
 }
 
+// Distinguishes the documented active fixed-axis rotation order from
+// alternatives.
 TEST(GGEMSRotatedBox, ActiveFixedAxisXYZOrder) {
   auto const rotation =
     ggems::geometry::BuildRotationXYZ(90_deg, 90_deg, 90_deg);
@@ -81,6 +85,7 @@ TEST(GGEMSRotatedBox, ActiveFixedAxisXYZOrder) {
   EXPECT_DOUBLE_EQ(rotation.axis_z.y, 0.0);
 }
 
+// Checks noncardinal and negative rotations across both supported angle units.
 TEST(GGEMSRotatedBox, ThirtyFortyFiveNegativeAndRadians) {
   auto const thirty = ggems::geometry::BuildRotationXYZ(0_deg, 0_deg, 30_deg);
   // Noncardinal rotations evaluate the canonical picoradian angle.
@@ -96,6 +101,7 @@ TEST(GGEMSRotatedBox, ThirtyFortyFiveNegativeAndRadians) {
   EXPECT_DOUBLE_EQ(negative.axis_y.x, radians.axis_y.x);
 }
 
+// Preserves a valid pose when angle conversion rejects an input.
 TEST(GGEMSRotatedBox, InvalidAnglesKeepThePreviousRotation) {
   GGEMSBox box;
   box.SetRotation(0_deg, 0_deg, 30_deg);
@@ -108,6 +114,7 @@ TEST(GGEMSRotatedBox, InvalidAnglesKeepThePreviousRotation) {
   }
 }
 
+// Keeps cardinal rotation matrices exact after canonical angle rounding.
 TEST(GGEMSRotatedBox, IndependentlyRoundedQuarterTurnsRemainExact) {
   for (int turn = -16; turn <= 16; ++turn) {
     SCOPED_TRACE(turn);
@@ -134,6 +141,7 @@ TEST(GGEMSRotatedBox, IndependentlyRoundedQuarterTurnsRemainExact) {
   }
 }
 
+// Preserves resolvable authored rotations adjacent to a quarter turn.
 TEST(GGEMSRotatedBox, PicoradianNeighborsAreNotSnappedToCardinalAngles) {
   for (long double const degrees : {-360.0L, -90.0L, 0.0L, 90.0L, 360.0L}) {
     auto const cardinal = MakeDegrees(degrees);
@@ -149,6 +157,7 @@ TEST(GGEMSRotatedBox, PicoradianNeighborsAreNotSnappedToCardinalAngles) {
   }
 }
 
+// Checks the specified canonical rounding boundary below one picoradian.
 TEST(GGEMSRotatedBox, SubPicoradianAnglePacksAnIdentityPose) {
   auto const angle = MakeRadians(1.0e-20L);
   EXPECT_EQ(angle.value, 0);
@@ -169,6 +178,7 @@ TEST(GGEMSRotatedBox, SubPicoradianAnglePacksAnIdentityPose) {
   EXPECT_EQ(pose->axis_y_y, 1.0F);
 }
 
+// Accepts a rotated solid with a valid positive containment margin.
 TEST(GGEMSRotatedBox, RotationFitsWithSubPicometerWorldClearance) {
   GGEMSWorld world;
   world.SetSize(Length{20}, Length{20}, Length{20})
@@ -191,6 +201,7 @@ TEST(GGEMSRotatedBox, RotationFitsWithSubPicometerWorldClearance) {
   EXPECT_THROW(shifted.Validate(), ggems::core::GGEMSRecoverable);
 }
 
+// Checks containment against the rotated physical envelope.
 TEST(GGEMSRotatedBox, RejectsRotatedProtrusionButAdmitsExactContact) {
   GGEMSWorld world;
   world.SetSize(Length{20}, Length{20}, Length{20})
@@ -213,6 +224,7 @@ TEST(GGEMSRotatedBox, RejectsRotatedProtrusionButAdmitsExactContact) {
   EXPECT_NO_THROW(contact.Validate());
 }
 
+// Separates immutable World placement from the solid's local shape payload.
 TEST(GGEMSRotatedBox, WorldOwnsPoseAndPacksLocalHalfExtents) {
   GGEMSWorld world;
   world.SetSize(20_mm, 20_mm, 20_mm)
@@ -261,6 +273,7 @@ TEST(GGEMSRotatedBox, WorldOwnsPoseAndPacksLocalHalfExtents) {
   EXPECT_EQ(world.BuildAnalyticVolumeRecord(3U).kind,
             ggems::geometry::GGEMSAnalyticKind::Box);
 }
+// Checks the final FP32 pose upload against canonical host coordinates.
 TEST(GGEMSRotatedBox, PackingRoundsAxesOnceAndPreservesCanonicalCenter) {
   constexpr std::int64_t center = 100'000'000'001LL;
   GGEMSWorld world;
@@ -292,6 +305,7 @@ TEST(GGEMSRotatedBox, PackingRoundsAxesOnceAndPreservesCanonicalCenter) {
   EXPECT_EQ(pose->axis_z_z, static_cast<float>(rotation.axis_z.z));
 }
 
+// Protects pose stride, alignment, and field offsets used by kernels.
 TEST(GGEMSRotatedBox, ScalarPoseLayoutMatchesTheDocumentedDeviceABI) {
   using ggems::geometry::GGEMSBoxPoseRecord;
   EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSBoxPoseRecord>);

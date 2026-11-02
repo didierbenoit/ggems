@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks built in materials behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -667,6 +669,8 @@ constexpr std::array<ExpectedTotals, 116U> k_expected_totals{
 // =============================================================================
 // =============================================================================
 
+// Stable semantic ordering must be independent of the order in which the
+// caller supplied data.
 TEST(GGEMSBuiltInMaterialsTest, ExposesCanonicalNamesInRegistryOrder) {
   auto const available = builtins::GetAvailableMaterialNames();
 
@@ -688,6 +692,8 @@ TEST(GGEMSBuiltInMaterialsTest, ExposesCanonicalNamesInRegistryOrder) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSBuiltInMaterialsTest, BuildsEveryAvailableMaterial) {
   for (auto const name : builtins::GetAvailableMaterialNames()) {
     SCOPED_TRACE(name);
@@ -698,6 +704,8 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsEveryAvailableMaterial) {
 // =============================================================================
 // =============================================================================
 
+// Vacuum must remain exactly matterless rather than an artificial low-density
+// material.
 TEST(GGEMSBuiltInMaterialsTest, BuildsVacuum) {
   auto const material = builtins::BuildBuiltInMaterial("Vacuum");
 
@@ -711,6 +719,8 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsVacuum) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSBuiltInMaterialsTest, BuildsCommonMedia) {
   auto const water = builtins::BuildBuiltInMaterial("Water");
   EXPECT_EQ(water.GetDensity(), 1.000_g_cm3);
@@ -736,6 +746,8 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsCommonMedia) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeElementalMaterials) {
   struct ExpectedMaterial {
     std::string_view name;
@@ -797,6 +809,8 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeElementalMaterials) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeMedicalMaterials) {
   auto const brain = builtins::BuildBuiltInMaterial("Brain");
   EXPECT_EQ(brain.GetDensity(), 1.03_g_cm3);
@@ -826,6 +840,8 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeMedicalMaterials) {
 // =============================================================================
 // =============================================================================
 
+// Unsupported identities must fail explicitly without approximate lookup or
+// substitution.
 TEST(GGEMSBuiltInMaterialsTest, RejectsUnknownOrInexactNames) {
   EXPECT_THROW(static_cast<void>(builtins::BuildBuiltInMaterial("water")),
                ggems::core::GGEMSRecoverable);
@@ -849,6 +865,8 @@ TEST(GGEMSBuiltInMaterialsTest, RejectsUnknownOrInexactNames) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSBuiltInMaterialsTest, ResolvesEveryElementThroughDefaultIsotopes) {
   for (auto const name : builtins::GetAvailableMaterialNames()) {
     SCOPED_TRACE(name);
@@ -895,6 +913,8 @@ TEST(GGEMSBuiltInMaterialsTest, ResolvesEveryElementThroughDefaultIsotopes) {
 // =============================================================================
 // =============================================================================
 
+// Scientific values must agree with the independent pinned reference rather
+// than a self-generated expectation.
 TEST(GGEMSBuiltInMaterialsTest, MatchesIndependentIsotopicOracle) {
   constexpr long double k_relative_budget{
     64.0L * std::numeric_limits<long double>::epsilon(),

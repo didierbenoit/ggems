@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks radionuclide source snapshot behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -115,6 +117,8 @@ MakeActivitySource(std::shared_ptr<Definition const> radionuclide,
 // =============================================================================
 // =============================================================================
 
+// Flattening must retain source-to-emission ranges and preserve absolute
+// marginal yields.
 TEST(GGEMSRadionuclideSourceSnapshot,
      ImmutablePackingPreservesSourcePrefixAndFlattenedEmissionOrder) {
   auto f18 = std::make_shared<Definition const>(
@@ -246,6 +250,8 @@ TEST(GGEMSRadionuclideSourceSnapshot,
 // =============================================================================
 // =============================================================================
 
+// A valid empty or zero-valued configuration must retain its explicit state
+// and boundaries.
 TEST(GGEMSRadionuclideSourceSnapshot,
      RunSnapshotExactlyMirrorsMixedCandidateIncludingEmptyGroups) {
   auto discrete = MakeDiscreteDefinition();
@@ -359,6 +365,8 @@ TEST(GGEMSRadionuclideSourceSnapshot,
 // =============================================================================
 // =============================================================================
 
+// Population planning must publish atomically and preserve stream continuity
+// across attempts.
 TEST(GGEMSRadionuclideSourceSnapshot,
      RejectsLiveAndPackedDefinitionMismatchesWithoutConsumingCandidate) {
   auto planned_definition = std::make_shared<Definition const>(
@@ -405,7 +413,8 @@ TEST(GGEMSRadionuclideSourceSnapshot,
     ggems::units::MakeQuantity<ggems::units::Activity>(0.0L, "Bq").value(),
     0ULL);
   std::vector<SourcePtr> mismatched_sources{
-    MakeActivitySource(replacement_definition, 0.0L)};
+    MakeActivitySource(replacement_definition, 0.0L),
+  };
   auto const mismatched_configuration =
     ggems::core::sources::BuildSourceConfigurationSnapshot(mismatched_sources);
 
@@ -428,6 +437,8 @@ TEST(GGEMSRadionuclideSourceSnapshot,
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSRadionuclideSourceSnapshot,
      ConfigurationAndRunSnapshotOwnRadionuclideDefinitions) {
   std::weak_ptr<Definition const> weak_definition;
@@ -519,6 +530,8 @@ TEST(GGEMSRadionuclideSourceSnapshot,
 // =============================================================================
 // =============================================================================
 
+// Packed source ranges must retain every slot and preserve exact counts and
+// ownership.
 TEST(GGEMSRadionuclideSourceSnapshot,
      DuplicateActivitySourceObjectKeepsDistinctPackedSlotsAndRanges) {
   auto definition = std::make_shared<Definition const>(

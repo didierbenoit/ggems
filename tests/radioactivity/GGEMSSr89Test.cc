@@ -49,6 +49,8 @@ using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::builtins::BuildSr89Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistributionType;
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSSr89Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildSr89Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Sr-89");
@@ -75,6 +77,8 @@ TEST(GGEMSSr89Test, PreservesIdentityAndOrderedMarginalYields) {
                        1.0e-14L);
 }
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSSr89Test, PreservesBetaMinus5861Kev) {
   auto const definition = BuildSr89Radionuclide();
   auto const &distribution =
@@ -132,6 +136,8 @@ TEST(GGEMSSr89Test, PreservesBetaMinus5861Kev) {
   }
 }
 
+// The evaluated beta spectrum must retain its support, normalization, and
+// reference moments.
 TEST(GGEMSSr89Test, PreservesBetaMinus14951Kev) {
   auto const definition = BuildSr89Radionuclide();
   auto const &distribution =
@@ -189,6 +195,8 @@ TEST(GGEMSSr89Test, PreservesBetaMinus14951Kev) {
   }
 }
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSSr89Test, PreservesAtomicXray) {
   auto const definition = BuildSr89Radionuclide();
   auto const &distribution =
@@ -196,6 +204,8 @@ TEST(GGEMSSr89Test, PreservesAtomicXray) {
   EXPECT_EQ(distribution.GetMonoEnergyMicroElectronVolt(), 14'958'500'000ULL);
 }
 
+// The direct-parent source must not acquire daughter emissions or unsupported
+// channels.
 TEST(GGEMSSr89Test, ExcludesUnsupportedDiscreteEmissions) {
   auto const definition = BuildSr89Radionuclide();
   for (auto const &emission : definition.GetEmissions()) {

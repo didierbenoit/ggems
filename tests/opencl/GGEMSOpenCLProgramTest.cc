@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks program compilation, cache identity, and resource lifetime.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -31,12 +33,12 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLProgram.hh"
-#include "GGEMSOpenCLCompilerDeviceInventory.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMSOpenCLFrameworkProbe.hh"
 
@@ -47,96 +49,80 @@ using ggems::test::k_opencl_framework_probe_name;
 
 } // namespace
 
-TEST(GGEMSOpenCLProgramTest,
-     BuildsAndReportsCoherentMetadataOnEveryCompilerDevice) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
-
-  if (compiler_devices.empty()) {
-    GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
-  }
-
+// Compiled metadata preserves the source, binary sizes, and approved math
+// options.
+TEST(GGEMSOpenCLProgramTest, BuildsAndReportsCoherentMetadataOnSelectedDevice) {
   auto const probe_root = GetOpenCLFrameworkProbeRoot();
   std::string const probe_name{k_opencl_framework_probe_name};
   auto const expected_source = probe_root / (probe_name + ".cl");
 
-  for (auto const &compiler_device : compiler_devices) {
-    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+  auto const &context = ggems::test::GetSelectedOpenCLContext();
+  auto const &program =
+    ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
+      context, probe_root, probe_name);
 
-    auto const &context = *compiler_device.context;
-    auto const &program =
-      ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-        context, probe_root, probe_name);
+  EXPECT_NE(program.GetProgramNative()(), nullptr);
+  EXPECT_EQ(program.GetKernelName(), probe_name);
+  EXPECT_FALSE(program.GetBuildOptions().empty());
+  EXPECT_EQ(program.GetNumDevices(), 1U);
 
-    EXPECT_NE(program.GetProgramNative()(), nullptr);
-    EXPECT_EQ(program.GetKernelName(), probe_name);
-    EXPECT_FALSE(program.GetBuildOptions().empty());
-    EXPECT_EQ(program.GetNumDevices(), 1U);
+  cl_int options_error{CL_SUCCESS};
+  auto const native_options =
+    program.GetProgramNative().getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(
+      context.GetDevice().GetDeviceNative(), &options_error);
+  ASSERT_EQ(options_error, CL_SUCCESS);
 
-    cl_int options_error{CL_SUCCESS};
-    auto const native_options =
-      program.GetProgramNative().getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(
-        context.GetDevice().GetDeviceNative(), &options_error);
-    ASSERT_EQ(options_error, CL_SUCCESS);
-
-    std::array const reported_options{
-      std::string{program.GetBuildOptions()},
-      native_options,
-    };
-    for (auto const &reported : reported_options) {
-      SCOPED_TRACE(reported);
-      std::string const options{" " + reported + " "};
+  std::array const reported_options{
+    std::string{program.GetBuildOptions()},
+    native_options,
+  };
+  for (auto const &reported : reported_options) {
+    SCOPED_TRACE(reported);
+    std::string const options{" " + reported + " "};
 #ifdef GGEMS_DEBUG_MODE
-      EXPECT_TRUE(options.contains(" -g "));
-      EXPECT_TRUE(options.contains(" -cl-opt-disable "));
+    EXPECT_TRUE(options.contains(" -g "));
+    EXPECT_TRUE(options.contains(" -cl-opt-disable "));
 #else
-      EXPECT_FALSE(options.contains(" -g "));
-      EXPECT_FALSE(options.contains(" -cl-opt-disable "));
+    EXPECT_FALSE(options.contains(" -g "));
+    EXPECT_FALSE(options.contains(" -cl-opt-disable "));
 #endif
-      // This program uses default options; explicit caller overrides are tested
-      // separately and are not subject to the default arithmetic policy.
-      for (auto const *unsafe_option : {
-             " -cl-fast-relaxed-math ",
-             " -cl-unsafe-math-optimizations ",
-             " -cl-finite-math-only ",
-             " -cl-mad-enable ",
-             " -cl-denorms-are-zero ",
-           }) {
-        EXPECT_FALSE(options.contains(unsafe_option)) << unsafe_option;
-      }
+    // This program uses default options; explicit caller overrides are tested
+    // separately and are not subject to the default arithmetic policy.
+    for (auto const *unsafe_option : {
+           " -cl-fast-relaxed-math ",
+           " -cl-unsafe-math-optimizations ",
+           " -cl-finite-math-only ",
+           " -cl-mad-enable ",
+           " -cl-denorms-are-zero ",
+         }) {
+      EXPECT_FALSE(options.contains(unsafe_option)) << unsafe_option;
     }
-
-    EXPECT_EQ(std::filesystem::weakly_canonical(program.GetSourcePath()),
-              std::filesystem::weakly_canonical(expected_source));
-
-    auto const binary_sizes = program.GetBinarySizes();
-    auto const binaries = program.GetBinaries();
-    ASSERT_EQ(binary_sizes.size(), 1U);
-    ASSERT_EQ(binaries.size(), 1U);
-    EXPECT_EQ(binaries.front().size(), binary_sizes.front());
-
-    EXPECT_TRUE(program.Matches(context, probe_root, probe_name, ""));
-    EXPECT_TRUE(program.Matches(context, probe_root / ".", probe_name, ""));
-    EXPECT_FALSE(program.Matches(context, probe_root, "different_probe", ""));
-    EXPECT_FALSE(
-      program.Matches(context, probe_root.parent_path(), probe_name, ""));
-    EXPECT_FALSE(program.Matches(context, probe_root, probe_name,
-                                 "-DGGEMS_TEST_OPTION=1"));
   }
+
+  EXPECT_EQ(std::filesystem::weakly_canonical(program.GetSourcePath()),
+            std::filesystem::weakly_canonical(expected_source));
+
+  auto const binary_sizes = program.GetBinarySizes();
+  auto const binaries = program.GetBinaries();
+  ASSERT_EQ(binary_sizes.size(), 1U);
+  ASSERT_EQ(binaries.size(), 1U);
+  EXPECT_EQ(binaries.front().size(), binary_sizes.front());
+
+  EXPECT_TRUE(program.Matches(context, probe_root, probe_name, ""));
+  EXPECT_TRUE(program.Matches(context, probe_root / ".", probe_name, ""));
+  EXPECT_FALSE(program.Matches(context, probe_root, "different_probe", ""));
+  EXPECT_FALSE(
+    program.Matches(context, probe_root.parent_path(), probe_name, ""));
+  EXPECT_FALSE(
+    program.Matches(context, probe_root, probe_name, "-DGGEMS_TEST_OPTION=1"));
 }
 
 // =============================================================================
 // =============================================================================
 
+// Equivalent source paths reuse the compiled program in the same context.
 TEST(GGEMSOpenCLProgramTest, ReusesEquivalentProgramFromMemoryCache) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
-
-  if (compiler_devices.empty()) {
-    GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
-  }
-
-  auto const &context = *compiler_devices.front().context;
+  auto const &context = ggems::test::GetSelectedOpenCLContext();
   auto const probe_root = GetOpenCLFrameworkProbeRoot();
   std::string const probe_name{k_opencl_framework_probe_name};
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -152,15 +138,10 @@ TEST(GGEMSOpenCLProgramTest, ReusesEquivalentProgramFromMemoryCache) {
 // =============================================================================
 // =============================================================================
 
+// Cached native programs remain usable after their temporary context wrapper
+// dies.
 TEST(GGEMSOpenCLProgramTest, CachedProgramOutlivesContextWrapper) {
-  auto const &compiler_devices =
-    ggems::test::GetOpenCLCompilerDeviceInventory();
-
-  if (compiler_devices.empty()) {
-    GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
-  }
-
-  auto const &device = compiler_devices.front().inventory.device.get();
+  auto const &device = ggems::test::GetSelectedOpenCLDevice().device.get();
   auto const probe_root = GetOpenCLFrameworkProbeRoot();
   std::string const probe_name{k_opencl_framework_probe_name};
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -182,4 +163,42 @@ TEST(GGEMSOpenCLProgramTest, CachedProgramOutlivesContextWrapper) {
 
   auto const kernel = cached_program->CreateKernel(probe_name);
   EXPECT_NE(kernel(), nullptr);
+}
+// Compiler options must change the cached executable, not reuse stale kernels.
+TEST(GGEMSOpenCLProgramTest, BuildOptionsProduceDistinctExecutablePrograms) {
+  auto const &context = ggems::test::GetSelectedOpenCLContext();
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+  auto const probe_root = GetOpenCLFrameworkProbeRoot();
+  std::string const probe_name{k_opencl_framework_probe_name};
+  std::string const configured_name{"configured_framework_probe"};
+
+  auto const &original =
+    opencl.GetOrCreateProgram(context, probe_root, probe_name);
+  auto const &configured = opencl.GetOrCreateProgram(
+    context, probe_root, probe_name,
+    "-Dopencl_framework_probe=configured_framework_probe");
+
+  EXPECT_NE(&original, &configured);
+  EXPECT_NE(configured.CreateKernel(configured_name)(), nullptr);
+  EXPECT_THROW((void)original.CreateKernel(configured_name),
+               ggems::core::GGEMSFatal);
+  EXPECT_NE(original.CreateKernel(probe_name)(), nullptr);
+}
+// A missing kernel source fails without invalidating a previously compiled
+// program.
+TEST(GGEMSOpenCLProgramTest, MissingSourcePreservesExistingCacheEntries) {
+  auto const &context = ggems::test::GetSelectedOpenCLContext();
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+  auto const probe_root = GetOpenCLFrameworkProbeRoot();
+  std::string const probe_name{k_opencl_framework_probe_name};
+  auto const &existing =
+    opencl.GetOrCreateProgram(context, probe_root, probe_name);
+
+  EXPECT_THROW((void)opencl.GetOrCreateProgram(
+                 context, probe_root, "missing_source_for_failure_fixture"),
+               ggems::core::GGEMSFatal);
+
+  EXPECT_EQ(&opencl.GetOrCreateProgram(context, probe_root, probe_name),
+            &existing);
+  EXPECT_NE(existing.CreateKernel(probe_name)(), nullptr);
 }

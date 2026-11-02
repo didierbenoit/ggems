@@ -21,6 +21,9 @@
 
 /*!
  * \file
+ * \brief Checks run lifecycle, chronology, source snapshots, and result
+ * publication.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -33,7 +36,7 @@
 #include <utility>
 #include <vector>
 #include <string>
-#include <limits>
+
 #include <functional>
 #include <array>
 #include <set>
@@ -49,6 +52,7 @@
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSSource.hh"
+#include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
@@ -186,10 +190,7 @@ protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"all"});
-      opencl.Initialize();
-    }
+    static_cast<void>(ggems::test::GetSelectedOpenCLContext());
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
@@ -213,6 +214,7 @@ private:
 // =============================================================================
 // =============================================================================
 
+// Rejects premature execution without publishing a source snapshot.
 TEST(GGEMSRun, RejectsRunBeforeInitializeWithoutPublishingSnapshot) {
   ggems::core::GGEMSRun run{};
 
@@ -224,6 +226,7 @@ TEST(GGEMSRun, RejectsRunBeforeInitializeWithoutPublishingSnapshot) {
 // =============================================================================
 // =============================================================================
 
+// Checks the observable observer attachment state used by Run configuration.
 TEST(GGEMSRun, ReportsObserverAttachment) {
   ggems::core::GGEMSRun run{};
 
@@ -240,6 +243,7 @@ TEST(GGEMSRun, ReportsObserverAttachment) {
 // =============================================================================
 // =============================================================================
 
+// Checks time configuration and reset behavior before Run initialization.
 TEST(GGEMSRun, ExposesStaticAndConfiguredTimeStateBeforeInitialize) {
   ggems::core::GGEMSRun run{};
 
@@ -272,6 +276,7 @@ TEST(GGEMSRun, ExposesStaticAndConfiguredTimeStateBeforeInitialize) {
 // =============================================================================
 // =============================================================================
 
+// Rejects invalid activity windows while leaving source authoring recoverable.
 TEST(GGEMSRun,
      RejectsInvalidActivityChronologyBeforeFinalizationAndLeavesItMutable) {
   auto radionuclide = std::make_shared<
@@ -327,6 +332,7 @@ TEST(GGEMSRun,
 // =============================================================================
 // =============================================================================
 
+// Preserves zero birth time across successive runs without a configured clock.
 TEST_F(GGEMSRunTest, RepeatedStaticRunsKeepPrimaryBirthTimeAtZero) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(1ULL);
@@ -361,6 +367,8 @@ TEST_F(GGEMSRunTest, RepeatedStaticRunsKeepPrimaryBirthTimeAtZero) {
 // =============================================================================
 // =============================================================================
 
+// Checks clipped final windows and time reset without rewinding histories or
+// random state.
 TEST_F(GGEMSRunTest, AdvancesConfiguredWindowsAndResetOnlyRewindsTime) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(1ULL);
@@ -458,16 +466,12 @@ TEST_F(GGEMSRunTest, AdvancesConfiguredWindowsAndResetOnlyRewindsTime) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSRunTest, GivesEveryDeviceTheSameEffectiveWindow) {
-  std::size_t const context_count =
-    ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().size();
-  ASSERT_GT(context_count, 0U);
-  ASSERT_LE(context_count, static_cast<std::size_t>(
-                             std::numeric_limits<std::uint32_t>::max()));
-
-  auto source = MakeLowEnergySource(static_cast<std::uint64_t>(context_count));
-  auto observer =
-    MakeCapturingObserver(static_cast<std::uint32_t>(context_count));
+// Checks every captured history uses the selected device's configured time
+// window.
+TEST_F(GGEMSRunTest, UsesTheConfiguredWindowForEverySelectedDeviceHistory) {
+  constexpr std::uint32_t primary_count{3U};
+  auto source = MakeLowEnergySource(primary_count);
+  auto observer = MakeCapturingObserver(primary_count);
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakePhiloxRandom());
@@ -481,7 +485,7 @@ TEST_F(GGEMSRunTest, GivesEveryDeviceTheSameEffectiveWindow) {
 
   auto const source_records =
     BuildSortedSourceRecordSnapshot(observer->GetRecords());
-  ASSERT_EQ(source_records.size(), context_count);
+  ASSERT_EQ(source_records.size(), primary_count);
   EXPECT_TRUE(
     std::ranges::all_of(source_records, [](auto const &record) -> bool {
       return record.time_ps == 50ULL;
@@ -497,6 +501,8 @@ TEST_F(GGEMSRunTest, GivesEveryDeviceTheSameEffectiveWindow) {
 // =============================================================================
 // =============================================================================
 
+// Advances an empty time window without consuming primary identifiers or random
+// draws.
 TEST_F(GGEMSRunTest,
        ConfiguredZeroCountWindowConsumesOnlyRunIdAndAdvancesClock) {
   auto random = MakePhiloxRandom();
@@ -574,21 +580,34 @@ TEST_F(GGEMSRunTest,
 // =============================================================================
 // =============================================================================
 
+// Checks failed reinitialization leaves subsequent run and primary identities
+// intact.
 TEST_F(GGEMSRunTest, RejectsSecondInitializeAndRemainsUsable) {
+  auto observer = MakeCapturingObserver(1U);
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakePhiloxRandom());
   run.AddSource(MakeLowEnergySource(1ULL));
+  run.SetObserver(observer);
 
   ASSERT_NO_THROW(run.Initialize());
   EXPECT_THROW(run.Initialize(), ggems::core::GGEMSRecoverable);
 
-  EXPECT_NO_THROW(run.Run());
-  EXPECT_NO_THROW(run.Run());
+  for (std::uint64_t run_id = 0; run_id < 2; ++run_id) {
+    ASSERT_NO_THROW(run.Run());
+
+    auto const records =
+      BuildSortedSourceRecordSnapshot(observer->GetRecords());
+    ASSERT_EQ(records.size(), 1U);
+    EXPECT_EQ(records[0].run_id, run_id);
+    EXPECT_EQ(records[0].global_primary_id, run_id);
+  }
 }
 
 // =============================================================================
 // =============================================================================
 
+// Checks each run captures current source values without altering earlier
+// records.
 TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
@@ -685,6 +704,7 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
 // =============================================================================
 // =============================================================================
 
+// Checks the attached source controls the number of transported histories.
 TEST_F(GGEMSRunTest, UsesPrimaryCountOwnedByAttachedSource) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(3ULL);
@@ -715,6 +735,8 @@ TEST_F(GGEMSRunTest, UsesPrimaryCountOwnedByAttachedSource) {
 // =============================================================================
 // =============================================================================
 
+// Checks changing source counts reserve contiguous, nonoverlapping global
+// histories.
 TEST_F(GGEMSRunTest, ReservesDisjointRangesForVariableSequentialSourceCounts) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(3ULL);
@@ -769,6 +791,7 @@ TEST_F(GGEMSRunTest, ReservesDisjointRangesForVariableSequentialSourceCounts) {
 // =============================================================================
 // =============================================================================
 
+// Keeps global identifiers available after a rejected empty static run.
 TEST_F(GGEMSRunTest, RejectsZeroSourcePrimaryCountBeforeReservingRange) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(0ULL);
@@ -801,6 +824,8 @@ TEST_F(GGEMSRunTest, RejectsZeroSourcePrimaryCountBeforeReservingRange) {
 // =============================================================================
 // =============================================================================
 
+// Prevents the implicit source from adding unexpected histories after explicit
+// attachment.
 TEST_F(GGEMSRunTest, FirstAddSourceReplacesImplicitDefault) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(3ULL);
@@ -838,6 +863,7 @@ TEST_F(GGEMSRunTest, FirstAddSourceReplacesImplicitDefault) {
 // =============================================================================
 // =============================================================================
 
+// Preserves frozen attachments while allowing execution after rejected changes.
 TEST_F(GGEMSRunTest, RejectsAttachmentChangesAfterInitialize) {
   auto initial_source = MakeLowEnergySource(1ULL);
   initial_source->SetPositionPicoMeter(1LL, 2LL, 3LL)
@@ -872,6 +898,8 @@ TEST_F(GGEMSRunTest, RejectsAttachmentChangesAfterInitialize) {
 // =============================================================================
 // =============================================================================
 
+// Preserves source indices and contiguous history ranges around a disabled
+// slot.
 TEST_F(GGEMSRunTest, RunsWithDisabledSlotBetweenActiveSources) {
   auto random = MakePhiloxRandom();
   auto source_0 = MakeLowEnergySource(2ULL);
@@ -929,6 +957,8 @@ TEST_F(GGEMSRunTest, RunsWithDisabledSlotBetweenActiveSources) {
 // =============================================================================
 // =============================================================================
 
+// Checks enabling different slots preserves source identity and global history
+// continuity.
 TEST_F(GGEMSRunTest, AlternatesActiveSourceAcrossSequentialRuns) {
   auto random = MakePhiloxRandom();
   auto source_a = MakeLowEnergySource(2ULL);
@@ -1004,6 +1034,7 @@ TEST_F(GGEMSRunTest, AlternatesActiveSourceAcrossSequentialRuns) {
 // =============================================================================
 // =============================================================================
 
+// Checks new per-source counts update the next run's range boundaries.
 TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
   auto random = MakePhiloxRandom();
   auto source_a = MakeLowEnergySource(3ULL);
@@ -1083,6 +1114,7 @@ TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
 // =============================================================================
 // =============================================================================
 
+// Keeps the last published observer result after an invalid capture request.
 TEST_F(GGEMSRunTest, PreservesObserverResultWhenNextCaptureIsInvalid) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(2ULL);
@@ -1130,6 +1162,8 @@ TEST_F(GGEMSRunTest, PreservesObserverResultWhenNextCaptureIsInvalid) {
 // =============================================================================
 // =============================================================================
 
+// Clears stale records after a successful run whose observer capture is
+// disabled.
 TEST_F(GGEMSRunTest, ClearsObserverAfterSuccessfulRunWithDisabledSnapshot) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(1ULL);
@@ -1160,6 +1194,8 @@ TEST_F(GGEMSRunTest, ClearsObserverAfterSuccessfulRunWithDisabledSnapshot) {
 // =============================================================================
 // =============================================================================
 
+// Rejects an empty static population without consuming future history
+// identifiers.
 TEST_F(GGEMSRunTest, RejectsAllDisabledSourcesBeforeReservation) {
   auto random = MakePhiloxRandom();
   auto source_a = MakeLowEnergySource(0ULL);
@@ -1214,6 +1250,8 @@ TEST_F(GGEMSRunTest, RejectsAllDisabledSourcesBeforeReservation) {
 // =============================================================================
 // =============================================================================
 
+// Preserves distinct slot identities when the same source object is attached
+// twice.
 TEST_F(GGEMSRunTest, RunsDuplicateSourceSlots) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(1ULL);
@@ -1253,6 +1291,8 @@ TEST_F(GGEMSRunTest, RunsDuplicateSourceSlots) {
 // =============================================================================
 // =============================================================================
 
+// Applies first-primary selection independently to each source's local
+// identifier range.
 TEST_F(GGEMSRunTest, CapturesFirstPrimariesFromEverySourceSlot) {
   auto random = MakePhiloxRandom();
   auto source_0 = MakeLowEnergySource(4ULL);
@@ -1306,6 +1346,7 @@ TEST_F(GGEMSRunTest, CapturesFirstPrimariesFromEverySourceSlot) {
 // =============================================================================
 // =============================================================================
 
+// Rejects invalid capture coordinates before reserving global histories.
 TEST_F(GGEMSRunTest,
        RejectsSpecificCaptureOutsideCurrentSnapshotBeforeReservation) {
   auto random = MakePhiloxRandom();
@@ -1363,6 +1404,8 @@ TEST_F(GGEMSRunTest,
 // =============================================================================
 // =============================================================================
 
+// Checks lossless diagnostic movement produces only source and terminal
+// records.
 TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(1ULL);
@@ -1437,6 +1480,8 @@ TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
 // =============================================================================
 // =============================================================================
 
+// Checks a failed timed run preserves clock, snapshot, records, and next
+// history id.
 TEST_F(GGEMSRunTest,
        InvalidCapturePreservesLastCommitAndDoesNotReservePrimaryId) {
   auto random = MakePhiloxRandom();
@@ -1491,6 +1536,8 @@ TEST_F(GGEMSRunTest,
 // =============================================================================
 // =============================================================================
 
+// Checks sampled source modes integrate with Run without introducing extra
+// records.
 TEST_F(GGEMSRunTest,
        RunsRectangleIsotropicAndFocusedSourcesWithOnlySourceAndTerminal) {
   auto random = MakePhiloxRandom();

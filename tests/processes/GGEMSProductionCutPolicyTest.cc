@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks production cut policy behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -34,7 +36,6 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/processes/GGEMSProductionCutPolicy.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -78,6 +79,8 @@ auto MakeGlobalPolicy() -> processes::GGEMSProductionCutPolicy {
 // =============================================================================
 // =============================================================================
 
+// Stable semantic ordering must be independent of the order in which the
+// caller supplied data.
 TEST(GGEMSProductionCutPolicyTest, DefinesExactlyFourOrderedChannels) {
   static_assert(std::is_same_v<std::underlying_type_t<Channel>, std::uint8_t>);
 
@@ -100,6 +103,8 @@ TEST(GGEMSProductionCutPolicyTest, DefinesExactlyFourOrderedChannels) {
 // =============================================================================
 // =============================================================================
 
+// Cut resolution must preserve per-channel precedence and the origin of the
+// selected value.
 TEST(GGEMSProductionCutPolicyTest, AuthoringUsesCanonicalLength) {
   static_assert(
     std::is_same_v<decltype(processes::GGEMSProductionCutLengths::gamma),
@@ -112,6 +117,8 @@ TEST(GGEMSProductionCutPolicyTest, AuthoringUsesCanonicalLength) {
 // =============================================================================
 // =============================================================================
 
+// The supported catalog must remain usable with complete, consistent physical
+// entries.
 TEST(GGEMSProductionCutPolicyTest, GlobalOnlyResolvesEveryChannel) {
   auto const resolved = processes::ResolveProductionCuts(
     MakeGlobalPolicy(), {.material_index = 0U, .volume = {}});
@@ -125,6 +132,8 @@ TEST(GGEMSProductionCutPolicyTest, GlobalOnlyResolvesEveryChannel) {
 // =============================================================================
 // =============================================================================
 
+// Cut resolution must preserve per-channel precedence and the origin of the
+// selected value.
 TEST(GGEMSProductionCutPolicyTest, MaterialOverrideChangesOnlyItsChannel) {
   auto policy = MakeGlobalPolicy();
   policy.materials.push_back({
@@ -155,6 +164,8 @@ TEST(GGEMSProductionCutPolicyTest, MaterialOverrideChangesOnlyItsChannel) {
 // =============================================================================
 // =============================================================================
 
+// Cut resolution must preserve per-channel precedence and the origin of the
+// selected value.
 TEST(GGEMSProductionCutPolicyTest, VolumeOverrideChangesOnlyItsChannel) {
   auto const resolved = processes::ResolveProductionCuts(
     MakeGlobalPolicy(), {
@@ -177,6 +188,8 @@ TEST(GGEMSProductionCutPolicyTest, VolumeOverrideChangesOnlyItsChannel) {
 // =============================================================================
 // =============================================================================
 
+// Cut resolution must preserve per-channel precedence and the origin of the
+// selected value.
 TEST(GGEMSProductionCutPolicyTest, PrecedenceIsVolumeMaterialGlobalPerChannel) {
   auto policy = MakeGlobalPolicy();
   policy.materials.push_back({
@@ -211,6 +224,8 @@ TEST(GGEMSProductionCutPolicyTest, PrecedenceIsVolumeMaterialGlobalPerChannel) {
 // =============================================================================
 // =============================================================================
 
+// Cut resolution must preserve per-channel precedence and the origin of the
+// selected value.
 TEST(GGEMSProductionCutPolicyTest, ProvenanceDoesNotChangeResolvedLengths) {
   auto global_policy = MakeGlobalPolicy();
   global_policy.global.electron = 50_um;
@@ -250,6 +265,8 @@ TEST(GGEMSProductionCutPolicyTest, ProvenanceDoesNotChangeResolvedLengths) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSProductionCutPolicyTest, ReportsTheWinningScopeOfEveryChannel) {
   using Scope = processes::GGEMSProductionCutScope;
 
@@ -292,6 +309,8 @@ TEST(GGEMSProductionCutPolicyTest, ReportsTheWinningScopeOfEveryChannel) {
 // =============================================================================
 // =============================================================================
 
+// Cut resolution must preserve per-channel precedence and the origin of the
+// selected value.
 TEST(GGEMSProductionCutPolicyTest, AnOverrideWinsEvenWithTheGlobalValue) {
   using Scope = processes::GGEMSProductionCutScope;
 
@@ -329,6 +348,8 @@ TEST(GGEMSProductionCutPolicyTest, AnOverrideWinsEvenWithTheGlobalValue) {
 // =============================================================================
 // =============================================================================
 
+// Diagnostics must expose the relevant configuration and state without
+// changing it.
 TEST(GGEMSProductionCutPolicyTest, NamesChannelsAndScopes) {
   using Scope = processes::GGEMSProductionCutScope;
 

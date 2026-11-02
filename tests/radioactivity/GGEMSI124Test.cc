@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks i124 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -171,6 +173,8 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSI124Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildI124Radionuclide();
 
@@ -213,6 +217,8 @@ TEST(GGEMSI124Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSI124Test, PreservesEightBetaShape24PositronBranches) {
   GGEMSRadionuclideDefinition const definition = BuildI124Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -272,6 +278,8 @@ TEST(GGEMSI124Test, PreservesEightBetaShape24PositronBranches) {
 // =============================================================================
 // =============================================================================
 
+// Selected parent photon lines must retain their physical energies and
+// absolute yields.
 TEST(GGEMSI124Test, PreservesDdepPhotonsWithoutSourceAnnihilationLine) {
   GGEMSRadionuclideDefinition const definition = BuildI124Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -306,6 +314,8 @@ TEST(GGEMSI124Test, PreservesDdepPhotonsWithoutSourceAnnihilationLine) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSI124Test, PreservesMirdAugerAndAllLaraConversionElectrons) {
   GGEMSRadionuclideDefinition const definition = BuildI124Radionuclide();
   auto const emissions = definition.GetEmissions();

@@ -49,6 +49,8 @@ struct ExpectedBuiltIn {
 // =============================================================================
 // =============================================================================
 
+// Only the documented exact radionuclide names may select a built-in physical
+// definition.
 TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
   constexpr std::array<ExpectedBuiltIn, 70U> expected{
     {
@@ -383,6 +385,8 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
 // =============================================================================
 // =============================================================================
 
+// The available-source listing must agree with the complete supported
+// dispatch catalog.
 TEST(GGEMSBuiltInRadionuclides,
      ListsEveryAvailableCanonicalNameInDispatchOrder) {
   constexpr std::array<std::string_view, 70U> expected{
@@ -413,6 +417,8 @@ TEST(GGEMSBuiltInRadionuclides,
 // =============================================================================
 // =============================================================================
 
+// Reachable invalid input must fail at its owning boundary instead of
+// publishing unusable state.
 TEST(GGEMSBuiltInRadionuclides, RejectsNoncanonicalAddedNames) {
   for (std::string_view const name : {
          "Co57",  "co-57",  " Co-57 ",  "Ga67",  "ga-67",  " Ga-67 ",
@@ -452,6 +458,8 @@ TEST(GGEMSBuiltInRadionuclides, RejectsNoncanonicalAddedNames) {
 // =============================================================================
 // =============================================================================
 
+// Published configuration must own its data and remain valid after the
+// authoring inputs change.
 TEST(GGEMSBuiltInRadionuclides, DescriptionRejectsUnknownCanonicalName) {
   EXPECT_THROW(
     static_cast<void>(
@@ -462,6 +470,8 @@ TEST(GGEMSBuiltInRadionuclides, DescriptionRejectsUnknownCanonicalName) {
 // =============================================================================
 // =============================================================================
 
+// Source diagnostics must expose the same physical metadata used by the built
+// definition.
 TEST(GGEMSBuiltInRadionuclides, DescriptionReflectsBuiltDefinition) {
   std::string const description =
     ggems::core::radioactivity::builtins::DescribeBuiltInRadionuclide("H-3");

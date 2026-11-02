@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks isotope behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -38,6 +40,8 @@ namespace materials = ggems::core::materials;
 // =============================================================================
 // =============================================================================
 
+// Identity lookup must preserve the complete supported key independently of
+// optional properties.
 TEST(GGEMSIsotopeTest, StoresExplicitKey) {
   constexpr materials::GGEMSIsotope tantalum_180m{73U, 180U, 1U};
 
@@ -50,6 +54,8 @@ TEST(GGEMSIsotopeTest, StoresExplicitKey) {
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSIsotopeTest, IdentityIsTheCompleteKey) {
   materials::GGEMSIsotope const boron_10{5U, 10U, 0U};
 
@@ -62,6 +68,8 @@ TEST(GGEMSIsotopeTest, IdentityIsTheCompleteKey) {
 // =============================================================================
 // =============================================================================
 
+// Isotope identity and composition must survive preparation without
+// substitution or natural-profile fallback.
 TEST(GGEMSIsotopeTest, OrdersLexicographicallyByAtomicMassAndIsomerKeys) {
   std::vector<materials::GGEMSIsotope> isotopes{
     {73U, 181U, 0U}, {5U, 11U, 0U},   {73U, 180U, 1U}, {1U, 2U, 0U},
@@ -86,6 +94,8 @@ TEST(GGEMSIsotopeTest, OrdersLexicographicallyByAtomicMassAndIsomerKeys) {
 // =============================================================================
 // =============================================================================
 
+// Unsupported identities must fail explicitly without approximate lookup or
+// substitution.
 TEST(GGEMSIsotopeTest, RejectsAtomicNumbersOutsideCatalogRange) {
   EXPECT_THROW(static_cast<void>(materials::GGEMSIsotope{0U, 1U, 0U}),
                ggems::core::GGEMSRecoverable);
@@ -97,6 +107,8 @@ TEST(GGEMSIsotopeTest, RejectsAtomicNumbersOutsideCatalogRange) {
 // =============================================================================
 // =============================================================================
 
+// Identity lookup must preserve the complete supported key independently of
+// optional properties.
 TEST(GGEMSIsotopeTest, AcceptsKeysWithoutRequiringTabulatedMasses) {
   EXPECT_NO_THROW(static_cast<void>(materials::GGEMSIsotope{1U, 1U, 0U}));
 

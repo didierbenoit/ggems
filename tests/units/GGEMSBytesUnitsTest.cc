@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks bytes units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -59,6 +61,8 @@ struct BytesConversionCase {
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSBytesUnits, ConvertsEveryOfficialRuntimeToken) {
   constexpr std::array<BytesConversionCase, 9U> cases{
     {
@@ -86,6 +90,8 @@ TEST(GGEMSBytesUnits, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSBytesUnits, RejectsNegativeValues) {
   auto const converted = MakeQuantity<Bytes>(-1, "B");
 
@@ -96,6 +102,8 @@ TEST(GGEMSBytesUnits, RejectsNegativeValues) {
 // =============================================================================
 // =============================================================================
 
+// User-visible quantities must retain the intended scale, symbol, and
+// requested presentation.
 TEST(GGEMSBytesUnits, AutomaticDisplayPrefersIecUnits) {
   using namespace ggems::units;
 
@@ -107,6 +115,8 @@ TEST(GGEMSBytesUnits, AutomaticDisplayPrefersIecUnits) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSBytesUnits, LiteralStoresCanonicalBytes) {
   using namespace ggems::units;
 

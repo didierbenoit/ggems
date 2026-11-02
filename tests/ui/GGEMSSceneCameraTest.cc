@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Checks camera projection, interaction, and rejected-input state.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <expected>
@@ -70,6 +99,8 @@ auto ExpectMatrixNear(Matrix4Rows const &actual, Matrix4Rows const &expected)
 // =============================================================================
 // =============================================================================
 
+// Reset must undo prior pan, orbit, and zoom and recover the independently
+// expected view.
 TEST(GGEMSSceneCamera, ResetRestoresCanonicalView) {
   Camera camera{};
   camera.SetViewportSize(800U, 800U);
@@ -95,6 +126,8 @@ TEST(GGEMSSceneCamera, ResetRestoresCanonicalView) {
 // =============================================================================
 // =============================================================================
 
+// An axis-aligned view must preserve handedness and front-to-back depth
+// ordering.
 TEST(GGEMSSceneCamera, ZeroYawAndPitchUseExpectedViewBasisAndDepth) {
   Camera camera{};
   camera.SetViewportSize(800U, 800U);
@@ -129,6 +162,8 @@ TEST(GGEMSSceneCamera, ZeroYawAndPitchUseExpectedViewBasisAndDepth) {
 // =============================================================================
 // =============================================================================
 
+// All signed world axes must project with the intended screen orientation and
+// depth.
 TEST(GGEMSSceneCamera,
      CanonicalViewProjectsSixGlobalAxesWithPositiveYDownConvention) {
   Camera camera{};
@@ -172,6 +207,8 @@ TEST(GGEMSSceneCamera,
 // =============================================================================
 // =============================================================================
 
+// A wide viewport must correct horizontal aspect without altering vertical
+// projection or depth.
 TEST(GGEMSSceneCamera,
      SixteenByNineViewportScalesOnlyHorizontalClipCoordinate) {
   Camera square_camera{};
@@ -199,6 +236,8 @@ TEST(GGEMSSceneCamera,
 // =============================================================================
 // =============================================================================
 
+// An asymmetric drag must move the expected view target without shifting its
+// depth.
 TEST(GGEMSSceneCamera, PanMovesTargetAlongBothViewAxes) {
   Camera camera{};
   camera.SetViewportSize(100U, 100U);
@@ -225,6 +264,7 @@ TEST(GGEMSSceneCamera, PanMovesTargetAlongBothViewAxes) {
 // =============================================================================
 // =============================================================================
 
+// Zoom must enlarge the screen projection while preserving scene depth.
 TEST(GGEMSSceneCamera, ZoomScalesXYWithoutChangingDepth) {
   Camera camera{};
   camera.SetViewportSize(800U, 800U);
@@ -251,6 +291,8 @@ TEST(GGEMSSceneCamera, ZoomScalesXYWithoutChangingDepth) {
 // =============================================================================
 // =============================================================================
 
+// Positive and negative pitch limits must prevent the camera from flipping over
+// its poles.
 TEST(GGEMSSceneCamera, PitchIsClampedToEightyFiveDegrees) {
   Camera positive_over_limit{};
   positive_over_limit.SetOrbitAngles(0.0F, 90.0F);
@@ -278,6 +320,7 @@ TEST(GGEMSSceneCamera, PitchIsClampedToEightyFiveDegrees) {
 // =============================================================================
 // =============================================================================
 
+// Pixel drags must apply the documented angular sensitivity on both axes.
 TEST(GGEMSSceneCamera, OrbitByPixelsAppliesTheOrbitPixelPolicy) {
   Camera by_pixels{};
   by_pixels.SetViewportSize(800U, 800U);
@@ -298,6 +341,8 @@ TEST(GGEMSSceneCamera, OrbitByPixelsAppliesTheOrbitPixelPolicy) {
 // =============================================================================
 // =============================================================================
 
+// A minimized viewport must retain its last valid projection instead of
+// dividing by zero.
 TEST(GGEMSSceneCamera, ZeroExtentKeepsLastValidViewportExtent) {
   Camera camera{};
   camera.SetViewportSize(1600U, 900U);
@@ -314,6 +359,7 @@ TEST(GGEMSSceneCamera, ZeroExtentKeepsLastValidViewportExtent) {
 // =============================================================================
 // =============================================================================
 
+// Rejected angular input must leave the complete previous view unchanged.
 TEST(GGEMSSceneCamera, InvalidAngularInputsPreserveThePreviousView) {
   using ConversionFailure =
     std::bad_expected_access<ggems::units::UnitConversionError>;

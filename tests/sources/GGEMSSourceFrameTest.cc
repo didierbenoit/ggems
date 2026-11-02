@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source frame behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,8 +42,8 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-using Direction3 = ggems::geometry::Direction3;
-using GGEMSSourceFrame = ggems::core::sources::GGEMSSourceFrame;
+using ggems::core::sources::GGEMSSourceFrame;
+using ggems::geometry::Direction3;
 
 auto ExpectAxis(Direction3 actual, Direction3 expected) -> void {
   EXPECT_NEAR(actual.x, expected.x,
@@ -99,6 +101,8 @@ struct CardinalCase {
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSourceFrame, BuildsSixCardinalRightHandedFrames) {
   std::array<CardinalCase, 6U> const cases{
     {
@@ -207,6 +211,8 @@ TEST(GGEMSSourceFrame, BuildsSixCardinalRightHandedFrames) {
 
 // =============================================================================
 // =============================================================================
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSourceFrame, BuildsNaturalCtFrame) {
   auto const frame =
     ggems::core::sources::BuildSourceFrame({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0});
@@ -218,6 +224,8 @@ TEST(GGEMSSourceFrame, BuildsNaturalCtFrame) {
 
 // =============================================================================
 // =============================================================================
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSourceFrame, BuildsRightHandedDiagonalFrame) {
   auto const frame =
     ggems::core::sources::BuildSourceFrame({1.0, 1.0, 1.0}, {0.0, 0.0, 1.0});
@@ -231,6 +239,8 @@ TEST(GGEMSSourceFrame, BuildsRightHandedDiagonalFrame) {
 
 // =============================================================================
 // =============================================================================
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSourceFrame, ProjectsNonOrthogonalUpOntoSourcePlane) {
   auto const frame =
     ggems::core::sources::BuildSourceFrame({1.0, 0.0, 0.0}, {1.0, 0.0, 2.0});
@@ -242,6 +252,8 @@ TEST(GGEMSSourceFrame, ProjectsNonOrthogonalUpOntoSourcePlane) {
 
 // =============================================================================
 // =============================================================================
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSourceFrame, RejectsInvalidDirectionAndUp) {
   double const nan = std::numeric_limits<double>::quiet_NaN();
   double const infinity = std::numeric_limits<double>::infinity();
@@ -263,6 +275,8 @@ TEST(GGEMSSourceFrame, RejectsInvalidDirectionAndUp) {
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSourceFrame, RejectsExactAndNearParallelExplicitUp) {
   EXPECT_THROW(static_cast<void>(ggems::core::sources::BuildSourceFrame(
                  {0.0, 0.0, 1.0}, {0.0, 0.0, 2.0})),
@@ -279,6 +293,8 @@ TEST(GGEMSSourceFrame, RejectsExactAndNearParallelExplicitUp) {
 // =============================================================================
 // =============================================================================
 
+// Representation limits must remain exact and reject values that cannot be
+// represented.
 TEST(GGEMSSourceFrame, HandlesValuesThatOverflowedFloatSquaredNorm) {
   auto const large = static_cast<double>(std::numeric_limits<float>::max());
 
@@ -291,6 +307,8 @@ TEST(GGEMSSourceFrame, HandlesValuesThatOverflowedFloatSquaredNorm) {
 // =============================================================================
 // =============================================================================
 
+// Source orientation must remain normalized and right-handed, including
+// nontrivial input directions.
 TEST(GGEMSSourceFrame,
      AutomaticUpUsesPreferredAndFallbackAxesDeterministically) {
   auto const transverse =

@@ -43,6 +43,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLDeviceInventory.hh"
+
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
@@ -458,7 +460,7 @@ auto CheckScene(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   EXPECT_EQ(result.counts.overflow_count, 0U);
   EXPECT_EQ(result.counts.total_fake_step_count, 0U);
   EXPECT_EQ(result.counts.created_secondary_count, 0U);
-  auto material = [&](std::uint32_t owner) {
+  auto material = [&](std::uint32_t owner) -> std::uint32_t {
     return owner == k_exterior ? k_exterior : ids[owner];
   };
   EXPECT_EQ(result.trace[test::k_initial_owner_index], scene.initial_owner);
@@ -529,12 +531,14 @@ auto CheckScene(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
 }
 } // namespace
 
+// Checks ordered parent-child transitions through nested physical volumes.
 TEST_F(GGEMSNavigationDeviceTest,
        PhysicalHierarchyPreservesContainedIntervals) {
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   auto const instrumented = test::InstrumentStream(root);
   auto const scenes = Scenes();
-  for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+  {
+    auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231U);
@@ -542,18 +546,15 @@ TEST_F(GGEMSNavigationDeviceTest,
       context, root / "transport", "particle_stream_transport",
       std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
                   root.generic_string(), random.GetKernelBuildDefinition()));
-    cl::Program program{context.GetContextNative(), instrumented};
-    auto const device = context.GetDevice().GetDeviceNative();
-    ASSERT_EQ(program.build({device},
-                            std::string{production.GetBuildOptions()}.c_str()),
-              CL_SUCCESS)
-      << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    auto const &program =
+      test::GetAnalyticTraceProgram(instrumented, production.GetBuildOptions());
     for (auto const &scene : scenes) {
       CheckScene(context, program, random, scene);
     }
   }
 }
 
+// Preserves nested Run geometry with observer capture enabled and disabled.
 TEST_F(GGEMSNavigationDeviceTest,
        PhysicalHierarchyRunOwnsSnapshotInBothObserverModes) {
   for (bool observed : {false, true}) {

@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks co60 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -166,6 +168,8 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSCo60Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildCo60Radionuclide();
 
@@ -209,6 +213,8 @@ TEST(GGEMSCo60Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSCo60Test, PreservesThreeTabulatedBetaShapeSpectra) {
   GGEMSRadionuclideDefinition const definition = BuildCo60Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -268,6 +274,8 @@ TEST(GGEMSCo60Test, PreservesThreeTabulatedBetaShapeSpectra) {
 // =============================================================================
 // =============================================================================
 
+// Selected parent photon lines must retain their physical energies and
+// absolute yields.
 TEST(GGEMSCo60Test, PreservesSixLaraNuclearGammas) {
   GGEMSRadionuclideDefinition const definition = BuildCo60Radionuclide();
   GGEMSRadionuclideEmission const &gamma = definition.GetEmissions()[3U];
@@ -289,6 +297,8 @@ TEST(GGEMSCo60Test, PreservesSixLaraNuclearGammas) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSCo60Test, PreservesLaraAndMirdAtomicRadiations) {
   GGEMSRadionuclideDefinition const definition = BuildCo60Radionuclide();
   auto const emissions = definition.GetEmissions();

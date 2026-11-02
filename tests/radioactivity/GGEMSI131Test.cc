@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks i131 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -214,6 +216,8 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSI131Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   GGEMSRadionuclideDefinition const definition = BuildI131Radionuclide();
 
@@ -253,6 +257,8 @@ TEST(GGEMSI131Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSI131Test, PreservesSixTabulatedBetaShapeSpectra) {
   GGEMSRadionuclideDefinition const definition = BuildI131Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -312,6 +318,8 @@ TEST(GGEMSI131Test, PreservesSixTabulatedBetaShapeSpectra) {
 // =============================================================================
 // =============================================================================
 
+// Selected parent photon lines must retain their physical energies and
+// absolute yields.
 TEST(GGEMSI131Test, PreservesEighteenPromptLaraGammaLines) {
   GGEMSRadionuclideDefinition const definition = BuildI131Radionuclide();
   GGEMSRadionuclideEmission const &gamma = definition.GetEmissions()[6U];
@@ -333,6 +341,8 @@ TEST(GGEMSI131Test, PreservesEighteenPromptLaraGammaLines) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSI131Test, PreservesLaraAndMirdAtomicRadiations) {
   GGEMSRadionuclideDefinition const definition = BuildI131Radionuclide();
   auto const emissions = definition.GetEmissions();
@@ -405,6 +415,8 @@ TEST(GGEMSI131Test, PreservesLaraAndMirdAtomicRadiations) {
 // =============================================================================
 // =============================================================================
 
+// The direct-parent source must exclude separately delayed daughter
+// deexcitation.
 TEST(GGEMSI131Test, ExcludesDelayedXe131mDeexcitation) {
   GGEMSRadionuclideDefinition const definition = BuildI131Radionuclide();
   auto const emissions = definition.GetEmissions();

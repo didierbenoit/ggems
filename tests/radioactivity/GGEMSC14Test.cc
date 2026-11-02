@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks c14 behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -53,6 +55,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// Scientific identity must distinguish physical differences while ignoring
+// display-only metadata.
 TEST(GGEMSC14Test, BuildsExactIdentityAndSingleBetaMinusEmission) {
   GGEMSRadionuclideDefinition const definition = BuildC14Radionuclide();
 
@@ -75,6 +79,8 @@ TEST(GGEMSC14Test, BuildsExactIdentityAndSingleBetaMinusEmission) {
 // =============================================================================
 // =============================================================================
 
+// The selected beta spectrum must retain its independently checked support
+// and moments.
 TEST(GGEMSC14Test, PreservesExperimentalBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildC14Radionuclide();
   auto const &distribution =

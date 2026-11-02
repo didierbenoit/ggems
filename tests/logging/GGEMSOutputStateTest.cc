@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Checks bounded log retention and UI sink metadata.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -58,6 +59,8 @@ using ggems::core::RenderedLogLine;
 // =============================================================================
 // =============================================================================
 
+// A new output buffer must contain no stale messages and admit subsequent
+// logging.
 TEST(GGEMSOutputStateTest, StartsWithEmptyLogBuffer) {
   GGEMSOutputState state{};
 
@@ -69,6 +72,8 @@ TEST(GGEMSOutputStateTest, StartsWithEmptyLogBuffer) {
 // =============================================================================
 // =============================================================================
 
+// Reconfiguring capacity must reset old messages and retain at least one usable
+// slot.
 TEST(GGEMSOutputStateTest, ZeroCapacityClampsToOneAndClearsExistingLogs) {
   GGEMSOutputState state{};
 
@@ -85,6 +90,7 @@ TEST(GGEMSOutputStateTest, ZeroCapacityClampsToOneAndClearsExistingLogs) {
 // =============================================================================
 // =============================================================================
 
+// A partially filled log snapshot must preserve message arrival order.
 TEST(GGEMSOutputStateTest, KeepsInsertionOrderBeforeCapacityIsReached) {
   GGEMSOutputState state{};
   state.SetLogCapacity(3U);
@@ -102,6 +108,8 @@ TEST(GGEMSOutputStateTest, KeepsInsertionOrderBeforeCapacityIsReached) {
 // =============================================================================
 // =============================================================================
 
+// A full ring buffer must discard only the oldest messages while preserving
+// chronology.
 TEST(GGEMSOutputStateTest, KeepsNewestLinesInOrderAfterWrap) {
   GGEMSOutputState state{};
   state.SetLogCapacity(3U);
@@ -123,6 +131,8 @@ TEST(GGEMSOutputStateTest, KeepsNewestLinesInOrderAfterWrap) {
 // =============================================================================
 // =============================================================================
 
+// Snapshot limits must select the newest suffix, including an empty zero-length
+// request.
 TEST(GGEMSOutputStateTest, SnapshotReturnsOnlyRequestedNewestLines) {
   GGEMSOutputState state{};
   state.SetLogCapacity(4U);
@@ -143,6 +153,8 @@ TEST(GGEMSOutputStateTest, SnapshotReturnsOnlyRequestedNewestLines) {
 // =============================================================================
 // =============================================================================
 
+// Clearing output must retain configured storage and allow a fresh message
+// stream.
 TEST(GGEMSOutputStateTest, ClearLogsPreservesCapacityAndAllowsReuse) {
   GGEMSOutputState state{};
   state.SetLogCapacity(3U);
@@ -166,6 +178,8 @@ TEST(GGEMSOutputStateTest, ClearLogsPreservesCapacityAndAllowsReuse) {
 // =============================================================================
 // =============================================================================
 
+// The UI sink must preserve message text, severity, module, and detail
+// metadata.
 TEST(GGEMSOutputStateTest, SinkForwardsRenderedLineWithoutLosingMetadata) {
   GGEMSOutputState state{};
   state.SetLogCapacity(2U);

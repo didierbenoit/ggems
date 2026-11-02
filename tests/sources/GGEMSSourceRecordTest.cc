@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks source record behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -41,6 +43,8 @@
 // =============================================================================
 // =============================================================================
 
+// Host data must preserve the numeric IDs and binary layout consumed by
+// OpenCL.
 TEST(GGEMSSourceDeviceRecord, IsKernelFriendly) {
   using SourceRecord = ggems::core::sources::GGEMSSourceDeviceRecord;
 
@@ -90,6 +94,8 @@ TEST(GGEMSSourceDeviceRecord, IsKernelFriendly) {
 // =============================================================================
 // =============================================================================
 
+// Default and explicitly configured source state must remain consistent at
+// the public boundary.
 TEST(GGEMSSourceRecord, DefaultSourceRecordIsAnalyticGammaPointSource) {
   ggems::core::sources::GGEMSSourceRecord source{};
 
@@ -144,9 +150,11 @@ TEST(GGEMSSourceRecord, DefaultSourceRecordIsAnalyticGammaPointSource) {
 // =============================================================================
 // =============================================================================
 
+// Host integer source coordinates must become FP32 only at the device-record
+// boundary.
 TEST(GGEMSSourceDeviceRecord, ConvertsSpatialConfigurationOnlyAtUpload) {
   ggems::core::sources::GGEMSSource source{};
-  constexpr std::int64_t origin{(1LL << 60U) + 123LL};
+  constexpr std::int64_t origin{static_cast<std::int64_t>(1ULL << 60U) + 123LL};
   source.SetPositionPicoMeter(origin, -origin, 101LL)
     .SetBoxEmissionPicoMeter(16'777'217ULL, 3ULL, 5ULL);
   auto canonical = source.BuildRecord();
@@ -172,9 +180,11 @@ TEST(GGEMSSourceDeviceRecord, ConvertsSpatialConfigurationOnlyAtUpload) {
 // =============================================================================
 // =============================================================================
 
+// Source support and angular bounds must preserve the authored geometry and
+// endpoint conventions.
 TEST(GGEMSSourceDeviceRecord, RejectsFocusedPointCollapsedByFP32Conversion) {
   ggems::core::sources::GGEMSSource source{};
-  constexpr std::int64_t origin{1LL << 60U};
+  constexpr std::int64_t origin{static_cast<std::int64_t>(1ULL << 60U)};
   source.SetPositionPicoMeter(origin, 0LL, 0LL)
     .SetFocusedAngularDistributionPicoMeter(origin + 1LL, 0LL, 0LL);
   auto const canonical = source.BuildRecord();

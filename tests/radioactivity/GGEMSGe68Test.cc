@@ -52,6 +52,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
+// The evaluated parent identity, half-life, and absolute emission yields must
+// survive compilation.
 TEST(GGEMSGe68Test, PreservesIdentityAndOrderedMarginalYields) {
   auto const definition = BuildGe68Radionuclide();
   EXPECT_EQ(definition.GetCanonicalName(), "Ge-68");
@@ -72,6 +74,8 @@ TEST(GGEMSGe68Test, PreservesIdentityAndOrderedMarginalYields) {
 // =============================================================================
 // =============================================================================
 
+// Evaluated discrete emissions must retain their energies, absolute yields,
+// and sampling law.
 TEST(GGEMSGe68Test, PreservesAtomicXray) {
   auto const definition = BuildGe68Radionuclide();
   auto const &distribution =

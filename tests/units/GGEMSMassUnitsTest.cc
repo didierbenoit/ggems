@@ -21,6 +21,8 @@
 
 /*!
  * \file
+ * \brief Checks mass units behavior and observable contracts.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -49,6 +51,8 @@ using ggems::units::UnitConversionError;
 // =============================================================================
 // =============================================================================
 
+// Every admitted unit scale must map to its independently specified canonical
+// value.
 TEST(GGEMSMassUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
     std::string_view unit;
@@ -78,6 +82,8 @@ TEST(GGEMSMassUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 // =============================================================================
 // =============================================================================
 
+// Invalid values and unit spellings must fail instead of producing a
+// canonical quantity.
 TEST(GGEMSMassUnitsTest, RejectsNegativeMass) {
   auto const converted = MakeQuantity<Mass>(-1, "pg");
 
@@ -88,6 +94,8 @@ TEST(GGEMSMassUnitsTest, RejectsNegativeMass) {
 // =============================================================================
 // =============================================================================
 
+// Mass formatting must distinguish ASCII input vocabulary from Unicode
+// presentation.
 TEST(GGEMSMassUnitsTest, PresentsMicrogramsInAsciiAndUnicode) {
   Mass const mass{2'000'000ULL};
 
@@ -104,6 +112,8 @@ TEST(GGEMSMassUnitsTest, PresentsMicrogramsInAsciiAndUnicode) {
 // =============================================================================
 // =============================================================================
 
+// Convenient authoring must preserve the physical scale of the stored
+// canonical value.
 TEST(GGEMSMassUnitsTest, LiteralStoresPicograms) {
   using namespace ggems::units;
 
