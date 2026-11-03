@@ -12,7 +12,7 @@ opencl.print_devices()
 # opencl.set_worker_count(65_536)
 # opencl.set_worker_count(4_194_304)
 opencl.set_worker_count(1_048_576)
-opencl.select_devices("2")
+opencl.select_devices("1")
 opencl.initialize()
 
 opencl.print_contexts()
@@ -53,14 +53,11 @@ mother = ggems.geometry.GGEMSBox()
 mother.set_size(250, 250, 250, "mm")
 mother.set_material("Water")
 
-for iy in range(10):
-    for iz in range(10):
-        crystal = ggems.geometry.GGEMSBox()
-        crystal.set_size(10, 10, 10, "mm")
-        crystal.set_material("Aluminum")
-        crystal.set_position(-54, -54 + iy * 12, -54 + iz * 12, "mm")
+crystal = ggems.geometry.GGEMSBox()
+crystal.set_size(10, 10, 10, "mm")
+crystal.set_material("Aluminum")
 
-        mother.linear_repeater(crystal, count=10, pitch=12, unit="mm", axis="X")
+mother.linear_repeater(crystal, count=(10, 10, 10), pitch=(12, 12, 12), unit="mm")
 
 world.add_volume(mother)
 

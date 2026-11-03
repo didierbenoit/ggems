@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <cstddef>
 #include <optional>
@@ -299,9 +300,9 @@ public:
   /*!
    * \brief Atomically expands a mother-local linear subtree repeater.
    * \tparam Child One of the eight analytical authoring types.
-   * \param[in] volume Captured reference root; its pose defines occurrence
-   * zero.
-   * \param[in] count Total positive number of copies, including index zero.
+   * \param[in] volume Captured root; its position is the arrangement center
+   * and its orientation is retained by every copy.
+   * \param[in] count Total positive number of copies.
    * \param[in] pitch Center-to-center length, positive when count exceeds one.
    * \param[in] axis Positive X, Y, or Z in the selected parent's local frame.
    * \param[in] parent_volume_id Existing physical parent, or zero for World.
@@ -309,6 +310,8 @@ public:
    * \throws core::GGEMSRecoverable If inputs, placements, capacity, or staged
    * geometry admission fail. A configured World is required; no partial batch
    * is retained. Runtime Navigation uses ordinary physical occurrences.
+   * \note Copy i is centered at p + (i - (count - 1)/2) * pitch along axis.
+   * Fractional-picometer offsets use ordinary signed integer division.
    */
   template <class Child>
   auto LinearRepeater(Child const &volume, std::uint32_t count,
@@ -316,6 +319,30 @@ public:
                       std::uint32_t parent_volume_id = 0U) -> GGEMSWorld & {
     return AttachBatch(Volume{volume}, count, pitch, axis, false,
                        parent_volume_id);
+  }
+
+  /*!
+   * \brief Atomically attaches a centered Cartesian arrangement of subtrees.
+   *
+   * All roots are direct siblings under the selected parent, without added
+   * Row or Plane volumes. X varies fastest, then Y, then Z; each root's
+   * descendants follow that root before the next copy. Each axis applies the
+   * same centering arithmetic as the scalar overload.
+   * \tparam Child One of the eight analytical authoring types.
+   * \param[in] volume Reference center, orientation and captured descendants.
+   * \param[in] count Positive X/Y/Z copy counts; their product counts roots.
+   * \param[in] pitch X/Y/Z center spacings in canonical pm. A singleton axis
+   * ignores its spacing; every other axis requires positive spacing.
+   * \param[in] parent_volume_id Existing physical parent, or zero for World.
+   * \return This World for chained configuration.
+   * \throws core::GGEMSRecoverable If inputs, depth, capacity or
+   * complete scene admission fail; no partial batch is retained.
+   */
+  template <class Child>
+  auto LinearRepeater(Child const &volume, std::array<std::uint32_t, 3> count,
+                      std::array<units::Length, 3> pitch,
+                      std::uint32_t parent_volume_id = 0U) -> GGEMSWorld & {
+    return AttachBatch(Volume{volume}, count, pitch, parent_volume_id);
   }
 
   /*!
@@ -565,7 +592,7 @@ private:
    * \brief Plans and admits an entire finite subtree batch before committing
    * it.
    * \param[in] volume Captured local root with immutable child descriptions.
-   * \param[in] count Number of repeated roots, including the reference.
+   * \param[in] count Number of repeated roots.
    * \param[in] pitch Linear center spacing in canonical pm; ignored for
    * circular.
    * \param[in] axis Positive parent-local repeat axis.
@@ -578,6 +605,30 @@ private:
   auto AttachBatch(Volume volume, std::uint32_t count, units::Length pitch,
                    GGEMSRepeatAxis axis, bool circular,
                    std::uint32_t parent_volume_id) -> GGEMSWorld &;
+
+  /*!
+   * \brief Captures a Cartesian recipe for atomic World attachment.
+   * \param[in] volume Local reference center, orientation and descendants.
+   * \param[in] count Positive X/Y/Z root counts.
+   * \param[in] pitch Canonical X/Y/Z center spacings.
+   * \param[in] parent_volume_id Existing physical parent identity.
+   * \return This World after successful atomic attachment.
+   * \throws core::GGEMSRecoverable If recipe or complete admission fails.
+   */
+  auto AttachBatch(Volume volume, std::array<std::uint32_t, 3> count,
+                   std::array<units::Length, 3> pitch,
+                   std::uint32_t parent_volume_id) -> GGEMSWorld &;
+
+  /*!
+   * \brief Plans, expands and admits one complete recipe before publication.
+   * \param[in] recipe Immutable captured placement and subtree description.
+   * \param[in] parent_volume_id Existing physical parent identity.
+   * \return This World after successful atomic attachment.
+   * \throws core::GGEMSRecoverable If World, recipe, depth, capacity or
+   * complete geometry admission fails.
+   */
+  auto AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
+                    std::uint32_t parent_volume_id) -> GGEMSWorld &;
 
   /*!
    * \brief Checks expanded device byte and crossing bounds before allocation.
@@ -613,11 +664,15 @@ private:
   /*!
    * \brief Applies feature-band and exact simple World containment checks.
    * \param[in] index Zero-based index of the owned occurrence to validate.
+   * \param[in] pose Already composed global occurrence pose.
    * \param[in] world_spacing Upward FP32 spacing at the World extent in pm.
+   * \return The admitted automatic surface half-band in pm.
    * \pre World size is configured and index is smaller than GetVolumeCount().
    * \throws GGEMSRecoverable If containment or automatic band admission fails.
    */
-  auto ValidateVolume(std::size_t index, float world_spacing) const -> void;
+  [[nodiscard]] auto ValidateVolume(std::size_t index,
+                                    GGEMSBoxPoseRecord const &pose,
+                                    float world_spacing) const -> float;
 
   /*!
    * \brief Rejects exact nominal overlaps for simple direct World sibling
@@ -661,18 +716,24 @@ private:
   /*!
    * \brief Counts a conservative straight-ray boundary-event bound.
    * \return One World exit plus each occurrence's maximum material crossings;
-   * uint64 maximum if the sum overflows. Validate() rejects a bound that cannot
-   * fit the uint32 device field before any scene upload.
+   * Validate() rejects a bound that cannot fit the uint32 device field before
+   * any scene upload.
    */
   [[nodiscard]] auto CountBoundaryEvents() const noexcept -> std::uint64_t;
 
   /*!
-   * \brief Unset optional retained by World/Box/Sphere tolerance selection.
-   *
-   * No public setter populates this member; authored scenes use automatic
-   * per-boundary half-bands.
+   * \brief Packs one occurrence using its already prepared pose and half-band.
+   * \param[in] material_id Dense snapshot-local Material identity.
+   * \param[in] index Existing zero-based physical occurrence index.
+   * \param[in] pose Composed global occurrence pose.
+   * \param[in] tolerance Automatic surface half-band in pm.
+   * \return Tagged scalar shape record with the unchanged device layout.
    */
-  std::optional<units::Length> navigation_tolerance_;
+  [[nodiscard]] auto BuildAnalyticVolumeRecord(std::uint32_t material_id,
+                                               std::size_t index,
+                                               GGEMSBoxPoseRecord const &pose,
+                                               float tolerance) const
+    -> GGEMSAnalyticVolumeRecord;
 };
 
 } // namespace ggems::geometry

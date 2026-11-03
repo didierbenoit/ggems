@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <variant>
@@ -66,13 +67,16 @@ struct GGEMSVolumeRecipe {
   /*! \brief Parent-local placement rule. */
   GGEMSRepeatKind kind{GGEMSRepeatKind::Single};
 
-  /*! \brief Total root count, including the captured reference pose. */
+  /*! \brief Checked total root count, including all Cartesian combinations. */
   std::uint32_t count{1U};
 
-  /*! \brief Center-to-center linear displacement in canonical picometers. */
-  units::Length pitch{0U};
+  /*! \brief Positive linear multiplicities ordered X, Y, Z. */
+  std::array<std::uint32_t, 3> linear_count{1U, 1U, 1U};
 
-  /*! \brief Positive axis through the mother's local origin. */
+  /*! \brief Nonnegative linear spacings ordered X, Y, Z in picometers. */
+  std::array<units::Length, 3> linear_pitch{};
+
+  /*! \brief Circular rotation axis through the mother's local origin. */
   GGEMSRepeatAxis axis{GGEMSRepeatAxis::X};
 };
 
@@ -89,26 +93,55 @@ struct GGEMSVolumeRecipes {
 };
 
 /*!
- * \brief Forms one exact checked linear reference position in integer pm.
+ * \brief Builds a compact Cartesian recipe with checked root multiplicity.
+ * \param[in] child Owned immutable reference subtree.
+ * \param[in] count Positive occurrence counts ordered X, Y, Z.
+ * \param[in] pitch Nonnegative axis spacings in canonical picometers.
+ * \return Linear recipe whose root count is the checked Cartesian product.
+ * \throws core::GGEMSRecoverable If counts or pitches are invalid, or IDs
+ * overflow.
+ */
+[[nodiscard]] auto
+MakeLinearRecipe(std::shared_ptr<GGEMSAuthoredVolume const> child,
+                 std::array<std::uint32_t, 3> count,
+                 std::array<units::Length, 3> pitch) -> GGEMSVolumeRecipe;
+
+/*!
+ * \brief Maps one scalar linear repetition to a compact Cartesian recipe.
+ * \param[in] child Owned immutable reference subtree.
+ * \param[in] count Positive occurrence count along axis.
+ * \param[in] pitch Nonnegative center spacing in canonical picometers.
+ * \param[in] axis Mother-local axis receiving the count and pitch.
+ * \return Centered linear recipe with singleton inactive axes.
+ * \throws core::GGEMSRecoverable If axis, count, or pitch is invalid, or IDs
+ * overflow.
+ */
+[[nodiscard]] auto
+MakeLinearRecipe(std::shared_ptr<GGEMSAuthoredVolume const> child,
+                 std::uint32_t count, units::Length pitch, GGEMSRepeatAxis axis)
+  -> GGEMSVolumeRecipe;
+
+/*!
+ * \brief Forms one centered linear position with integer-picometer offsets.
+ *
+ * Fractional-picometer offsets truncate toward zero before adding the
+ * reference.
  * \param[in] reference Captured mother-local reference position.
- * \param[in] index Zero-based physical copy index.
- * \param[in] pitch Nonnegative center displacement in canonical picometers.
- * \param[in] axis Positive mother-local axis.
- * \return Reference position translated by index times pitch along axis.
- * \throws core::GGEMSRecoverable If axis is invalid or the signed endpoint
- * cannot be represented; no floating-point conversion is used.
+ * \param[in] index Zero-based root index; X varies fastest, then Y, then Z.
+ * \param[in] recipe Linear recipe with checked positive Cartesian counts.
+ * \return Reference position plus its centered Cartesian offset.
  */
 [[nodiscard]] auto LinearPosition(Position3PM reference, std::uint32_t index,
-                                  units::Length pitch, GGEMSRepeatAxis axis)
+                                  GGEMSVolumeRecipe const &recipe)
   -> Position3PM;
 
 /*!
  * \brief Admits one user-authored recipe before any scientific mutation.
  *
- * Checks the complete reference shape, count, axis, linear pitch and final
- * translated coordinate, and nonzero circular radius for multiple copies.
- * Final FP32, overlap, and containment admission belongs to staged World
- * preparation with its final pose and dimensions.
+ * Checks the complete reference shape, count, axis, and nonzero circular radius
+ * for multiple copies. The linear factory already admits counts and pitches.
+ * Final FP32, overlap, and containment admission belongs to staged
+ * World preparation with its final pose and dimensions.
  * \param[in] recipe Finite placement with a non-null captured child.
  * \throws core::GGEMSRecoverable If a shape or placement parameter is invalid.
  */
@@ -116,9 +149,9 @@ auto ValidateRecipe(GGEMSVolumeRecipe const &recipe) -> void;
 
 /*!
  * \brief Checks and counts all physical occurrences produced by a recipe.
- * \param[in] recipe Recipe with a non-null captured child.
+ * \param[in] recipe Admitted recipe with a non-null captured child.
  * \return Root multiplicity times complete captured subtree size.
- * \throws core::GGEMSRecoverable If count is zero or physical IDs overflow.
+ * \throws core::GGEMSRecoverable If physical IDs overflow.
  */
 [[nodiscard]] auto RecipeOccurrenceCount(GGEMSVolumeRecipe const &recipe)
   -> std::uint32_t;

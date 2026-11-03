@@ -30,6 +30,8 @@
 #include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -50,48 +52,106 @@
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
+namespace {
+
+/*!
+ * \brief Adds the centered integer-picometer offset along one axis.
+ * \param[in] reference Arrangement center in canonical signed picometers.
+ * \param[in] index Zero-based index along this axis.
+ * \param[in] count Positive occurrence count along this axis.
+ * \param[in] pitch Nonnegative canonical center spacing in picometers.
+ * \return Reference plus the offset, truncated toward zero in picometers.
+ */
+[[nodiscard]] auto CenteredCoordinate(ggems::geometry::CoordinatePM reference,
+                                      std::uint32_t index, std::uint32_t count,
+                                      ggems::units::Length pitch)
+  -> ggems::geometry::CoordinatePM {
+  auto const offset = ((static_cast<std::int64_t>(index) * 2) -
+                       static_cast<std::int64_t>(count - 1)) *
+                      static_cast<std::int64_t>(pitch.value) / 2;
+
+  return reference + offset;
+}
+
+} // namespace
+
+// =============================================================================
+// =============================================================================
+
 namespace ggems::geometry::detail {
 
-auto LinearPosition(Position3PM reference, std::uint32_t index,
-                    units::Length pitch, GGEMSRepeatAxis axis) -> Position3PM {
-  CoordinatePM *coordinate = nullptr;
-  switch (axis) {
-  case GGEMSRepeatAxis::X:
-    coordinate = &reference.x;
-    break;
-  case GGEMSRepeatAxis::Y:
-    coordinate = &reference.y;
-    break;
-  case GGEMSRepeatAxis::Z:
-    coordinate = &reference.z;
-    break;
-  default:
+auto MakeLinearRecipe(std::shared_ptr<GGEMSAuthoredVolume const> child,
+                      std::array<std::uint32_t, 3> count,
+                      std::array<units::Length, 3> pitch) -> GGEMSVolumeRecipe {
+  std::uint32_t total{1U};
+
+  auto constexpr maximum = std::numeric_limits<std::uint32_t>::max() - 1U;
+
+  for (std::size_t axis = 0U; axis < count.size(); ++axis) {
+    if (count[axis] == 0U) {
+      throw core::GGEMSRecoverable("Repeater count must be positive.");
+    }
+
+    if (count[axis] > maximum / total) {
+      throw core::GGEMSRecoverable(
+        "Repeater expansion exceeds the physical VolumeID domain.");
+    }
+
+    if (count[axis] > 1U && pitch[axis].value == 0U) {
+      throw core::GGEMSRecoverable(
+        "Linear repeater pitch must be positive for multiple occurrences.");
+    }
+
+    total *= count[axis];
+  }
+
+  return {
+    .child = std::move(child),
+    .kind = GGEMSRepeatKind::Linear,
+    .count = total,
+    .linear_count = count,
+    .linear_pitch = pitch,
+  };
+}
+
+// -----------------------------------------------------------------------------
+
+auto MakeLinearRecipe(std::shared_ptr<GGEMSAuthoredVolume const> child,
+                      std::uint32_t count, units::Length pitch,
+                      GGEMSRepeatAxis axis) -> GGEMSVolumeRecipe {
+  std::array<std::uint32_t, 3> counts{1U, 1U, 1U};
+  std::array<units::Length, 3> pitches{};
+
+  auto const axis_index = static_cast<std::size_t>(axis);
+  if (axis_index >= counts.size()) {
     throw core::GGEMSRecoverable("Repeater axis must be X, Y, or Z.");
   }
 
-  auto const available =
-    static_cast<std::uint64_t>(std::numeric_limits<CoordinatePM>::max()) -
-    static_cast<std::uint64_t>(*coordinate);
-  if (index != 0U && pitch.value > available / index) {
-    throw core::GGEMSRecoverable(
-      "Linear repeater endpoint exceeds the signed picometer domain.");
-  }
-  auto const delta = pitch.value * index;
-  if (*coordinate >= 0) {
-    *coordinate += static_cast<CoordinatePM>(delta);
-  } else {
-    auto const magnitude = 0U - static_cast<std::uint64_t>(*coordinate);
-    if (delta >= magnitude) {
-      *coordinate = static_cast<CoordinatePM>(delta - magnitude);
-    } else {
-      auto const remaining = magnitude - delta;
-      *coordinate = remaining > static_cast<std::uint64_t>(
-                                  std::numeric_limits<CoordinatePM>::max())
-                      ? std::numeric_limits<CoordinatePM>::min()
-                      : -static_cast<CoordinatePM>(remaining);
-    }
-  }
-  return reference;
+  counts[axis_index] = count;
+  pitches[axis_index] = pitch;
+
+  return MakeLinearRecipe(std::move(child), counts, pitches);
+}
+
+// -----------------------------------------------------------------------------
+
+auto LinearPosition(Position3PM reference, std::uint32_t index,
+                    GGEMSVolumeRecipe const &recipe) -> Position3PM {
+  auto const x_index = index % recipe.linear_count[0];
+  index /= recipe.linear_count[0];
+
+  auto const y_index = index % recipe.linear_count[1];
+
+  auto const z_index = index / recipe.linear_count[1];
+
+  return {
+    .x = CenteredCoordinate(reference.x, x_index, recipe.linear_count[0],
+                            recipe.linear_pitch[0]),
+    .y = CenteredCoordinate(reference.y, y_index, recipe.linear_count[1],
+                            recipe.linear_pitch[1]),
+    .z = CenteredCoordinate(reference.z, z_index, recipe.linear_count[2],
+                            recipe.linear_pitch[2]),
+  };
 }
 
 // -----------------------------------------------------------------------------
@@ -100,6 +160,7 @@ auto ValidateRecipe(GGEMSVolumeRecipe const &recipe) -> void {
   if (recipe.count == 0U) {
     throw core::GGEMSRecoverable("Repeater count must be positive.");
   }
+
   if (recipe.axis != GGEMSRepeatAxis::X && recipe.axis != GGEMSRepeatAxis::Y &&
       recipe.axis != GGEMSRepeatAxis::Z) {
     throw core::GGEMSRecoverable("Repeater axis must be X, Y, or Z.");
@@ -112,17 +173,9 @@ auto ValidateRecipe(GGEMSVolumeRecipe const &recipe) -> void {
     },
     recipe.child->volume);
 
-  if (recipe.kind == GGEMSRepeatKind::Linear && recipe.count > 1U) {
-    if (recipe.pitch.value == 0U) {
-      throw core::GGEMSRecoverable(
-        "Linear repeater pitch must be positive for multiple occurrences.");
-    }
-    static_cast<void>(
-      LinearPosition(position, recipe.count - 1U, recipe.pitch, recipe.axis));
-  }
-
   if (recipe.kind == GGEMSRepeatKind::Circular && recipe.count > 1U) {
     bool on_axis = false;
+
     switch (recipe.axis) {
     case GGEMSRepeatAxis::X:
       on_axis = position.y == 0 && position.z == 0;
@@ -134,6 +187,7 @@ auto ValidateRecipe(GGEMSVolumeRecipe const &recipe) -> void {
       on_axis = position.x == 0 && position.y == 0;
       break;
     }
+
     if (on_axis) {
       throw core::GGEMSRecoverable(
         "Circular repeater radius must be nonzero for multiple occurrences.");
@@ -149,11 +203,14 @@ auto RecipeOccurrenceCount(GGEMSVolumeRecipe const &recipe) -> std::uint32_t {
       return shape.GetDescendantCount() + 1U;
     },
     recipe.child->volume);
+
   auto constexpr maximum = std::numeric_limits<std::uint32_t>::max() - 1U;
-  if (recipe.count == 0U || recipe.count > maximum / subtree_count) {
+
+  if (recipe.count > maximum / subtree_count) {
     throw core::GGEMSRecoverable(
       "Repeater expansion exceeds the physical VolumeID domain.");
   }
+
   return recipe.count * subtree_count;
 }
 
@@ -206,25 +263,50 @@ auto GGEMSVolumeAuthoring::Append(
   std::shared_ptr<detail::GGEMSAuthoredVolume const> child,
   detail::GGEMSRepeatKind kind, std::uint32_t count, units::Length pitch,
   GGEMSRepeatAxis axis) -> void {
-  detail::GGEMSVolumeRecipe recipe{
+  if (kind == detail::GGEMSRepeatKind::Linear) {
+    AppendRecipe(
+      detail::MakeLinearRecipe(std::move(child), count, pitch, axis));
+    return;
+  }
+
+  AppendRecipe({
     .child = std::move(child),
     .kind = kind,
     .count = count,
-    .pitch = pitch,
     .axis = axis,
-  };
+  });
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSVolumeAuthoring::AppendLinear(
+  std::shared_ptr<detail::GGEMSAuthoredVolume const> child,
+  std::array<std::uint32_t, 3> count, std::array<units::Length, 3> pitch)
+  -> void {
+  AppendRecipe(detail::MakeLinearRecipe(std::move(child), count, pitch));
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSVolumeAuthoring::AppendRecipe(detail::GGEMSVolumeRecipe recipe)
+  -> void {
+
   detail::ValidateRecipe(recipe);
+
   auto const additional = detail::RecipeOccurrenceCount(recipe);
   auto const depth = std::visit(
     [](auto const &shape) -> std::uint32_t {
       return shape.GetDescendantDepth() + 1U;
     },
     recipe.child->volume);
+
   if (depth > 2U) {
     throw core::GGEMSRecoverable("Detached subtree cannot exceed three "
                                  "physical levels including its root.");
   }
+
   auto constexpr maximum = std::numeric_limits<std::uint32_t>::max() - 2U;
+
   if (additional > maximum - GetDescendantCount()) {
     throw core::GGEMSRecoverable(
       "Authored descendants exceed the physical VolumeID domain.");
@@ -236,6 +318,7 @@ auto GGEMSVolumeAuthoring::Append(
   updated->recipes.push_back(std::move(recipe));
   updated->descendant_count += additional;
   updated->descendant_depth = std::max(updated->descendant_depth, depth);
+
   children_ = std::move(updated);
 }
 

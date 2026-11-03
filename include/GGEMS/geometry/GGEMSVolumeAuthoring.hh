@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -65,7 +66,7 @@ enum class GGEMSRepeatKind : std::uint8_t {
   /*! \brief One occurrence at the captured pose. */
   Single,
 
-  /*! \brief Constant positive local-axis translation between centers. */
+  /*! \brief Centered Cartesian translations with unchanged orientation. */
   Linear,
 
   /*! \brief Right-handed rigid rotation around the mother's local origin. */
@@ -109,21 +110,23 @@ public:
   }
 
   /*!
-   * \brief Captures translated copies including the reference occurrence.
+   * \brief Captures copies centered on the reference position along one axis.
    *
-   * Copy i has position p + i * pitch along axis and unchanged orientation.
+   * Copy i has position p + (i - (count - 1)/2) * pitch along axis and
+   * unchanged orientation. Fractional-picometer offsets truncate toward zero
+   * before addition to p. A singleton ignores its pitch.
    * Placement is parent-local; full overlap and containment admission occurs
    * when the complete subtree is attached to a configured World.
    * \tparam Self Concrete analytical mother type.
    * \tparam Child One of the eight analytical child types.
    * \param[in,out] self Mother retaining the captured description.
    * \param[in] child Complete reference subtree copied at this call.
-   * \param[in] count Total occurrence count, including index zero.
+   * \param[in] count Positive total occurrence count.
    * \param[in] pitch Canonical center-to-center distance in picometers.
    * \param[in] axis Positive mother-local axis.
    * \return This concrete mother for chained configuration.
    * \throws core::GGEMSRecoverable If self-reference, shape, count, axis,
-   * pitch, endpoint representability, depth, or physical ID capacity fails.
+   * pitch, depth, or physical ID capacity fails.
    */
   template <class Self, class Child>
   auto LinearRepeater(this Self &self, Child const &child, std::uint32_t count,
@@ -131,6 +134,32 @@ public:
     self.RequireDifferent(child);
     self.Append(Capture(child), detail::GGEMSRepeatKind::Linear, count, pitch,
                 axis);
+    return self;
+  }
+
+  /*!
+   * \brief Captures a centered Cartesian arrangement of child subtrees.
+   *
+   * Counts and pitches are ordered X, Y, Z in the mother's local frame.
+   * Each axis follows the scalar centering rule. X varies fastest,
+   * then Y, then Z; every root is a direct child with unchanged orientation.
+   * A singleton axis permits zero pitch and ignores its displacement.
+   * \tparam Self Concrete analytical mother type.
+   * \tparam Child One of the eight analytical child types.
+   * \param[in,out] self Mother retaining the captured description.
+   * \param[in] child Complete reference subtree copied at this call.
+   * \param[in] count Positive occurrence counts ordered X, Y, Z.
+   * \param[in] pitch Canonical nonnegative axis spacings in picometers.
+   * \return This concrete mother for chained configuration.
+   * \throws core::GGEMSRecoverable If self-reference, shape, counts, pitches,
+   * depth, or physical ID capacity fails.
+   */
+  template <class Self, class Child>
+  auto LinearRepeater(this Self &self, Child const &child,
+                      std::array<std::uint32_t, 3> count,
+                      std::array<units::Length, 3> pitch) -> Self & {
+    self.RequireDifferent(child);
+    self.AppendLinear(Capture(child), count, pitch);
     return self;
   }
 
@@ -207,6 +236,24 @@ private:
   auto Append(std::shared_ptr<detail::GGEMSAuthoredVolume const> child,
               detail::GGEMSRepeatKind kind, std::uint32_t count,
               units::Length pitch, GGEMSRepeatAxis axis) -> void;
+
+  /*!
+   * \brief Normalizes and appends one Cartesian child recipe.
+   * \param[in] child Owned complete child snapshot.
+   * \param[in] count Positive root multiplicities ordered X, Y, Z.
+   * \param[in] pitch Canonical nonnegative axis spacings in picometers.
+   * \throws core::GGEMSRecoverable If recipe, depth, or count admission fails.
+   */
+  auto AppendLinear(std::shared_ptr<detail::GGEMSAuthoredVolume const> child,
+                    std::array<std::uint32_t, 3> count,
+                    std::array<units::Length, 3> pitch) -> void;
+
+  /*!
+   * \brief Validates and publishes one child recipe without partial mutation.
+   * \param[in] recipe Complete immutable placement to append.
+   * \throws core::GGEMSRecoverable If recipe, depth, or count admission fails.
+   */
+  auto AppendRecipe(detail::GGEMSVolumeRecipe recipe) -> void;
 
   /*!
    * \brief Copies one complete Box and its immutable descendants.

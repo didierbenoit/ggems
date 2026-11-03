@@ -605,7 +605,7 @@ TEST_F(GGEMSNavigationDeviceTest,
   std::vector<Scene> scenes;
   auto gap_world = World();
   auto gap_mother = Box(60_mm, 40_mm, 40_mm);
-  gap_mother.LinearRepeater(Box(2_mm, 6_mm, 8_mm, {-10, 0, 0}), 3U, 4_mm,
+  gap_mother.LinearRepeater(Box(2_mm, 6_mm, 8_mm, {-6, 0, 0}), 3U, 4_mm,
                             geometry::GGEMSRepeatAxis::X);
   gap_world.AddVolume(gap_mother);
   scenes.push_back({
@@ -626,7 +626,7 @@ TEST_F(GGEMSNavigationDeviceTest,
 
   auto contact_world = World();
   auto contact_mother = Box(60_mm, 40_mm, 40_mm);
-  contact_mother.LinearRepeater(Box(2_mm, 6_mm, 8_mm, {-4, 0, 0}), 3U, 2_mm,
+  contact_mother.LinearRepeater(Box(2_mm, 6_mm, 8_mm, {-2, 0, 0}), 3U, 2_mm,
                                 geometry::GGEMSRepeatAxis::X);
   contact_world.AddVolume(contact_mother);
   scenes.push_back({
@@ -645,7 +645,7 @@ TEST_F(GGEMSNavigationDeviceTest,
 
   auto nested_world = World();
   auto scanner = Box(100_mm, 60_mm, 40_mm);
-  auto module = Box(12_mm, 14_mm, 16_mm, {-20, 0, 0}, "Aluminum");
+  auto module = Box(12_mm, 14_mm, 16_mm, {0, 0, 0}, "Aluminum");
   module.AddVolume(Box(4_mm, 6_mm, 8_mm, {2, 0, 0}, "Air"));
   scanner.LinearRepeater(module, 2U, 40_mm, geometry::GGEMSRepeatAxis::X);
   nested_world.AddVolume(scanner);
@@ -670,7 +670,7 @@ TEST_F(GGEMSNavigationDeviceTest,
   auto mixed_world = World();
   auto mixed_mother = Box(80_mm, 60_mm, 60_mm);
   mixed_mother
-    .LinearRepeater(Box(4_mm, 6_mm, 8_mm, {10, 0, 0}), 2U, 8_mm,
+    .LinearRepeater(Box(4_mm, 6_mm, 8_mm, {14, 0, 0}), 2U, 8_mm,
                     geometry::GGEMSRepeatAxis::X)
     .AddVolume(Box(4_mm, 6_mm, 8_mm, {-20, 0, 0}, "Aluminum"));
   mixed_world.AddVolume(mixed_mother);
@@ -687,6 +687,26 @@ TEST_F(GGEMSNavigationDeviceTest,
         {.parameter_mm = 76, .arrival = 3, .event = 2},
         {.parameter_mm = 80, .arrival = 1, .event = 3},
         {.parameter_mm = 100, .arrival = 0, .event = 3},
+      },
+  });
+
+  auto cartesian_world = World();
+  auto cartesian_mother = Box(60_mm, 40_mm, 40_mm);
+  cartesian_mother.LinearRepeater(Box(2_mm, 2_mm, 2_mm), {2U, 3U, 2U},
+                                  {8_mm, 6_mm, 10_mm});
+  cartesian_world.AddVolume(cartesian_mother);
+  scenes.push_back({
+    .name = "Centered Cartesian siblings retain X-fast physical IDs off axis",
+    .world = cartesian_world,
+    .start = {-60, 0, 5},
+    .crossings =
+      {
+        {.parameter_mm = 30, .arrival = 1, .event = 2},
+        {.parameter_mm = 55, .arrival = 10, .event = 2},
+        {.parameter_mm = 57, .arrival = 1, .event = 3},
+        {.parameter_mm = 63, .arrival = 11, .event = 2},
+        {.parameter_mm = 65, .arrival = 1, .event = 3},
+        {.parameter_mm = 90, .arrival = 0, .event = 3},
       },
   });
 

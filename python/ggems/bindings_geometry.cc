@@ -27,12 +27,15 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <memory>
 #include <vector>
 
+// Keep Python C API inclusion behind pybind11's Windows Debug boundary.
 #include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/cast.h>
@@ -80,6 +83,55 @@ using ggems::python::detail::MakeQuantityOrThrow;
 }
 
 /*!
+ * \brief Converts a parent-local position for any analytical shape.
+ * \tparam Shape Analytical shape with a parent-local pose.
+ * \param[in,out] shape Shape receiving the absolute position.
+ * \param[in] x Parent-local X coordinate.
+ * \param[in] y Parent-local Y coordinate.
+ * \param[in] z Parent-local Z coordinate.
+ * \param[in] unit GGEMS length unit.
+ * \return The same shape for chained configuration.
+ */
+template <class Shape>
+auto SetPosition(Shape &shape, double x, double y, double z,
+                 std::string const &unit) -> Shape & {
+  return shape.SetPosition(ggems::geometry::MakePositionPM(
+    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit).value));
+}
+
+/*!
+ * \brief Converts absolute parent-axis angles for any analytical shape.
+ * \tparam Shape Analytical shape with a parent-local pose.
+ * \param[in,out] shape Shape receiving the absolute rotation.
+ * \param[in] x Rotation about the parent X axis.
+ * \param[in] y Rotation about the parent Y axis.
+ * \param[in] z Rotation about the parent Z axis.
+ * \param[in] unit GGEMS angular unit.
+ * \return The same shape for chained configuration.
+ */
+template <class Shape>
+auto SetRotation(Shape &shape, double x, double y, double z,
+                 std::string const &unit) -> Shape & {
+  return shape.SetRotation(MakeQuantityOrThrow<ggems::units::Angle>(x, unit),
+                           MakeQuantityOrThrow<ggems::units::Angle>(y, unit),
+                           MakeQuantityOrThrow<ggems::units::Angle>(z, unit));
+}
+
+/*!
+ * \brief Resolves and assigns a medium to World or an analytical shape.
+ * \tparam Volume World or analytical shape type.
+ * \param[in,out] volume Authoring value receiving the material.
+ * \param[in] name Exact registered, built-in, or custom material name.
+ * \return The same value for chained configuration.
+ */
+template <class Volume>
+auto SetMaterial(Volume &volume, std::string const &name) -> Volume & {
+  return volume.SetMaterial(ResolveMaterial(name));
+}
+
+/*!
  * \brief Converts an actual positive Python integer to the occurrence domain.
  * \param[in] value Python integer; Boolean values are not admitted counts.
  * \return Count in the existing unsigned 32-bit occurrence domain.
@@ -100,6 +152,81 @@ using ggems::python::detail::MakeQuantityOrThrow;
     throw py::value_error("count must be in [1, 4294967295].");
   }
   return count;
+}
+
+/*!
+ * \brief Borrows an exact three-element tuple for Cartesian repetition.
+ * \param[in] value Unconverted Python count or pitch argument.
+ * \param[in] name Argument name used in diagnostics.
+ * \return Borrowed tuple after type and length validation.
+ * \throws py::type_error If value is not a built-in tuple.
+ * \throws py::value_error If the tuple does not contain three entries.
+ */
+[[nodiscard]] auto ParseRepeatTuple(py::handle value, std::string_view name)
+  -> py::tuple {
+  if (!PyTuple_CheckExact(value.ptr())) {
+    throw py::type_error(std::string{name} + " must be a built-in tuple.");
+  }
+
+  auto values = py::reinterpret_borrow<py::tuple>(value);
+
+  if (values.size() != 3U) {
+    throw py::value_error(
+      std::string{name} +
+      " must contain exactly three entries ordered X, Y, Z.");
+  }
+
+  return values;
+}
+
+/*!
+ * \brief Converts three exact Cartesian count entries to physical counts.
+ * \param[in] value Built-in count tuple ordered X, Y, and Z.
+ * \return Positive unsigned 32-bit counts in the same order.
+ * \throws py::type_error If tuple or entry types are invalid, including bool.
+ * \throws py::value_error If length, positivity, or numeric range is invalid.
+ */
+[[nodiscard]] auto ParseRepeatCounts(py::handle value)
+  -> std::array<std::uint32_t, 3> {
+  auto const values = ParseRepeatTuple(value, "count");
+
+  std::array<std::uint32_t, 3> counts{};
+
+  for (std::size_t index = 0U; index < counts.size(); ++index) {
+    counts[index] = ParseRepeatCount(values[index]);
+  }
+
+  return counts;
+}
+
+/*!
+ * \brief Converts three Cartesian pitches through the central unit policy.
+ * \param[in] value Built-in pitch tuple ordered X, Y, and Z.
+ * \param[in] unit Explicit GGEMS length unit shared by the three entries.
+ * \return Finite nonnegative canonical spacings, including singleton axes.
+ * \throws py::type_error If tuple or numeric entry types are invalid.
+ * \throws py::value_error If length, unit, sign, finiteness, or range is
+ * invalid.
+ */
+[[nodiscard]] auto ParseRepeatPitches(py::handle value, std::string_view unit)
+  -> std::array<ggems::units::Length, 3> {
+  auto const values = ParseRepeatTuple(value, "pitch");
+
+  std::array<ggems::units::Length, 3> pitches{};
+
+  for (std::size_t index = 0U; index < pitches.size(); ++index) {
+    double spacing{};
+
+    try {
+      spacing = py::cast<double>(values[index]);
+    } catch (py::cast_error const &) {
+      throw py::type_error("pitch entries must be real numbers.");
+    }
+
+    pitches[index] = MakeQuantityOrThrow<ggems::units::Length>(spacing, unit);
+  }
+
+  return pitches;
 }
 
 /*!
@@ -187,14 +314,19 @@ Returns:
                                     repeat_axis);
         return *parent;
       },
-      R"doc(Capture a subtree repeated along a positive mother-local axis.
+      R"doc(Capture a centered line of subtree copies along a mother-local axis.
 
-Count includes occurrence zero at the source's current pose. Occurrence i has
-position p + i*pitch*axis and the unchanged source orientation. Pitch is the
-center-to-center displacement, with an explicit GGEMS length unit. For multiple
-copies it must remain strictly positive after unit conversion; zero is allowed
-only for count=1. Negative and nonfinite pitch are rejected. Reversed axes are
-not supported.
+The source position p is the center of the whole line. Copy i has nominal
+position p + (i - (count - 1)/2)*pitch*axis and the unchanged source orientation.
+This centered convention intentionally replaces the earlier first-copy
+positioning. Fractional-picometer offsets truncate toward zero before addition
+to the source position. No manual centering position is needed.
+
+Pitch is the center-to-center spacing, with an explicit GGEMS length unit. It
+must be finite, nonnegative, and representable even for count=1, where spacing
+does not change placement. Multiple copies require a strictly positive converted
+pitch. Reversed axes are unsupported. The tuple overload takes exact count and
+pitch triples ordered X, Y, Z and accepts no axis argument.
 
 The complete child subtree is captured now. Later source edits do not alter the
 recipe. The detached mother's final pose composes with every occurrence when
@@ -212,7 +344,7 @@ not a scalable accelerator for large repeated scenes.
 Args:
     volume: Complete analytical reference volume and captured descendants.
     count: Positive integer total count, excluding Booleans.
-    pitch: Nonnegative center-to-center displacement.
+    pitch: Finite nonnegative center-to-center spacing.
     unit: Explicit GGEMS length unit.
     axis: Exactly "X", "Y", or "Z" in the mother's local frame.
 
@@ -221,6 +353,57 @@ Returns:
 )doc",
       py::arg("volume"), py::arg("count"), py::arg("pitch"), py::arg("unit"),
       py::arg("axis"), py::return_value_policy::reference_internal);
+
+    binding.def(
+      "linear_repeater",
+      [attachments](std::shared_ptr<Parent> const &parent,
+                    std::shared_ptr<Child> const &child, py::handle count,
+                    py::handle pitch, std::string const &unit) -> Parent & {
+        auto const counts = ParseRepeatCounts(count);
+        auto const pitches = ParseRepeatPitches(pitch, unit);
+        attachments->LinearRepeater(parent, child, counts, pitches);
+        return *parent;
+      },
+      R"doc(Capture a centered Cartesian arrangement of subtree copies.
+
+Count and pitch must be built-in tuples of exactly three entries ordered X, Y,
+Z in the mother's local frame. No axis argument is accepted. Counts (nx, ny, nz)
+produce nx*ny*nz direct sibling roots without Row, Plane, or other intermediate
+volumes. X varies fastest: flat = x + nx*(y + ny*z). Each root is followed by its
+captured descendants before the next root. Every physical copy has its own ID.
+
+The source position is the center of the entire arrangement. For each axis,
+copy i has nominal coordinate p + (i - (n - 1)/2)*pitch; all copies retain the
+source orientation. Fractional-picometer offsets truncate toward zero before
+addition to the source position. A default source position centers
+the arrangement at the mother's origin. Singleton axes preserve their source
+coordinate; their pitches must still be finite, nonnegative, and representable.
+Axes with multiple copies require a strictly positive converted pitch.
+
+The complete child subtree is captured now and remains independent of later
+source edits. The detached mother's pose may be set before or after capturing
+its children, until that mother is itself captured or attached. A registered
+mother extends its original World using its stored pose. Repeated sources do
+not become live occurrence handles. Self-use and reuse of a source registered
+in a live World are rejected.
+
+World expansion requires configured size and material and admits the complete
+batch atomically under existing depth, capacity, FP32, containment, and overlap
+rules. Bounded overlap sampling is not a complete geometric proof. Expansion
+materializes ordinary occurrences with linear device candidate scans; it does
+not provide large-scene spatial acceleration.
+
+Args:
+    volume: Complete analytical reference volume and captured descendants.
+    count: Tuple of three positive integers, excluding Booleans.
+    pitch: Tuple of three finite nonnegative center-to-center spacings.
+    unit: Explicit GGEMS length unit shared by all pitch entries.
+
+Returns:
+    This parent for chaining.
+)doc",
+      py::arg("volume"), py::arg("count"), py::arg("pitch"), py::arg("unit"),
+      py::return_value_policy::reference_internal);
 
     binding.def(
       "circular_repeater",
@@ -348,16 +531,8 @@ Example:
         py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
         py::return_value_policy::reference_internal)
 
-      .def(
-        "set_rotation",
-        [](GGEMSBox &self, double angle_x, double angle_y, double angle_z,
-           std::string const &unit) -> GGEMSBox & {
-          return self.SetRotation(
-            MakeQuantityOrThrow<ggems::units::Angle>(angle_x, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(angle_y, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(angle_z, unit));
-        },
-        R"doc(Assign the absolute right-handed active rotation Rz * Ry * Rx.
+      .def("set_rotation", &SetRotation<GGEMSBox>,
+           R"doc(Assign the absolute right-handed active rotation Rz * Ry * Rx.
 
 The Box rotates about its center. Fixed parent-axis X, Y, then Z rotations
 replace any previous rotation; positive angles follow the right-hand rule.
@@ -371,22 +546,11 @@ Args:
 Returns:
     GGEMSBox: This Box, allowing chained configuration.
 )doc",
-        py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
-        py::return_value_policy::reference_internal)
+           py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+           py::return_value_policy::reference_internal)
 
-      .def(
-        "set_position",
-        [](GGEMSBox &self, double pos_x, double pos_y, double pos_z,
-           std::string const &unit) -> GGEMSBox & {
-          return self.SetPosition(ggems::geometry::MakePositionPM(
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(pos_x, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(pos_y, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(pos_z, unit)
-              .value));
-        },
-        R"doc(Set the parent-frame position of the Box geometric center.
+      .def("set_position", &SetPosition<GGEMSBox>,
+           R"doc(Set the parent-frame position of the Box geometric center.
 
 Args:
     x: Parent-frame X coordinate of the center.
@@ -400,15 +564,11 @@ Returns:
 Example:
     box.set_position(10.0, -20.0, 5.0, "mm")
 )doc",
-        py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
-        py::return_value_policy::reference_internal)
+           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+           py::return_value_policy::reference_internal)
 
-      .def(
-        "set_material",
-        [](GGEMSBox &self, std::string const &material_name) -> GGEMSBox & {
-          return self.SetMaterial(ResolveMaterial(material_name));
-        },
-        R"doc(Set the Box medium by exact material name.
+      .def("set_material", &SetMaterial<GGEMSBox>,
+           R"doc(Set the Box medium by exact material name.
 
 The name is resolved among registered, built-in, and custom materials; the
 material becomes registered as used by the scene.
@@ -422,7 +582,8 @@ Returns:
 Example:
     box.set_material("Water")
 )doc",
-        py::arg("material_name"), py::return_value_policy::reference_internal);
+           py::arg("material_name"),
+           py::return_value_policy::reference_internal);
 
   // === === ===
   auto sphere_binding =
@@ -451,37 +612,19 @@ Returns:
 )doc",
         py::arg("radius"), py::arg("unit") = "mm",
         py::return_value_policy::reference_internal)
-      .def(
-        "set_position",
-        [](GGEMSSphere &self, double x, double y, double z,
-           std::string const &unit) -> GGEMSSphere & {
-          return self.SetPosition(ggems::geometry::MakePositionPM(
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
-              .value));
-        },
-        R"doc(Set the geometric center in the selected parent frame using a
+      .def("set_position", &SetPosition<GGEMSSphere>,
+           R"doc(Set the geometric center in the selected parent frame using a
 
 GGEMS length unit.
 
 Returns:
     GGEMSSphere: This Sphere, allowing chained configuration.
 )doc",
-        py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
-        py::return_value_policy::reference_internal)
+           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+           py::return_value_policy::reference_internal)
 
       .def(
-        "set_rotation",
-        [](GGEMSSphere &self, double x, double y, double z,
-           std::string const &unit) -> GGEMSSphere & {
-          return self.SetRotation(
-            MakeQuantityOrThrow<ggems::units::Angle>(x, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(y, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(z, unit));
-        },
+        "set_rotation", &SetRotation<GGEMSSphere>,
         R"doc(Set the local-to-parent daughter frame with active Rz * Ry * Rx rotation.
 
 The spherical boundary is rotation invariant. Angles use a GGEMS angular unit;
@@ -492,10 +635,7 @@ Return this Sphere for chaining.
         py::return_value_policy::reference_internal)
 
       .def(
-        "set_material",
-        [](GGEMSSphere &self, std::string const &name) -> GGEMSSphere & {
-          return self.SetMaterial(ResolveMaterial(name));
-        },
+        "set_material", &SetMaterial<GGEMSSphere>,
         R"doc(Set the medium by exact registered, built-in, or custom material name.
 
 The material becomes registered as used by the scene.
@@ -546,31 +686,13 @@ The length must convert to a positive even number of picometers. Caps are at
         py::arg("length"), py::arg("unit") = "mm",
         py::return_value_policy::reference_internal)
 
-      .def(
-        "set_position",
-        [](GGEMSTubs &self, double x, double y, double z,
-           std::string const &unit) -> GGEMSTubs & {
-          return self.SetPosition(ggems::geometry::MakePositionPM(
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
-              .value));
-        },
-        "Set the parent-frame geometric center and return this tube.",
-        py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
-        py::return_value_policy::reference_internal)
+      .def("set_position", &SetPosition<GGEMSTubs>,
+           "Set the parent-frame geometric center and return this tube.",
+           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+           py::return_value_policy::reference_internal)
 
       .def(
-        "set_rotation",
-        [](GGEMSTubs &self, double rx, double ry, double rz,
-           std::string const &unit) -> GGEMSTubs & {
-          return self.SetRotation(
-            MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
-        },
+        "set_rotation", &SetRotation<GGEMSTubs>,
         R"doc(Assign the absolute active rotation Rz * Ry * Rx about the center.
 
 Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
@@ -581,10 +703,7 @@ Calls replace the previous rotation and return this tube.
         py::return_value_policy::reference_internal)
 
       .def(
-        "set_material",
-        [](GGEMSTubs &self, std::string const &name) -> GGEMSTubs & {
-          return self.SetMaterial(ResolveMaterial(name));
-        },
+        "set_material", &SetMaterial<GGEMSTubs>,
         R"doc(Set the medium by exact registered, built-in, or custom material name.
 
 The material becomes registered as used by the scene. Return this tube.
@@ -619,31 +738,13 @@ complete local surface is (x/a)^2 + (y/b)^2 + (z/c)^2 = 1, without cut planes.
         py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
         py::return_value_policy::reference_internal)
 
-      .def(
-        "set_position",
-        [](GGEMSEllipsoid &self, double x, double y, double z,
-           std::string const &unit) -> GGEMSEllipsoid & {
-          return self.SetPosition(ggems::geometry::MakePositionPM(
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
-              .value));
-        },
-        "Set the parent-frame geometric center and return this ellipsoid.",
-        py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
-        py::return_value_policy::reference_internal)
+      .def("set_position", &SetPosition<GGEMSEllipsoid>,
+           "Set the parent-frame geometric center and return this ellipsoid.",
+           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+           py::return_value_policy::reference_internal)
 
       .def(
-        "set_rotation",
-        [](GGEMSEllipsoid &self, double rx, double ry, double rz,
-           std::string const &unit) -> GGEMSEllipsoid & {
-          return self.SetRotation(
-            MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
-        },
+        "set_rotation", &SetRotation<GGEMSEllipsoid>,
         R"doc(Assign the absolute active rotation Rz * Ry * Rx about the center.
 
 Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
@@ -654,10 +755,7 @@ Calls replace the previous rotation and return this ellipsoid.
         py::return_value_policy::reference_internal)
 
       .def(
-        "set_material",
-        [](GGEMSEllipsoid &self, std::string const &name) -> GGEMSEllipsoid & {
-          return self.SetMaterial(ResolveMaterial(name));
-        },
+        "set_material", &SetMaterial<GGEMSEllipsoid>,
         R"doc(Set the medium by exact registered, built-in, or custom material name.
 
 The material becomes registered as used by the scene. Return this ellipsoid.
@@ -711,32 +809,14 @@ Rigid XYZ rotation is separate. World owns a copy; setters return this object.
         py::arg("length"), py::arg("unit") = "mm",
         py::return_value_policy::reference_internal)
 
-      .def(
-        "set_position",
-        [](GGEMSTrd &self, double x, double y, double z,
-           std::string const &unit) -> GGEMSTrd & {
-          return self.SetPosition(ggems::geometry::MakePositionPM(
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
-              .value));
-        },
-        "Set the parent-frame position of the local frame origin and return "
-        "this solid.",
-        py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
-        py::return_value_policy::reference_internal)
+      .def("set_position", &SetPosition<GGEMSTrd>,
+           "Set the parent-frame position of the local frame origin and return "
+           "this solid.",
+           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+           py::return_value_policy::reference_internal)
 
       .def(
-        "set_rotation",
-        [](GGEMSTrd &self, double rx, double ry, double rz,
-           std::string const &unit) -> GGEMSTrd & {
-          return self.SetRotation(
-            MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
-        },
+        "set_rotation", &SetRotation<GGEMSTrd>,
         R"doc(Replace the absolute right-handed fixed-axis rotation Rz * Ry * Rx.
 
 Return this solid. Rotation acts about the local frame origin using parent axes
@@ -746,10 +826,7 @@ selected by add_volume(), or World axes by default.
         py::return_value_policy::reference_internal)
 
       .def(
-        "set_material",
-        [](GGEMSTrd &self, std::string const &name) -> GGEMSTrd & {
-          return self.SetMaterial(ResolveMaterial(name));
-        },
+        "set_material", &SetMaterial<GGEMSTrd>,
         R"doc(Set an owned medium by exact registered, built-in or custom name.
 
 The Material becomes registered as used by the scene. Return this solid.
@@ -847,32 +924,14 @@ toward +Y. Return this solid.
         py::arg("theta"), py::arg("phi"), py::arg("unit") = "deg",
         py::return_value_policy::reference_internal)
 
-      .def(
-        "set_position",
-        [](GGEMSTrap &self, double x, double y, double z,
-           std::string const &unit) -> GGEMSTrap & {
-          return self.SetPosition(ggems::geometry::MakePositionPM(
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
-              .value));
-        },
-        "Set the parent-frame position of the local frame origin and return "
-        "this solid.",
-        py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
-        py::return_value_policy::reference_internal)
+      .def("set_position", &SetPosition<GGEMSTrap>,
+           "Set the parent-frame position of the local frame origin and return "
+           "this solid.",
+           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+           py::return_value_policy::reference_internal)
 
       .def(
-        "set_rotation",
-        [](GGEMSTrap &self, double rx, double ry, double rz,
-           std::string const &unit) -> GGEMSTrap & {
-          return self.SetRotation(
-            MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
-        },
+        "set_rotation", &SetRotation<GGEMSTrap>,
         R"doc(Replace the absolute right-handed fixed-axis rotation Rz * Ry * Rx.
 
 Return this solid. Rotation acts about the local frame origin using parent axes
@@ -882,10 +941,7 @@ selected by add_volume(), or World axes by default.
         py::return_value_policy::reference_internal)
 
       .def(
-        "set_material",
-        [](GGEMSTrap &self, std::string const &name) -> GGEMSTrap & {
-          return self.SetMaterial(ResolveMaterial(name));
-        },
+        "set_material", &SetMaterial<GGEMSTrap>,
         R"doc(Set an owned medium by exact registered, built-in or custom name.
 
 The Material becomes registered as used by the scene. Return this solid.
@@ -946,31 +1002,13 @@ The length must convert to a positive even number of picometers. Caps are at
         py::arg("length"), py::arg("unit") = "mm",
         py::return_value_policy::reference_internal)
 
-      .def(
-        "set_position",
-        [](GGEMSCons &self, double x, double y, double z,
-           std::string const &unit) -> GGEMSCons & {
-          return self.SetPosition(ggems::geometry::MakePositionPM(
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
-              .value));
-        },
-        "Set the parent-frame geometric center and return this frustum.",
-        py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
-        py::return_value_policy::reference_internal)
+      .def("set_position", &SetPosition<GGEMSCons>,
+           "Set the parent-frame geometric center and return this frustum.",
+           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+           py::return_value_policy::reference_internal)
 
       .def(
-        "set_rotation",
-        [](GGEMSCons &self, double rx, double ry, double rz,
-           std::string const &unit) -> GGEMSCons & {
-          return self.SetRotation(
-            MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
-        },
+        "set_rotation", &SetRotation<GGEMSCons>,
         R"doc(Assign the absolute active rotation Rz * Ry * Rx about the center.
 
 Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
@@ -981,10 +1019,7 @@ Calls replace the previous rotation and return this frustum.
         py::return_value_policy::reference_internal)
 
       .def(
-        "set_material",
-        [](GGEMSCons &self, std::string const &name) -> GGEMSCons & {
-          return self.SetMaterial(ResolveMaterial(name));
-        },
+        "set_material", &SetMaterial<GGEMSCons>,
         R"doc(Set the medium by exact registered, built-in, or custom material name.
 
 The material becomes registered as used by the scene. Return this frustum.
@@ -1059,32 +1094,14 @@ Repeated Z planes and steps are rejected. Return this solid.
         py::arg("z"), py::arg("inner"), py::arg("outer"),
         py::arg("unit") = "mm", py::return_value_policy::reference_internal)
 
-      .def(
-        "set_position",
-        [](GGEMSPolyhedra &self, double x, double y, double z,
-           std::string const &unit) -> GGEMSPolyhedra & {
-          return self.SetPosition(ggems::geometry::MakePositionPM(
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit)
-              .value,
-            MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
-              .value));
-        },
-        "Set the parent-frame position of the local frame origin and return "
-        "this solid.",
-        py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
-        py::return_value_policy::reference_internal)
+      .def("set_position", &SetPosition<GGEMSPolyhedra>,
+           "Set the parent-frame position of the local frame origin and return "
+           "this solid.",
+           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+           py::return_value_policy::reference_internal)
 
       .def(
-        "set_rotation",
-        [](GGEMSPolyhedra &self, double rx, double ry, double rz,
-           std::string const &unit) -> GGEMSPolyhedra & {
-          return self.SetRotation(
-            MakeQuantityOrThrow<ggems::units::Angle>(rx, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(ry, unit),
-            MakeQuantityOrThrow<ggems::units::Angle>(rz, unit));
-        },
+        "set_rotation", &SetRotation<GGEMSPolyhedra>,
         R"doc(Assign the absolute active rotation Rz * Ry * Rx about the local frame origin.
 
 Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
@@ -1095,10 +1112,7 @@ Calls replace the previous rotation and return this solid.
         py::return_value_policy::reference_internal)
 
       .def(
-        "set_material",
-        [](GGEMSPolyhedra &self, std::string const &name) -> GGEMSPolyhedra & {
-          return self.SetMaterial(ResolveMaterial(name));
-        },
+        "set_material", &SetMaterial<GGEMSPolyhedra>,
         R"doc(Set the medium by exact registered, built-in, or custom material name.
 
 The material becomes registered as used by the scene. Return this solid.
@@ -1123,7 +1137,9 @@ by value. Configure the mother pose before or after its children, then attach
 its complete subtree with world.add_volume(mother). Later source edits never
 change captured copies. Position and rotation remain parent-local. Physical
 depth is limited to three below World, and Sphere rotation defines its daughter
-frame without changing the spherical surface.
+frame without changing the spherical surface. Scalar and Cartesian linear
+repeaters center their copies about the child position and add no hierarchy
+level. Circular repeaters retain their occurrence-zero angular convention.
 
 Explicit ordinary attachment also retains top-down assembly: subsequent
 mother.add_volume(child) extends the original live World using the stored mother
@@ -1181,12 +1197,8 @@ Example:
         py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
         py::return_value_policy::reference_internal)
 
-      .def(
-        "set_material",
-        [](GGEMSWorld &self, std::string const &material_name) -> GGEMSWorld & {
-          return self.SetMaterial(ResolveMaterial(material_name));
-        },
-        R"doc(Set the World medium by exact material name.
+      .def("set_material", &SetMaterial<GGEMSWorld>,
+           R"doc(Set the World medium by exact material name.
 
 The name is resolved among registered, built-in, and custom materials; the
 material becomes registered as used by the scene.
@@ -1200,7 +1212,8 @@ Returns:
 Example:
     world.set_material("Air")
 )doc",
-        py::arg("material_name"), py::return_value_policy::reference_internal);
+           py::arg("material_name"),
+           py::return_value_policy::reference_internal);
 
   auto const attachments =
     std::make_shared<ggems::python::detail::GGEMSGeometryAttachments>();

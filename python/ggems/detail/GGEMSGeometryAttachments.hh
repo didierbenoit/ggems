@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -81,12 +82,12 @@ public:
   }
 
   /*!
-   * \brief Captures a linear subtree repeater in the parent's local frame.
+   * \brief Captures a centered linear subtree repeater in the parent frame.
    * \tparam Parent Bound World or one of the eight analytical mother types.
    * \tparam Child One of the eight existing analytical shape types.
    * \param[in] parent Detached mother, registered mother, or World.
-   * \param[in] child Complete reference subtree captured at occurrence zero.
-   * \param[in] count Total number of physical copies, including index zero.
+   * \param[in] child Subtree whose captured position centers the arrangement.
+   * \param[in] count Total number of physical copies along the selected axis.
    * \param[in] pitch Center-to-center displacement in canonical picometers.
    * \param[in] axis Positive parent-local repetition axis.
    * \throws core::GGEMSRecoverable If ownership, repetition, depth, capacity,
@@ -99,12 +100,42 @@ public:
                       units::Length pitch, geometry::GGEMSRepeatAxis axis)
     -> void {
     CheckChild(parent, child);
+
     auto const target = ResolveParent(parent);
+
     if (target.world) {
       target.world->LinearRepeater(*child, count, pitch, axis,
                                    target.volume_id);
     } else {
       parent->LinearRepeater(*child, count, pitch, axis);
+    }
+  }
+
+  /*!
+   * \brief Captures a centered Cartesian arrangement of child subtrees.
+   * \tparam Parent Bound World or one of the eight analytical mother types.
+   * \tparam Child One of the eight existing analytical shape types.
+   * \param[in] parent Detached mother, registered mother, or World.
+   * \param[in] child Subtree whose captured position centers the arrangement.
+   * \param[in] counts Positive counts along parent-local X, Y, and Z.
+   * \param[in] pitches Nonnegative canonical spacings along X, Y, and Z.
+   * \throws core::GGEMSRecoverable If ownership, repetition, depth, capacity,
+   * or geometry admission fails. Copies are direct siblings in X-fast order;
+   * no source registration or partial World batch is published on failure.
+   */
+  template <class Parent, class Child>
+  auto LinearRepeater(std::shared_ptr<Parent> const &parent,
+                      std::shared_ptr<Child> const &child,
+                      std::array<std::uint32_t, 3> const &counts,
+                      std::array<units::Length, 3> const &pitches) -> void {
+    CheckChild(parent, child);
+
+    auto const target = ResolveParent(parent);
+
+    if (target.world) {
+      target.world->LinearRepeater(*child, counts, pitches, target.volume_id);
+    } else {
+      parent->LinearRepeater(*child, counts, pitches);
     }
   }
 

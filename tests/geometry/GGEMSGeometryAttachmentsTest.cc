@@ -420,22 +420,26 @@ TEST(GGEMSGeometryAttachments, DetachedBindingKeepsCapturedSourcesIndependent) {
   EXPECT_EQ(unconfigured_world->GetVolumeCount(), 1U);
 }
 
-// A pitch is center-to-center, count includes the reference, and identical
-// materials do not collapse physical identities, including at face contact.
+// Odd and even arrays are centered on the reference pose. Identical materials
+// retain distinct physical identities, including at face contact.
 TEST(GGEMSGeometryAttachments, LinearRepeatersPreserveGapsContactAndCountOne) {
-  for (auto const pitch : {0_mm, 2_mm, 4_mm}) {
-    SCOPED_TRACE(pitch.value);
+  std::array const pitches{0_mm, 2_mm, 4_mm, 4_mm};
+  for (auto const count : {1U, 2U, 3U, 4U}) {
+    SCOPED_TRACE(count);
+    auto const pitch = pitches[count - 1U];
     auto mother = *MakeShape<GGEMSBox>(20_mm);
     auto child = *MakeShape<GGEMSBox>(1_mm);
-    child.SetPosition(MakePositionPM(-4'000'000'000LL, 0, 0));
-    auto const count = pitch.value == 0U ? 1U : 3U;
+    child.SetPosition(MakePositionPM(-4'000'000'000LL, 0, 0))
+      .SetRotation(0_deg, 0_deg, 90_deg);
     auto expected = *MakeWorld();
     expected.AddVolume(mother);
     for (std::uint32_t index = 0U; index < count; ++index) {
       auto copy = child;
-      copy.SetPosition(MakePositionPM(
-        -4'000'000'000LL + static_cast<std::int64_t>(index * pitch.value), 0,
-        0));
+      auto const offset = (2 * static_cast<std::int64_t>(index)) - count + 1;
+      copy.SetPosition(
+        MakePositionPM(-4'000'000'000LL +
+                         (offset * static_cast<std::int64_t>(pitch.value) / 2),
+                       0, 0));
       expected.AddVolume(copy, 1U);
     }
     mother.LinearRepeater(child, count, pitch, GGEMSRepeatAxis::X);
@@ -456,6 +460,109 @@ TEST(GGEMSGeometryAttachments, LinearRepeatersPreserveGapsContactAndCountOne) {
   EXPECT_EQ(world.GetVolumeCount(), 2U);
 }
 
+// Cartesian roots are direct siblings in X-fast order, with the same captured
+// local geometry whether the mother is posed before or after authoring.
+TEST(GGEMSGeometryAttachments, CartesianRepeatersPreserveCenteredPosesAndIds) {
+  for (std::array<std::uint32_t, 3> const counts : {
+         std::array{1U, 1U, 1U},
+         std::array{3U, 1U, 1U},
+         std::array{2U, 3U, 1U},
+         std::array{2U, 3U, 2U},
+       }) {
+    SCOPED_TRACE(counts[0]);
+    SCOPED_TRACE(counts[1]);
+    SCOPED_TRACE(counts[2]);
+    auto child = *MakeShape<GGEMSBox>(1_mm);
+    child.SetSize(2_mm, 4_mm, 6_mm)
+      .SetPosition(
+        MakePositionPM(3'000'000'000LL, 4'000'000'000LL, 5'000'000'000LL))
+      .SetRotation(0_deg, 0_deg, 90_deg);
+    auto reference = child;
+    auto before = *MakeShape<GGEMSBox>(40_mm);
+    auto after = before;
+    before
+      .SetPosition(
+        MakePositionPM(10'000'000'000LL, -5'000'000'000LL, 3'000'000'000LL))
+      .SetRotation(0_deg, 0_deg, 90_deg);
+    auto expected_mother = before;
+    before.LinearRepeater(child, counts, {8_mm, 10_mm, 12_mm});
+    after.LinearRepeater(child, counts, {8_mm, 10_mm, 12_mm})
+      .SetPosition(expected_mother.GetPositionPM())
+      .SetRotation(0_deg, 0_deg, 90_deg);
+    child.SetSize(1_mm, 1_mm, 1_mm)
+      .SetPosition(MakePositionPM(80'000'000'000LL, 0, 0));
+    auto world_before = *MakeWorld();
+    auto world_after = *MakeWorld();
+    world_before.AddVolume(before);
+    world_after.AddVolume(after);
+    auto expected = *MakeWorld();
+    expected.AddVolume(expected_mother);
+    for (std::uint32_t z = 0U; z < counts[2]; ++z) {
+      for (std::uint32_t y = 0U; y < counts[1]; ++y) {
+        for (std::uint32_t x = 0U; x < counts[0]; ++x) {
+          reference.SetPosition(MakePositionPM(
+            3'000'000'000LL +
+              (((2 * static_cast<std::int64_t>(x)) - counts[0] + 1) *
+               4'000'000'000LL),
+            4'000'000'000LL +
+              (((2 * static_cast<std::int64_t>(y)) - counts[1] + 1) *
+               5'000'000'000LL),
+            5'000'000'000LL +
+              (((2 * static_cast<std::int64_t>(z)) - counts[2] + 1) *
+               6'000'000'000LL)));
+          expected.AddVolume(reference, 1U);
+        }
+      }
+    }
+    ExpectSameCompilation(world_before, expected);
+    ExpectSameCompilation(world_after, expected);
+    auto const total = counts[0] * counts[1] * counts[2];
+    ASSERT_EQ(world_after.GetVolumeCount(), total + 1U);
+    EXPECT_EQ(world_after.BuildRecord().hierarchy_depth, 2U);
+    auto const links = world_after.BuildOccurrenceRecords();
+    for (std::uint32_t index = 1U; index <= total; ++index) {
+      EXPECT_EQ(links[index].parent_volume_id, 1U);
+      EXPECT_EQ(links[index].first_child_id, 0U);
+      EXPECT_EQ(world_after.BuildAnalyticVolumeRecord(7U, index)
+                  .parameters.box.volume_id,
+                index + 1U);
+    }
+  }
+}
+
+// The user-facing 10-by-10-by-10 example is bounded host admission only;
+// it performs no particle transport or device initialization.
+TEST(GGEMSGeometryAttachments, ThousandCenteredBoxesHaveTwelveMillimeterPitch) {
+  auto world = *MakeWorld();
+  auto child = *MakeShape<GGEMSBox>(5_mm);
+  world.LinearRepeater(child, {10U, 10U, 10U}, {12_mm, 12_mm, 12_mm});
+  ASSERT_EQ(world.GetVolumeCount(), 1000U);
+  EXPECT_EQ(world.BuildRecord().hierarchy_depth, 1U);
+  auto const links = world.BuildOccurrenceRecords();
+  for (std::uint32_t index = 0U; index < 1000U; ++index) {
+    auto const center = world.GetBoxes(index).front().GetPositionPM();
+    EXPECT_EQ(center.x, -54'000'000'000LL + ((index % 10U) * 12'000'000'000LL));
+    EXPECT_EQ(center.y,
+              -54'000'000'000LL + (((index / 10U) % 10U) * 12'000'000'000LL));
+    EXPECT_EQ(center.z,
+              -54'000'000'000LL + ((index / 100U) * 12'000'000'000LL));
+    EXPECT_EQ(links[index].parent_volume_id, 0U);
+    EXPECT_EQ(links[index].first_child_id, 0U);
+    auto const record = world.BuildAnalyticVolumeRecord(7U, index);
+    EXPECT_EQ(record.parameters.box.volume_id, index + 1U);
+    EXPECT_EQ(record.parameters.box.material_id, 7U);
+  }
+  auto const &first = world.GetBoxes(0U).front();
+  auto const &last = world.GetBoxes(999U).front();
+  auto const diameter =
+    static_cast<std::int64_t>(2U * first.GetHalfExtentPM().x);
+  EXPECT_EQ(last.GetPositionPM().x - first.GetPositionPM().x + diameter,
+            (118_mm).value);
+  EXPECT_EQ(world.GetBoxes(1U).front().GetPositionPM().x -
+              first.GetPositionPM().x - diameter,
+            (2_mm).value);
+}
+
 // Invalid recipes leave no retained child; invalid expanded scenes leave the
 // previously attached World unchanged and can be corrected before retrying.
 TEST(GGEMSGeometryAttachments, InvalidRecipesAndBatchesRejectAtomically) {
@@ -473,10 +580,6 @@ TEST(GGEMSGeometryAttachments, InvalidRecipesAndBatchesRejectAtomically) {
   EXPECT_THROW(
     mother.LinearRepeater(child, 2U, 4_mm, static_cast<GGEMSRepeatAxis>(3U)),
     GGEMSRecoverable);
-  EXPECT_THROW(mother.LinearRepeater(
-                 child, 2U, Length{std::numeric_limits<std::uint64_t>::max()},
-                 GGEMSRepeatAxis::X),
-               GGEMSRecoverable);
   EXPECT_THROW(mother.CircularRepeater(child, 0U, GGEMSRepeatAxis::Z),
                GGEMSRecoverable);
   EXPECT_THROW(mother.CircularRepeater(child, 2U, GGEMSRepeatAxis::Z),
@@ -485,6 +588,13 @@ TEST(GGEMSGeometryAttachments, InvalidRecipesAndBatchesRejectAtomically) {
                                      std::numeric_limits<std::uint32_t>::max(),
                                      4_mm, GGEMSRepeatAxis::X),
                GGEMSRecoverable);
+  EXPECT_THROW(mother.LinearRepeater(child, {2U, 0U, 1U}, {4_mm, 4_mm, 0_mm}),
+               GGEMSRecoverable);
+  EXPECT_THROW(mother.LinearRepeater(child, {2U, 1U, 1U}, {0_mm, 0_mm, 0_mm}),
+               GGEMSRecoverable);
+  EXPECT_THROW(
+    mother.LinearRepeater(child, {65536U, 65536U, 1U}, {4_mm, 4_mm, 0_mm}),
+    GGEMSRecoverable);
   EXPECT_THROW(mother.AddVolume(mother), GGEMSRecoverable);
   auto empty = *MakeWorld();
   empty.AddVolume(mother);
@@ -503,8 +613,12 @@ TEST(GGEMSGeometryAttachments, InvalidRecipesAndBatchesRejectAtomically) {
     world.CircularRepeater(existing, excessive_descriptors, GGEMSRepeatAxis::Z),
     GGEMSRecoverable);
   ExpectSameCompilation(world, before);
+  EXPECT_THROW(world.LinearRepeater(existing, {excessive_descriptors, 1U, 1U},
+                                    {4_mm, 0_mm, 0_mm}),
+               GGEMSRecoverable);
+  ExpectSameCompilation(world, before);
   auto overlapping = *MakeShape<GGEMSBox>(10_mm);
-  overlapping.LinearRepeater(child, 2U, 1_mm, GGEMSRepeatAxis::X);
+  overlapping.LinearRepeater(child, {2U, 2U, 1U}, {1_mm, 4_mm, 0_mm});
   EXPECT_THROW(world.AddVolume(overlapping), GGEMSRecoverable);
   ExpectSameCompilation(world, before);
 
@@ -515,10 +629,10 @@ TEST(GGEMSGeometryAttachments, InvalidRecipesAndBatchesRejectAtomically) {
   ExpectSameCompilation(world, before);
 
   auto mixed = *MakeShape<GGEMSBox>(10_mm);
-  mixed.AddVolume(child).LinearRepeater(child, 2U, 4_mm, GGEMSRepeatAxis::X);
+  mixed.AddVolume(child).LinearRepeater(child, 3U, 4_mm, GGEMSRepeatAxis::X);
   EXPECT_THROW(world.AddVolume(mixed), GGEMSRecoverable);
   ExpectSameCompilation(world, before);
-  EXPECT_THROW(world.LinearRepeater(existing, 2U, 4_mm, GGEMSRepeatAxis::X),
+  EXPECT_THROW(world.LinearRepeater(existing, 3U, 4_mm, GGEMSRepeatAxis::X),
                GGEMSRecoverable);
   ExpectSameCompilation(world, before);
 
@@ -605,9 +719,8 @@ TEST(GGEMSGeometryAttachments, RepeatedSubtreesPreserveParentageAndDepth) {
   auto module = *MakeShape<GGEMSBox>(10_mm);
   auto crystal = *MakeShape<GGEMSBox>(2_mm);
   crystal.SetPosition(MakePositionPM(2'000'000'000LL, 0, 0));
-  module.AddVolume(crystal).SetPosition(
-    MakePositionPM(-20'000'000'000LL, 0, 0));
-  scanner.LinearRepeater(module, 2U, 40_mm, GGEMSRepeatAxis::X);
+  module.AddVolume(crystal);
+  scanner.LinearRepeater(module, {2U, 1U, 1U}, {40_mm, 0_mm, 0_mm});
   auto world = *MakeWorld();
   world.AddVolume(scanner);
   ASSERT_EQ(world.GetVolumeCount(), 5U);
@@ -630,8 +743,8 @@ TEST(GGEMSGeometryAttachments, RepeatedSubtreesPreserveParentageAndDepth) {
 
   auto repeated_module = *MakeShape<GGEMSBox>(5_mm);
   auto repeated_crystal = *MakeShape<GGEMSBox>(1_mm);
-  repeated_crystal.SetPosition(MakePositionPM(-2'000'000'000LL, 0, 0));
-  repeated_module.LinearRepeater(repeated_crystal, 2U, 4_mm, GGEMSRepeatAxis::X)
+  repeated_module
+    .LinearRepeater(repeated_crystal, {2U, 1U, 1U}, {4_mm, 0_mm, 0_mm})
     .SetPosition(MakePositionPM(30'000'000'000LL, 0, 0));
   auto ring_before = *MakeShape<GGEMSBox>(50_mm);
   auto ring_after = ring_before;
@@ -668,7 +781,7 @@ TEST(GGEMSGeometryAttachments, BothRepeatersAcceptAllEightAnalyticalFamilies) {
       if (circular) {
         mother.CircularRepeater(child, 7U, GGEMSRepeatAxis::Z);
       } else {
-        mother.LinearRepeater(child, 2U, 4_mm, GGEMSRepeatAxis::X);
+        mother.LinearRepeater(child, {2U, 1U, 1U}, {4_mm, 0_mm, 0_mm});
       }
       auto world = *MakeWorld();
       world.AddVolume(mother);
