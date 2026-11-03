@@ -76,6 +76,9 @@ void BindGui(py::module_ &module) {
          &ggems::ui::GGEMSGuiApplication::SubmitLastRunSourceSnapshot,
          py::arg("run"))
 
+    .def("submit_run_geometry",
+         &ggems::ui::GGEMSGuiApplication::SubmitRunGeometry, py::arg("run"))
+
     .def(
       "submit_particle_traces_from_observer",
       [](ggems::ui::GGEMSGuiApplication &application,

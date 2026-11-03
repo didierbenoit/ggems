@@ -28,6 +28,7 @@
  */
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <expected>
 #include <limits>
@@ -398,3 +399,62 @@ TEST(GGEMSSceneCamera, InvalidAngularInputsPreserveThePreviousView) {
 }
 
 } // namespace
+
+// =============================================================================
+// =============================================================================
+
+// World corners stay visible across physical scales, orbit and viewport resize.
+TEST(GGEMSSceneCamera, FramesWorldAtSmallAndLargePhysicalScales) {
+  for (double scale : {1.0e-9, 1.0, 1.0e6}) {
+    SCOPED_TRACE(scale);
+    Camera camera{};
+    camera.SetViewportSize(1200U, 700U);
+    camera.FrameWorld({2.0 * scale, 3.0 * scale, scale});
+
+    for (auto const viewport : {
+           std::array{1200U, 700U},
+           std::array{320U, 720U},
+           std::array{30U, 1000U},
+         }) {
+      camera.SetViewportSize(viewport[0], viewport[1]);
+      camera.Reset();
+      camera.Orbit(37.0F, -12.0F);
+      auto const matrix = camera.BuildWorldToClipMatrix();
+
+      for (float x : {-2.0F, 2.0F}) {
+        for (float y : {-3.0F, 3.0F}) {
+          for (float z : {-1.0F, 1.0F}) {
+            auto const point =
+              TransformPoint(matrix, Point3{
+                                       .x = x * static_cast<float>(scale),
+                                       .y = y * static_cast<float>(scale),
+                                       .z = z * static_cast<float>(scale),
+                                     });
+            EXPECT_LT(std::abs(point[0]), 1.0F);
+            EXPECT_LT(std::abs(point[1]), 1.0F);
+            EXPECT_GT(point[2], 0.0F);
+            EXPECT_LT(point[2], 1.0F);
+          }
+        }
+      }
+    }
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+// Pixel panning must remain responsive when World framing needs a tiny scale.
+TEST(GGEMSSceneCamera, LargeWorldRetainsPixelPanAndReset) {
+  Camera camera{};
+  camera.SetViewportSize(1000U, 1000U);
+  camera.FrameWorld({1.0e6, 2.0e6, 3.0e6});
+  auto const framed = camera.BuildWorldToClipMatrix();
+  camera.Pan(100.0F, 50.0F);
+  auto const origin = TransformPoint(camera.BuildWorldToClipMatrix(), Point3{});
+  EXPECT_NEAR(origin[0], 0.2F, k_tolerance);
+  EXPECT_NEAR(origin[1], 0.1F, k_tolerance);
+  camera.ZoomBy(3.0F);
+  camera.Reset();
+  ExpectMatrixNear(camera.BuildWorldToClipMatrix(), framed);
+}

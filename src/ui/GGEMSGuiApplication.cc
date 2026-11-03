@@ -58,6 +58,7 @@
 #include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/opencl/GGEMSOpenCLStrings.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
@@ -529,24 +530,38 @@ auto GGEMSGuiApplication::RecreateSceneRenderTargets() -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSGuiApplication::ApplyPendingSourceRunSnapshot() -> void {
+auto GGEMSGuiApplication::ApplyPendingScene() -> void {
   std::optional<core::sources::GGEMSSourceRunSnapshot> snapshot{};
+  std::optional<std::shared_ptr<render::GGEMSGeometryScene const>> geometry{};
 
   {
-    std::scoped_lock lock{pending_source_run_snapshot_mutex_};
-
-    if (!pending_source_run_snapshot_.has_value()) {
-      return;
-    }
+    std::scoped_lock lock{pending_scene_mutex_};
 
     snapshot = std::move(pending_source_run_snapshot_);
     pending_source_run_snapshot_.reset();
+    geometry = std::move(pending_geometry_scene_);
+    pending_geometry_scene_.reset();
   }
 
-  workbench_.trace_visibility.ReconcileSourceCount(
-    snapshot->GetRecords().size());
-  ++workbench_.source_presentation_revision;
-  displayed_source_run_snapshot_ = std::move(*snapshot);
+  if (snapshot) {
+    workbench_.trace_visibility.ReconcileSourceCount(
+      snapshot->GetRecords().size());
+    ++workbench_.source_presentation_revision;
+    displayed_source_run_snapshot_ = std::move(*snapshot);
+  }
+
+  if (geometry) {
+    device_->GetDevice().waitIdle();
+    scene_renderer_->SetGeometryScene(*geometry);
+    displayed_geometry_scene_ = std::move(*geometry);
+
+    if (displayed_geometry_scene_) {
+      workbench_.camera.FrameWorld(
+        displayed_geometry_scene_->world_half_extent_m);
+    } else {
+      workbench_.camera = detail::GGEMSSceneCamera{};
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -590,14 +605,14 @@ auto GGEMSGuiApplication::ApplyPendingParticleTraceSegments() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSGuiApplication::BuildImGuiFrame() -> void {
-  ApplyPendingSourceRunSnapshot();
+  ApplyPendingScene();
   ApplyPendingParticleTraceSegments();
 
   imgui_integration_->BeginFrame();
 
   if (workbench_.viewport.visible) {
     detail::GGEMSImGuiIntegration::FramebufferDensity const density =
-      imgui_integration_->GetFramebufferDensity();
+      detail::GGEMSImGuiIntegration::GetFramebufferDensity();
 
     detail::GGEMSPixelExtent const target_extent =
       detail::ComputeSceneTargetExtent(
@@ -635,6 +650,7 @@ auto GGEMSGuiApplication::BuildImGuiFrame() -> void {
       .source_run_snapshot = displayed_source_run_snapshot_.has_value()
                                ? &displayed_source_run_snapshot_.value()
                                : nullptr,
+      .geometry_scene = displayed_geometry_scene_.get(),
       .output_state = &core::GetOutputState(),
     },
     device_status_, workbench_);
@@ -666,8 +682,34 @@ auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
                "will be available.");
   }
 
-  std::scoped_lock lock{pending_source_run_snapshot_mutex_};
+  auto const *world = run.GetWorld();
+  auto geometry = world != nullptr
+                    ? std::make_shared<render::GGEMSGeometryScene const>(
+                        render::BuildGeometryScene(*world))
+                    : nullptr;
+
+  std::scoped_lock lock{pending_scene_mutex_};
   pending_source_run_snapshot_ = std::move(*snapshot);
+  pending_geometry_scene_ = std::move(geometry);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSGuiApplication::SubmitRunGeometry(ggems::core::GGEMSRun const &run)
+  -> void {
+  if (!IsInitialized()) {
+    throw ggems::core::GGEMSRecoverable(
+      "GGEMS GuiMode must be initialized before submitting geometry.");
+  }
+
+  auto const *world = run.GetWorld();
+  auto geometry = world != nullptr
+                    ? std::make_shared<render::GGEMSGeometryScene const>(
+                        render::BuildGeometryScene(*world))
+                    : nullptr;
+
+  std::scoped_lock lock{pending_scene_mutex_};
+  pending_geometry_scene_ = std::move(geometry);
 }
 
 // -----------------------------------------------------------------------------

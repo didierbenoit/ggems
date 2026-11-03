@@ -50,6 +50,7 @@
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -101,6 +102,19 @@ inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
  */
 class GGEMSWorld {
 public:
+  /*! \brief Read-only shape alternatives captured for one occurrence. */
+  using Volume = std::variant<GGEMSBox, GGEMSSphere, GGEMSTubs, GGEMSEllipsoid,
+                              GGEMSTrd, GGEMSTrap, GGEMSCons, GGEMSPolyhedra>;
+
+  /*! \brief Composed host pose before conversion to device FP32 parameters. */
+  struct Pose {
+    /*! \brief Local origin in World coordinates, in picometers. */
+    std::array<double, 3> position_pm;
+
+    /*! \brief Local-to-World orthonormal basis. */
+    GGEMSRotation3D rotation;
+  };
+
   /*! \brief Creates a World with no size, no Material and no volume. */
   GGEMSWorld() = default;
 
@@ -407,6 +421,21 @@ public:
   [[nodiscard]] auto GetVolumeCount() const noexcept -> std::size_t;
 
   /*!
+   * \brief Borrows the canonical authored shape and parent-local pose.
+   * \param[in] index Physical occurrence index, smaller than GetVolumeCount().
+   * \return Owned shape value; World mutation or destruction invalidates it.
+   */
+  [[nodiscard]] auto GetVolume(std::size_t index) const noexcept
+    -> Volume const &;
+
+  /*!
+   * \brief Composes the host local-to-World pose without FP32 packing.
+   * \param[in] index Physical occurrence index, smaller than GetVolumeCount().
+   * \return Global translation and rotation, including Sphere daughter frames.
+   */
+  [[nodiscard]] auto BuildVolumePose(std::size_t index) const noexcept -> Pose;
+
+  /*!
    * \brief Packs geometry references and parent/child/sibling physical links.
    * \return Insertion-ordered descriptors; empty for World-only.
    * \pre Validate() has succeeded since the last scene edit.
@@ -558,10 +587,6 @@ private:
 
   /*! \brief Owned World medium, absent until SetMaterial(). */
   std::optional<core::materials::GGEMSMaterial> material_;
-
-  /*! \brief Authoring alternatives for one physical occurrence. */
-  using Volume = std::variant<GGEMSBox, GGEMSSphere, GGEMSTubs, GGEMSEllipsoid,
-                              GGEMSTrd, GGEMSTrap, GGEMSCons, GGEMSPolyhedra>;
 
   /*! \brief One owned local authoring value and its existing physical parent.
    */

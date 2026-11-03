@@ -28,6 +28,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 
@@ -58,6 +59,14 @@ auto GGEMSSceneCamera::SetViewportSize(std::uint32_t width,
     return;
   }
 
+  if (world_radius_m_ > 0.0F) {
+    float const old_aspect = static_cast<float>(viewport_width_) /
+                             static_cast<float>(viewport_height_);
+    float const new_aspect =
+      static_cast<float>(width) / static_cast<float>(height);
+    zoom_ *= std::min(1.0F, new_aspect) / std::min(1.0F, old_aspect);
+  }
+
   viewport_width_ = width;
   viewport_height_ = height;
 }
@@ -68,8 +77,10 @@ auto GGEMSSceneCamera::SetOrbitAngles(float yaw_degrees, float pitch_degrees)
   -> void {
   auto const yaw = static_cast<float>(units::ToRadians(
     units::MakeDegrees(static_cast<long double>(yaw_degrees))));
+
   auto const pitch = static_cast<float>(units::ToRadians(
     units::MakeDegrees(static_cast<long double>(pitch_degrees))));
+
   yaw_radians_ = yaw;
   pitch_radians_ = std::clamp(pitch, -k_max_pitch_radians, k_max_pitch_radians);
 }
@@ -77,7 +88,26 @@ auto GGEMSSceneCamera::SetOrbitAngles(float yaw_degrees, float pitch_degrees)
 // -----------------------------------------------------------------------------
 
 auto GGEMSSceneCamera::SetZoom(float zoom) noexcept -> void {
-  zoom_ = std::max(0.05F, zoom);
+  float const aspect =
+    static_cast<float>(viewport_width_) / static_cast<float>(viewport_height_);
+
+  float const minimum_zoom =
+    world_radius_m_ > 0.0F ? 0.05F * std::min(1.0F, aspect) / world_radius_m_
+                           : 0.05F;
+
+  zoom_ = std::max(minimum_zoom, zoom);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSceneCamera::FrameWorld(
+  std::array<double, 3> const &half_extent_m) noexcept -> void {
+  world_radius_m_ = static_cast<float>(
+    std::hypot(half_extent_m[0], half_extent_m[1], half_extent_m[2]));
+
+  depth_scale_ = 0.45F / world_radius_m_;
+
+  Reset();
 }
 
 // -----------------------------------------------------------------------------
@@ -86,9 +116,12 @@ auto GGEMSSceneCamera::Orbit(float delta_yaw_degrees, float delta_pitch_degrees)
   -> void {
   auto const delta_yaw = static_cast<float>(units::ToRadians(
     units::MakeDegrees(static_cast<long double>(delta_yaw_degrees))));
+
   auto const delta_pitch = static_cast<float>(units::ToRadians(
     units::MakeDegrees(static_cast<long double>(delta_pitch_degrees))));
+
   yaw_radians_ += delta_yaw;
+
   pitch_radians_ = std::clamp(pitch_radians_ + delta_pitch,
                               -k_max_pitch_radians, k_max_pitch_radians);
 }
@@ -113,7 +146,7 @@ auto GGEMSSceneCamera::Pan(float delta_x_pixels, float delta_y_pixels) noexcept
     return;
   }
 
-  if (viewport_height_ == 0U || zoom_ <= 1.0e-6F) {
+  if (viewport_height_ == 0U || zoom_ <= 0.0F) {
     return;
   }
 
@@ -149,7 +182,11 @@ auto GGEMSSceneCamera::ZoomBy(float wheel_delta) noexcept -> void {
 auto GGEMSSceneCamera::Reset() noexcept -> void {
   target_m_ = Vector3{.x = 0.0F, .y = 0.0F, .z = 0.0F};
   SetOrbitAngles(315.0F, 45.0F);
-  SetZoom(0.8F);
+  float const aspect =
+    static_cast<float>(viewport_width_) / static_cast<float>(viewport_height_);
+  SetZoom(world_radius_m_ > 0.0F
+            ? 0.85F * std::min(1.0F, aspect) / world_radius_m_
+            : 0.8F);
 }
 
 // -----------------------------------------------------------------------------

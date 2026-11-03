@@ -54,15 +54,15 @@ auto GGEMSImGuiLayer::BuildFrame(
   }
 
   if (workbench.show_status_panel) {
-    detail::BuildStatusPanel(workbench.show_status_panel, device_status,
-                             inputs.swapchain_width, inputs.swapchain_height,
-                             workbench.show_axes,
-                             workbench.trace_visibility.IsGlobalVisible());
+    detail::BuildStatusPanel(
+      workbench.show_status_panel, device_status, inputs.swapchain_width,
+      inputs.swapchain_height, workbench.show_axes,
+      workbench.trace_visibility.IsGlobalVisible(), inputs.geometry_scene);
   }
 
   if (workbench.show_scene_panel) {
     detail::BuildScenePanel(workbench.show_scene_panel, workbench,
-                            inputs.source_run_snapshot);
+                            inputs.source_run_snapshot, inputs.geometry_scene);
   }
 
   if (workbench.show_viewport_panel) {

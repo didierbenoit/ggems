@@ -47,6 +47,7 @@
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
@@ -516,6 +517,7 @@ auto BuildSourceEntries(
  * \param[in,out] workbench Selected category and trace presentation controls.
  * \param[in] source_run_snapshot Borrowed source snapshot used by the source
  *   category.
+ * \param[in] geometry_scene Borrowed geometry used for loaded-state labels.
  * \param[in] label Category display label and ImGui identity.
  * \param[in] selection Category associated with this node.
  * \param[in] extra_flags Additional tree-node presentation flags.
@@ -523,8 +525,8 @@ auto BuildSourceEntries(
 auto BuildSceneNode(
   ggems::ui::detail::GGEMSWorkbenchState &workbench,
   ggems::core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot,
-  char const *label, SceneSelection selection,
-  ImGuiTreeNodeFlags extra_flags = 0) -> void {
+  ggems::render::GGEMSGeometryScene const *geometry_scene, char const *label,
+  SceneSelection selection, ImGuiTreeNodeFlags extra_flags = 0) -> void {
   ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
                              ImGuiTreeNodeFlags_SpanAvailWidth | extra_flags;
 
@@ -541,13 +543,20 @@ auto BuildSceneNode(
   if (opened) {
     switch (selection) {
     case SceneSelection::World:
-      ImGui::TextDisabled("World volume: not loaded yet");
+      ImGui::TextUnformatted(geometry_scene != nullptr
+                               ? "World volume: loaded (wireframe)"
+                               : "World volume: not loaded yet");
       break;
     case SceneSelection::Sources:
       BuildSourceEntries(workbench, source_run_snapshot);
       break;
     case SceneSelection::Volumes:
-      ImGui::TextDisabled("No geometry volume loaded yet");
+      if (geometry_scene != nullptr) {
+        ImGui::Text("Physical volumes: %zu (wireframe)",
+                    geometry_scene->occurrences.size() - 1U);
+      } else {
+        ImGui::TextDisabled("No geometry volume loaded yet");
+      }
       break;
     case SceneSelection::Materials:
       ImGui::TextDisabled("No material table loaded yet");
@@ -582,7 +591,9 @@ auto BuildStatusPanel(bool &show_window,
                       GGEMSDeviceStatusSnapshot const &device_status,
                       std::uint32_t swapchain_width,
                       std::uint32_t swapchain_height, bool show_axes,
-                      bool particle_traces_visible) -> void {
+                      bool particle_traces_visible,
+                      render::GGEMSGeometryScene const *geometry_scene)
+  -> void {
   ImGui::Begin(k_status_window_name, &show_window);
 
   ImGui::TextUnformatted("GuiMode bootstrap");
@@ -637,7 +648,9 @@ auto BuildStatusPanel(bool &show_window,
   ImGui::Text("Axes: %s", show_axes ? "visible" : "hidden");
   ImGui::Text("Particle traces: %s",
               particle_traces_visible ? "visible" : "hidden");
-  ImGui::TextUnformatted("GGEMSWorld: not loaded yet");
+  ImGui::TextUnformatted(geometry_scene != nullptr
+                           ? "GGEMSWorld: loaded (wireframe)"
+                           : "GGEMSWorld: not loaded yet");
   ImGui::TextUnformatted("Output console: connected");
 
   ImGui::End();
@@ -647,26 +660,27 @@ auto BuildStatusPanel(bool &show_window,
 
 auto BuildScenePanel(
   bool &show_window, GGEMSWorkbenchState &workbench,
-  core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot) -> void {
+  core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot,
+  render::GGEMSGeometryScene const *geometry_scene) -> void {
   ImGui::Begin(k_scene_window_name, &show_window);
 
   ImGui::TextUnformatted("Scene hierarchy");
   ImGui::Separator();
 
-  BuildSceneNode(workbench, source_run_snapshot, "GGEMSWorld",
+  BuildSceneNode(workbench, source_run_snapshot, geometry_scene, "GGEMSWorld",
                  SceneSelection::World, ImGuiTreeNodeFlags_DefaultOpen);
 
-  BuildSceneNode(workbench, source_run_snapshot, "Sources",
+  BuildSceneNode(workbench, source_run_snapshot, geometry_scene, "Sources",
                  SceneSelection::Sources, ImGuiTreeNodeFlags_DefaultOpen);
 
-  BuildSceneNode(workbench, source_run_snapshot, "Volumes",
+  BuildSceneNode(workbench, source_run_snapshot, geometry_scene, "Volumes",
                  SceneSelection::Volumes, ImGuiTreeNodeFlags_DefaultOpen);
 
-  BuildSceneNode(workbench, source_run_snapshot, "Materials",
+  BuildSceneNode(workbench, source_run_snapshot, geometry_scene, "Materials",
                  SceneSelection::Materials);
 
-  BuildSceneNode(workbench, source_run_snapshot, "Tracks / Replay",
-                 SceneSelection::Tracks);
+  BuildSceneNode(workbench, source_run_snapshot, geometry_scene,
+                 "Tracks / Replay", SceneSelection::Tracks);
 
   ImGui::End();
 }
@@ -699,7 +713,7 @@ auto BuildInspectorPanel(bool &show_window,
     switch (selection) {
     case SceneSelection::World:
       ImGui::TextUnformatted("Type: GGEMSWorld boundary");
-      ImGui::TextUnformatted("Bounds: not loaded yet");
+      ImGui::TextUnformatted("Bounds: not shown here");
       break;
     case SceneSelection::Volumes:
       ImGui::TextUnformatted("Type: geometry collection");

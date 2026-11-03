@@ -1706,8 +1706,7 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids,
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::BuildOccurrencePose(std::size_t index) const noexcept
-  -> GGEMSBoxPoseRecord {
+auto GGEMSWorld::BuildVolumePose(std::size_t index) const noexcept -> Pose {
   auto const local_pose = [this](std::size_t local_index)
     -> std::pair<std::array<double, 3U>, GGEMSRotation3D> {
     return std::visit(
@@ -1726,12 +1725,11 @@ auto GGEMSWorld::BuildOccurrencePose(std::size_t index) const noexcept
       },
       volumes_[local_index].volume);
   };
+
   auto [center, rotation] = local_pose(index);
-  auto const authored_center = std::visit(
-    [](auto const &shape) -> Position3PM { return shape.GetPositionPM(); },
-    volumes_[index].volume);
-  auto const direct_child = volumes_[index].parent_volume_id == 0U;
+
   auto parent = volumes_[index].parent_volume_id;
+
   while (parent != 0U) {
     auto const [parent_center, parent_rotation] = local_pose(parent - 1U);
     auto const rotate =
@@ -1749,21 +1747,43 @@ auto GGEMSWorld::BuildOccurrencePose(std::size_t index) const noexcept
           (parent_rotation.axis_z.z * vector[2]),
       };
     };
+
     center = rotate(center);
+
     for (std::size_t axis = 0U; axis < 3U; ++axis) {
       center[axis] += parent_center[axis];
     }
+
     auto const axis_x =
       rotate({rotation.axis_x.x, rotation.axis_x.y, rotation.axis_x.z});
+
     auto const axis_y =
       rotate({rotation.axis_y.x, rotation.axis_y.y, rotation.axis_y.z});
+
     auto const axis_z =
       rotate({rotation.axis_z.x, rotation.axis_z.y, rotation.axis_z.z});
+
     rotation.axis_x = {.x = axis_x[0], .y = axis_x[1], .z = axis_x[2]};
     rotation.axis_y = {.x = axis_y[0], .y = axis_y[1], .z = axis_y[2]};
     rotation.axis_z = {.x = axis_z[0], .y = axis_z[1], .z = axis_z[2]};
+
     parent = volumes_[parent - 1U].parent_volume_id;
   }
+
+  return {.position_pm = center, .rotation = rotation};
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::BuildOccurrencePose(std::size_t index) const noexcept
+  -> GGEMSBoxPoseRecord {
+  auto const [center, rotation] = BuildVolumePose(index);
+
+  auto const authored_center = std::visit(
+    [](auto const &shape) -> Position3PM { return shape.GetPositionPM(); },
+    volumes_[index].volume);
+
+  auto const direct_child = volumes_[index].parent_volume_id == 0U;
 
   return {
     .center_x_pm = direct_child ? static_cast<float>(authored_center.x)
@@ -1828,6 +1848,12 @@ auto GGEMSWorld::BuildAnalyticAuxiliaryData(std::size_t index) const
 
 auto GGEMSWorld::GetVolumeCount() const noexcept -> std::size_t {
   return volumes_.size();
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::GetVolume(std::size_t index) const noexcept -> Volume const & {
+  return volumes_[index].volume;
 }
 
 // -----------------------------------------------------------------------------

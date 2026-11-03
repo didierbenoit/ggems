@@ -76,11 +76,18 @@ public:
   auto SetOrbitAngles(float yaw_degrees, float pitch_degrees) -> void;
 
   /*!
-   * \brief Sets the orthographic scale with a minimum of 0.05.
+   * \brief Sets the orthographic scale with a scene-relative minimum.
    *
    * \param[in] zoom Requested vertical scale applied to world meters.
    */
   auto SetZoom(float zoom) noexcept -> void;
+
+  /*!
+   * \brief Frames the finite World and adapts the depth range to its size.
+   *
+   * \param[in] half_extent_m Positive World half extents in meters.
+   */
+  auto FrameWorld(std::array<double, 3> const &half_extent_m) noexcept -> void;
 
   /*!
    * \brief Adds angular motion while retaining the pitch limit.
@@ -117,7 +124,7 @@ public:
    */
   auto ZoomBy(float wheel_delta) noexcept -> void;
 
-  /*! \brief Restores the origin target, default orbit, and default zoom. */
+  /*! \brief Restores the origin, default orbit, and World framing if loaded. */
   auto Reset() noexcept -> void;
 
   /*!
@@ -207,6 +214,9 @@ private:
 
   /*! \brief World-meter to clip-depth scale around depth 0.5. */
   float depth_scale_{0.05F};
+
+  /*! \brief World bounding-sphere radius in meters, or zero before loading. */
+  float world_radius_m_{0.0F};
 };
 
 } // namespace ggems::ui::detail

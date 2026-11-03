@@ -37,6 +37,7 @@
 #include <vector>
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
@@ -66,8 +67,8 @@ class GGEMSVulkanPresenter;
 /*!
  * \brief Owns the window, renderer, and diagnostic presentation state.
  *
- * Rendering runs in the GLFW event loop. Submitted source snapshots and trace
- *   segments replace pending display data and are consumed by that loop.
+ * Rendering runs in the GLFW event loop. Submitted geometry, source snapshots
+ * and trace segments replace pending display data consumed by that loop.
  */
 class GGEMSGuiApplication {
 public:
@@ -120,7 +121,7 @@ public:
   void Run();
 
   /*!
-   * \brief Queues the last successful source snapshot.
+   * \brief Queues the last successful source snapshot and captured geometry.
    *
    * The newest submission replaces any pending snapshot. CountDriven and
    *   ActivityDriven sources are both presented.
@@ -131,6 +132,17 @@ public:
    *   completed snapshot exists.
    */
   auto SubmitLastRunSourceSnapshot(ggems::core::GGEMSRun const &run) -> void;
+
+  /*!
+   * \brief Copies Run-owned geometry into immutable wireframe presentation
+   * data.
+   *
+   * No simulation execution is required. A Run without a World clears the
+   * displayed geometry. Do not call concurrently with Run::SetWorld.
+   * \param[in] run Run whose captured World is read during this call only.
+   * \throws core::GGEMSRecoverable If the GUI has not been initialized.
+   */
+  auto SubmitRunGeometry(ggems::core::GGEMSRun const &run) -> void;
 
   /*!
    * \brief Queues replacement diagnostic traces for the render loop.
@@ -218,8 +230,8 @@ private:
   /*! \brief Replaces idle scene targets and their ImGui texture binding. */
   auto RecreateSceneRenderTargets() -> void;
 
-  /*! \brief Publishes the latest queued source snapshot to the panels. */
-  auto ApplyPendingSourceRunSnapshot() -> void;
+  /*! \brief Publishes queued source and geometry data to the current scene. */
+  auto ApplyPendingScene() -> void;
 
   /*! \brief Applies queued trace replacement or removal while idle. */
   auto ApplyPendingParticleTraceSegments() -> void;
@@ -251,7 +263,7 @@ private:
   /*! \brief Dear ImGui context and backend owner. */
   std::unique_ptr<detail::GGEMSImGuiIntegration> imgui_integration_;
 
-  /*! \brief Offscreen axes and diagnostic trace renderer. */
+  /*! \brief Offscreen geometry, axes, and diagnostic trace renderer. */
   std::unique_ptr<GGEMSVulkanSceneRenderer> scene_renderer_;
 
   /*! \brief Panel composition and UI interaction state. */
@@ -273,12 +285,19 @@ private:
   std::optional<core::sources::GGEMSSourceRunSnapshot>
     displayed_source_run_snapshot_;
 
-  /*! \brief Protects replacement of the pending source snapshot. */
-  std::mutex pending_source_run_snapshot_mutex_;
+  /*! \brief Protects replacement of pending source and geometry data. */
+  std::mutex pending_scene_mutex_;
 
   /*! \brief Newest submitted snapshot awaiting the UI loop. */
   std::optional<core::sources::GGEMSSourceRunSnapshot>
     pending_source_run_snapshot_;
+
+  /*! \brief Immutable geometry shared by the renderer and current panels. */
+  std::shared_ptr<render::GGEMSGeometryScene const> displayed_geometry_scene_;
+
+  /*! \brief Pending geometry; an engaged null pointer requests removal. */
+  std::optional<std::shared_ptr<render::GGEMSGeometryScene const>>
+    pending_geometry_scene_;
 
   /*! \brief Protects queued trace data and clear requests. */
   std::mutex pending_particle_trace_mutex_;

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Renders reference axes and diagnostic traces to an offscreen image.
+ * \brief Renders geometry, reference axes, and traces to an offscreen image.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -32,21 +32,23 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <span>
 #include <vector>
 
 #include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 
 namespace ggems::ui {
 
 /*!
- * \brief Owns offscreen scene targets and diagnostic drawing resources.
+ * \brief Owns offscreen scene targets and presentation drawing resources.
  *
  * Physical and logical devices are borrowed. The application completes GPU use
- *   before replacing targets or trace data and before shutdown; scene texture
- *   descriptors must be released before their image views.
+ * before replacing targets or scene data and before shutdown; scene texture
+ * descriptors must be released before their image views.
  */
 class GGEMSVulkanSceneRenderer {
 private:
@@ -58,6 +60,15 @@ private:
 
   /*! \brief Shared source-grouped vertex range for trace drawing. */
   using TraceDrawRange = ggems::render::GGEMSParticleTraceDrawRange;
+
+  /*! \brief Per-occurrence clip transform and linear wireframe color. */
+  struct GeometryPushConstants {
+    /*! \brief Rows mapping local meters to clip coordinates. */
+    ScenePushConstants local_to_clip{};
+
+    /*! \brief Linear RGBA shared by all geometry edges. */
+    std::array<float, 4U> color{};
+  };
 
 public:
   /*! \brief Borrows presentation inputs for one scene recording. */
@@ -180,6 +191,16 @@ public:
                            RenderParameters const &parameters) -> void;
 
   /*!
+   * \brief Retains an immutable geometry scene and uploads its shared edges.
+   *
+   * The caller must finish GPU use of the previous geometry buffer first.
+   *
+   * \param[in] scene Prepared scene, or null to clear the displayed geometry.
+   */
+  auto SetGeometryScene(
+    std::shared_ptr<ggems::render::GGEMSGeometryScene const> scene) -> void;
+
+  /*!
    * \brief Replaces and uploads source-grouped diagnostic trace geometry.
    *
    * The caller must finish GPU use of the previous trace buffer first.
@@ -203,6 +224,18 @@ public:
     -> std::uint32_t;
 
 private:
+  /*! \brief Creates the position-only geometry line pipeline. */
+  auto CreateGeometryPipeline() -> void;
+
+  /*!
+   * \brief Draws the shared edge meshes with each physical occurrence pose.
+   *
+   * \param[in] command_buffer Recording buffer inside the scene rendering pass.
+   * \param[in] world_to_clip Rows mapping world meters to clip coordinates.
+   */
+  auto RecordGeometryCommands(vk::raii::CommandBuffer const &command_buffer,
+                              ScenePushConstants const &world_to_clip) -> void;
+
   /*! \brief Allocates the sampled color attachment for the requested extent. */
   auto CreateColorTarget() -> void;
 
@@ -380,6 +413,24 @@ private:
 
   /*! \brief Source-specific ranges used for visibility filtering. */
   std::vector<TraceDrawRange> trace_draw_ranges_;
+
+  /*! \brief Immutable scene shared with the application presentation state. */
+  std::shared_ptr<ggems::render::GGEMSGeometryScene const> geometry_scene_;
+
+  /*! \brief Linear neutral palette color prepared at initialization. */
+  std::array<float, 4U> geometry_color_{};
+
+  /*! \brief Geometry transform and color push-constant layout. */
+  vk::raii::PipelineLayout geometry_pipeline_layout_{nullptr};
+
+  /*! \brief Depth-tested line pipeline for physical geometry edges. */
+  vk::raii::Pipeline geometry_pipeline_{nullptr};
+
+  /*! \brief Host-visible coherent allocation for shared geometry vertices. */
+  vk::raii::DeviceMemory geometry_vertex_memory_{nullptr};
+
+  /*! \brief One vertex buffer shared by every occurrence. */
+  vk::raii::Buffer geometry_vertex_buffer_{nullptr};
 };
 
 } // namespace ggems::ui

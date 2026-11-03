@@ -319,6 +319,12 @@ auto GGEMSRun::SetWorld(geometry::GGEMSWorld world) -> void {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSRun::GetWorld() const noexcept -> geometry::GGEMSWorld const * {
+  return world_ ? &*world_ : nullptr;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSRun::Initialize() -> void {
   if (initialized_) {
     throw ggems::core::GGEMSRecoverable(

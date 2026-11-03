@@ -115,12 +115,21 @@ public:
    * completeness and strict containment) and then owned by the Run as its
    * scene snapshot; later edits of the caller's World do not reach the Run.
    * Initialize compiles the snapshot into the device World and volume records.
-   * \param[in] box Authored World including its explicit Material and
+   * \param[in] world Authored World including its explicit Material and
    * volumes.
    * \throws GGEMSRecoverable If Initialize has already succeeded, or if the
    * World is incomplete or inconsistent.
    */
-  auto SetWorld(geometry::GGEMSWorld box) -> void;
+  auto SetWorld(geometry::GGEMSWorld world) -> void;
+
+  /*!
+   * \brief Borrows the validated World captured by this Run.
+   *
+   * The view remains valid until SetWorld replaces it or this Run is destroyed.
+   * Callers must not read concurrently with SetWorld.
+   * \return Captured World, or null when no World has been attached.
+   */
+  [[nodiscard]] auto GetWorld() const noexcept -> geometry::GGEMSWorld const *;
 
   /*!
    * \brief Executes the next source population on the active devices.

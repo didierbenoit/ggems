@@ -38,6 +38,7 @@
 #include "GGEMSImGuiViewportPanel.hh"
 #include "GGEMSWorkbenchState.hh"
 #include "GGEMS/logging/GGEMSOutputState.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 
 namespace ggems::ui {
@@ -63,6 +64,9 @@ public:
 
     /*! \brief Borrowed completed source snapshot, or null when absent. */
     core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot{nullptr};
+
+    /*! \brief Borrowed current geometry presentation, or null when absent. */
+    render::GGEMSGeometryScene const *geometry_scene{nullptr};
 
     /*! \brief Borrowed log state, required when the output panel is shown. */
     core::GGEMSOutputState *output_state{nullptr};

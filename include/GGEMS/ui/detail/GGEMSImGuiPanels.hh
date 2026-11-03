@@ -34,6 +34,7 @@
 #include "GGEMSDeviceStatus.hh"
 #include "GGEMSWorkbenchState.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 
 namespace ggems::ui::detail {
 
@@ -46,12 +47,14 @@ namespace ggems::ui::detail {
  * \param[in] swapchain_height Presentation image height in physical pixels.
  * \param[in] show_axes Whether reference axes are visible.
  * \param[in] particle_traces_visible Global diagnostic trace visibility.
+ * \param[in] geometry_scene Borrowed geometry presentation, or null if absent.
  */
 auto BuildStatusPanel(bool &show_window,
                       GGEMSDeviceStatusSnapshot const &device_status,
                       std::uint32_t swapchain_width,
                       std::uint32_t swapchain_height, bool show_axes,
-                      bool particle_traces_visible) -> void;
+                      bool particle_traces_visible,
+                      render::GGEMSGeometryScene const *geometry_scene) -> void;
 
 /*!
  * \brief Displays submitted sources and scene presentation controls.
@@ -60,10 +63,12 @@ auto BuildStatusPanel(bool &show_window,
  * \param[in,out] workbench Scene selection and trace visibility controls.
  * \param[in] source_run_snapshot Borrowed completed source snapshot, or null
  *   when absent.
+ * \param[in] geometry_scene Borrowed geometry presentation, or null if absent.
  */
 auto BuildScenePanel(
   bool &show_window, GGEMSWorkbenchState &workbench,
-  core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot) -> void;
+  core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot,
+  render::GGEMSGeometryScene const *geometry_scene) -> void;
 
 /*!
  * \brief Displays the selected category and unavailable-property labels.
