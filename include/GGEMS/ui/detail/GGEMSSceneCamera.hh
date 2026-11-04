@@ -52,6 +52,36 @@ public:
     std::array<float, 4> row_3{0.0F, 0.0F, 0.0F, 1.0F};
   };
 
+  /*! \brief Reports the current camera state and world-space viewing axes. */
+  struct Diagnostics {
+    /*! \brief Current unwrapped orbit yaw in degrees. */
+    float yaw_degrees{};
+
+    /*! \brief Current clamped orbit pitch in degrees. */
+    float pitch_degrees{};
+
+    /*! \brief Camera target in world-space meters, ordered X, Y, Z. */
+    std::array<float, 3> target_m{};
+
+    /*! \brief Orthographic vertical scale applied to world meters. */
+    float zoom{};
+
+    /*! \brief Current projection width in logical pixels. */
+    std::uint32_t viewport_width{};
+
+    /*! \brief Current projection height in logical pixels. */
+    std::uint32_t viewport_height{};
+
+    /*! \brief Unit direction toward screen right, ordered X, Y, Z. */
+    std::array<float, 3> right{};
+
+    /*! \brief Unit camera vertical direction, ordered X, Y, Z. */
+    std::array<float, 3> up{};
+
+    /*! \brief Unit direction toward the target, ordered X, Y, Z. */
+    std::array<float, 3> forward{};
+  };
+
   /*! \brief Initializes the camera at its default view. */
   GGEMSSceneCamera() noexcept;
 
@@ -133,6 +163,13 @@ public:
    * \return Rows mapping world meters to homogeneous clip coordinates.
    */
   [[nodiscard]] auto BuildWorldToClipMatrix() const noexcept -> Matrix4Rows;
+
+  /*!
+   * \brief Reads the current camera state without changing the view.
+   *
+   * \return Current angles, target, scale, projection extent, and viewing axes.
+   */
+  [[nodiscard]] auto GetDiagnostics() const noexcept -> Diagnostics;
 
 private:
   /*! \brief Stores a camera direction or target coordinate triple. */

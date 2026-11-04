@@ -46,6 +46,7 @@ auto GGEMSImGuiLayer::BuildFrame(
   detail::GGEMSDeviceStatusSnapshot const &device_status,
   detail::GGEMSWorkbenchState &workbench) -> void {
   workbench.viewport.visible = false;
+  detail::GGEMSImGuiViewportPanel::Result camera_input{};
 
   MenuActions const menu_actions = BuildMainDockspace(workbench);
 
@@ -66,11 +67,10 @@ auto GGEMSImGuiLayer::BuildFrame(
   }
 
   if (workbench.show_viewport_panel) {
-    detail::GGEMSImGuiViewportPanel::Result const result =
-      viewport_panel_.Build(workbench.show_viewport_panel,
-                            inputs.scene_texture_id,
-                            inputs.scene_texture_logical_width,
-                            inputs.scene_texture_logical_height);
+    camera_input = viewport_panel_.Build(
+      workbench.show_viewport_panel, inputs.scene_texture_id,
+      inputs.scene_texture_logical_width, inputs.scene_texture_logical_height);
+    auto const &result = camera_input;
 
     workbench.viewport.visible = result.visible;
 
@@ -89,6 +89,11 @@ auto GGEMSImGuiLayer::BuildFrame(
 
   if (menu_actions.reset_camera) {
     workbench.camera.Reset();
+  }
+
+  if (workbench.show_camera_panel) {
+    detail::BuildCameraPanel(workbench.show_camera_panel, workbench.camera,
+                             camera_input);
   }
 
   if (workbench.show_inspector_panel) {
@@ -142,6 +147,7 @@ auto GGEMSImGuiLayer::BuildMainDockspace(detail::GGEMSWorkbenchState &workbench)
     workbench.show_scene_panel = true;
     workbench.show_viewport_panel = true;
     workbench.show_inspector_panel = true;
+    workbench.show_camera_panel = true;
   }
 
   ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
@@ -170,6 +176,7 @@ auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
     ImGui::MenuItem("Scene", nullptr, &workbench.show_scene_panel);
     ImGui::MenuItem("Viewport", nullptr, &workbench.show_viewport_panel);
     ImGui::MenuItem("Inspector", nullptr, &workbench.show_inspector_panel);
+    ImGui::MenuItem("Camera", nullptr, &workbench.show_camera_panel);
 
     ImGui::Separator();
     ImGui::MenuItem("Axes", nullptr, &workbench.show_axes);

@@ -29,6 +29,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -41,6 +42,8 @@
 #include "GGEMS/ui/detail/GGEMSImGuiPanels.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
+#include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
@@ -734,6 +737,76 @@ auto BuildInspectorPanel(bool &show_window,
   if (ImGui::CollapsingHeader("Physics")) {
     ImGui::TextUnformatted("Processes: not available yet");
     ImGui::TextUnformatted("Cross sections: not available yet");
+  }
+
+  ImGui::End();
+}
+
+// -----------------------------------------------------------------------------
+
+auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera const &camera,
+                      GGEMSImGuiViewportPanel::Result const &camera_input)
+  -> void {
+  if (!ImGui::Begin(k_camera_window_name, &show_window,
+                    ImGuiWindowFlags_HorizontalScrollbar)) {
+    ImGui::End();
+    return;
+  }
+
+  auto const diagnostics = camera.GetDiagnostics();
+  ImGuiIO const &imgui_io = ImGui::GetIO();
+
+  ImGui::SeparatorText("Camera");
+  ImGui::Text("Yaw (deg): %+.3f", diagnostics.yaw_degrees);
+  ImGui::Text("Pitch (deg): %+.3f", diagnostics.pitch_degrees);
+  ImGui::Text("Target (m): (%+.4f, %+.4f, %+.4f)", diagnostics.target_m[0],
+              diagnostics.target_m[1], diagnostics.target_m[2]);
+  ImGui::Text("Zoom: %.6g", diagnostics.zoom);
+  ImGui::Text("Camera viewport (px): %u x %u", diagnostics.viewport_width,
+              diagnostics.viewport_height);
+
+  ImGui::SeparatorText("Mouse / current frame");
+
+  if (ImGui::IsMousePosValid(&imgui_io.MousePos)) {
+    ImGui::Text("Position (px): (%+.1f, %+.1f)", imgui_io.MousePos.x,
+                imgui_io.MousePos.y);
+  } else {
+    ImGui::TextUnformatted("Position (px): unavailable");
+  }
+
+  ImGui::Text("Held: left %s / middle %s",
+              imgui_io.MouseDown[ImGuiMouseButton_Left] ? "yes" : "no",
+              imgui_io.MouseDown[ImGuiMouseButton_Middle] ? "yes" : "no");
+  ImGui::Text("ImGui MouseDelta (px): (%+.2f, %+.2f)", imgui_io.MouseDelta.x,
+              imgui_io.MouseDelta.y);
+  ImGui::Text("Applied orbit (px): (%+.2f, %+.2f)",
+              camera_input.orbit_delta_x_pixels,
+              camera_input.orbit_delta_y_pixels);
+  ImGui::Text("Applied pan (px): (%+.2f, %+.2f)",
+              camera_input.pan_delta_x_pixels, camera_input.pan_delta_y_pixels);
+  ImGui::TextWrapped("Pan includes routed arrow keys. Applied deltas are zero "
+                     "when no camera motion is requested this frame.");
+
+  ImGui::SeparatorText("Orientation / world coordinates");
+  ImGui::Text("right:   (%+.4f, %+.4f, %+.4f)", diagnostics.right[0],
+              diagnostics.right[1], diagnostics.right[2]);
+  ImGui::Text("up:      (%+.4f, %+.4f, %+.4f)", diagnostics.up[0],
+              diagnostics.up[1], diagnostics.up[2]);
+  ImGui::Text("forward: (%+.4f, %+.4f, %+.4f)", diagnostics.forward[0],
+              diagnostics.forward[1], diagnostics.forward[2]);
+  ImGui::TextWrapped("X/Y: transverse; Z: patient longitudinal. X x Y = Z.");
+
+  if (ImGui::CollapsingHeader("WorldToClip (4 x 4)")) {
+    auto const matrix = camera.BuildWorldToClipMatrix();
+    std::array const rows{
+      matrix.row_0,
+      matrix.row_1,
+      matrix.row_2,
+      matrix.row_3,
+    };
+    for (auto const &row : rows) {
+      ImGui::Text("%+.5f  %+.5f  %+.5f  %+.5f", row[0], row[1], row[2], row[3]);
+    }
   }
 
   ImGui::End();

@@ -41,12 +41,13 @@ namespace {
 // =============================================================================
 
 /*! \brief Panel identities participating in saved layout restoration. */
-constexpr std::array<char const *, 5U> k_layout_window_names{
+constexpr std::array<char const *, 6U> k_layout_window_names{
   ggems::ui::detail::k_output_window_name,
   ggems::ui::detail::k_status_window_name,
   ggems::ui::detail::k_scene_window_name,
   ggems::ui::detail::k_viewport_window_name,
   ggems::ui::detail::k_inspector_window_name,
+  ggems::ui::detail::k_camera_window_name,
 };
 
 // =============================================================================
@@ -120,6 +121,7 @@ auto BuildDefaultLayout(ImVec2 const &dockspace_size) -> void {
   ImGui::DockBuilderDockWindow(k_scene_window_name, dock_left_id);
   ImGui::DockBuilderDockWindow(k_viewport_window_name, dockspace_main_id);
   ImGui::DockBuilderDockWindow(k_inspector_window_name, dock_right_id);
+  ImGui::DockBuilderDockWindow(k_camera_window_name, dock_right_id);
 
   ImGui::DockBuilderFinish(dockspace_id);
 }

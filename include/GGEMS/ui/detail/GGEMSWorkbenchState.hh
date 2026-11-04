@@ -89,6 +89,9 @@ struct GGEMSWorkbenchState {
   /*! \brief Whether to show the selected category inspector. */
   bool show_inspector_panel{true};
 
+  /*! \brief Whether to show live camera and input diagnostics. */
+  bool show_camera_panel{true};
+
   /*! \brief Whether to draw the reference axes. */
   bool show_axes{true};
 

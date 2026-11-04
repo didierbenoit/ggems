@@ -32,6 +32,8 @@
 #include <cstdint>
 
 #include "GGEMSDeviceStatus.hh"
+#include "GGEMSImGuiViewportPanel.hh"
+#include "GGEMSSceneCamera.hh"
 #include "GGEMSWorkbenchState.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
@@ -78,5 +80,17 @@ auto BuildScenePanel(
  */
 auto BuildInspectorPanel(bool &show_window,
                          GGEMSWorkbenchState::SceneSelection selection) -> void;
+
+/*!
+ * \brief Displays current camera state and this frame's applied input.
+ *
+ * \param[in,out] show_window Panel visibility, updated when the window closes.
+ * \param[in] camera Camera after this frame's controls and reset.
+ * \param[in] camera_input Deltas passed to the camera this frame, or zero
+ *   when the viewport is hidden.
+ */
+auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera const &camera,
+                      GGEMSImGuiViewportPanel::Result const &camera_input)
+  -> void;
 
 } // namespace ggems::ui::detail

@@ -49,6 +49,7 @@ TEST(GGEMSWorkbenchState, DefaultsPresentEverythingWithCanonicalCamera) {
   EXPECT_TRUE(workbench.show_scene_panel);
   EXPECT_TRUE(workbench.show_viewport_panel);
   EXPECT_TRUE(workbench.show_inspector_panel);
+  EXPECT_TRUE(workbench.show_camera_panel);
   EXPECT_TRUE(workbench.show_axes);
   EXPECT_TRUE(workbench.trace_visibility.IsGlobalVisible());
   EXPECT_EQ(workbench.selected_scene_item, Workbench::SceneSelection::World);

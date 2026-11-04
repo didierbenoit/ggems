@@ -31,6 +31,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <numbers>
 
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
@@ -64,6 +65,7 @@ auto GGEMSSceneCamera::SetViewportSize(std::uint32_t width,
                              static_cast<float>(viewport_height_);
     float const new_aspect =
       static_cast<float>(width) / static_cast<float>(height);
+
     zoom_ *= std::min(1.0F, new_aspect) / std::min(1.0F, old_aspect);
   }
 
@@ -134,8 +136,8 @@ auto GGEMSSceneCamera::OrbitByPixels(float delta_x_pixels, float delta_y_pixels)
     return;
   }
 
-  Orbit(delta_x_pixels * k_orbit_degrees_per_pixel,
-        delta_y_pixels * k_orbit_degrees_per_pixel);
+  Orbit(-delta_x_pixels * k_orbit_degrees_per_pixel,
+        -delta_y_pixels * k_orbit_degrees_per_pixel);
 }
 
 // -----------------------------------------------------------------------------
@@ -181,9 +183,12 @@ auto GGEMSSceneCamera::ZoomBy(float wheel_delta) noexcept -> void {
 
 auto GGEMSSceneCamera::Reset() noexcept -> void {
   target_m_ = Vector3{.x = 0.0F, .y = 0.0F, .z = 0.0F};
-  SetOrbitAngles(315.0F, 45.0F);
+
+  SetOrbitAngles(300.0F, -25.0F);
+
   float const aspect =
     static_cast<float>(viewport_width_) / static_cast<float>(viewport_height_);
+
   SetZoom(world_radius_m_ > 0.0F
             ? 0.85F * std::min(1.0F, aspect) / world_radius_m_
             : 0.8F);
@@ -228,6 +233,24 @@ auto GGEMSSceneCamera::BuildWorldToClipMatrix() const noexcept
   matrix.row_3[3] = 1.0F;
 
   return matrix;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSceneCamera::GetDiagnostics() const noexcept -> Diagnostics {
+  CameraBasis const basis = BuildCameraBasis();
+
+  return Diagnostics{
+    .yaw_degrees = yaw_radians_ * (180.0F / std::numbers::pi_v<float>),
+    .pitch_degrees = pitch_radians_ * (180.0F / std::numbers::pi_v<float>),
+    .target_m = {target_m_.x, target_m_.y, target_m_.z},
+    .zoom = zoom_,
+    .viewport_width = viewport_width_,
+    .viewport_height = viewport_height_,
+    .right = {basis.right.x, basis.right.y, basis.right.z},
+    .up = {basis.up.x, basis.up.y, basis.up.z},
+    .forward = {basis.forward.x, basis.forward.y, basis.forward.z},
+  };
 }
 
 // -----------------------------------------------------------------------------

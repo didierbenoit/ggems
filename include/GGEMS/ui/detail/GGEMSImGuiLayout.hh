@@ -56,6 +56,10 @@ inline constexpr char const *k_viewport_window_name =
 inline constexpr char const *k_inspector_window_name =
   "GGEMS Inspector###GGEMS.Inspector";
 
+/*! \brief Display label and persistent ID of the camera diagnostics panel. */
+inline constexpr char const *k_camera_window_name =
+  "GGEMS Camera###GGEMS.Camera";
+
 /*!
  * \brief Returns the persistent main docking-node identity.
  *

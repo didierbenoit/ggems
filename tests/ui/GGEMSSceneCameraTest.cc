@@ -32,6 +32,7 @@
 #include <cstddef>
 #include <expected>
 #include <limits>
+#include <numbers>
 
 #include <gtest/gtest.h>
 
@@ -47,7 +48,9 @@ using Camera = ggems::ui::detail::GGEMSSceneCamera;
 using Matrix4Rows = Camera::Matrix4Rows;
 
 constexpr float k_tolerance{1.0e-5F};
-constexpr float k_sqrt_half{0.7071067811865475F};
+constexpr float k_sin_sixty_degrees{0.8660254037844386F};
+constexpr float k_sin_twenty_five_degrees{0.4226182617406994F};
+constexpr float k_cos_twenty_five_degrees{0.9063077870366500F};
 
 // =============================================================================
 // =============================================================================
@@ -115,13 +118,79 @@ TEST(GGEMSSceneCamera, ResetRestoresCanonicalView) {
   camera.Reset();
 
   Matrix4Rows const expected{
-    .row_0 = {0.8F * k_sqrt_half, 0.0F, -0.8F * k_sqrt_half, 0.0F},
-    .row_1 = {-0.4F, 0.8F * k_sqrt_half, -0.4F, 0.0F},
-    .row_2 = {-0.025F, -0.05F * k_sqrt_half, -0.025F, 0.5F},
+    .row_0 = {0.8F * k_sin_sixty_degrees, 0.0F, -0.4F, 0.0F},
+    .row_1 =
+      {
+        0.4F * k_sin_twenty_five_degrees,
+        0.8F * k_cos_twenty_five_degrees,
+        0.8F * k_sin_sixty_degrees * k_sin_twenty_five_degrees,
+        0.0F,
+      },
+    .row_2 =
+      {
+        -0.025F * k_cos_twenty_five_degrees,
+        0.05F * k_sin_twenty_five_degrees,
+        -0.05F * k_sin_sixty_degrees * k_cos_twenty_five_degrees,
+        0.5F,
+      },
     .row_3 = {0.0F, 0.0F, 0.0F, 1.0F},
   };
 
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), expected);
+
+  auto const diagnostics = camera.GetDiagnostics();
+  EXPECT_NEAR(diagnostics.yaw_degrees, 300.0F, 1.0e-4F);
+  EXPECT_NEAR(diagnostics.pitch_degrees, -25.0F, k_tolerance);
+  EXPECT_EQ(diagnostics.target_m, (std::array<float, 3>{}));
+  EXPECT_FLOAT_EQ(diagnostics.zoom, 0.8F);
+  EXPECT_EQ(diagnostics.viewport_width, 800U);
+  EXPECT_EQ(diagnostics.viewport_height, 800U);
+}
+
+// =============================================================================
+// =============================================================================
+
+// Diagnostics must describe the current projection after interaction, including
+// an unwrapped yaw, the panned target, and the actual viewing axes.
+TEST(GGEMSSceneCamera, DiagnosticsMatchCurrentProjectionAfterInteraction) {
+  Camera camera{};
+  camera.SetViewportSize(1600U, 800U);
+  camera.SetOrbitAngles(370.0F, 25.0F);
+  camera.OrbitByPixels(50.0F, 0.0F);
+  camera.Pan(12.0F, -17.0F);
+  camera.ZoomBy(2.0F);
+
+  auto const matrix = camera.BuildWorldToClipMatrix();
+  auto const diagnostics = camera.GetDiagnostics();
+
+  EXPECT_NEAR(diagnostics.yaw_degrees, 360.0F, 1.0e-4F);
+  EXPECT_NEAR(diagnostics.pitch_degrees, 25.0F, k_tolerance);
+  EXPECT_NEAR(diagnostics.zoom, 0.8F * 1.12F * 1.12F, k_tolerance);
+  EXPECT_EQ(diagnostics.viewport_width, 1600U);
+  EXPECT_EQ(diagnostics.viewport_height, 800U);
+
+  for (std::size_t index = 0U; index < 3U; ++index) {
+    EXPECT_NEAR(matrix.row_0[index],
+                diagnostics.right[index] * diagnostics.zoom * 0.5F,
+                k_tolerance);
+    EXPECT_NEAR(matrix.row_1[index], diagnostics.up[index] * diagnostics.zoom,
+                k_tolerance);
+    EXPECT_NEAR(matrix.row_2[index], diagnostics.forward[index] * 0.05F,
+                k_tolerance);
+  }
+
+  auto const target = TransformPoint(matrix, Point3{
+                                               .x = diagnostics.target_m[0],
+                                               .y = diagnostics.target_m[1],
+                                               .z = diagnostics.target_m[2],
+                                             });
+  ExpectRowNear(target, {0.0F, 0.0F, 0.5F, 1.0F});
+
+  auto const after_read = camera.BuildWorldToClipMatrix();
+  EXPECT_EQ(after_read.row_0, matrix.row_0);
+  EXPECT_EQ(after_read.row_1, matrix.row_1);
+  EXPECT_EQ(after_read.row_2, matrix.row_2);
+  EXPECT_EQ(after_read.row_3, matrix.row_3);
 }
 
 // =============================================================================
@@ -180,29 +249,41 @@ TEST(GGEMSSceneCamera,
   auto const positive_z = TransformPoint(matrix, Point3{.z = 1.0F});
   auto const negative_z = TransformPoint(matrix, Point3{.z = -1.0F});
 
-  EXPECT_NEAR(positive_x[0], 0.8F * k_sqrt_half, k_tolerance);
-  EXPECT_NEAR(positive_x[1], -0.4F, k_tolerance);
-  EXPECT_NEAR(positive_x[2], 0.475F, k_tolerance);
+  EXPECT_NEAR(positive_x[0], 0.8F * k_sin_sixty_degrees, k_tolerance);
+  EXPECT_NEAR(positive_x[1], 0.4F * k_sin_twenty_five_degrees, k_tolerance);
+  EXPECT_NEAR(positive_x[2], 0.5F - (0.025F * k_cos_twenty_five_degrees),
+              k_tolerance);
 
-  EXPECT_NEAR(negative_x[0], -0.8F * k_sqrt_half, k_tolerance);
-  EXPECT_NEAR(negative_x[1], 0.4F, k_tolerance);
-  EXPECT_NEAR(negative_x[2], 0.525F, k_tolerance);
+  EXPECT_NEAR(negative_x[0], -0.8F * k_sin_sixty_degrees, k_tolerance);
+  EXPECT_NEAR(negative_x[1], -0.4F * k_sin_twenty_five_degrees, k_tolerance);
+  EXPECT_NEAR(negative_x[2], 0.5F + (0.025F * k_cos_twenty_five_degrees),
+              k_tolerance);
 
   EXPECT_NEAR(positive_y[0], 0.0F, k_tolerance);
-  EXPECT_NEAR(positive_y[1], 0.8F * k_sqrt_half, k_tolerance);
-  EXPECT_NEAR(positive_y[2], 0.5F - (0.05F * k_sqrt_half), k_tolerance);
+  EXPECT_NEAR(positive_y[1], 0.8F * k_cos_twenty_five_degrees, k_tolerance);
+  EXPECT_NEAR(positive_y[2], 0.5F + (0.05F * k_sin_twenty_five_degrees),
+              k_tolerance);
 
   EXPECT_NEAR(negative_y[0], 0.0F, k_tolerance);
-  EXPECT_NEAR(negative_y[1], -0.8F * k_sqrt_half, k_tolerance);
-  EXPECT_NEAR(negative_y[2], 0.5F + (0.05F * k_sqrt_half), k_tolerance);
+  EXPECT_NEAR(negative_y[1], -0.8F * k_cos_twenty_five_degrees, k_tolerance);
+  EXPECT_NEAR(negative_y[2], 0.5F - (0.05F * k_sin_twenty_five_degrees),
+              k_tolerance);
 
-  EXPECT_NEAR(positive_z[0], -0.8F * k_sqrt_half, k_tolerance);
-  EXPECT_NEAR(positive_z[1], -0.4F, k_tolerance);
-  EXPECT_NEAR(positive_z[2], 0.475F, k_tolerance);
+  EXPECT_NEAR(positive_z[0], -0.4F, k_tolerance);
+  EXPECT_NEAR(positive_z[1],
+              0.8F * k_sin_sixty_degrees * k_sin_twenty_five_degrees,
+              k_tolerance);
+  EXPECT_NEAR(positive_z[2],
+              0.5F - (0.05F * k_sin_sixty_degrees * k_cos_twenty_five_degrees),
+              k_tolerance);
 
-  EXPECT_NEAR(negative_z[0], 0.8F * k_sqrt_half, k_tolerance);
-  EXPECT_NEAR(negative_z[1], 0.4F, k_tolerance);
-  EXPECT_NEAR(negative_z[2], 0.525F, k_tolerance);
+  EXPECT_NEAR(negative_z[0], 0.4F, k_tolerance);
+  EXPECT_NEAR(negative_z[1],
+              -0.8F * k_sin_sixty_degrees * k_sin_twenty_five_degrees,
+              k_tolerance);
+  EXPECT_NEAR(negative_z[2],
+              0.5F + (0.05F * k_sin_sixty_degrees * k_cos_twenty_five_degrees),
+              k_tolerance);
 }
 
 // =============================================================================
@@ -321,7 +402,7 @@ TEST(GGEMSSceneCamera, PitchIsClampedToEightyFiveDegrees) {
 // =============================================================================
 // =============================================================================
 
-// Pixel drags must apply the documented angular sensitivity on both axes.
+// Pixel drags must apply the negated angular sensitivity on both axes.
 TEST(GGEMSSceneCamera, OrbitByPixelsAppliesTheOrbitPixelPolicy) {
   Camera by_pixels{};
   by_pixels.SetViewportSize(800U, 800U);
@@ -329,11 +410,15 @@ TEST(GGEMSSceneCamera, OrbitByPixelsAppliesTheOrbitPixelPolicy) {
   by_pixels.SetZoom(1.0F);
   by_pixels.OrbitByPixels(5.0F, -10.0F);
 
+  auto const diagnostics = by_pixels.GetDiagnostics();
+  EXPECT_NEAR(diagnostics.yaw_degrees, -1.0F, k_tolerance);
+  EXPECT_NEAR(diagnostics.pitch_degrees, 2.0F, k_tolerance);
+
   Camera by_degrees{};
   by_degrees.SetViewportSize(800U, 800U);
   by_degrees.SetOrbitAngles(0.0F, 0.0F);
   by_degrees.SetZoom(1.0F);
-  by_degrees.Orbit(1.0F, -2.0F);
+  by_degrees.Orbit(-1.0F, 2.0F);
 
   ExpectMatrixNear(by_pixels.BuildWorldToClipMatrix(),
                    by_degrees.BuildWorldToClipMatrix());
@@ -457,4 +542,146 @@ TEST(GGEMSSceneCamera, LargeWorldRetainsPixelPanAndReset) {
   camera.ZoomBy(3.0F);
   camera.Reset();
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), framed);
+}
+
+// =============================================================================
+// =============================================================================
+
+// The reported viewing frame remains orthonormal and right-handed near the
+// observed yaw boundaries, with the same axes used by the actual projection.
+TEST(GGEMSSceneCamera, BoundaryAnglesPreserveViewingBasisAndProjection) {
+  auto const dot = [](auto const &first, auto const &second) -> double {
+    return (static_cast<double>(first[0]) * second[0]) +
+           (static_cast<double>(first[1]) * second[1]) +
+           (static_cast<double>(first[2]) * second[2]);
+  };
+
+  for (float pitch : {-5.0F, 0.0F, 5.0F}) {
+    SCOPED_TRACE(pitch);
+    for (float yaw : {
+           0.0F,
+           90.0F,
+           179.0F,
+           180.0F,
+           181.0F,
+           270.0F,
+           359.0F,
+           360.0F,
+           361.0F,
+         }) {
+      SCOPED_TRACE(yaw);
+      Camera camera{};
+      camera.SetViewportSize(1200U, 800U);
+      camera.SetZoom(1.0F);
+      camera.SetOrbitAngles(yaw, pitch);
+
+      auto const state = camera.GetDiagnostics();
+      auto const matrix = camera.BuildWorldToClipMatrix();
+      double const yaw_rad = yaw * std::numbers::pi / 180.0;
+      double const pitch_rad = pitch * std::numbers::pi / 180.0;
+      std::array const expected_right{
+        -std::sin(yaw_rad),
+        0.0,
+        -std::cos(yaw_rad),
+      };
+      std::array const expected_up{
+        -std::cos(yaw_rad) * std::sin(pitch_rad),
+        std::cos(pitch_rad),
+        std::sin(yaw_rad) * std::sin(pitch_rad),
+      };
+      std::array const expected_forward{
+        -std::cos(yaw_rad) * std::cos(pitch_rad),
+        -std::sin(pitch_rad),
+        std::sin(yaw_rad) * std::cos(pitch_rad),
+      };
+
+      EXPECT_NEAR(dot(state.right, state.right), 1.0, 2.0e-6);
+      EXPECT_NEAR(dot(state.up, state.up), 1.0, 2.0e-6);
+      EXPECT_NEAR(dot(state.forward, state.forward), 1.0, 2.0e-6);
+      EXPECT_NEAR(dot(state.right, state.up), 0.0, 2.0e-6);
+      EXPECT_NEAR(dot(state.right, state.forward), 0.0, 2.0e-6);
+      EXPECT_NEAR(dot(state.up, state.forward), 0.0, 2.0e-6);
+
+      std::array const right_cross_up{
+        (state.right[1] * state.up[2]) - (state.right[2] * state.up[1]),
+        (state.right[2] * state.up[0]) - (state.right[0] * state.up[2]),
+        (state.right[0] * state.up[1]) - (state.right[1] * state.up[0]),
+      };
+      EXPECT_NEAR(-dot(right_cross_up, state.forward), 1.0, 2.0e-6);
+
+      for (std::size_t index = 0; index < 3; ++index) {
+        EXPECT_NEAR(state.right[index], expected_right[index], 2.0e-6);
+        EXPECT_NEAR(state.up[index], expected_up[index], 2.0e-6);
+        EXPECT_NEAR(state.forward[index], expected_forward[index], 2.0e-6);
+        EXPECT_NEAR(matrix.row_0[index], expected_right[index] * (2.0 / 3.0),
+                    5.0e-6);
+        EXPECT_NEAR(matrix.row_1[index], expected_up[index], 5.0e-6);
+        EXPECT_NEAR(matrix.row_2[index], expected_forward[index] * 0.05,
+                    5.0e-6);
+      }
+    }
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+// Positive and negative pixel updates cross 180/360 without reversing yaw or
+// changing pitch, regardless of batching and zero-motion frames between drags.
+TEST(GGEMSSceneCamera, PixelOrbitCrossesYawBoundariesWithoutReversal) {
+  for (float pitch : {-5.0F, 0.0F, 5.0F}) {
+    SCOPED_TRACE(pitch);
+    for (float boundary : {180.0F, 360.0F}) {
+      SCOPED_TRACE(boundary);
+      for (float direction : {-1.0F, 1.0F}) {
+        SCOPED_TRACE(direction);
+        float const start = boundary + direction;
+        for (int step_pixels : {1, 2, 5, 10}) {
+          SCOPED_TRACE(step_pixels);
+          Camera camera{};
+          camera.SetOrbitAngles(start, pitch);
+          auto const before = camera.GetDiagnostics();
+          float previous_yaw = before.yaw_degrees;
+
+          for (int step = 0; step < 10 / step_pixels; ++step) {
+            camera.OrbitByPixels(direction * static_cast<float>(step_pixels),
+                                 0.0F);
+            auto const current = camera.GetDiagnostics();
+            EXPECT_LT(direction * (current.yaw_degrees - previous_yaw), 0.0F);
+            EXPECT_EQ(current.pitch_degrees, before.pitch_degrees);
+            previous_yaw = current.yaw_degrees;
+
+            if (step_pixels == 2 || step_pixels == 5) {
+              camera.OrbitByPixels(0.0F, 0.0F);
+            }
+          }
+
+          Camera direct{};
+          direct.SetOrbitAngles(boundary - direction, pitch);
+          EXPECT_NEAR(camera.GetDiagnostics().yaw_degrees, boundary - direction,
+                      1.0e-3F);
+          auto const actual = camera.BuildWorldToClipMatrix();
+          auto const expected = direct.BuildWorldToClipMatrix();
+          std::array const actual_rows{
+            actual.row_0,
+            actual.row_1,
+            actual.row_2,
+            actual.row_3,
+          };
+          std::array const expected_rows{
+            expected.row_0,
+            expected.row_1,
+            expected.row_2,
+            expected.row_3,
+          };
+          for (std::size_t row = 0; row < 4; ++row) {
+            for (std::size_t col = 0; col < 4; ++col) {
+              EXPECT_NEAR(actual_rows[row][col], expected_rows[row][col],
+                          2.0e-5F);
+            }
+          }
+        }
+      }
+    }
+  }
 }
