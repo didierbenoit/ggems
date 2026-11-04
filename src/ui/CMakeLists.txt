@@ -128,7 +128,9 @@ add_library(
   GGEMSVulkanDeviceSelection.cc
   GGEMSVulkanDisplayAdapterWin32.cc
   GGEMSVulkanPresenter.cc
-  GGEMSVulkanSceneRenderer.cc)
+  GGEMSVulkanSceneRenderer.cc
+  GGEMSVulkanShaderFile.cc
+  GGEMSVulkanWorldAxes.cc)
 
 add_dependencies(ggems_gui ggems_gui_shaders)
 add_library(GGEMS::Gui ALIAS ggems_gui)

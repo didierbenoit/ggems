@@ -31,7 +31,6 @@
 
 #include <array>
 #include <cstdint>
-#include <filesystem>
 #include <memory>
 #include <span>
 #include <vector>
@@ -40,6 +39,7 @@
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanWorldAxes.hh"
 
 namespace ggems::ui {
 
@@ -255,37 +255,8 @@ private:
                                     vk::MemoryPropertyFlags properties) const
     -> std::uint32_t;
 
-  /*! \brief Loads the compiled reference-axis vertex and fragment shaders. */
-  auto CreateAxesShaderModules() -> void;
-
-  /*! \brief Releases axes and trace shader modules. */
+  /*! \brief Releases trace shader modules. */
   auto CleanupShaderModules() noexcept -> void;
-
-  /*!
-   * \brief Reads a nonempty word-aligned SPIR-V binary.
-   *
-   * \param[in] path Compiled shader file to read.
-   * \return Shader words for Vulkan module creation.
-   * \throws core::GGEMSInternal If the file cannot be read or has an invalid
-   *   byte size.
-   */
-  [[nodiscard]] static auto ReadSPIRVFile(std::filesystem::path const &path)
-    -> std::vector<std::uint32_t>;
-
-  /*! \brief Creates the depth-tested axes pipeline for the scene format. */
-  auto CreateAxesPipeline() -> void;
-
-  /*! \brief Releases the axes pipeline and its layout. */
-  auto CleanupAxesPipeline() noexcept -> void;
-
-  /*!
-   * \brief Records the reference-axis line draw when its pipeline exists.
-   *
-   * \param[in] command_buffer Recording buffer inside the scene rendering pass.
-   * \param[in] push_constants World-to-clip transform rows.
-   */
-  auto RecordAxesCommands(vk::raii::CommandBuffer const &command_buffer,
-                          ScenePushConstants const &push_constants) -> void;
 
   /*! \brief Loads the compiled diagnostic trace vertex and fragment shaders. */
   auto CreateTraceShaderModules() -> void;
@@ -378,23 +349,14 @@ private:
   /*! \brief Whether render targets must be created or resized. */
   bool requires_resize_{false};
 
-  /*! \brief Vertex shader generating the reference-axis endpoints. */
-  vk::raii::ShaderModule axes_vertex_shader_module_{nullptr};
-
-  /*! \brief Fragment shader shading the reference axes. */
-  vk::raii::ShaderModule axes_fragment_shader_module_{nullptr};
+  /*! \brief Procedural World-reference pipeline and recording component. */
+  detail::GGEMSVulkanWorldAxes world_axes_;
 
   /*! \brief Vertex shader transforming diagnostic trace vertices. */
   vk::raii::ShaderModule trace_vertex_shader_module_{nullptr};
 
   /*! \brief Fragment shader shading diagnostic traces. */
   vk::raii::ShaderModule trace_fragment_shader_module_{nullptr};
-
-  /*! \brief Axes pipeline layout with world-to-clip push constants. */
-  vk::raii::PipelineLayout axes_pipeline_layout_{nullptr};
-
-  /*! \brief Line-list graphics pipeline for the reference axes. */
-  vk::raii::Pipeline axes_pipeline_{nullptr};
 
   /*! \brief Trace pipeline layout with world-to-clip push constants. */
   vk::raii::PipelineLayout trace_pipeline_layout_{nullptr};

@@ -109,7 +109,7 @@ target_include_directories(ggems_geometry_tests
 # UI tests retain their optional GUI dependencies.
 if(GGEMS_WITH_IMGUI)
   ggems_add_test_suite(ui ui)
-  target_link_libraries(ggems_ui_tests PRIVATE ggems_gui Vulkan::Headers)
+  target_link_libraries(ggems_ui_tests PRIVATE ggems_gui ggems_imgui Vulkan::Headers)
   target_compile_definitions(
     ggems_ui_tests PRIVATE
     "$<FILTER:$<TARGET_PROPERTY:ggems_gui,COMPILE_DEFINITIONS>,INCLUDE,VULKAN_HPP_>")

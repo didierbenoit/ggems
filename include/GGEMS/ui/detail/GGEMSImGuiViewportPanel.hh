@@ -104,7 +104,17 @@ private:
    * \brief Middle-button pan drag.
    */
 
-  /*! \brief Drag retained while the scene image item remains active. */
+  /*!
+   * \brief Accumulates pointer motion between the owned button transitions.
+   *
+   * \param[in] activated_button Mouse button that activated the scene item,
+   *   or -1 when no mouse gesture was acquired this frame.
+   * \param[in,out] result Camera deltas receiving owned pointer motion.
+   */
+  auto AddMouseGestures(ImGuiMouseButton activated_button, Result &result)
+    -> void;
+
+  /*! \brief Drag retained until release or cancellation of scene ownership. */
   Gesture gesture_{Gesture::None};
 };
 

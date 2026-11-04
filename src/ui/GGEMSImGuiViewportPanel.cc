@@ -188,37 +188,33 @@ auto GGEMSImGuiViewportPanel::Build(bool &show_window,
   ImVec2 const image_size{static_cast<float>(result.width),
                           static_cast<float>(result.height)};
 
+  ImGuiContext const &imgui_context = *ImGui::GetCurrentContext();
+  ImGuiID const scene_item_id = ImGui::GetID("##scene");
+
+  // Check ownership before the widget consumes a possible button release.
+  if (imgui_context.ActiveId != scene_item_id) {
+    CancelGesture();
+  }
+
   ImGui::InvisibleButton("##scene", image_size,
                          ImGuiButtonFlags_MouseButtonLeft |
                            ImGuiButtonFlags_MouseButtonMiddle);
+
   ImGui::GetWindowDrawList()->AddImage(
     scene_texture_id, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 
   ImGuiIO const &imgui_io = ImGui::GetIO();
 
-  if (ImGui::IsItemActivated()) {
-    if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-      gesture_ = Gesture::Orbit;
-    } else if (ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
-      gesture_ = Gesture::Pan;
-    }
-  }
+  ImGuiMouseButton const activated_button =
+    ImGui::IsItemActivated() &&
+        imgui_context.ActiveIdSource == ImGuiInputSource_Mouse
+      ? imgui_context.ActiveIdMouseButton
+      : -1;
+
+  AddMouseGestures(activated_button, result);
 
   if (!ImGui::IsItemActive()) {
-    gesture_ = Gesture::None;
-  }
-
-  switch (gesture_) {
-  case Gesture::Orbit:
-    result.orbit_delta_x_pixels = imgui_io.MouseDelta.x;
-    result.orbit_delta_y_pixels = imgui_io.MouseDelta.y;
-    break;
-  case Gesture::Pan:
-    result.pan_delta_x_pixels = imgui_io.MouseDelta.x;
-    result.pan_delta_y_pixels = imgui_io.MouseDelta.y;
-    break;
-  case Gesture::None:
-    break;
+    CancelGesture();
   }
 
   if (ImGui::IsItemHovered(ImGuiHoveredFlags_NoNavOverride) &&
@@ -238,6 +234,68 @@ auto GGEMSImGuiViewportPanel::Build(bool &show_window,
 
 auto GGEMSImGuiViewportPanel::CancelGesture() noexcept -> void {
   gesture_ = Gesture::None;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSImGuiViewportPanel::AddMouseGestures(
+  ImGuiMouseButton activated_button, Result &result) -> void {
+  ImGuiContext const &imgui_context = *ImGui::GetCurrentContext();
+  ImVec2 mouse_position = imgui_context.IO.MousePosPrev;
+
+  // The trail contains only events consumed by NewFrame, in their original
+  // order. MouseDelta spans the whole frame and cannot delimit a gesture.
+  for (ImGuiInputEvent const &event : imgui_context.InputEventsTrail) {
+    switch (event.Type) {
+    case ImGuiInputEventType_MousePos: {
+      ImVec2 next_position{event.MousePos.PosX, event.MousePos.PosY};
+
+      if (ImGui::IsMousePosValid(&next_position)) {
+        next_position = ImFloor(next_position);
+      }
+
+      // Match ImGui's logical-pixel rounding and suppress jumps across an
+      // invalid native cursor position, while retaining captured ownership.
+      if (ImGui::IsMousePosValid(&mouse_position) &&
+          ImGui::IsMousePosValid(&next_position)) {
+        float const delta_x = next_position.x - mouse_position.x;
+        float const delta_y = next_position.y - mouse_position.y;
+
+        if (gesture_ == Gesture::Orbit) {
+          result.orbit_delta_x_pixels += delta_x;
+          result.orbit_delta_y_pixels += delta_y;
+        } else if (gesture_ == Gesture::Pan) {
+          result.pan_delta_x_pixels += delta_x;
+          result.pan_delta_y_pixels += delta_y;
+        }
+      }
+
+      mouse_position = next_position;
+      break;
+    }
+    case ImGuiInputEventType_MouseButton:
+      if (event.MouseButton.Down &&
+          event.MouseButton.Button == activated_button) {
+        gesture_ = activated_button == ImGuiMouseButton_Left ? Gesture::Orbit
+                                                             : Gesture::Pan;
+        activated_button = -1;
+      } else if (!event.MouseButton.Down &&
+                 ((gesture_ == Gesture::Orbit &&
+                   event.MouseButton.Button == ImGuiMouseButton_Left) ||
+                  (gesture_ == Gesture::Pan &&
+                   event.MouseButton.Button == ImGuiMouseButton_Middle))) {
+        CancelGesture();
+      }
+      break;
+    case ImGuiInputEventType_Focus:
+      if (!event.AppFocused.Focused) {
+        CancelGesture();
+      }
+      break;
+    default:
+      break;
+    }
+  }
 }
 
 } // namespace ggems::ui::detail
