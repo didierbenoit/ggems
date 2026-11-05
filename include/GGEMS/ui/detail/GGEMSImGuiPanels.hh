@@ -32,6 +32,7 @@
 #include <cstdint>
 
 #include "GGEMSDeviceStatus.hh"
+#include "GGEMSCartesianGrid.hh"
 #include "GGEMSImGuiViewportPanel.hh"
 #include "GGEMSSceneCamera.hh"
 #include "GGEMSWorkbenchState.hh"
@@ -82,15 +83,18 @@ auto BuildInspectorPanel(bool &show_window,
                          GGEMSWorkbenchState::SceneSelection selection) -> void;
 
 /*!
- * \brief Selects the view and projection and displays current camera input.
+ * \brief Displays current camera state and input without navigation controls.
  *
  * \param[in,out] show_window Panel visibility, updated when the window closes.
- * \param[in,out] camera Camera updated by view and projection controls.
+ * \param[in] camera Camera read without changing navigation or projection.
  * \param[in] camera_input Deltas passed to the camera this frame, or zero
  *   when the viewport is hidden.
+ * \param[in] grid Current grid scale and selected cursor reference plane.
+ * \param[in] world_loaded Whether physical World bounds are available.
  */
-auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera &camera,
-                      GGEMSImGuiViewportPanel::Result const &camera_input)
+auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera const &camera,
+                      GGEMSImGuiViewportPanel::Result const &camera_input,
+                      GGEMSCartesianGrid const &grid, bool world_loaded)
   -> void;
 
 } // namespace ggems::ui::detail

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Records offscreen geometry, axes, and source-filtered traces.
+ * \brief Records offscreen grids, geometry, axes, and source-filtered traces.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -53,6 +53,7 @@ auto GGEMSVulkanSceneRenderer::Initialize(
   color_format_ = color_format;
 
   world_axes_.Initialize(device, color_format_, depth_format_);
+  cartesian_grid_.Initialize(device, color_format_, depth_format_);
 
   particle_traces_.Initialize(physical_device, device, color_format_,
                               depth_format_);
@@ -76,6 +77,7 @@ auto GGEMSVulkanSceneRenderer::Shutdown() -> void {
   particle_traces_.Shutdown();
 
   world_axes_.Shutdown();
+  cartesian_grid_.Shutdown();
 
   geometry_.Shutdown();
 
@@ -500,6 +502,12 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   command_buffer.setViewport(0U, viewport);
   command_buffer.setScissor(0U, scissor);
+
+  if (parameters.cartesian_grid != nullptr) {
+    cartesian_grid_.Record(command_buffer, parameters.world_to_clip,
+                           viewport_extent_, *parameters.cartesian_grid,
+                           parameters.clear_color);
+  }
 
   geometry_.Record(command_buffer, parameters.world_to_clip);
 

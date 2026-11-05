@@ -32,6 +32,7 @@
 
 #include <gtest/gtest.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
 
@@ -406,6 +407,33 @@ TEST_F(GGEMSImGuiViewportInput, FocusedKeyboardPanKeepsModifierSpeeds) {
   EXPECT_FLOAT_EQ(Frame().pan_delta_x_pixels, 1.5F);
   io.AddKeyEvent(ImGuiKey_RightArrow, false);
   ExpectNoMouseMotion(Frame());
+}
+
+TEST_F(GGEMSImGuiViewportInput, CursorUsesLogicalImageCoordinatesAndClears) {
+  auto const initial = Frame();
+  auto *window = ImGui::FindWindowByName("GGEMS Viewport###GGEMS.Viewport");
+  ASSERT_NE(window, nullptr);
+  ImVec2 const origin = window->DC.CursorStartPos;
+  auto &io = ImGui::GetIO();
+
+  for (float const density : {1.0F, 1.5F, 2.0F}) {
+    io.DisplayFramebufferScale = {density, density};
+    io.AddMousePosEvent(origin.x + 120.0F, origin.y + 80.0F);
+    auto const result = Frame();
+    ASSERT_TRUE(result.cursor_pixels);
+    EXPECT_FLOAT_EQ(result.cursor_pixels->x, 120.0F);
+    EXPECT_FLOAT_EQ(result.cursor_pixels->y, 80.0F);
+    EXPECT_EQ(result.width, initial.width);
+    EXPECT_EQ(result.height, initial.height);
+    ExpectNoMouseMotion(result);
+  }
+
+  EXPECT_FALSE(Frame(true).cursor_pixels);
+  EXPECT_TRUE(Frame().cursor_pixels);
+  io.AddMousePosEvent(750.0F, 550.0F);
+  EXPECT_FALSE(Frame().cursor_pixels);
+  io.AddMousePosEvent(-10000.0F, -10000.0F);
+  EXPECT_FALSE(Frame().cursor_pixels);
 }
 
 } // namespace

@@ -37,10 +37,12 @@ set(GGEMS_UI_SHADER_ENTRIES VertexMain FragmentMain)
 set(GGEMS_UI_SHADER_SUFFIXES vert frag)
 set(GGEMS_UI_SHADER_OUTPUTS)
 
-foreach(shader_name IN ITEMS GGEMSAxes GGEMSTraces GGEMSGeometry)
+foreach(shader_name IN ITEMS GGEMSAxes GGEMSTraces GGEMSGeometry
+    GGEMSCartesianGrid)
   set(shader_source "${GGEMS_UI_SHADER_SOURCE_DIR}/${shader_name}.slang")
   foreach(shader_stage shader_entry shader_suffix IN ZIP_LISTS
-          GGEMS_UI_SHADER_STAGES GGEMS_UI_SHADER_ENTRIES GGEMS_UI_SHADER_SUFFIXES)
+          GGEMS_UI_SHADER_STAGES GGEMS_UI_SHADER_ENTRIES
+          GGEMS_UI_SHADER_SUFFIXES)
     set(shader_output
         "${GGEMS_UI_SHADER_OUTPUT_DIR}/${shader_name}.${shader_suffix}.spv")
     add_custom_command(

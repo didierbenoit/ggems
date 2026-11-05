@@ -40,6 +40,8 @@
 #include <imgui.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiPanels.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiCartesianGrid.hh"
+#include "GGEMS/ui/detail/GGEMSCartesianGrid.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
@@ -744,57 +746,14 @@ auto BuildInspectorPanel(bool &show_window,
 
 // -----------------------------------------------------------------------------
 
-auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera &camera,
-                      GGEMSImGuiViewportPanel::Result const &camera_input)
+auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera const &camera,
+                      GGEMSImGuiViewportPanel::Result const &camera_input,
+                      GGEMSCartesianGrid const &grid, bool world_loaded)
   -> void {
   if (!ImGui::Begin(k_camera_window_name, &show_window,
                     ImGuiWindowFlags_HorizontalScrollbar)) {
     ImGui::End();
     return;
-  }
-
-  ImGui::SeparatorText("View");
-  if (ImGui::Button("XY")) {
-    camera.SetView(GGEMSSceneCamera::ViewPlane::XY);
-  }
-
-  ImGui::SetItemTooltip("From +Z; screen right +X, screen up -Y.");
-  ImGui::SameLine();
-
-  if (ImGui::Button("XZ")) {
-    camera.SetView(GGEMSSceneCamera::ViewPlane::XZ);
-  }
-
-  ImGui::SetItemTooltip("From +Y; screen right +X, screen up +Z.");
-  ImGui::SameLine();
-
-  if (ImGui::Button("YZ")) {
-    camera.SetView(GGEMSSceneCamera::ViewPlane::YZ);
-  }
-
-  ImGui::SetItemTooltip("From +X; screen right -Z, screen up -Y.");
-
-  if (ImGui::Button("Reset / free view")) {
-    camera.Reset();
-  }
-
-  ImGui::SetItemTooltip("Restore World framing, yaw 300 deg and pitch -25 deg. "
-                        "Keep the selected projection.");
-
-  ImGui::SeparatorText("Projection");
-
-  auto const projection = camera.GetDiagnostics().projection;
-
-  if (ImGui::RadioButton("Orthographic",
-                         projection ==
-                           GGEMSSceneCamera::Projection::Orthographic)) {
-    camera.SetProjection(GGEMSSceneCamera::Projection::Orthographic);
-  }
-
-  if (ImGui::RadioButton("Perspective",
-                         projection ==
-                           GGEMSSceneCamera::Projection::Perspective)) {
-    camera.SetProjection(GGEMSSceneCamera::Projection::Perspective);
   }
 
   auto const diagnostics = camera.GetDiagnostics();
@@ -824,6 +783,8 @@ auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera &camera,
                         "shared by both projections.");
   ImGui::Text("Camera viewport (px): %u x %u", diagnostics.viewport_width,
               diagnostics.viewport_height);
+
+  BuildCartesianGridReadout(camera, grid, camera_input, world_loaded);
 
   ImGui::SeparatorText("Mouse / current frame");
 

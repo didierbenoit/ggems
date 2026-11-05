@@ -31,6 +31,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 
 namespace ggems::ui::detail {
 
@@ -41,6 +42,7 @@ public:
   enum class Projection : std::uint8_t {
     /*! \brief Parallel rays, the default projection. */
     Orthographic,
+
     /*! \brief Perspective rays with an automatic distance and FOV. */
     Perspective,
   };
@@ -49,8 +51,10 @@ public:
   enum class ViewPlane : std::uint8_t {
     /*! \brief From +Z; screen right +X and screen up -Y. */
     XY,
+
     /*! \brief From +Y; screen right +X and screen up +Z. */
     XZ,
+
     /*! \brief From +X; screen right -Z and screen up -Y. */
     YZ,
   };
@@ -113,6 +117,15 @@ public:
 
     /*! \brief Unit direction toward the target, ordered X, Y, Z. */
     std::array<float, 3> forward{};
+  };
+
+  /*! \brief Describes a world-space viewing ray in meters. */
+  struct ScreenRay {
+    /*! \brief Eye in perspective, or near-plane point in orthographic mode. */
+    std::array<double, 3> origin_m{};
+
+    /*! \brief Unit direction into the visible scene. */
+    std::array<double, 3> direction{};
   };
 
   /*! \brief Initializes the camera at its default view. */
@@ -227,6 +240,29 @@ public:
    * \return Current angles, target, scale, projection extent, and viewing axes.
    */
   [[nodiscard]] auto GetDiagnostics() const noexcept -> Diagnostics;
+
+  /*!
+   * \brief Builds a ray through a viewport-relative logical pixel position.
+   *
+   * \param[in] x Horizontal coordinate from the viewport's left edge.
+   * \param[in] y Vertical coordinate from the viewport's top edge.
+   * \return Viewing ray, or no value for invalid or outside coordinates.
+   */
+  [[nodiscard]] auto BuildScreenRay(double x, double y) const noexcept
+    -> std::optional<ScreenRay>;
+
+  /*!
+   * \brief Intersects the viewing ray with a world-origin reference plane.
+   *
+   * \param[in] x Viewport-relative horizontal logical pixel coordinate.
+   * \param[in] y Viewport-relative vertical logical pixel coordinate.
+   * \param[in] plane Reference plane; this is not a geometry surface query.
+   * \return World meters, or no value outside the viewport/depth interval,
+   *   behind the eye, or when the ray is parallel to the plane.
+   */
+  [[nodiscard]] auto IntersectReferencePlane(double x, double y,
+                                             ViewPlane plane) const noexcept
+    -> std::optional<std::array<double, 3>>;
 
 private:
   /*! \brief Stores a camera direction or target coordinate triple. */

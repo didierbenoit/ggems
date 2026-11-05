@@ -32,6 +32,7 @@
 #include <cstdint>
 
 #include "GGEMSSceneCamera.hh"
+#include "GGEMSCartesianGrid.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
 namespace ggems::ui::detail {
@@ -73,6 +74,11 @@ struct GGEMSWorkbenchState {
 
   /*! \brief Presentation camera independent of simulation state. */
   GGEMSSceneCamera camera;
+
+  /*!
+   * \brief World grids and cursor reference plane, independent of navigation.
+   */
+  GGEMSCartesianGrid cartesian_grid;
 
   /*! \brief Whether to show the output console. */
   bool show_output_panel{true};

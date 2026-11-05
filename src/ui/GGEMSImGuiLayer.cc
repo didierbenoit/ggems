@@ -27,14 +27,88 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <cmath>
+#include <cstddef>
+
 #include <imgui.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiCartesianGrid.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiPanels.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
+#include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
+
+namespace {
+
+/*! \brief Camera authority shared by the existing navigation menus. */
+using Camera = ggems::ui::detail::GGEMSSceneCamera;
+
+/*!
+ * \brief Recognizes a preset orientation without caching navigation state.
+ *
+ * \param[in] current Current camera diagnostics.
+ * \param[in] plane Existing preset used as the orientation authority.
+ * \return True when both screen basis vectors match within display tolerance.
+ */
+[[nodiscard]] auto IsCameraViewSelected(Camera::Diagnostics const &current,
+                                        Camera::ViewPlane plane) -> bool {
+  Camera reference;
+  reference.SetView(plane);
+  auto const expected = reference.GetDiagnostics();
+
+  for (std::size_t index = 0U; index < current.right.size(); ++index) {
+    if (std::abs(current.right[index] - expected.right[index]) > 1.0e-5F ||
+        std::abs(current.up[index] - expected.up[index]) > 1.0e-5F) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/*!
+ * \brief Applies existing plane presets or requests the existing free reset.
+ *
+ * \param[in,out] camera Camera changed only when a plane is selected.
+ * \return True when Free view requests a camera reset.
+ */
+[[nodiscard]] auto BuildCameraViewMenu(Camera &camera) -> bool {
+  if (!ImGui::BeginMenu("Camera view")) {
+    return false;
+  }
+
+  auto const diagnostics = camera.GetDiagnostics();
+  bool const xy = IsCameraViewSelected(diagnostics, Camera::ViewPlane::XY);
+  bool const xz = IsCameraViewSelected(diagnostics, Camera::ViewPlane::XZ);
+  bool const yz = IsCameraViewSelected(diagnostics, Camera::ViewPlane::YZ);
+
+  bool const reset = ImGui::MenuItem("Free view", nullptr, !xy && !xz && !yz);
+  ImGui::SetItemTooltip("Restore the default free view and World framing. "
+                        "Keep the selected projection.");
+
+  if (ImGui::MenuItem("XY", nullptr, xy)) {
+    camera.SetView(Camera::ViewPlane::XY);
+  }
+  ImGui::SetItemTooltip("From +Z; screen right +X, screen up -Y.");
+
+  if (ImGui::MenuItem("XZ", nullptr, xz)) {
+    camera.SetView(Camera::ViewPlane::XZ);
+  }
+  ImGui::SetItemTooltip("From +Y; screen right +X, screen up +Z.");
+
+  if (ImGui::MenuItem("YZ", nullptr, yz)) {
+    camera.SetView(Camera::ViewPlane::YZ);
+  }
+  ImGui::SetItemTooltip("From +X; screen right -Z, screen up -Y.");
+
+  ImGui::EndMenu();
+  return reset;
+}
+
+} // namespace
 
 namespace ggems::ui {
 
@@ -91,9 +165,15 @@ auto GGEMSImGuiLayer::BuildFrame(
     workbench.camera.Reset();
   }
 
+  if (inputs.geometry_scene != nullptr) {
+    workbench.cartesian_grid.Update(workbench.camera,
+                                    inputs.geometry_scene->world_half_extent_m);
+  }
+
   if (workbench.show_camera_panel) {
     detail::BuildCameraPanel(workbench.show_camera_panel, workbench.camera,
-                             camera_input);
+                             camera_input, workbench.cartesian_grid,
+                             inputs.geometry_scene != nullptr);
   }
 
   if (workbench.show_inspector_panel) {
@@ -181,13 +261,32 @@ auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
 
     ImGui::Separator();
     ImGui::MenuItem("Axes", nullptr, &workbench.show_axes);
+    detail::BuildCartesianGridMenus(workbench.cartesian_grid);
 
     bool show_particle_traces = workbench.trace_visibility.IsGlobalVisible();
     if (ImGui::MenuItem("Particle traces", nullptr, &show_particle_traces)) {
       workbench.trace_visibility.SetGlobalVisible(show_particle_traces);
     }
 
-    menu_actions.reset_camera = ImGui::MenuItem("Reset Camera");
+    ImGui::Separator();
+    menu_actions.reset_camera = BuildCameraViewMenu(workbench.camera);
+
+    if (ImGui::BeginMenu("Projection")) {
+      auto const projection = workbench.camera.GetDiagnostics().projection;
+      if (ImGui::MenuItem("Orthographic", nullptr,
+                          projection == Camera::Projection::Orthographic)) {
+        workbench.camera.SetProjection(Camera::Projection::Orthographic);
+      }
+      if (ImGui::MenuItem("Perspective", nullptr,
+                          projection == Camera::Projection::Perspective)) {
+        workbench.camera.SetProjection(Camera::Projection::Perspective);
+      }
+      ImGui::EndMenu();
+    }
+
+    if (ImGui::MenuItem("Reset Camera")) {
+      menu_actions.reset_camera = true;
+    }
 
     ImGui::Separator();
     menu_actions.reset_layout = ImGui::MenuItem("Reset layout");

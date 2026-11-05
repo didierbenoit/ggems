@@ -124,7 +124,7 @@ private:
   /*!
    * \brief Builds view controls and collects reset requests.
    *
-   * \param[in,out] workbench Panel, axis, and trace visibility controls.
+   * \param[in,out] workbench Camera navigation and presentation controls.
    * \return Camera and layout reset requests.
    */
   [[nodiscard]] static auto

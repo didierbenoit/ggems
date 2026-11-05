@@ -28,7 +28,9 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <iomanip>
 #include <initializer_list>
 #include <sstream>
@@ -44,6 +46,7 @@
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 
 namespace {
 
@@ -104,6 +107,7 @@ protected:
       .scene_texture_id = ImTextureID{1},
       .scene_texture_logical_width = workbench_.viewport.width,
       .scene_texture_logical_height = workbench_.viewport.height,
+      .geometry_scene = geometry_scene_,
     };
     layer_.BuildFrame(inputs, ggems::ui::detail::GGEMSDeviceStatusSnapshot{},
                       workbench_);
@@ -133,41 +137,80 @@ protected:
     }
   }
 
-  // Tab through the live widgets and activate the requested control with Space.
-  // No camera setters or synthetic widget return values participate.
-  auto Activate(char const *label) -> void {
-    auto *window =
-      ImGui::FindWindowByName(ggems::ui::detail::k_camera_window_name);
-    ASSERT_NE(window, nullptr);
-    auto const wanted = window->GetID(label);
+  auto PressKey(ImGuiKey key) -> void {
     auto &imgui_io = ImGui::GetIO();
-    if (GImGui->NavWindow != window) {
-      imgui_io.AddMousePosEvent(window->Pos.x + (window->Size.x * 0.5F),
-                                window->Pos.y + 10.0F);
-      Frame();
-      imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
-      Frame();
-      imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
-      Frame();
-    }
+    imgui_io.AddKeyEvent(key, true);
+    Frame();
+    imgui_io.AddKeyEvent(key, false);
+    Frame();
+  }
+
+  // Navigate real menu items. No camera setters or synthetic widget return
+  // values participate in menu activation.
+  auto FocusMenuItem(char const *label) -> void {
+    PressKey(ImGuiKey_Home);
     for (int attempt = 0; attempt < 24; ++attempt) {
-      imgui_io.AddKeyEvent(ImGuiKey_Tab, true);
-      Frame();
-      imgui_io.AddKeyEvent(ImGuiKey_Tab, false);
-      Frame();
-      if (GImGui->NavId == wanted) {
-        break;
+      auto *window = GImGui->NavWindow;
+      if (window != nullptr && GImGui->NavId == window->GetID(label)) {
+        return;
       }
+      PressKey(ImGuiKey_DownArrow);
     }
-    ASSERT_EQ(GImGui->NavId, wanted) << label;
-    imgui_io.AddKeyEvent(ImGuiKey_Space, true);
+    FAIL() << "Menu item was not reachable: " << label;
+  }
+
+  auto OpenMenu(char const *submenu) -> void {
+    PressKey(ImGuiKey_Escape);
+    PressKey(ImGuiKey_Escape);
+    auto *menu_bar = ImGui::FindWindowByName("##MainMenuBar");
+    ASSERT_NE(menu_bar, nullptr);
+    auto &imgui_io = ImGui::GetIO();
+    imgui_io.AddMousePosEvent(menu_bar->Pos.x +
+                                ImGui::GetStyle().WindowPadding.x +
+                                (ImGui::CalcTextSize("View").x * 0.5F),
+                              menu_bar->Pos.y + (menu_bar->Size.y * 0.5F));
     Frame();
-    imgui_io.AddKeyEvent(ImGuiKey_Space, false);
+    imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
     Frame();
+    imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+    Frame();
+    if (submenu != nullptr) {
+      ASSERT_NO_FATAL_FAILURE(FocusMenuItem(submenu));
+      PressKey(ImGuiKey_RightArrow);
+    }
+  }
+
+  auto Activate(std::initializer_list<char const *> path) -> void {
+    auto const *item = path.begin();
+    char const *submenu = path.size() == 2U ? *item++ : nullptr;
+    ASSERT_NO_FATAL_FAILURE(OpenMenu(submenu));
+    ASSERT_NO_FATAL_FAILURE(FocusMenuItem(*item));
+    PressKey(ImGuiKey_Enter);
+  }
+
+  // Menu checkmarks are geometry, not logged text. Inspect the rendered mark
+  // column of the focused item without fixing triangle counts or coordinates.
+  auto ExpectMenuChecked(char const *label, bool expected) -> void {
+    ASSERT_NO_FATAL_FAILURE(FocusMenuItem(label));
+    auto *window = GImGui->NavWindow;
+    auto const bounds =
+      ImGui::WindowRectRelToAbs(window, window->NavRectRel[ImGuiNavLayer_Main]);
+    float const mark_left = bounds.Max.x - (1.5F * ImGui::GetFontSize());
+    auto const text_color = ImGui::GetColorU32(ImGuiCol_Text);
+    auto const &vertices = window->DrawList->VtxBuffer;
+    bool const checked =
+      std::ranges::any_of(vertices, [&](ImDrawVert const &vertex) -> bool {
+        return vertex.col == text_color && vertex.pos.x >= mark_left &&
+               vertex.pos.x <= bounds.Max.x && vertex.pos.y >= bounds.Min.y &&
+               vertex.pos.y < bounds.Max.y;
+      });
+    EXPECT_EQ(checked, expected) << label;
   }
 
   ggems::ui::detail::GGEMSWorkbenchState workbench_;
   std::string displayed_text_;
+
+  ggems::render::GGEMSGeometryScene const *geometry_scene_{};
 
 private:
   ImGuiContext *context_{};
@@ -353,22 +396,28 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
                  std::to_string(maximum_yaw_increment_error));
 }
 
-// The actual buttons select exact anatomical views and report the resulting
+// The actual menu items select exact anatomical views and report the resulting
 // camera state in the same frame; reset keeps the selected projection.
-TEST_F(GGEMSImGuiCameraDiagnostics, ViewButtonsAndResetApplyThroughImGui) {
-  Activate("XY");
+TEST_F(GGEMSImGuiCameraDiagnostics, ViewMenuAndResetApplyThroughImGui) {
+  Activate({"Camera view", "XY"});
   ExpectValues("Yaw (deg)", {270.0F});
   ExpectValues("Pitch (deg)", {0.0F});
   EXPECT_NEAR(workbench_.camera.GetDiagnostics().forward[2], -1.0F, 1.0e-6F);
-  Activate("XZ");
+  Activate({"Camera view", "XZ"});
   ExpectValues("Pitch (deg)", {90.0F});
   EXPECT_NEAR(workbench_.camera.GetDiagnostics().forward[1], -1.0F, 1.0e-6F);
-  Activate("YZ");
+  Activate({"Camera view", "YZ"});
   ExpectValues("Yaw (deg)", {0.0F});
   ExpectValues("Pitch (deg)", {0.0F});
   EXPECT_NEAR(workbench_.camera.GetDiagnostics().forward[0], -1.0F, 1.0e-6F);
-  Activate("Perspective");
-  Activate("Reset / free view");
+  Activate({"Projection", "Perspective"});
+  Activate({"Camera view", "Free view"});
+  ExpectValues("Yaw (deg)", {300.0F});
+  ExpectValues("Pitch (deg)", {-25.0F});
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
+            ggems::ui::detail::GGEMSSceneCamera::Projection::Perspective);
+  Activate({"Camera view", "XY"});
+  Activate({"Reset Camera"});
   ExpectValues("Yaw (deg)", {300.0F});
   ExpectValues("Pitch (deg)", {-25.0F});
   EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
@@ -380,7 +429,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   EXPECT_TRUE(displayed_text_.contains("Mode: Orthographic"));
   EXPECT_FALSE(displayed_text_.contains("Vertical FOV"));
   auto const before = workbench_.camera.GetDiagnostics();
-  Activate("Perspective");
+  Activate({"Projection", "Perspective"});
   EXPECT_TRUE(displayed_text_.contains("Mode: Perspective"));
   ExpectValues("Vertical FOV (deg)", {45.0F});
   EXPECT_TRUE(displayed_text_.contains("Target distance (m)"));
@@ -390,7 +439,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().zoom, before.zoom);
   auto const perspective = workbench_.camera.BuildWorldToClipMatrix();
   EXPECT_NE(perspective.row_3[0], 0.0F);
-  Activate("Orthographic");
+  Activate({"Projection", "Orthographic"});
   EXPECT_TRUE(displayed_text_.contains("Mode: Orthographic"));
   EXPECT_FALSE(displayed_text_.contains("Vertical FOV"));
   EXPECT_FALSE(displayed_text_.contains("Target distance (m)"));
@@ -398,8 +447,91 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().zoom, before.zoom);
 }
 
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       MenusWorkWithoutCameraControlsInDiagnostics) {
+  workbench_.show_camera_panel = false;
+  Frame();
+  Activate({"Camera view", "XY"});
+  EXPECT_NEAR(workbench_.camera.GetDiagnostics().forward[2], -1.0F, 1.0e-6F);
+  Activate({"Projection", "Perspective"});
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
+            ggems::ui::detail::GGEMSSceneCamera::Projection::Perspective);
+  EXPECT_FALSE(workbench_.show_camera_panel);
+
+  Activate({"Camera"});
+  EXPECT_TRUE(workbench_.show_camera_panel);
+  EXPECT_TRUE(displayed_text_.contains("Mode: Perspective"));
+  ExpectValues("Yaw (deg)", {270.0F});
+  auto *window =
+    ImGui::FindWindowByName(ggems::ui::detail::k_camera_window_name);
+  ASSERT_NE(window, nullptr);
+  auto &imgui_io = ImGui::GetIO();
+  imgui_io.AddMousePosEvent(window->Pos.x + (window->Size.x * 0.5F),
+                            window->Pos.y + 10.0F);
+  Frame();
+  imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+  Frame();
+  imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+  Frame();
+  // The retained matrix expander affects display only. No camera command is
+  // reachable by tabbing through the diagnostic panel.
+  for (int attempt = 0; attempt < 8; ++attempt) {
+    PressKey(ImGuiKey_Tab);
+    EXPECT_EQ(GImGui->NavWindow, window);
+    EXPECT_EQ(GImGui->NavId, window->GetID("WorldToClip (4 x 4)"));
+  }
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics, MenuCheckmarksFollowCurrentCameraState) {
+  OpenMenu("Camera view");
+  ExpectMenuChecked("Free view", true);
+  for (char const *view : {"XY", "XZ", "YZ"}) {
+    ExpectMenuChecked(view, false);
+  }
+  for (char const *selected : {"XY", "XZ", "YZ"}) {
+    Activate({"Camera view", selected});
+    OpenMenu("Camera view");
+    ExpectMenuChecked("Free view", false);
+    for (char const *view : {"XY", "XZ", "YZ"}) {
+      ExpectMenuChecked(view, std::string_view{view} == selected);
+    }
+  }
+
+  workbench_.camera.Pan(15.0F, -5.0F);
+  workbench_.camera.ZoomBy(1.0F);
+  workbench_.camera.Orbit(360.0F, 0.0F);
+  OpenMenu("Camera view");
+  ExpectMenuChecked("YZ", true);
+  ExpectMenuChecked("Free view", false);
+
+  PressKey(ImGuiKey_Escape);
+  PressKey(ImGuiKey_Escape);
+  auto &imgui_io = ImGui::GetIO();
+  imgui_io.AddMousePosEvent(100.0F, 100.0F);
+  Frame();
+  imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+  Frame();
+  imgui_io.AddMousePosEvent(120.0F, 90.0F);
+  Frame();
+  imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+  Frame();
+  OpenMenu("Camera view");
+  ExpectMenuChecked("Free view", true);
+  for (char const *view : {"XY", "XZ", "YZ"}) {
+    ExpectMenuChecked(view, false);
+  }
+
+  for (char const *selected : {"Orthographic", "Perspective"}) {
+    Activate({"Projection", selected});
+    OpenMenu("Projection");
+    for (char const *mode : {"Orthographic", "Perspective"}) {
+      ExpectMenuChecked(mode, std::string_view{mode} == selected);
+    }
+  }
+}
+
 TEST_F(GGEMSImGuiCameraDiagnostics, PerspectiveViewportRoutesOrbitPanAndWheel) {
-  Activate("Perspective");
+  Activate({"Projection", "Perspective"});
   auto &imgui_io = ImGui::GetIO();
   imgui_io.AddMousePosEvent(100.0F, 100.0F);
   Frame();
@@ -427,6 +559,134 @@ TEST_F(GGEMSImGuiCameraDiagnostics, PerspectiveViewportRoutesOrbitPanAndWheel) {
   Frame();
   EXPECT_GT(workbench_.camera.GetDiagnostics().zoom, before.zoom);
   EXPECT_TRUE(displayed_text_.contains("Mode: Perspective"));
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics, GridsAndCursorPlaneMenusAreIndependent) {
+  auto const before = workbench_.camera.BuildWorldToClipMatrix();
+  auto &grid = workbench_.cartesian_grid;
+  EXPECT_EQ(grid.reference_plane,
+            ggems::ui::detail::GGEMSSceneCamera::ViewPlane::XY);
+  for (bool const visible : grid.visible) {
+    EXPECT_FALSE(visible);
+  }
+
+  std::array<char const *, 3U> const names{"XY", "XZ", "YZ"};
+  for (unsigned int mask = 0U; mask < 8U; ++mask) {
+    for (std::size_t index = 0U; index < names.size(); ++index) {
+      bool const expected = (mask & (1U << index)) != 0U;
+      if (grid.visible[index] != expected) {
+        Activate({"Grids", names[index]});
+      }
+      EXPECT_EQ(grid.visible[index], expected);
+    }
+    OpenMenu("Grids");
+    for (std::size_t index = 0U; index < names.size(); ++index) {
+      ExpectMenuChecked(names[index], (mask & (1U << index)) != 0U);
+    }
+  }
+
+  std::array<char const *, 3U> const labels{
+    "XY (Z = 0)",
+    "XZ (Y = 0)",
+    "YZ (X = 0)",
+  };
+  for (std::size_t selected = 0U; selected < labels.size(); ++selected) {
+    Activate({"Cursor plane", labels[selected]});
+    EXPECT_EQ(static_cast<std::size_t>(grid.reference_plane), selected);
+    OpenMenu("Cursor plane");
+    for (std::size_t index = 0U; index < labels.size(); ++index) {
+      ExpectMenuChecked(labels[index], index == selected);
+    }
+    EXPECT_TRUE(displayed_text_.contains(labels[selected]));
+  }
+
+  auto const after = workbench_.camera.BuildWorldToClipMatrix();
+  EXPECT_EQ(after.row_0, before.row_0);
+  EXPECT_EQ(after.row_1, before.row_1);
+  EXPECT_EQ(after.row_2, before.row_2);
+  EXPECT_EQ(after.row_3, before.row_3);
+  Activate({"Camera view", "Free view"});
+  EXPECT_EQ(grid.reference_plane,
+            ggems::ui::detail::GGEMSSceneCamera::ViewPlane::YZ);
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       CursorReadoutUsesPlaneAndNeverKeepsOldPoint) {
+  using Camera = ggems::ui::detail::GGEMSSceneCamera;
+  ggems::render::GGEMSGeometryScene const scene{
+    .vertices = {},
+    .meshes = {},
+    .occurrences = {},
+    .world_half_extent_m = {0.6, 0.4, 0.3},
+  };
+  geometry_scene_ = &scene;
+  workbench_.camera.FrameWorld(scene.world_half_extent_m);
+  workbench_.camera.SetView(Camera::ViewPlane::XY);
+  Frame();
+  auto *viewport =
+    ImGui::FindWindowByName(ggems::ui::detail::k_viewport_window_name);
+  ASSERT_NE(viewport, nullptr);
+  // ImGui floors queued pointer positions. Use an even logical image extent
+  // so its exact geometric center is a representable pointer position.
+  ImGui::SetWindowSize(
+    ggems::ui::detail::k_viewport_window_name,
+    {viewport->Size.x + static_cast<float>(workbench_.viewport.width % 2U),
+     viewport->Size.y + static_cast<float>(workbench_.viewport.height % 2U)});
+  Frame();
+  Frame();
+  ASSERT_EQ(workbench_.viewport.width % 2U, 0U);
+  ASSERT_EQ(workbench_.viewport.height % 2U, 0U);
+  ImVec2 const origin = viewport->DC.CursorStartPos;
+  auto &io = ImGui::GetIO();
+
+  for (auto const projection :
+       {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
+    workbench_.camera.SetProjection(projection);
+    io.AddMousePosEvent(
+      origin.x + (0.5F * static_cast<float>(workbench_.viewport.width)),
+      origin.y + (0.5F * static_cast<float>(workbench_.viewport.height)));
+    Frame();
+    EXPECT_TRUE(displayed_text_.contains("Cursor plane: XY (Z = 0)"));
+    EXPECT_TRUE(displayed_text_.contains("Ray-plane intersection"));
+    EXPECT_TRUE(displayed_text_.contains("Cursor world: (0 mm, 0 mm, 0 mm)"))
+      << displayed_text_;
+    EXPECT_TRUE(displayed_text_.contains("minor "));
+    EXPECT_TRUE(displayed_text_.contains(" / major "));
+
+    workbench_.cartesian_grid.reference_plane = Camera::ViewPlane::YZ;
+    Frame();
+    EXPECT_TRUE(displayed_text_.contains("Cursor world: N/A"));
+    workbench_.cartesian_grid.reference_plane = Camera::ViewPlane::XY;
+    io.AddMousePosEvent(1200.0F, 750.0F);
+    Frame();
+    EXPECT_TRUE(displayed_text_.contains("Cursor world: N/A"));
+    workbench_.show_viewport_panel = false;
+    Frame();
+    EXPECT_TRUE(displayed_text_.contains("Cursor world: N/A"));
+    workbench_.show_viewport_panel = true;
+    Frame();
+  }
+  geometry_scene_ = nullptr;
+  Frame();
+  EXPECT_TRUE(displayed_text_.contains("Cursor world: N/A"));
+  EXPECT_TRUE(displayed_text_.contains("step N/A"));
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       GridStepsBelowUnitResolutionAreNeverLabeledZero) {
+  ggems::render::GGEMSGeometryScene const scene{
+    .vertices = {},
+    .meshes = {},
+    .occurrences = {},
+    .world_half_extent_m = {1.0e-9, 1.0e-9, 1.0e-9},
+  };
+  geometry_scene_ = &scene;
+  workbench_.camera.FrameWorld(scene.world_half_extent_m);
+  workbench_.camera.SetView(ggems::ui::detail::GGEMSSceneCamera::ViewPlane::XY);
+  workbench_.camera.SetZoom(1.0e19F);
+  Frame();
+  EXPECT_TRUE(displayed_text_.contains("minor <1 pm / major <1 pm"))
+    << displayed_text_;
 }
 
 } // namespace

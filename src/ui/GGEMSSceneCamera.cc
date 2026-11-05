@@ -30,8 +30,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <numbers>
+#include <optional>
 
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
@@ -316,6 +318,116 @@ auto GGEMSSceneCamera::GetDiagnostics() const noexcept -> Diagnostics {
     .up = {basis.up.x, basis.up.y, basis.up.z},
     .forward = {basis.forward.x, basis.forward.y, basis.forward.z},
   };
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSceneCamera::BuildScreenRay(double x, double y) const noexcept
+  -> std::optional<ScreenRay> {
+  if (!std::isfinite(x) || !std::isfinite(y) || x < 0.0 || y < 0.0 ||
+      x >= viewport_width_ || y >= viewport_height_ || !std::isfinite(zoom_) ||
+      zoom_ <= 0.0F) {
+    return std::nullopt;
+  }
+
+  CameraBasis const basis = BuildCameraBasis();
+  std::array<double, 3> const right{
+    basis.right.x,
+    basis.right.y,
+    basis.right.z,
+  };
+  std::array<double, 3> const up{basis.up.x, basis.up.y, basis.up.z};
+  std::array<double, 3> const forward{
+    basis.forward.x,
+    basis.forward.y,
+    basis.forward.z,
+  };
+  double const offset_x = ((2.0 * x) - viewport_width_) /
+                          (zoom_ * static_cast<double>(viewport_height_));
+  double const offset_y = ((2.0 * y) - viewport_height_) /
+                          (zoom_ * static_cast<double>(viewport_height_));
+  ScreenRay ray{
+    .origin_m = {target_m_.x, target_m_.y, target_m_.z},
+    .direction = forward,
+  };
+
+  if (projection_ == Projection::Perspective) {
+    double const distance = BuildPerspectiveDepth(basis).distance_m;
+    for (std::size_t axis = 0U; axis < 3U; ++axis) {
+      ray.origin_m[axis] -= distance * forward[axis];
+      ray.direction[axis] = (distance * forward[axis]) +
+                            (offset_x * right[axis]) + (offset_y * up[axis]);
+    }
+  } else {
+    for (std::size_t axis = 0U; axis < 3U; ++axis) {
+      ray.origin_m[axis] += (offset_x * right[axis]) + (offset_y * up[axis]);
+    }
+    auto const matrix = BuildWorldToClipMatrix();
+    double depth = matrix.row_2[3];
+    double slope = 0.0;
+    for (std::size_t axis = 0U; axis < 3U; ++axis) {
+      depth += matrix.row_2[axis] * ray.origin_m[axis];
+      slope += matrix.row_2[axis] * forward[axis];
+    }
+    for (std::size_t axis = 0U; axis < 3U; ++axis) {
+      ray.origin_m[axis] -= (depth / slope) * forward[axis];
+    }
+  }
+
+  double const length =
+    std::hypot(ray.direction[0], ray.direction[1], ray.direction[2]);
+  for (std::size_t axis = 0U; axis < 3U; ++axis) {
+    ray.direction[axis] /= length;
+    if (!std::isfinite(ray.origin_m[axis]) ||
+        !std::isfinite(ray.direction[axis])) {
+      return std::nullopt;
+    }
+  }
+  return ray;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSceneCamera::IntersectReferencePlane(double x, double y,
+                                               ViewPlane plane) const noexcept
+  -> std::optional<std::array<double, 3>> {
+  auto const ray = BuildScreenRay(x, y);
+  std::size_t normal{};
+  switch (plane) {
+  case ViewPlane::XY:
+    normal = 2U;
+    break;
+  case ViewPlane::XZ:
+    normal = 1U;
+    break;
+  case ViewPlane::YZ:
+    normal = 0U;
+    break;
+  }
+  if (!ray || std::abs(ray->direction[normal]) <= 1.0e-6) {
+    return std::nullopt;
+  }
+  double const distance = -ray->origin_m[normal] / ray->direction[normal];
+  if (distance < 0.0 || !std::isfinite(distance)) {
+    return std::nullopt;
+  }
+  std::array<double, 3> point{};
+  auto const matrix = BuildWorldToClipMatrix();
+  double clip_z = matrix.row_2[3];
+  double clip_w = matrix.row_3[3];
+  for (std::size_t axis = 0U; axis < 3U; ++axis) {
+    point[axis] = ray->origin_m[axis] + (distance * ray->direction[axis]);
+    if (!std::isfinite(point[axis])) {
+      return std::nullopt;
+    }
+    clip_z += matrix.row_2[axis] * point[axis];
+    clip_w += matrix.row_3[axis] * point[axis];
+  }
+  if (clip_w <= 0.0 || clip_z < 0.0 || clip_z > clip_w) {
+    return std::nullopt;
+  }
+  point[normal] = 0.0;
+  return point;
 }
 
 // -----------------------------------------------------------------------------

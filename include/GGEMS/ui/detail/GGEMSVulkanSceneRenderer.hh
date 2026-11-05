@@ -41,11 +41,13 @@
 #include "GGEMS/ui/detail/GGEMSVulkanWorldAxes.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanGeometry.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanParticleTraces.hh"
+#include "GGEMS/ui/detail/GGEMSCartesianGrid.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanCartesianGrid.hh"
 
 namespace ggems::ui {
 
 /*!
- * \brief Owns offscreen targets and coordinates geometry, axes, and traces.
+ * \brief Owns offscreen targets and coordinates grids, geometry, and traces.
  *
  * Physical and logical devices are borrowed. The application completes GPU use
  * before replacing targets or scene data and before shutdown; scene texture
@@ -66,6 +68,9 @@ public:
 
     /*! \brief Borrowed global and per-source trace visibility. */
     ggems::render::GGEMSParticleTraceVisibility const &trace_visibility;
+
+    /*! \brief Optional updated Cartesian reference grids; null draws none. */
+    detail::GGEMSCartesianGrid const *cartesian_grid{};
   };
 
   /*! \brief Creates an inactive UI component. */
@@ -288,6 +293,9 @@ private:
 
   /*! \brief Procedural World-reference pipeline and recording component. */
   detail::GGEMSVulkanWorldAxes world_axes_;
+
+  /*! \brief Bounded procedural Cartesian grid pipeline and recording. */
+  detail::GGEMSVulkanCartesianGrid cartesian_grid_;
 
   /*! \brief Trace pipeline, uploaded vertices, and source-filtered drawing. */
   detail::GGEMSVulkanParticleTraces particle_traces_;

@@ -480,6 +480,8 @@ auto GGEMSGuiApplication::RenderFrame(bool framebuffer_resized) -> void {
         GetThemeColorKey(GGEMSThemeRole::SceneBackground)),
       .show_axes = workbench_.show_axes,
       .trace_visibility = workbench_.trace_visibility,
+      .cartesian_grid =
+        displayed_geometry_scene_ ? &workbench_.cartesian_grid : nullptr,
     };
 
     scene_renderer_->RecordSceneCommands(command_buffer, render_parameters);

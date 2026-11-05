@@ -205,6 +205,13 @@ auto GGEMSImGuiViewportPanel::Build(bool &show_window,
 
   ImGuiIO const &imgui_io = ImGui::GetIO();
 
+  if (ImGui::IsItemHovered(ImGuiHoveredFlags_NoNavOverride) &&
+      ImGui::IsMousePosValid(&imgui_io.MousePos)) {
+    ImVec2 const image_origin = ImGui::GetItemRectMin();
+    result.cursor_pixels = ImVec2{imgui_io.MousePos.x - image_origin.x,
+                                  imgui_io.MousePos.y - image_origin.y};
+  }
+
   ImGuiMouseButton const activated_button =
     ImGui::IsItemActivated() &&
         imgui_context.ActiveIdSource == ImGuiInputSource_Mouse

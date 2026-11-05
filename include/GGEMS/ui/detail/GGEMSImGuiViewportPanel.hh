@@ -30,6 +30,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 
 #include <imgui.h>
 
@@ -48,6 +49,12 @@ public:
 
     /*! \brief Requested height in logical UI pixels. */
     std::uint32_t height{0U};
+
+    /*!
+     * \brief Hovered image position in logical pixels, absent for stale
+     * images.
+     */
+    std::optional<ImVec2> cursor_pixels;
 
     /*! \brief Horizontal orbit drag in logical UI pixels. */
     float orbit_delta_x_pixels{0.0F};
