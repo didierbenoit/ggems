@@ -247,8 +247,8 @@ float3 RotateAxis(float3 direction, uint axis) {
  * \param[in] vertex_id Draw-local index in [0, 192) or [0, 2880) for a sphere.
  * \return Clip position, outward World normal, and linear-light surface color.
  */
-[shader("vertex")]
-VertexOutput VertexMain(uint vertex_id/*! \cond */: SV_VertexID/*! \endcond */) {
+[shader("vertex")] VertexOutput
+VertexMain(uint vertex_id /*! \cond */ : SV_VertexID /*! \endcond */) {
   SurfaceVertex vertex;
 
   if (g_axes.primitive == 0) {
@@ -275,14 +275,14 @@ VertexOutput VertexMain(uint vertex_id/*! \cond */: SV_VertexID/*! \endcond */) 
   return output;
 }
 
-/*!
- * \brief Preserves the mild sphere and arrow depth cues in linear light.
- *
- * \param[in] input Rasterized position, normal, and linear-light color.
- * \return Opaque shaded RGBA color for the existing scene target.
- */
-[shader("fragment")]
-float4 FragmentMain(VertexOutput input) /*! \cond */: SV_Target/*! \endcond */ {
+  /*!
+   * \brief Preserves the mild sphere and arrow depth cues in linear light.
+   *
+   * \param[in] input Rasterized position, normal, and linear-light color.
+   * \return Opaque shaded RGBA color for the existing scene target.
+   */
+  [shader("fragment")] float4 FragmentMain(VertexOutput input) /*! \cond */
+    : SV_Target /*! \endcond */ {
   float3 normal = normalize(input.normal);
   float3 light = normalize(float3(0.45, 0.70, 1.0));
   float shade = 0.42 + (0.58 * saturate(dot(normal, light)));

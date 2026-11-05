@@ -61,6 +61,13 @@ struct Point3 {
   float z{0.0F};
 };
 
+constexpr std::array k_world_corners{
+  Point3{.x = -2, .y = -3, .z = -1}, Point3{.x = 2, .y = -3, .z = -1},
+  Point3{.x = -2, .y = 3, .z = -1},  Point3{.x = 2, .y = 3, .z = -1},
+  Point3{.x = -2, .y = -3, .z = 1},  Point3{.x = 2, .y = -3, .z = 1},
+  Point3{.x = -2, .y = 3, .z = 1},   Point3{.x = 2, .y = 3, .z = 1},
+};
+
 // =============================================================================
 // =============================================================================
 
@@ -102,6 +109,280 @@ auto ExpectMatrixNear(Matrix4Rows const &actual, Matrix4Rows const &expected)
 
 // =============================================================================
 // =============================================================================
+
+class GGEMSSceneCameraProjection
+    : public ::testing::TestWithParam<Camera::Projection> {};
+
+INSTANTIATE_TEST_SUITE_P(BothProjections, GGEMSSceneCameraProjection,
+                         ::testing::Values(Camera::Projection::Orthographic,
+                                           Camera::Projection::Perspective));
+
+// The three exact presets keep scientific axes fixed and explicitly define
+// the six signed axes on the positive-height Vulkan viewport.
+TEST_P(GGEMSSceneCameraProjection, ExactViewsProjectAllSignedWorldAxes) {
+  struct View {
+    Camera::ViewPlane plane;
+    std::array<float, 3> right;
+    std::array<float, 3> down;
+    std::array<float, 3> forward;
+  };
+  std::array const views{
+    View{
+      .plane = Camera::ViewPlane::XY,
+      .right = {1, 0, 0},
+      .down = {0, 1, 0},
+      .forward = {0, 0, -1},
+    },
+    View{
+      .plane = Camera::ViewPlane::XZ,
+      .right = {1, 0, 0},
+      .down = {0, 0, -1},
+      .forward = {0, -1, 0},
+    },
+    View{
+      .plane = Camera::ViewPlane::YZ,
+      .right = {0, 0, -1},
+      .down = {0, 1, 0},
+      .forward = {-1, 0, 0},
+    },
+  };
+  std::array const axes{
+    Point3{.x = 1},  Point3{.x = -1}, Point3{.y = 1},
+    Point3{.y = -1}, Point3{.z = 1},  Point3{.z = -1},
+  };
+  auto const dot = [](std::array<float, 3> const &axis, Point3 point) -> float {
+    return (axis[0] * point.x) + (axis[1] * point.y) + (axis[2] * point.z);
+  };
+  Camera camera{};
+  camera.SetViewportSize(800U, 800U);
+  camera.SetProjection(GetParam());
+  camera.FrameWorld({2.0, 3.0, 1.0});
+
+  for (auto const &view : views) {
+    SCOPED_TRACE(static_cast<int>(view.plane));
+    camera.Pan(61, -27);
+    camera.SetView(view.plane);
+    auto const state = camera.GetDiagnostics();
+    EXPECT_EQ(state.projection, GetParam());
+    EXPECT_EQ(state.target_m, (std::array<float, 3>{}));
+    for (std::size_t component = 0; component < 3; ++component) {
+      EXPECT_NEAR(state.right[component], view.right[component], k_tolerance);
+      EXPECT_NEAR(state.up[component], view.down[component], k_tolerance);
+      EXPECT_NEAR(state.forward[component], view.forward[component],
+                  k_tolerance);
+    }
+    auto const matrix = camera.BuildWorldToClipMatrix();
+    float const distance =
+      GetParam() == Camera::Projection::Perspective ? state.distance_m : 1.0F;
+    for (auto const &axis : axes) {
+      auto const projected = TransformPoint(matrix, axis);
+      float const expected_w = GetParam() == Camera::Projection::Perspective
+                                 ? distance + dot(view.forward, axis)
+                                 : 1.0F;
+      EXPECT_NEAR(projected[3], expected_w, k_tolerance);
+      EXPECT_NEAR(projected[0] / projected[3],
+                  dot(view.right, axis) * state.zoom * distance / expected_w,
+                  k_tolerance);
+      EXPECT_NEAR(projected[1] / projected[3],
+                  dot(view.down, axis) * state.zoom * distance / expected_w,
+                  k_tolerance);
+      EXPECT_GT(projected[2], 0.0F);
+      EXPECT_LT(projected[2], projected[3]);
+    }
+  }
+}
+
+// The perspective divide must change apparent size with distance, while near
+// and far map to Vulkan zero and one rather than an orthographic rescaling.
+TEST(GGEMSSceneCamera, PerspectiveUsesCameraDepthAndVulkanNearFarPlanes) {
+  Camera camera{};
+  camera.SetViewportSize(1600U, 800U);
+  camera.FrameWorld({2.0, 3.0, 1.0});
+  camera.SetView(Camera::ViewPlane::YZ);
+  camera.SetProjection(Camera::Projection::Perspective);
+  auto const state = camera.GetDiagnostics();
+  auto const matrix = camera.BuildWorldToClipMatrix();
+  EXPECT_NEAR(state.vertical_fov_degrees, 45.0F, k_tolerance);
+  EXPECT_GT(state.near_m, 0.0F);
+  EXPECT_GT(state.far_m, state.near_m);
+
+  auto const near_point =
+    TransformPoint(matrix, Point3{.x = state.distance_m - state.near_m});
+  auto const far_point =
+    TransformPoint(matrix, Point3{.x = state.distance_m - state.far_m});
+  EXPECT_NEAR(near_point[3], state.near_m, k_tolerance);
+  EXPECT_NEAR(far_point[3], state.far_m, k_tolerance);
+  EXPECT_NEAR(near_point[2] / near_point[3], 0.0F, k_tolerance);
+  EXPECT_NEAR(far_point[2] / far_point[3], 1.0F, k_tolerance);
+
+  auto const front = TransformPoint(matrix, Point3{.x = 1, .y = 1, .z = 1});
+  auto const back = TransformPoint(matrix, Point3{.x = -1, .y = 1, .z = 1});
+  EXPECT_NEAR(front[3], state.distance_m - 1.0F, k_tolerance);
+  EXPECT_NEAR(back[3], state.distance_m + 1.0F, k_tolerance);
+  EXPECT_GT(front[1] / front[3], back[1] / back[3]);
+  EXPECT_LT(front[2] / front[3], back[2] / back[3]);
+  EXPECT_NEAR(front[0] / front[1], -0.5F, k_tolerance);
+}
+
+// Centered strong zoom narrows the FOV after the eye reaches its safe distance.
+TEST(GGEMSSceneCamera, PerspectiveHighZoomStaysOutsideWorld) {
+  Camera camera{};
+  camera.SetViewportSize(800U, 800U);
+  camera.FrameWorld({2.0, 3.0, 1.0});
+  camera.SetProjection(Camera::Projection::Perspective);
+  auto const before = camera.GetDiagnostics();
+  camera.ZoomBy(20);
+  auto const after = camera.GetDiagnostics();
+  EXPECT_GT(after.zoom, before.zoom);
+  EXPECT_GT(after.distance_m, std::sqrt(14.0F));
+  EXPECT_LT(after.vertical_fov_degrees, before.vertical_fov_degrees);
+  EXPECT_GT(after.near_m, 0.0F);
+  EXPECT_GT(after.far_m, after.near_m);
+  EXPECT_EQ(after.target_m, before.target_m);
+}
+
+// Presets and reset reframe navigation but retain the selected projection.
+// Returning to the default view must recover the same fitted matrix.
+TEST_P(GGEMSSceneCameraProjection, ResetPreservesProjectionAndDefaultFraming) {
+  Camera camera{};
+  EXPECT_EQ(camera.GetDiagnostics().projection,
+            Camera::Projection::Orthographic);
+  camera.SetViewportSize(900U, 700U);
+  camera.SetProjection(GetParam());
+  camera.FrameWorld({2.0, 3.0, 1.0});
+  auto const original = camera.BuildWorldToClipMatrix();
+  camera.SetView(Camera::ViewPlane::XZ);
+  camera.OrbitByPixels(51, 27);
+  camera.Pan(-71, 43);
+  camera.ZoomBy(5);
+  camera.Reset();
+  auto const reset = camera.GetDiagnostics();
+  EXPECT_EQ(reset.projection, GetParam());
+  EXPECT_NEAR(reset.yaw_degrees, 300.0F, 1.0e-4F);
+  EXPECT_NEAR(reset.pitch_degrees, -25.0F, k_tolerance);
+  EXPECT_EQ(reset.target_m, (std::array<float, 3>{}));
+  ExpectMatrixNear(camera.BuildWorldToClipMatrix(), original);
+}
+
+// At either exact pole, outward pitch clamps and inward drag moves by the
+// requested 0.2 degrees. Horizontal motion has a continuous screen orientation.
+TEST_P(GGEMSSceneCameraProjection,
+       PoleOrbitRemainsContinuousAndKeepsDragSigns) {
+  Camera camera{};
+  camera.SetProjection(GetParam());
+  camera.FrameWorld({2.0, 3.0, 1.0});
+  for (float pole : {-90.0F, 90.0F}) {
+    SCOPED_TRACE(pole);
+    camera.SetOrbitAngles(270.0F, pole);
+    auto const before = camera.GetDiagnostics();
+    EXPECT_FLOAT_EQ(before.forward[0], 0.0F);
+    EXPECT_FLOAT_EQ(before.forward[2], 0.0F);
+    EXPECT_FLOAT_EQ(before.forward[1], pole > 0 ? -1.0F : 1.0F);
+    camera.OrbitByPixels(1.0F, 0.0F);
+    auto const horizontal = camera.GetDiagnostics();
+    EXPECT_NEAR(horizontal.yaw_degrees, 269.8F, 1.0e-4F);
+    EXPECT_EQ(horizontal.forward, before.forward);
+    EXPECT_GT(horizontal.right[0], 0.999F);
+
+    camera.OrbitByPixels(0.0F, pole > 0 ? -1.0F : 1.0F);
+    EXPECT_NEAR(camera.GetDiagnostics().pitch_degrees, pole, k_tolerance);
+    camera.OrbitByPixels(0.0F, pole > 0 ? 1.0F : -1.0F);
+    auto const inside = camera.GetDiagnostics();
+    EXPECT_NEAR(std::abs(inside.pitch_degrees), 89.8F, 1.0e-4F);
+    EXPECT_GT(std::abs(inside.forward[1]), 0.999F);
+    EXPECT_GT(inside.right[0], 0.999F);
+    auto const matrix = camera.BuildWorldToClipMatrix();
+    for (float value : matrix.row_0) {
+      EXPECT_TRUE(std::isfinite(value));
+    }
+    for (float value : matrix.row_1) {
+      EXPECT_TRUE(std::isfinite(value));
+    }
+    for (float value : matrix.row_2) {
+      EXPECT_TRUE(std::isfinite(value));
+    }
+    for (float value : matrix.row_3) {
+      EXPECT_TRUE(std::isfinite(value));
+    }
+  }
+}
+
+// Panning follows the same pixel displacement at the target plane in either
+// projection. Switching modes keeps that plane's scale, orbit, and target.
+TEST_P(GGEMSSceneCameraProjection, PanAndProjectionSwitchKeepTargetPlaneScale) {
+  Camera camera{};
+  camera.SetViewportSize(1000U, 500U);
+  camera.FrameWorld({2.0, 3.0, 1.0});
+  camera.SetView(Camera::ViewPlane::XY);
+  camera.SetProjection(GetParam());
+  camera.Pan(100, 50);
+  auto const origin = TransformPoint(camera.BuildWorldToClipMatrix(), Point3{});
+  EXPECT_NEAR(origin[0] / origin[3], 0.2F, k_tolerance);
+  EXPECT_NEAR(origin[1] / origin[3], 0.2F, k_tolerance);
+  camera.ZoomBy(20);
+  auto const before = camera.GetDiagnostics();
+  Point3 const target{
+    .x = before.target_m[0],
+    .y = before.target_m[1],
+    .z = before.target_m[2],
+  };
+  Point3 const offset{
+    .x = target.x + (before.right[0] / before.zoom),
+    .y = target.y + (before.right[1] / before.zoom),
+    .z = target.z + (before.right[2] / before.zoom),
+  };
+  for (auto projection :
+       {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
+    camera.SetProjection(projection);
+    auto const state = camera.GetDiagnostics();
+    EXPECT_EQ(state.target_m, before.target_m);
+    EXPECT_FLOAT_EQ(state.zoom, before.zoom);
+    EXPECT_FLOAT_EQ(state.yaw_degrees, before.yaw_degrees);
+    EXPECT_FLOAT_EQ(state.pitch_degrees, before.pitch_degrees);
+    auto const matrix = camera.BuildWorldToClipMatrix();
+    auto const center = TransformPoint(matrix, target);
+    auto const edge = TransformPoint(matrix, offset);
+    EXPECT_NEAR(center[0] / center[3], 0.0F, k_tolerance);
+    EXPECT_NEAR(center[1] / center[3], 0.0F, k_tolerance);
+    EXPECT_NEAR(edge[0] / edge[3], 0.5F, k_tolerance);
+    EXPECT_NEAR(edge[1] / edge[3], 0.0F, k_tolerance);
+  }
+}
+
+// Zoom may intentionally crop XY, but World must remain inside the depth
+// interval even after a large pan followed by orbit and an aspect change.
+TEST_P(GGEMSSceneCameraProjection, StrongNavigationKeepsWorldDepthVisible) {
+  Camera camera{};
+  camera.SetProjection(GetParam());
+  for (double scale : {1.0e-9, 1.0, 1.0e6}) {
+    SCOPED_TRACE(scale);
+    camera.SetViewportSize(900U, 700U);
+    camera.FrameWorld({2.0 * scale, 3.0 * scale, scale});
+    camera.Pan(1800, -1200);
+    camera.OrbitByPixels(280, -60);
+    camera.ZoomBy(35);
+    camera.SetViewportSize(300U, 800U);
+    auto const state = camera.GetDiagnostics();
+    auto const matrix = camera.BuildWorldToClipMatrix();
+    for (auto const &point : k_world_corners) {
+      auto const corner =
+        TransformPoint(matrix, Point3{
+                                 .x = point.x * static_cast<float>(scale),
+                                 .y = point.y * static_cast<float>(scale),
+                                 .z = point.z * static_cast<float>(scale),
+                               });
+      EXPECT_GT(corner[3], 0.0F);
+      EXPECT_GT(corner[2] / corner[3], 0.0F);
+      EXPECT_LT(corner[2] / corner[3], 1.0F);
+    }
+    if (GetParam() == Camera::Projection::Perspective) {
+      EXPECT_GT(state.near_m, 0.0F);
+      EXPECT_GT(state.far_m, state.near_m);
+      EXPECT_GT(state.vertical_fov_degrees, 0.0F);
+      EXPECT_LE(state.vertical_fov_degrees, 45.0F + k_tolerance);
+    }
+  }
+}
 
 // Reset must undo prior pan, orbit, and zoom and recover the independently
 // expected view.
@@ -375,24 +656,24 @@ TEST(GGEMSSceneCamera, ZoomScalesXYWithoutChangingDepth) {
 
 // Positive and negative pitch limits must prevent the camera from flipping over
 // its poles.
-TEST(GGEMSSceneCamera, PitchIsClampedToEightyFiveDegrees) {
+TEST(GGEMSSceneCamera, PitchIsClampedToExactNinetyDegreePoles) {
   Camera positive_over_limit{};
-  positive_over_limit.SetOrbitAngles(0.0F, 90.0F);
+  positive_over_limit.SetOrbitAngles(0.0F, 100.0F);
   positive_over_limit.SetZoom(1.0F);
 
   Camera positive_limit{};
-  positive_limit.SetOrbitAngles(0.0F, 85.0F);
+  positive_limit.SetOrbitAngles(0.0F, 90.0F);
   positive_limit.SetZoom(1.0F);
 
   ExpectMatrixNear(positive_over_limit.BuildWorldToClipMatrix(),
                    positive_limit.BuildWorldToClipMatrix());
 
   Camera negative_over_limit{};
-  negative_over_limit.SetOrbitAngles(0.0F, -90.0F);
+  negative_over_limit.SetOrbitAngles(0.0F, -100.0F);
   negative_over_limit.SetZoom(1.0F);
 
   Camera negative_limit{};
-  negative_limit.SetOrbitAngles(0.0F, -85.0F);
+  negative_limit.SetOrbitAngles(0.0F, -90.0F);
   negative_limit.SetZoom(1.0F);
 
   ExpectMatrixNear(negative_over_limit.BuildWorldToClipMatrix(),
@@ -489,10 +770,11 @@ TEST(GGEMSSceneCamera, InvalidAngularInputsPreserveThePreviousView) {
 // =============================================================================
 
 // World corners stay visible across physical scales, orbit and viewport resize.
-TEST(GGEMSSceneCamera, FramesWorldAtSmallAndLargePhysicalScales) {
+TEST_P(GGEMSSceneCameraProjection, FramesWorldAtSmallAndLargePhysicalScales) {
   for (double scale : {1.0e-9, 1.0, 1.0e6}) {
     SCOPED_TRACE(scale);
     Camera camera{};
+    camera.SetProjection(GetParam());
     camera.SetViewportSize(1200U, 700U);
     camera.FrameWorld({2.0 * scale, 3.0 * scale, scale});
 
@@ -506,21 +788,18 @@ TEST(GGEMSSceneCamera, FramesWorldAtSmallAndLargePhysicalScales) {
       camera.Orbit(37.0F, -12.0F);
       auto const matrix = camera.BuildWorldToClipMatrix();
 
-      for (float x : {-2.0F, 2.0F}) {
-        for (float y : {-3.0F, 3.0F}) {
-          for (float z : {-1.0F, 1.0F}) {
-            auto const point =
-              TransformPoint(matrix, Point3{
-                                       .x = x * static_cast<float>(scale),
-                                       .y = y * static_cast<float>(scale),
-                                       .z = z * static_cast<float>(scale),
-                                     });
-            EXPECT_LT(std::abs(point[0]), 1.0F);
-            EXPECT_LT(std::abs(point[1]), 1.0F);
-            EXPECT_GT(point[2], 0.0F);
-            EXPECT_LT(point[2], 1.0F);
-          }
-        }
+      for (auto const &corner : k_world_corners) {
+        auto const point =
+          TransformPoint(matrix, Point3{
+                                   .x = corner.x * static_cast<float>(scale),
+                                   .y = corner.y * static_cast<float>(scale),
+                                   .z = corner.z * static_cast<float>(scale),
+                                 });
+        EXPECT_GT(point[3], 0.0F);
+        EXPECT_LT(std::abs(point[0] / point[3]), 1.0F);
+        EXPECT_LT(std::abs(point[1] / point[3]), 1.0F);
+        EXPECT_GT(point[2], 0.0F);
+        EXPECT_LT(point[2], point[3]);
       }
     }
   }

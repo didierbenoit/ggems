@@ -68,11 +68,20 @@ inline constexpr char const *k_camera_window_name =
 [[nodiscard]] auto GetMainDockspaceID() -> ImGuiID;
 
 /*!
- * \brief Checks for a usable dockspace or saved panel placement.
+ * \brief Checks for a usable saved panel placement.
  *
- * \return True when a dock node or usable window settings exist.
+ * \return True when at least one panel has usable window settings.
  */
 [[nodiscard]] auto HasSavedLayout() -> bool;
+
+/*!
+ * \brief Restores panel placements or creates the default docking layout.
+ *
+ * A missing Camera joins the saved Inspector dock when available. Existing
+ * Camera settings, including a floating placement, are preserved.
+ * \param[in] dockspace_size Available dockspace size in logical UI pixels.
+ */
+auto InitializeLayout(ImVec2 const &dockspace_size) -> void;
 
 /*!
  * \brief Replaces the main docking tree with the default panel layout.

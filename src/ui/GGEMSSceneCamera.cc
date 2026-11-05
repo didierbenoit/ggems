@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Implements the orthographic scene camera and pixel-based controls.
+ * \brief Implements scene projections, exact views, and pixel-based controls.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -41,7 +41,10 @@ namespace ggems::ui::detail {
 namespace {
 /*! \brief Maximum absolute orbit pitch, in radians. */
 constexpr float k_max_pitch_radians =
-  static_cast<float>(units::ToRadians(units::MakeDegrees(85.0L)));
+  static_cast<float>(units::ToRadians(units::MakeDegrees(90.0L)));
+
+/*! \brief Tangent of half the maximum 45-degree perspective vertical FOV. */
+constexpr float k_perspective_half_fov_tangent{0.414213562373095F};
 
 /*! \brief Orbit sensitivity in degrees per logical drag pixel. */
 constexpr float k_orbit_degrees_per_pixel{0.20F};
@@ -51,6 +54,29 @@ constexpr float k_orbit_degrees_per_pixel{0.20F};
 // =============================================================================
 
 GGEMSSceneCamera::GGEMSSceneCamera() noexcept { Reset(); }
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSceneCamera::SetProjection(Projection projection) noexcept -> void {
+  projection_ = projection;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSceneCamera::SetView(ViewPlane plane) noexcept -> void {
+  Reset();
+  switch (plane) {
+  case ViewPlane::XY:
+    SetOrbitAngles(270.0F, 0.0F);
+    break;
+  case ViewPlane::XZ:
+    SetOrbitAngles(270.0F, 90.0F);
+    break;
+  case ViewPlane::YZ:
+    SetOrbitAngles(0.0F, 0.0F);
+    break;
+  }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -210,6 +236,15 @@ auto GGEMSSceneCamera::BuildWorldToClipMatrix() const noexcept
   float horizontal_scale = zoom_ * inverse_aspect_ratio;
   float vertical_scale = zoom_;
 
+  PerspectiveDepth const perspective = projection_ == Projection::Perspective
+                                         ? BuildPerspectiveDepth(basis)
+                                         : PerspectiveDepth{};
+
+  if (projection_ == Projection::Perspective) {
+    horizontal_scale *= perspective.distance_m;
+    vertical_scale *= perspective.distance_m;
+  }
+
   Matrix4Rows matrix{};
 
   matrix.row_0[0] = right.x * horizontal_scale;
@@ -225,12 +260,29 @@ auto GGEMSSceneCamera::BuildWorldToClipMatrix() const noexcept
   matrix.row_2[0] = forward.x * depth_scale_;
   matrix.row_2[1] = forward.y * depth_scale_;
   matrix.row_2[2] = forward.z * depth_scale_;
-  matrix.row_2[3] = 0.5F - (Dot(forward, target_m_) * depth_scale_);
+  matrix.row_2[3] = world_radius_m_ > 0.0F
+                      ? 0.5F
+                      : 0.5F - (Dot(forward, target_m_) * depth_scale_);
 
   matrix.row_3[0] = 0.0F;
   matrix.row_3[1] = 0.0F;
   matrix.row_3[2] = 0.0F;
   matrix.row_3[3] = 1.0F;
+
+  if (projection_ == Projection::Perspective) {
+    float const eye_depth = perspective.distance_m - Dot(forward, target_m_);
+    float const depth_multiplier =
+      perspective.far_m / (perspective.far_m - perspective.near_m);
+
+    matrix.row_2 = {
+      forward.x * depth_multiplier,
+      forward.y * depth_multiplier,
+      forward.z * depth_multiplier,
+      (eye_depth - perspective.near_m) * depth_multiplier,
+    };
+
+    matrix.row_3 = {forward.x, forward.y, forward.z, eye_depth};
+  }
 
   return matrix;
 }
@@ -240,11 +292,24 @@ auto GGEMSSceneCamera::BuildWorldToClipMatrix() const noexcept
 auto GGEMSSceneCamera::GetDiagnostics() const noexcept -> Diagnostics {
   CameraBasis const basis = BuildCameraBasis();
 
+  PerspectiveDepth const perspective = projection_ == Projection::Perspective
+                                         ? BuildPerspectiveDepth(basis)
+                                         : PerspectiveDepth{};
+
   return Diagnostics{
     .yaw_degrees = yaw_radians_ * (180.0F / std::numbers::pi_v<float>),
     .pitch_degrees = pitch_radians_ * (180.0F / std::numbers::pi_v<float>),
     .target_m = {target_m_.x, target_m_.y, target_m_.z},
+    .projection = projection_,
     .zoom = zoom_,
+    .vertical_fov_degrees =
+      projection_ == Projection::Perspective
+        ? 2.0F * std::atan(1.0F / (zoom_ * perspective.distance_m)) *
+            (180.0F / std::numbers::pi_v<float>)
+        : 0.0F,
+    .distance_m = perspective.distance_m,
+    .near_m = perspective.near_m,
+    .far_m = perspective.far_m,
     .viewport_width = viewport_width_,
     .viewport_height = viewport_height_,
     .right = {basis.right.x, basis.right.y, basis.right.z},
@@ -257,7 +322,9 @@ auto GGEMSSceneCamera::GetDiagnostics() const noexcept -> Diagnostics {
 
 auto GGEMSSceneCamera::BuildCameraBasis() const noexcept
   -> GGEMSSceneCamera::CameraBasis {
-  float cos_pitch = std::cos(pitch_radians_);
+  float const cos_pitch = std::abs(pitch_radians_) == k_max_pitch_radians
+                            ? 0.0F
+                            : std::cos(pitch_radians_);
 
   Vector3 camera_offset{
     .x = std::cos(-yaw_radians_) * cos_pitch,
@@ -271,18 +338,34 @@ auto GGEMSSceneCamera::BuildCameraBasis() const noexcept
     .z = -camera_offset.z,
   });
 
-  Vector3 world_up{.x = 0.0F, .y = 1.0F, .z = 0.0F};
-
-  Vector3 right = Normalize(Cross(forward, world_up));
-
-  if (std::abs(right.x) < 1.0e-6F && std::abs(right.y) < 1.0e-6F &&
-      std::abs(right.z) < 1.0e-6F) {
-    right = Vector3{.x = 1.0F, .y = 0.0F, .z = 0.0F};
-  }
+  // Yaw defines a continuous screen frame even at the two exact Y poles.
+  Vector3 right = Normalize(Vector3{
+    .x = -std::sin(yaw_radians_),
+    .y = 0.0F,
+    .z = -std::cos(yaw_radians_),
+  });
 
   Vector3 up_reference = Cross(right, forward);
 
   return CameraBasis{.right = right, .up = up_reference, .forward = forward};
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSceneCamera::BuildPerspectiveDepth(
+  CameraBasis const &basis) const noexcept -> PerspectiveDepth {
+  float const radius = world_radius_m_ > 0.0F ? world_radius_m_ : 1.0F;
+  float const target_depth = Dot(basis.forward, target_m_);
+  float const distance =
+    std::max(1.0F / (zoom_ * k_perspective_half_fov_tangent),
+             target_depth + (1.1F * radius));
+  float const world_depth = distance - target_depth;
+
+  return PerspectiveDepth{
+    .distance_m = distance,
+    .near_m = (world_depth - radius) * 0.5F,
+    .far_m = world_depth + (1.05F * radius),
+  };
 }
 
 // -----------------------------------------------------------------------------

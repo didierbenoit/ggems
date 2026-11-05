@@ -73,8 +73,7 @@ ConstantBuffer<GeometryPushConstants> g_geometry;
  * \param[in] input Wireframe endpoint in occurrence-local meters.
  * \return Homogeneous clip position and the occurrence's linear-light RGBA.
  */
-[shader("vertex")]
-VertexOutput VertexMain(VertexInput input) {
+[shader("vertex")] VertexOutput VertexMain(VertexInput input) {
   float4 position = float4(input.position, 1.0);
   VertexOutput output;
   output.position = float4(dot(g_geometry.local_to_clip_row_0, position),
@@ -85,11 +84,13 @@ VertexOutput VertexMain(VertexInput input) {
   return output;
 }
 
-/*!
- * \brief Publishes the interpolated geometry display color.
- *
- * \param[in] input Rasterized clip position and linear-light RGBA.
- * \return Interpolated RGBA for the common scene color attachment.
- */
-[shader("fragment")]
-float4 FragmentMain(VertexOutput input) /*! \cond */: SV_Target/*! \endcond */ { return input.color; }
+  /*!
+   * \brief Publishes the interpolated geometry display color.
+   *
+   * \param[in] input Rasterized clip position and linear-light RGBA.
+   * \return Interpolated RGBA for the common scene color attachment.
+   */
+  [shader("fragment")] float4 FragmentMain(VertexOutput input) /*! \cond */
+    : SV_Target /*! \endcond */ {
+  return input.color;
+}

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Maps scene coordinates in meters to an orthographic clip volume.
+ * \brief Maps scene meters to orthographic or perspective clip coordinates.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -37,6 +37,24 @@ namespace ggems::ui::detail {
 /*! \brief Maintains orbit, pan, and zoom for scene presentation. */
 class GGEMSSceneCamera {
 public:
+  /*! \brief Selects the projection without changing target-plane scale. */
+  enum class Projection : std::uint8_t {
+    /*! \brief Parallel rays, the default projection. */
+    Orthographic,
+    /*! \brief Perspective rays with an automatic distance and FOV. */
+    Perspective,
+  };
+
+  /*! \brief Selects an exact anatomical plane without changing World axes. */
+  enum class ViewPlane : std::uint8_t {
+    /*! \brief From +Z; screen right +X and screen up -Y. */
+    XY,
+    /*! \brief From +Y; screen right +X and screen up +Z. */
+    XZ,
+    /*! \brief From +X; screen right -Z and screen up -Y. */
+    YZ,
+  };
+
   /*! \brief Stores the four rows of the world-to-clip transform. */
   struct Matrix4Rows {
     /*! \brief Homogeneous row producing horizontal clip coordinates. */
@@ -48,7 +66,7 @@ public:
     /*! \brief Homogeneous row producing Vulkan clip depth. */
     std::array<float, 4> row_2{0.0F, 0.0F, 1.0F, 0.0F};
 
-    /*! \brief Homogeneous row preserving the orthographic w coordinate. */
+    /*! \brief Produces one for orthographic or camera depth for perspective. */
     std::array<float, 4> row_3{0.0F, 0.0F, 0.0F, 1.0F};
   };
 
@@ -63,8 +81,23 @@ public:
     /*! \brief Camera target in world-space meters, ordered X, Y, Z. */
     std::array<float, 3> target_m{};
 
-    /*! \brief Orthographic vertical scale applied to world meters. */
+    /*! \brief Active projection mode. */
+    Projection projection{Projection::Orthographic};
+
+    /*! \brief Vertical clip scale per meter at the camera target plane. */
     float zoom{};
+
+    /*! \brief Actual perspective vertical FOV; zero in orthographic mode. */
+    float vertical_fov_degrees{};
+
+    /*! \brief Perspective camera-to-target distance; zero in orthographic. */
+    float distance_m{};
+
+    /*! \brief Positive perspective near distance; zero in orthographic. */
+    float near_m{};
+
+    /*! \brief Positive perspective far distance; zero in orthographic. */
+    float far_m{};
 
     /*! \brief Current projection width in logical pixels. */
     std::uint32_t viewport_width{};
@@ -75,7 +108,7 @@ public:
     /*! \brief Unit direction toward screen right, ordered X, Y, Z. */
     std::array<float, 3> right{};
 
-    /*! \brief Unit camera vertical direction, ordered X, Y, Z. */
+    /*! \brief Unit clip +Y direction; screen up is its negative in Vulkan. */
     std::array<float, 3> up{};
 
     /*! \brief Unit direction toward the target, ordered X, Y, Z. */
@@ -84,6 +117,27 @@ public:
 
   /*! \brief Initializes the camera at its default view. */
   GGEMSSceneCamera() noexcept;
+
+  /*!
+   * \brief Changes projection while preserving target, orbit, and scale.
+   *
+   * Perspective uses at most 45 degrees vertically. Distance keeps World in
+   * front of the camera; closer zoom narrows the actual FOV instead of entering
+   * World. The diagnostics report these automatically coupled parameters.
+   *
+   * \param[in] projection Requested projection mode.
+   */
+  auto SetProjection(Projection projection) noexcept -> void;
+
+  /*!
+   * \brief Recenters and frames World along an exact anatomical direction.
+   *
+   * Preserves the projection. The ViewPlane documentation defines screen signs
+   * for the existing positive-height Vulkan viewport; World axes never change.
+   *
+   * \param[in] plane Plane to view from its documented positive normal.
+   */
+  auto SetView(ViewPlane plane) noexcept -> void;
 
   /*!
    * \brief Updates the aspect ratio for a nonzero viewport extent.
@@ -100,13 +154,13 @@ public:
    * \brief Sets yaw and clamps pitch to the supported orbit range.
    *
    * \param[in] yaw_degrees Yaw angle in degrees.
-   * \param[in] pitch_degrees Pitch angle in degrees, clamped to [-85, 85].
+   * \param[in] pitch_degrees Pitch angle in degrees, clamped to [-90, 90].
    * \throws std::bad_expected_access If an angle is not representable in Units.
    */
   auto SetOrbitAngles(float yaw_degrees, float pitch_degrees) -> void;
 
   /*!
-   * \brief Sets the orthographic scale with a scene-relative minimum.
+   * \brief Sets target-plane vertical scale with a scene-relative minimum.
    *
    * \param[in] zoom Requested vertical scale applied to world meters.
    */
@@ -154,11 +208,14 @@ public:
    */
   auto ZoomBy(float wheel_delta) noexcept -> void;
 
-  /*! \brief Restores the origin, default orbit, and World framing if loaded. */
+  /*! \brief Resets navigation and framing while preserving projection. */
   auto Reset() noexcept -> void;
 
   /*!
-   * \brief Builds the orthographic transform for the current view.
+   * \brief Builds the current projection with Vulkan depth in [0, 1].
+   *
+   * Loaded World bounds define depth independently of navigation. Orthographic
+   * depth stays centered on World; perspective planes enclose its sphere.
    *
    * \return Rows mapping world meters to homogeneous clip coordinates.
    */
@@ -231,6 +288,28 @@ private:
    */
   [[nodiscard]] auto BuildCameraBasis() const noexcept -> CameraBasis;
 
+  /*! \brief Stores perspective distances measured along the viewing axis. */
+  struct PerspectiveDepth {
+    /*! \brief Camera-to-target distance in meters. */
+    float distance_m{};
+
+    /*! \brief Positive near-plane distance in meters. */
+    float near_m{};
+
+    /*! \brief Far-plane distance enclosing World in meters. */
+    float far_m{};
+  };
+
+  /*!
+   * \brief Keeps World ahead of the eye and between positive depth planes.
+   *
+   * \param[in] basis Current orthonormal camera axes.
+   * \return Automatic target, near-plane, and far-plane distances in meters.
+   */
+  [[nodiscard]] auto
+  BuildPerspectiveDepth(CameraBasis const &basis) const noexcept
+    -> PerspectiveDepth;
+
   /*! \brief Current viewport width in logical pixels. */
   std::uint32_t viewport_width_{1U};
 
@@ -243,10 +322,13 @@ private:
   /*! \brief Orbit yaw in radians. */
   float yaw_radians_{};
 
-  /*! \brief Orbit pitch in radians, limited away from the poles. */
+  /*! \brief Orbit pitch in radians, including both exact poles. */
   float pitch_radians_{};
 
-  /*! \brief Orthographic vertical scale applied to world meters. */
+  /*! \brief Selected projection, preserved by navigation resets. */
+  Projection projection_{Projection::Orthographic};
+
+  /*! \brief Vertical clip scale per meter at the target plane. */
   float zoom_{};
 
   /*! \brief World-meter to clip-depth scale around depth 0.5. */

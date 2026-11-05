@@ -97,6 +97,10 @@ auto GGEMSImGuiLayer::BuildFrame(
   }
 
   if (workbench.show_inspector_panel) {
+    if (menu_actions.reset_layout) {
+      ImGui::SetNextWindowFocus();
+    }
+
     detail::BuildInspectorPanel(workbench.show_inspector_panel,
                                 workbench.selected_scene_item);
   }
@@ -132,10 +136,7 @@ auto GGEMSImGuiLayer::BuildMainDockspace(detail::GGEMSWorkbenchState &workbench)
   MenuActions const menu_actions = BuildMainMenuBar(workbench);
 
   if (!layout_initialized_) {
-    if (!detail::HasSavedLayout()) {
-      detail::BuildDefaultLayout(viewport->Size);
-    }
-
+    detail::InitializeLayout(viewport->Size);
     layout_initialized_ = true;
   }
 

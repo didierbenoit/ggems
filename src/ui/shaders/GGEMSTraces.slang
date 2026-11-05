@@ -90,21 +90,20 @@ float4 TransformWorldPosition(float3 world_position) {
  * \param[in] input Host-packed World-meter position and RGBA color.
  * \return Clip-space vertex with the unchanged RGBA value.
  */
-[shader("vertex")]
-VertexOutput VertexMain(VertexInput input) {
+[shader("vertex")] VertexOutput VertexMain(VertexInput input) {
   VertexOutput output;
   output.position = TransformWorldPosition(input.position);
   output.color = input.color;
   return output;
 }
 
-/*!
- * \brief Publishes the interpolated diagnostic display color.
- *
- * \param[in] input Rasterized vertex outputs.
- * \return Interpolated RGBA fragment color.
- */
-[shader("fragment")]
-float4 FragmentMain(VertexOutput input) : SV_Target {
+  /*!
+   * \brief Publishes the interpolated diagnostic display color.
+   *
+   * \param[in] input Rasterized vertex outputs.
+   * \return Interpolated RGBA fragment color.
+   */
+  [shader("fragment")] float4 FragmentMain(VertexOutput input)
+    : SV_Target {
   return input.color;
 }

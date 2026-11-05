@@ -37,9 +37,11 @@
 
 #include <gtest/gtest.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 
@@ -55,7 +57,8 @@ protected:
     auto &imgui_io = ImGui::GetIO();
     imgui_io.IniFilename = nullptr;
     imgui_io.LogFilename = nullptr;
-    imgui_io.ConfigFlags = ImGuiConfigFlags_DockingEnable;
+    imgui_io.ConfigFlags =
+      ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
     imgui_io.DisplaySize = {1280.0F, 800.0F};
     imgui_io.DeltaTime = 1.0F / 60.0F;
     unsigned char *pixels{};
@@ -130,6 +133,39 @@ protected:
     }
   }
 
+  // Tab through the live widgets and activate the requested control with Space.
+  // No camera setters or synthetic widget return values participate.
+  auto Activate(char const *label) -> void {
+    auto *window =
+      ImGui::FindWindowByName(ggems::ui::detail::k_camera_window_name);
+    ASSERT_NE(window, nullptr);
+    auto const wanted = window->GetID(label);
+    auto &imgui_io = ImGui::GetIO();
+    if (GImGui->NavWindow != window) {
+      imgui_io.AddMousePosEvent(window->Pos.x + (window->Size.x * 0.5F),
+                                window->Pos.y + 10.0F);
+      Frame();
+      imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+      Frame();
+      imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+      Frame();
+    }
+    for (int attempt = 0; attempt < 24; ++attempt) {
+      imgui_io.AddKeyEvent(ImGuiKey_Tab, true);
+      Frame();
+      imgui_io.AddKeyEvent(ImGuiKey_Tab, false);
+      Frame();
+      if (GImGui->NavId == wanted) {
+        break;
+      }
+    }
+    ASSERT_EQ(GImGui->NavId, wanted) << label;
+    imgui_io.AddKeyEvent(ImGuiKey_Space, true);
+    Frame();
+    imgui_io.AddKeyEvent(ImGuiKey_Space, false);
+    Frame();
+  }
+
   ggems::ui::detail::GGEMSWorkbenchState workbench_;
   std::string displayed_text_;
 
@@ -143,7 +179,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   ExpectValues("Yaw (deg)", {300.0F});
   ExpectValues("Pitch (deg)", {-25.0F});
   ExpectValues("Target (m)", {0.0F, 0.0F, 0.0F});
-  ExpectValues("Zoom", {0.8F});
+  ExpectValues("Target scale (/m)", {0.8F});
   ExpectValues("Camera viewport (px)",
                {
                  static_cast<float>(workbench_.viewport.width),
@@ -315,6 +351,82 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   RecordProperty("event_trace_csv", trace.str());
   RecordProperty("maximum_yaw_increment_error_degrees",
                  std::to_string(maximum_yaw_increment_error));
+}
+
+// The actual buttons select exact anatomical views and report the resulting
+// camera state in the same frame; reset keeps the selected projection.
+TEST_F(GGEMSImGuiCameraDiagnostics, ViewButtonsAndResetApplyThroughImGui) {
+  Activate("XY");
+  ExpectValues("Yaw (deg)", {270.0F});
+  ExpectValues("Pitch (deg)", {0.0F});
+  EXPECT_NEAR(workbench_.camera.GetDiagnostics().forward[2], -1.0F, 1.0e-6F);
+  Activate("XZ");
+  ExpectValues("Pitch (deg)", {90.0F});
+  EXPECT_NEAR(workbench_.camera.GetDiagnostics().forward[1], -1.0F, 1.0e-6F);
+  Activate("YZ");
+  ExpectValues("Yaw (deg)", {0.0F});
+  ExpectValues("Pitch (deg)", {0.0F});
+  EXPECT_NEAR(workbench_.camera.GetDiagnostics().forward[0], -1.0F, 1.0e-6F);
+  Activate("Perspective");
+  Activate("Reset / free view");
+  ExpectValues("Yaw (deg)", {300.0F});
+  ExpectValues("Pitch (deg)", {-25.0F});
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
+            ggems::ui::detail::GGEMSSceneCamera::Projection::Perspective);
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       ProjectionControlsShowOnlyActiveModeParameters) {
+  EXPECT_TRUE(displayed_text_.contains("Mode: Orthographic"));
+  EXPECT_FALSE(displayed_text_.contains("Vertical FOV"));
+  auto const before = workbench_.camera.GetDiagnostics();
+  Activate("Perspective");
+  EXPECT_TRUE(displayed_text_.contains("Mode: Perspective"));
+  ExpectValues("Vertical FOV (deg)", {45.0F});
+  EXPECT_TRUE(displayed_text_.contains("Target distance (m)"));
+  EXPECT_TRUE(displayed_text_.contains("Near plane (m)"));
+  EXPECT_TRUE(displayed_text_.contains("Far plane (m)"));
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().target_m, before.target_m);
+  EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().zoom, before.zoom);
+  auto const perspective = workbench_.camera.BuildWorldToClipMatrix();
+  EXPECT_NE(perspective.row_3[0], 0.0F);
+  Activate("Orthographic");
+  EXPECT_TRUE(displayed_text_.contains("Mode: Orthographic"));
+  EXPECT_FALSE(displayed_text_.contains("Vertical FOV"));
+  EXPECT_FALSE(displayed_text_.contains("Target distance (m)"));
+  EXPECT_EQ(workbench_.camera.BuildWorldToClipMatrix().row_3[3], 1.0F);
+  EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().zoom, before.zoom);
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics, PerspectiveViewportRoutesOrbitPanAndWheel) {
+  Activate("Perspective");
+  auto &imgui_io = ImGui::GetIO();
+  imgui_io.AddMousePosEvent(100.0F, 100.0F);
+  Frame();
+  auto const before = workbench_.camera.GetDiagnostics();
+  imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+  Frame();
+  imgui_io.AddMousePosEvent(120.0F, 90.0F);
+  Frame();
+  ExpectValues("Applied orbit (px)", {20.0F, -10.0F});
+  EXPECT_NEAR(workbench_.camera.GetDiagnostics().yaw_degrees,
+              before.yaw_degrees - 4.0F, 1.0e-4F);
+  EXPECT_NEAR(workbench_.camera.GetDiagnostics().pitch_degrees,
+              before.pitch_degrees + 2.0F, 1.0e-4F);
+  imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+  Frame();
+  imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Middle, true);
+  Frame();
+  imgui_io.AddMousePosEvent(130.0F, 100.0F);
+  Frame();
+  ExpectValues("Applied pan (px)", {10.0F, 10.0F});
+  EXPECT_NE(workbench_.camera.GetDiagnostics().target_m, before.target_m);
+  imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Middle, false);
+  Frame();
+  imgui_io.AddMouseWheelEvent(0.0F, 1.0F);
+  Frame();
+  EXPECT_GT(workbench_.camera.GetDiagnostics().zoom, before.zoom);
+  EXPECT_TRUE(displayed_text_.contains("Mode: Perspective"));
 }
 
 } // namespace

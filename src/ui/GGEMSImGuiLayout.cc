@@ -88,11 +88,38 @@ auto GetMainDockspaceID() -> ImGuiID {
 // -----------------------------------------------------------------------------
 
 auto HasSavedLayout() -> bool {
-  if (ImGui::DockBuilderGetNode(GetMainDockspaceID()) != nullptr) {
-    return true;
+  return std::ranges::any_of(k_layout_window_names, IsUsableWindowSettings);
+}
+
+// -----------------------------------------------------------------------------
+
+auto InitializeLayout(ImVec2 const &dockspace_size) -> void {
+  if (!HasSavedLayout()) {
+    BuildDefaultLayout(dockspace_size);
+    return;
   }
 
-  return std::ranges::any_of(k_layout_window_names, IsUsableWindowSettings);
+  if (ImGui::FindWindowSettingsByID(ImHashStr(k_camera_window_name)) !=
+      nullptr) {
+    return;
+  }
+
+  ImGuiWindowSettings const *inspector =
+    ImGui::FindWindowSettingsByID(ImHashStr(k_inspector_window_name));
+
+  if (inspector == nullptr || inspector->DockId == 0U) {
+    return;
+  }
+
+  ImGuiDockNode *node = ImGui::DockBuilderGetNode(inspector->DockId);
+
+  if (node == nullptr || !node->IsLeafNode()) {
+    return;
+  }
+
+  ImGui::DockBuilderDockWindow(k_camera_window_name, inspector->DockId);
+  ImGui::DockBuilderFinish(node->ID);
+  ImGui::GetIO().WantSaveIniSettings = true;
 }
 
 // -----------------------------------------------------------------------------
@@ -122,6 +149,10 @@ auto BuildDefaultLayout(ImVec2 const &dockspace_size) -> void {
   ImGui::DockBuilderDockWindow(k_viewport_window_name, dockspace_main_id);
   ImGui::DockBuilderDockWindow(k_inspector_window_name, dock_right_id);
   ImGui::DockBuilderDockWindow(k_camera_window_name, dock_right_id);
+
+  // ImGui seeds each dock-tab identity with its window identity.
+  ImGui::DockBuilderGetNode(dock_right_id)->SelectedTabId =
+    ImHashStr("#TAB", 0U, ImHashStr(k_inspector_window_name));
 
   ImGui::DockBuilderFinish(dockspace_id);
 }

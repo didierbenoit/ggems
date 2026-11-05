@@ -82,14 +82,14 @@ auto BuildInspectorPanel(bool &show_window,
                          GGEMSWorkbenchState::SceneSelection selection) -> void;
 
 /*!
- * \brief Displays current camera state and this frame's applied input.
+ * \brief Selects the view and projection and displays current camera input.
  *
  * \param[in,out] show_window Panel visibility, updated when the window closes.
- * \param[in] camera Camera after this frame's controls and reset.
+ * \param[in,out] camera Camera updated by view and projection controls.
  * \param[in] camera_input Deltas passed to the camera this frame, or zero
  *   when the viewport is hidden.
  */
-auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera const &camera,
+auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera &camera,
                       GGEMSImGuiViewportPanel::Result const &camera_input)
   -> void;
 

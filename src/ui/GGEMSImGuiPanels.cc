@@ -744,7 +744,7 @@ auto BuildInspectorPanel(bool &show_window,
 
 // -----------------------------------------------------------------------------
 
-auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera const &camera,
+auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera &camera,
                       GGEMSImGuiViewportPanel::Result const &camera_input)
   -> void {
   if (!ImGui::Begin(k_camera_window_name, &show_window,
@@ -753,15 +753,75 @@ auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera const &camera,
     return;
   }
 
+  ImGui::SeparatorText("View");
+  if (ImGui::Button("XY")) {
+    camera.SetView(GGEMSSceneCamera::ViewPlane::XY);
+  }
+
+  ImGui::SetItemTooltip("From +Z; screen right +X, screen up -Y.");
+  ImGui::SameLine();
+
+  if (ImGui::Button("XZ")) {
+    camera.SetView(GGEMSSceneCamera::ViewPlane::XZ);
+  }
+
+  ImGui::SetItemTooltip("From +Y; screen right +X, screen up +Z.");
+  ImGui::SameLine();
+
+  if (ImGui::Button("YZ")) {
+    camera.SetView(GGEMSSceneCamera::ViewPlane::YZ);
+  }
+
+  ImGui::SetItemTooltip("From +X; screen right -Z, screen up -Y.");
+
+  if (ImGui::Button("Reset / free view")) {
+    camera.Reset();
+  }
+
+  ImGui::SetItemTooltip("Restore World framing, yaw 300 deg and pitch -25 deg. "
+                        "Keep the selected projection.");
+
+  ImGui::SeparatorText("Projection");
+
+  auto const projection = camera.GetDiagnostics().projection;
+
+  if (ImGui::RadioButton("Orthographic",
+                         projection ==
+                           GGEMSSceneCamera::Projection::Orthographic)) {
+    camera.SetProjection(GGEMSSceneCamera::Projection::Orthographic);
+  }
+
+  if (ImGui::RadioButton("Perspective",
+                         projection ==
+                           GGEMSSceneCamera::Projection::Perspective)) {
+    camera.SetProjection(GGEMSSceneCamera::Projection::Perspective);
+  }
+
   auto const diagnostics = camera.GetDiagnostics();
   ImGuiIO const &imgui_io = ImGui::GetIO();
+
+  bool const perspective =
+    diagnostics.projection == GGEMSSceneCamera::Projection::Perspective;
+
+  ImGui::Text("Mode: %s", perspective ? "Perspective" : "Orthographic");
+
+  if (perspective) {
+    ImGui::Text("Vertical FOV (deg): %.1f", diagnostics.vertical_fov_degrees);
+    ImGui::SetItemTooltip("At most 45 degrees. Close zoom narrows the field of "
+                          "view to keep the World in front of the camera.");
+    ImGui::TextWrapped("Target distance (m): %.6g", diagnostics.distance_m);
+    ImGui::Text("Near plane (m): %.6g", diagnostics.near_m);
+    ImGui::Text("Far plane (m): %.6g", diagnostics.far_m);
+  }
 
   ImGui::SeparatorText("Camera");
   ImGui::Text("Yaw (deg): %+.3f", diagnostics.yaw_degrees);
   ImGui::Text("Pitch (deg): %+.3f", diagnostics.pitch_degrees);
   ImGui::Text("Target (m): (%+.4f, %+.4f, %+.4f)", diagnostics.target_m[0],
               diagnostics.target_m[1], diagnostics.target_m[2]);
-  ImGui::Text("Zoom: %.6g", diagnostics.zoom);
+  ImGui::Text("Target scale (/m): %.6g", diagnostics.zoom);
+  ImGui::SetItemTooltip("Vertical clip scale per meter at the target plane, "
+                        "shared by both projections.");
   ImGui::Text("Camera viewport (px): %u x %u", diagnostics.viewport_width,
               diagnostics.viewport_height);
 
@@ -790,7 +850,7 @@ auto BuildCameraPanel(bool &show_window, GGEMSSceneCamera const &camera,
   ImGui::SeparatorText("Orientation / world coordinates");
   ImGui::Text("right:   (%+.4f, %+.4f, %+.4f)", diagnostics.right[0],
               diagnostics.right[1], diagnostics.right[2]);
-  ImGui::Text("up:      (%+.4f, %+.4f, %+.4f)", diagnostics.up[0],
+  ImGui::Text("clip Y:  (%+.4f, %+.4f, %+.4f)", diagnostics.up[0],
               diagnostics.up[1], diagnostics.up[2]);
   ImGui::Text("forward: (%+.4f, %+.4f, %+.4f)", diagnostics.forward[0],
               diagnostics.forward[1], diagnostics.forward[2]);
