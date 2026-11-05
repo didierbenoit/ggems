@@ -33,43 +33,25 @@
 #include <cstdint>
 #include <memory>
 #include <span>
-#include <vector>
 
 #include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanWorldAxes.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanGeometry.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanParticleTraces.hh"
 
 namespace ggems::ui {
 
 /*!
- * \brief Owns offscreen scene targets and presentation drawing resources.
+ * \brief Owns offscreen targets and coordinates geometry, axes, and traces.
  *
  * Physical and logical devices are borrowed. The application completes GPU use
  * before replacing targets or scene data and before shutdown; scene texture
  * descriptors must be released before their image views.
  */
 class GGEMSVulkanSceneRenderer {
-private:
-  /*! \brief Four world-to-clip rows passed to scene vertex shaders. */
-  using ScenePushConstants = std::array<std::array<float, 4U>, 4U>;
-
-  /*! \brief Shared diagnostic line-list vertex format. */
-  using TraceVertex = ggems::render::GGEMSParticleTraceVertex;
-
-  /*! \brief Shared source-grouped vertex range for trace drawing. */
-  using TraceDrawRange = ggems::render::GGEMSParticleTraceDrawRange;
-
-  /*! \brief Per-occurrence clip transform and linear wireframe color. */
-  struct GeometryPushConstants {
-    /*! \brief Rows mapping local meters to clip coordinates. */
-    ScenePushConstants local_to_clip{};
-
-    /*! \brief Linear RGBA shared by all geometry edges. */
-    std::array<float, 4U> color{};
-  };
-
 public:
   /*! \brief Borrows presentation inputs for one scene recording. */
   struct RenderParameters {
@@ -224,18 +206,6 @@ public:
     -> std::uint32_t;
 
 private:
-  /*! \brief Creates the position-only geometry line pipeline. */
-  auto CreateGeometryPipeline() -> void;
-
-  /*!
-   * \brief Draws the shared edge meshes with each physical occurrence pose.
-   *
-   * \param[in] command_buffer Recording buffer inside the scene rendering pass.
-   * \param[in] world_to_clip Rows mapping world meters to clip coordinates.
-   */
-  auto RecordGeometryCommands(vk::raii::CommandBuffer const &command_buffer,
-                              ScenePushConstants const &world_to_clip) -> void;
-
   /*! \brief Allocates the sampled color attachment for the requested extent. */
   auto CreateColorTarget() -> void;
 
@@ -254,39 +224,6 @@ private:
   [[nodiscard]] auto FindMemoryType(std::uint32_t type_filter,
                                     vk::MemoryPropertyFlags properties) const
     -> std::uint32_t;
-
-  /*! \brief Releases trace shader modules. */
-  auto CleanupShaderModules() noexcept -> void;
-
-  /*! \brief Loads the compiled diagnostic trace vertex and fragment shaders. */
-  auto CreateTraceShaderModules() -> void;
-
-  /*! \brief Creates the depth-tested pipeline for diagnostic line vertices. */
-  auto CreateTracePipeline() -> void;
-
-  /*! \brief Releases the trace pipeline and its layout. */
-  auto CleanupTracePipeline() noexcept -> void;
-
-  /*! \brief Releases the trace vertex buffer and cached draw data. */
-  auto CleanupTraceResources() noexcept -> void;
-
-  /*! \brief Uploads nonempty trace vertices into host-coherent memory. */
-  auto CreateTraceVertexBuffer() -> void;
-
-  /*! \brief Releases the trace vertex buffer and its allocation. */
-  auto DestroyTraceVertexBuffer() noexcept -> void;
-
-  /*!
-   * \brief Records source-grouped trace draws admitted by visibility controls.
-   *
-   * \param[in] command_buffer Recording buffer inside the scene rendering pass.
-   * \param[in] push_constants World-to-clip transform rows.
-   * \param[in] visibility Global and per-source diagnostic trace visibility.
-   */
-  auto RecordTraceCommands(
-    vk::raii::CommandBuffer const &command_buffer,
-    ScenePushConstants const &push_constants,
-    ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
 
   /*!
    * \brief Allocates the depth attachment for the requested scene extent.
@@ -352,47 +289,11 @@ private:
   /*! \brief Procedural World-reference pipeline and recording component. */
   detail::GGEMSVulkanWorldAxes world_axes_;
 
-  /*! \brief Vertex shader transforming diagnostic trace vertices. */
-  vk::raii::ShaderModule trace_vertex_shader_module_{nullptr};
+  /*! \brief Trace pipeline, uploaded vertices, and source-filtered drawing. */
+  detail::GGEMSVulkanParticleTraces particle_traces_;
 
-  /*! \brief Fragment shader shading diagnostic traces. */
-  vk::raii::ShaderModule trace_fragment_shader_module_{nullptr};
-
-  /*! \brief Trace pipeline layout with world-to-clip push constants. */
-  vk::raii::PipelineLayout trace_pipeline_layout_{nullptr};
-
-  /*! \brief Line-list graphics pipeline for diagnostic traces. */
-  vk::raii::Pipeline trace_pipeline_{nullptr};
-
-  /*! \brief Owned GPU-readable trace vertex buffer. */
-  vk::raii::Buffer trace_vertex_buffer_{nullptr};
-
-  /*! \brief Host-visible coherent allocation for trace vertices. */
-  vk::raii::DeviceMemory trace_vertex_memory_{nullptr};
-
-  /*! \brief Owned source-grouped vertices retained on the host. */
-  std::vector<TraceVertex> trace_vertices_;
-
-  /*! \brief Source-specific ranges used for visibility filtering. */
-  std::vector<TraceDrawRange> trace_draw_ranges_;
-
-  /*! \brief Immutable scene shared with the application presentation state. */
-  std::shared_ptr<ggems::render::GGEMSGeometryScene const> geometry_scene_;
-
-  /*! \brief Linear neutral palette color prepared at initialization. */
-  std::array<float, 4U> geometry_color_{};
-
-  /*! \brief Geometry transform and color push-constant layout. */
-  vk::raii::PipelineLayout geometry_pipeline_layout_{nullptr};
-
-  /*! \brief Depth-tested line pipeline for physical geometry edges. */
-  vk::raii::Pipeline geometry_pipeline_{nullptr};
-
-  /*! \brief Host-visible coherent allocation for shared geometry vertices. */
-  vk::raii::DeviceMemory geometry_vertex_memory_{nullptr};
-
-  /*! \brief One vertex buffer shared by every occurrence. */
-  vk::raii::Buffer geometry_vertex_buffer_{nullptr};
+  /*! \brief Geometry pipeline, immutable scene, and shared edge buffer. */
+  detail::GGEMSVulkanGeometry geometry_;
 };
 
 } // namespace ggems::ui

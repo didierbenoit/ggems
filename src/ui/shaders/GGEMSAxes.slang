@@ -22,6 +22,9 @@
  * \file
  * \brief Generates the World-origin sphere and positive arrows procedurally.
  *
+ * Documentation guards around entry-point semantics support Doxygen's C++
+ * parser. The shader and source listings retain the complete signatures.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -30,18 +33,25 @@
 struct AxesPushConstants {
   /*! \brief Row 0 of the World-meter to clip-coordinate transform. */
   float4 world_to_clip_row_0;
+
   /*! \brief Row 1 of the World-meter to clip-coordinate transform. */
   float4 world_to_clip_row_1;
+
   /*! \brief Row 2 of the World-meter to clip-coordinate transform. */
   float4 world_to_clip_row_2;
+
   /*! \brief Row 3 of the World-meter to clip-coordinate transform. */
   float4 world_to_clip_row_3;
+
   /*! \brief Linear-light RGB color and unit alpha, at byte 64. */
   float4 color;
+
   /*! \brief Axis length in meters, relative radius, height, and base Z. */
   float4 dimensions;
+
   /*! \brief Cylinder 0, cone 1, or sphere 2, at byte 96. */
   uint primitive;
+
   /*! \brief Global positive X 0, Y 1, or Z 2, at byte 100. */
   uint axis;
 };
@@ -50,6 +60,7 @@ struct AxesPushConstants {
 struct SurfaceVertex {
   /*! \brief Local position in units of the reference-axis length. */
   float3 position;
+
   /*! \brief Outward local surface normal. */
   float3 normal;
 };
@@ -58,8 +69,10 @@ struct SurfaceVertex {
 struct VertexOutput {
   /*! \brief Homogeneous clip position used by Vulkan rasterization. */
   float4 position : SV_Position;
+
   /*! \brief World surface normal, normalized after interpolation. */
   float3 normal : NORMAL0;
+
   /*! \brief Linear-light surface color. */
   float4 color : COLOR0;
 };
@@ -68,8 +81,13 @@ struct VertexOutput {
 [[vk::push_constant]]
 ConstantBuffer<AxesPushConstants> g_axes;
 
+/*! \brief Number of azimuth segments around each circular cross section. */
 static const uint k_radial_segments = 32;
+
+/*! \brief Number of sphere polar intervals from +Z to -Z. */
 static const uint k_latitude_segments = 16;
+
+/*! \brief Half a revolution in radians. */
 static const float k_pi = 3.14159265358979323846;
 
 /*! \brief Two consistently wound triangles covering one parametric square. */
@@ -77,13 +95,26 @@ static const uint2 k_quad_corners[6] = {
   uint2(0, 0), uint2(1, 0), uint2(0, 1), uint2(1, 0), uint2(1, 1), uint2(0, 1),
 };
 
-/*! \brief Samples one ring, including half-step cone-tip normals. */
+/*!
+ * \brief Samples one ring, including half-step cone-tip normals.
+ *
+ * \param[in] segment Azimuth sample in radial-segment units; may be fractional.
+ * \return Unit XY direction, starting at +X and increasing toward +Y.
+ */
 float2 RingDirection(float segment) {
   float angle = (2.0 * k_pi * segment) / float(k_radial_segments);
   return float2(cos(angle), sin(angle));
 }
 
-/*! \brief Emits 32 shaft quads; the sphere and cone conceal the open ends. */
+/*!
+ * \brief Emits 32 shaft quads; the sphere and cone conceal the open ends.
+ *
+ * \param[in] vertex_id Triangle-list vertex index in [0, 192).
+ * \param[in] radius Cylinder radius relative to the reference-axis length.
+ * \param[in] height Cylinder height relative to the reference-axis length.
+ * \param[in] base_z Local base Z relative to the reference-axis length.
+ * \return Local surface position and outward unit radial normal.
+ */
 SurfaceVertex CylinderVertex(uint vertex_id, float radius, float height,
                              float base_z) {
   uint2 corner = k_quad_corners[vertex_id % 6];
@@ -98,7 +129,15 @@ SurfaceVertex CylinderVertex(uint vertex_id, float radius, float height,
   return vertex;
 }
 
-/*! \brief Emits 32 cone side triangles and 32 downward cap triangles. */
+/*!
+ * \brief Emits 32 cone side triangles and 32 downward cap triangles.
+ *
+ * \param[in] vertex_id Triangle-list vertex index in [0, 192).
+ * \param[in] radius Base radius relative to the reference-axis length.
+ * \param[in] height Positive cone height relative to the reference-axis length.
+ * \param[in] base_z Local base Z relative to the reference-axis length.
+ * \return Local surface position and outward unit side or cap normal.
+ */
 SurfaceVertex ConeVertex(uint vertex_id, float radius, float height,
                          float base_z) {
   uint triangle = vertex_id / 3;
@@ -126,7 +165,13 @@ SurfaceVertex ConeVertex(uint vertex_id, float radius, float height,
   return vertex;
 }
 
-/*! \brief Samples a unit sphere with exact poles and a wrapped azimuth seam. */
+/*!
+ * \brief Samples a unit sphere with exact poles and a wrapped azimuth seam.
+ *
+ * \param[in] latitude Polar sample in [0, 16], from +Z to -Z.
+ * \param[in] segment Azimuth sample, wrapped modulo the radial segment count.
+ * \return Unit direction from the sphere center to the sampled surface.
+ */
 float3 SphereDirection(uint latitude, uint segment) {
   if (latitude == 0) {
     return float3(0.0, 0.0, 1.0);
@@ -142,7 +187,13 @@ float3 SphereDirection(uint latitude, uint segment) {
                 cos(theta));
 }
 
-/*! \brief Emits two pole fans and 14 latitude strips without degeneracy. */
+/*!
+ * \brief Emits two pole fans and 14 latitude strips without degeneracy.
+ *
+ * \param[in] vertex_id Triangle-list vertex index in [0, 2880).
+ * \param[in] radius Sphere radius relative to the reference-axis length.
+ * \return Local surface position and outward unit spherical normal.
+ */
 SurfaceVertex SphereVertex(uint vertex_id, float radius) {
   const uint cap_vertices = 3 * k_radial_segments;
   const uint strip_vertices = 6 * k_radial_segments * (k_latitude_segments - 2);
@@ -171,7 +222,13 @@ SurfaceVertex SphereVertex(uint vertex_id, float radius) {
   return vertex;
 }
 
-/*! \brief Applies a proper rotation from local +Z to global +X, +Y, or +Z. */
+/*!
+ * \brief Applies a proper rotation from local +Z to global +X, +Y, or +Z.
+ *
+ * \param[in] direction Local position or direction to rotate without scaling.
+ * \param[in] axis Positive World axis: X is 0, Y is 1, and Z is 2.
+ * \return Rotated vector in the selected World-axis frame.
+ */
 float3 RotateAxis(float3 direction, uint axis) {
   if (axis == 0) {
     return float3(direction.z, direction.y, -direction.x);
@@ -191,7 +248,7 @@ float3 RotateAxis(float3 direction, uint axis) {
  * \return Clip position, outward World normal, and linear-light surface color.
  */
 [shader("vertex")]
-VertexOutput VertexMain(uint vertex_id: SV_VertexID) {
+VertexOutput VertexMain(uint vertex_id/*! \cond */: SV_VertexID/*! \endcond */) {
   SurfaceVertex vertex;
 
   if (g_axes.primitive == 0) {
@@ -225,7 +282,7 @@ VertexOutput VertexMain(uint vertex_id: SV_VertexID) {
  * \return Opaque shaded RGBA color for the existing scene target.
  */
 [shader("fragment")]
-float4 FragmentMain(VertexOutput input) : SV_Target {
+float4 FragmentMain(VertexOutput input) /*! \cond */: SV_Target/*! \endcond */ {
   float3 normal = normalize(input.normal);
   float3 light = normalize(float3(0.45, 0.70, 1.0));
   float shade = 0.42 + (0.58 * saturate(dot(normal, light)));

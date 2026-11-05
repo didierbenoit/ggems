@@ -28,109 +28,39 @@ if(NOT GGEMS_SLANGC_EXECUTABLE)
 endif()
 
 set(GGEMS_UI_SHADER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
-
 set(GGEMS_UI_SHADER_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 
 file(MAKE_DIRECTORY "${GGEMS_UI_SHADER_OUTPUT_DIR}")
 
-set(GGEMS_AXES_SHADER_SOURCE "${GGEMS_UI_SHADER_SOURCE_DIR}/GGEMSAxes.slang")
-set(GGEMS_AXES_VERTEX_SPV "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSAxes.vert.spv")
-set(GGEMS_AXES_FRAGMENT_SPV "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSAxes.frag.spv")
+set(GGEMS_UI_SHADER_STAGES vertex fragment)
+set(GGEMS_UI_SHADER_ENTRIES VertexMain FragmentMain)
+set(GGEMS_UI_SHADER_SUFFIXES vert frag)
+set(GGEMS_UI_SHADER_OUTPUTS)
 
-set(GGEMS_TRACES_SHADER_SOURCE
-    "${GGEMS_UI_SHADER_SOURCE_DIR}/GGEMSTraces.slang")
-set(GGEMS_TRACES_VERTEX_SPV
-    "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSTraces.vert.spv")
-set(GGEMS_TRACES_FRAGMENT_SPV
-    "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSTraces.frag.spv")
+foreach(shader_name IN ITEMS GGEMSAxes GGEMSTraces GGEMSGeometry)
+  set(shader_source "${GGEMS_UI_SHADER_SOURCE_DIR}/${shader_name}.slang")
+  foreach(shader_stage shader_entry shader_suffix IN ZIP_LISTS
+          GGEMS_UI_SHADER_STAGES GGEMS_UI_SHADER_ENTRIES GGEMS_UI_SHADER_SUFFIXES)
+    set(shader_output
+        "${GGEMS_UI_SHADER_OUTPUT_DIR}/${shader_name}.${shader_suffix}.spv")
+    add_custom_command(
+      OUTPUT "${shader_output}"
+      COMMAND
+        "${GGEMS_SLANGC_EXECUTABLE}" "${shader_source}" -target spirv
+        -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry
+        "${shader_entry}" -stage "${shader_stage}" -o "${shader_output}"
+      DEPENDS "${shader_source}"
+      VERBATIM)
+    list(APPEND GGEMS_UI_SHADER_OUTPUTS "${shader_output}")
+  endforeach()
+endforeach()
 
-set(GGEMS_GEOMETRY_SHADER_SOURCE
-    "${GGEMS_UI_SHADER_SOURCE_DIR}/GGEMSGeometry.slang")
-set(GGEMS_GEOMETRY_VERTEX_SPV
-    "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSGeometry.vert.spv")
-set(GGEMS_GEOMETRY_FRAGMENT_SPV
-    "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSGeometry.frag.spv")
-
-add_custom_command(
-  OUTPUT "${GGEMS_AXES_VERTEX_SPV}"
-  COMMAND
-    "${GGEMS_SLANGC_EXECUTABLE}" "${GGEMS_AXES_SHADER_SOURCE}" -target spirv
-    -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry
-    VertexMain -stage vertex -o "${GGEMS_AXES_VERTEX_SPV}"
-  DEPENDS "${GGEMS_AXES_SHADER_SOURCE}"
-  VERBATIM)
-
-add_custom_command(
-  OUTPUT "${GGEMS_AXES_FRAGMENT_SPV}"
-  COMMAND
-    "${GGEMS_SLANGC_EXECUTABLE}" "${GGEMS_AXES_SHADER_SOURCE}" -target spirv
-    -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry
-    FragmentMain -stage fragment -o "${GGEMS_AXES_FRAGMENT_SPV}"
-  DEPENDS "${GGEMS_AXES_SHADER_SOURCE}"
-  VERBATIM)
-
-add_custom_command(
-  OUTPUT "${GGEMS_TRACES_VERTEX_SPV}"
-  COMMAND
-    "${GGEMS_SLANGC_EXECUTABLE}" "${GGEMS_TRACES_SHADER_SOURCE}" -target spirv
-    -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry
-    VertexMain -stage vertex -o "${GGEMS_TRACES_VERTEX_SPV}"
-  DEPENDS "${GGEMS_TRACES_SHADER_SOURCE}"
-  VERBATIM)
-
-add_custom_command(
-  OUTPUT "${GGEMS_TRACES_FRAGMENT_SPV}"
-  COMMAND
-    "${GGEMS_SLANGC_EXECUTABLE}" "${GGEMS_TRACES_SHADER_SOURCE}" -target spirv
-    -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry
-    FragmentMain -stage fragment -o "${GGEMS_TRACES_FRAGMENT_SPV}"
-  DEPENDS "${GGEMS_TRACES_SHADER_SOURCE}"
-  VERBATIM)
-
-add_custom_command(
-  OUTPUT "${GGEMS_GEOMETRY_VERTEX_SPV}"
-  COMMAND
-    "${GGEMS_SLANGC_EXECUTABLE}" "${GGEMS_GEOMETRY_SHADER_SOURCE}" -target spirv
-    -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry
-    VertexMain -stage vertex -o "${GGEMS_GEOMETRY_VERTEX_SPV}"
-  DEPENDS "${GGEMS_GEOMETRY_SHADER_SOURCE}"
-  VERBATIM)
-
-add_custom_command(
-  OUTPUT "${GGEMS_GEOMETRY_FRAGMENT_SPV}"
-  COMMAND
-    "${GGEMS_SLANGC_EXECUTABLE}" "${GGEMS_GEOMETRY_SHADER_SOURCE}" -target spirv
-    -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name -entry
-    FragmentMain -stage fragment -o "${GGEMS_GEOMETRY_FRAGMENT_SPV}"
-  DEPENDS "${GGEMS_GEOMETRY_SHADER_SOURCE}"
-  VERBATIM)
-
-add_custom_target(
-  ggems_gui_shaders
-  DEPENDS "${GGEMS_AXES_VERTEX_SPV}" "${GGEMS_AXES_FRAGMENT_SPV}"
-          "${GGEMS_TRACES_VERTEX_SPV}" "${GGEMS_TRACES_FRAGMENT_SPV}"
-          "${GGEMS_GEOMETRY_VERTEX_SPV}" "${GGEMS_GEOMETRY_FRAGMENT_SPV}")
+add_custom_target(ggems_gui_shaders DEPENDS ${GGEMS_UI_SHADER_OUTPUTS})
 
 # GGEMS GuiMode library
-add_library(
-  ggems_gui STATIC
-  GGEMSGuiApplication.cc
-  GGEMSImGuiIntegration.cc
-  GGEMSImGuiLayer.cc
-  GGEMSImGuiLayout.cc
-  GGEMSImGuiOutputPanel.cc
-  GGEMSImGuiPanels.cc
-  GGEMSImGuiSettingsFile.cc
-  GGEMSImGuiTheme.cc
-  GGEMSImGuiViewportPanel.cc
-  GGEMSSceneCamera.cc
-  GGEMSVulkanDevice.cc
-  GGEMSVulkanDeviceSelection.cc
-  GGEMSVulkanDisplayAdapterWin32.cc
-  GGEMSVulkanPresenter.cc
-  GGEMSVulkanSceneRenderer.cc
-  GGEMSVulkanShaderFile.cc
-  GGEMSVulkanWorldAxes.cc)
+file(GLOB GGEMS_UI_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+list(SORT GGEMS_UI_SOURCES)
+add_library(ggems_gui STATIC ${GGEMS_UI_SOURCES})
 
 add_dependencies(ggems_gui ggems_gui_shaders)
 add_library(GGEMS::Gui ALIAS ggems_gui)

@@ -57,7 +57,11 @@ namespace {
 
 using namespace ggems::geometry;
 using ggems::render::GGEMSGeometryVertex;
+
+/*! \brief Packed line-list endpoints in local meters. */
 using Vertices = std::vector<GGEMSGeometryVertex>;
+
+/*! \brief One local Cartesian position in meters before float conversion. */
 using Point = std::array<double, 3>;
 
 /*! \brief Converts canonical picometers to render meters. */
@@ -66,7 +70,13 @@ constexpr double k_pm_to_m{1.0e-12};
 /*! \brief Number of segments in a visualization circle. */
 constexpr std::uint32_t k_circle_segments{64U};
 
-/*! \brief Appends two local-meter endpoints without introducing diagonals. */
+/*!
+ * \brief Appends two local-meter endpoints without introducing diagonals.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] first First endpoint in local meters.
+ * \param[in] second Second endpoint in local meters.
+ */
 auto Line(Vertices &vertices, Point first, Point second) -> void {
   vertices.push_back({
     .x = static_cast<float>(first[0]),
@@ -81,7 +91,11 @@ auto Line(Vertices &vertices, Point first, Point second) -> void {
   });
 }
 
-/*! \brief Connects corresponding corners of two rectangular/trapezoidal ends.
+/*!
+ * \brief Connects the corners of two rectangular or trapezoidal ends.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] corners Local-meter corners: four per end, X varying before Y.
  */
 auto PlanarEdges(Vertices &vertices, std::array<Point, 8> const &corners)
   -> void {
@@ -98,7 +112,12 @@ auto PlanarEdges(Vertices &vertices, std::array<Point, 8> const &corners)
   }
 }
 
-/*! \brief Builds the twelve physical edges of a centered rectangular solid. */
+/*!
+ * \brief Builds the twelve physical edges of a centered rectangular solid.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] half Half extents along the local axes in picometers.
+ */
 auto BoxEdges(Vertices &vertices, HalfExtent3PM half) -> void {
   std::array<Point, 8> corners{};
 
@@ -113,12 +132,27 @@ auto BoxEdges(Vertices &vertices, HalfExtent3PM half) -> void {
   PlanarEdges(vertices, corners);
 }
 
-/*! \brief Returns one circle point in local meters. */
+/*!
+ * \brief Returns one circle point in local meters.
+ *
+ * \param[in] radius Circle radius in meters.
+ * \param[in] z Local Z coordinate of the circle in meters.
+ * \param[in] angle Azimuth from local +X toward +Y in radians.
+ * \return Local-meter position on the circle.
+ */
 auto RingPoint(double radius, double z, double angle) -> Point {
   return {radius * std::cos(angle), radius * std::sin(angle), z};
 }
 
-/*! \brief Tessellates one ring; zero-radius endpoints are apexes, not rings. */
+/*!
+ * \brief Tessellates one ring; zero-radius endpoints are apexes, not rings.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] radius Ring radius in meters; zero appends no edges.
+ * \param[in] z Local Z coordinate in meters.
+ * \param[in] sides Number of evenly spaced edges, at least three.
+ * \param[in] start Azimuth of the first vertex in radians.
+ */
 auto Ring(Vertices &vertices, double radius, double z,
           std::uint32_t sides = k_circle_segments, double start = 0.0) -> void {
   if (radius == 0.0) {
@@ -133,7 +167,17 @@ auto Ring(Vertices &vertices, double radius, double z,
   }
 }
 
-/*! \brief Draws axial generatrices, including a possible closing apex. */
+/*!
+ * \brief Draws axial generatrices, including a possible closing apex.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] first_radius First ring radius in meters; zero denotes an apex.
+ * \param[in] first_z First ring's local Z coordinate in meters.
+ * \param[in] second_radius Second ring radius in meters; zero denotes an apex.
+ * \param[in] second_z Second ring's local Z coordinate in meters.
+ * \param[in] sides Number of matching azimuth samples, at least three.
+ * \param[in] start Azimuth of the first sample in radians.
+ */
 auto ConnectRings(Vertices &vertices, double first_radius, double first_z,
                   double second_radius, double second_z, std::uint32_t sides,
                   double start = 0.0) -> void {
@@ -150,7 +194,12 @@ auto ConnectRings(Vertices &vertices, double first_radius, double first_z,
   }
 }
 
-/*! \brief Draws latitude rings and meridians of a complete ellipsoid. */
+/*!
+ * \brief Draws latitude rings and meridians of a complete ellipsoid.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] axes Local X, Y, and Z semiaxes in picometers.
+ */
 auto EllipsoidEdges(Vertices &vertices, HalfExtent3PM axes) -> void {
   auto const point = [axes](double latitude, double longitude) -> Point {
     return {
@@ -183,7 +232,15 @@ auto EllipsoidEdges(Vertices &vertices, HalfExtent3PM axes) -> void {
   }
 }
 
-/*! \brief Draws both walls and end rims of a tube or conical frustum. */
+/*!
+ * \brief Draws both walls and end rims of a tube or conical frustum.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] half_length Half length along local Z in meters.
+ * \param[in] outer Outer radii in meters at negative and positive Z.
+ * \param[in] inner Bore radii in meters at negative and positive Z; zero
+ * closes.
+ */
 auto ConicalEdges(Vertices &vertices, double half_length,
                   std::array<double, 2> outer, std::array<double, 2> inner)
   -> void {
@@ -194,7 +251,13 @@ auto ConicalEdges(Vertices &vertices, double half_length,
   }
 }
 
-/*! \brief Draws actual polygon profile rings and longitudinal polygon edges. */
+/*!
+ * \brief Draws actual polygon profile rings and longitudinal polygon edges.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] shape Authored polygon profile; picometer apothems are converted
+ * to vertex radii, and the start angle locates each ring's first vertex.
+ */
 auto PolyhedraEdges(Vertices &vertices, GGEMSPolyhedra const &shape) -> void {
   auto const sides = shape.GetSideCount();
 
@@ -233,7 +296,13 @@ auto PolyhedraEdges(Vertices &vertices, GGEMSPolyhedra const &shape) -> void {
   }
 }
 
-/*! \brief Builds exact planar corners using canonical dimensions and angles. */
+/*!
+ * \brief Builds exact planar corners using canonical dimensions and angles.
+ *
+ * \tparam Shape GGEMSTrd or GGEMSTrap.
+ * \param[in,out] vertices Line-list endpoints to extend.
+ * \param[in] shape Authored solid with picometer dimensions and local angles.
+ */
 template <typename Shape>
 auto TrapezoidEdges(Vertices &vertices, Shape const &shape) -> void {
   std::array<Point, 8> corners{};
@@ -293,7 +362,12 @@ auto TrapezoidEdges(Vertices &vertices, Shape const &shape) -> void {
   PlanarEdges(vertices, corners);
 }
 
-/*! \brief Appends only the selected analytical family's wire representation. */
+/*!
+ * \brief Appends only the selected analytical family's wire representation.
+ *
+ * \param[in,out] vertices Line-list endpoints to extend in local meters.
+ * \param[in] volume Validated shape with canonical authored dimensions.
+ */
 auto ShapeEdges(Vertices &vertices, GGEMSWorld::Volume const &volume) -> void {
   std::visit(
     [&vertices](auto const &shape) -> void {
@@ -336,7 +410,13 @@ auto ShapeEdges(Vertices &vertices, GGEMSWorld::Volume const &volume) -> void {
     volume);
 }
 
-/*! \brief Compares exact dimensions only, excluding Material and placement. */
+/*!
+ * \brief Compares exact dimensions only, excluding Material and placement.
+ *
+ * \param[in] first First authored shape to compare.
+ * \param[in] second Second authored shape to compare.
+ * \return True for the same shape family and equal geometric parameters.
+ */
 auto SameShape(GGEMSWorld::Volume const &first,
                GGEMSWorld::Volume const &second) -> bool {
   return std::visit(
@@ -395,7 +475,12 @@ auto SameShape(GGEMSWorld::Volume const &first,
     first);
 }
 
-/*! \brief Converts a composed host pose into a row-major meter transform. */
+/*!
+ * \brief Converts a composed host pose into a row-major meter transform.
+ *
+ * \param[in] pose Local-to-World rotation and World translation in picometers.
+ * \return Row-major homogeneous local-to-World matrix for meter coordinates.
+ */
 auto Transform(GGEMSWorld::Pose const &pose) -> std::array<float, 16> {
   auto const &rotation = pose.rotation;
   return {

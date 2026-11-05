@@ -27,14 +27,8 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <filesystem>
-#include <vector>
 #include <format>
-#include <array>
-#include <cstddef>
-#include <cstring>
 #include <cstdint>
-#include <limits>
 #include <utility>
 #include <span>
 #include <memory>
@@ -45,9 +39,6 @@
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
-#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
-#include "GGEMS/ui/detail/GGEMSVulkanColorConversion.hh"
-#include "GGEMS/ui/detail/GGEMSVulkanShaderFile.hh"
 
 namespace ggems::ui {
 
@@ -63,11 +54,10 @@ auto GGEMSVulkanSceneRenderer::Initialize(
 
   world_axes_.Initialize(device, color_format_, depth_format_);
 
-  CreateTraceShaderModules();
-  CreateTracePipeline();
-  CreateGeometryPipeline();
-  geometry_color_ =
-    detail::ToVulkanClearColor(GetThemeColorKey(GGEMSThemeRole::PrimaryText));
+  particle_traces_.Initialize(physical_device, device, color_format_,
+                              depth_format_);
+
+  geometry_.Initialize(physical_device, device, color_format_, depth_format_);
 
   initialized_ = true;
   requires_resize_ = true;
@@ -83,17 +73,11 @@ auto GGEMSVulkanSceneRenderer::Shutdown() -> void {
   }
 
   CleanupRenderTargets();
-  CleanupTraceResources();
+  particle_traces_.Shutdown();
 
   world_axes_.Shutdown();
 
-  CleanupShaderModules();
-
-  geometry_vertex_buffer_ = nullptr;
-  geometry_vertex_memory_ = nullptr;
-  geometry_scene_.reset();
-  geometry_pipeline_ = nullptr;
-  geometry_pipeline_layout_ = nullptr;
+  geometry_.Shutdown();
 
   physical_device_ = nullptr;
   device_ = nullptr;
@@ -500,16 +484,33 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   command_buffer.beginRendering(rendering_info);
 
-  RecordGeometryCommands(command_buffer, parameters.world_to_clip);
+  vk::Viewport const viewport{
+    .x = 0.0F,
+    .y = 0.0F,
+    .width = static_cast<float>(viewport_extent_.width),
+    .height = static_cast<float>(viewport_extent_.height),
+    .minDepth = 0.0F,
+    .maxDepth = 1.0F,
+  };
 
-  if (parameters.show_axes && geometry_scene_) {
+  vk::Rect2D const scissor{
+    .offset = vk::Offset2D{.x = 0, .y = 0},
+    .extent = viewport_extent_,
+  };
+
+  command_buffer.setViewport(0U, viewport);
+  command_buffer.setScissor(0U, scissor);
+
+  geometry_.Record(command_buffer, parameters.world_to_clip);
+
+  auto const *scene = geometry_.GetScene();
+  if (parameters.show_axes && scene != nullptr) {
     world_axes_.Record(command_buffer, viewport_extent_,
-                       parameters.world_to_clip,
-                       geometry_scene_->world_half_extent_m);
+                       parameters.world_to_clip, scene->world_half_extent_m);
   }
 
-  RecordTraceCommands(command_buffer, parameters.world_to_clip,
-                      parameters.trace_visibility);
+  particle_traces_.Record(command_buffer, parameters.world_to_clip,
+                          parameters.trace_visibility);
 
   command_buffer.endRendering();
 
@@ -538,636 +539,29 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::CreateTraceShaderModules() -> void {
-  if (!(device_ != nullptr)) {
-    throw ggems::core::GGEMSInternal(
-      "A Vulkan device is required before creating trace shader modules.");
-  }
-
-#ifndef GGEMS_UI_SHADER_DIRECTORY
-  if (!(false)) {
-    throw ggems::core::GGEMSInternal(
-      "GGEMS_UI_SHADER_DIRECTORY is not defined.");
-  }
-#endif
-
-  std::filesystem::path shader_directory(GGEMS_UI_SHADER_DIRECTORY);
-
-  std::filesystem::path vertex_shader_path =
-    shader_directory / "GGEMSTraces.vert.spv";
-  std::filesystem::path fragment_shader_path =
-    shader_directory / "GGEMSTraces.frag.spv";
-
-  std::vector<std::uint32_t> vertex_code =
-    detail::ReadSPIRVFile(vertex_shader_path);
-
-  std::vector<std::uint32_t> fragment_code =
-    detail::ReadSPIRVFile(fragment_shader_path);
-
-  vk::ShaderModuleCreateInfo vertex_create_info{
-    .codeSize = vertex_code.size() * sizeof(std::uint32_t),
-    .pCode = vertex_code.data(),
-  };
-
-  vk::ShaderModuleCreateInfo fragment_create_info{
-    .codeSize = fragment_code.size() * sizeof(std::uint32_t),
-    .pCode = fragment_code.data(),
-  };
-
-  trace_vertex_shader_module_ =
-    vk::raii::ShaderModule{*device_, vertex_create_info};
-
-  trace_fragment_shader_module_ =
-    vk::raii::ShaderModule{*device_, fragment_create_info};
-
-  GGEMS_INFOEX("Vulkan", 2,
-               "Vulkan scene trace shader modules created from '{}'.",
-               shader_directory.string());
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
-  if (!(device_ != nullptr)) {
-    throw ggems::core::GGEMSInternal(
-      "A Vulkan device is required before creating the trace pipeline.");
-  }
-
-  if (!(*trace_vertex_shader_module_ != vk::ShaderModule{})) {
-    throw ggems::core::GGEMSInternal(
-      "A Vulkan vertex shader module is required before "
-      "creating the trace pipeline.");
-  }
-
-  if (!(*trace_fragment_shader_module_ != vk::ShaderModule{})) {
-    throw ggems::core::GGEMSInternal(
-      "A Vulkan fragment shader module is required before "
-      "creating the trace pipeline.");
-  }
-
-  vk::PipelineShaderStageCreateInfo vertex_stage{
-    .stage = vk::ShaderStageFlagBits::eVertex,
-    .module = *trace_vertex_shader_module_,
-    .pName = "VertexMain",
-  };
-
-  vk::PipelineShaderStageCreateInfo fragment_stage{
-    .stage = vk::ShaderStageFlagBits::eFragment,
-    .module = *trace_fragment_shader_module_,
-    .pName = "FragmentMain",
-  };
-
-  std::array<vk::PipelineShaderStageCreateInfo, 2U> shader_stages{
-    vertex_stage,
-    fragment_stage,
-  };
-
-  vk::VertexInputBindingDescription vertex_binding_description{
-    .binding = 0U,
-    .stride = sizeof(TraceVertex),
-    .inputRate = vk::VertexInputRate::eVertex,
-  };
-
-  std::array<vk::VertexInputAttributeDescription, 2U>
-    vertex_attribute_descriptions{
-      {
-        vk::VertexInputAttributeDescription{
-          .location = 0U,
-          .binding = 0U,
-          .format = vk::Format::eR32G32B32Sfloat,
-          .offset = offsetof(TraceVertex, position),
-        },
-        vk::VertexInputAttributeDescription{
-          .location = 1U,
-          .binding = 0U,
-          .format = vk::Format::eR32G32B32A32Sfloat,
-          .offset = offsetof(TraceVertex, color),
-        },
-      },
-  };
-
-  vk::PipelineVertexInputStateCreateInfo vertex_input_state{
-    .vertexBindingDescriptionCount = 1U,
-    .pVertexBindingDescriptions = &vertex_binding_description,
-    .vertexAttributeDescriptionCount =
-      static_cast<std::uint32_t>(vertex_attribute_descriptions.size()),
-    .pVertexAttributeDescriptions = vertex_attribute_descriptions.data(),
-  };
-
-  vk::PipelineInputAssemblyStateCreateInfo input_assembly_state{
-    .topology = vk::PrimitiveTopology::eLineList,
-    .primitiveRestartEnable = vk::False,
-  };
-
-  vk::PipelineViewportStateCreateInfo viewport_state{
-    .viewportCount = 1U,
-    .scissorCount = 1U,
-  };
-
-  vk::PipelineRasterizationStateCreateInfo rasterization_state{
-    .depthClampEnable = vk::False,
-    .rasterizerDiscardEnable = vk::False,
-    .polygonMode = vk::PolygonMode::eFill,
-    .cullMode = vk::CullModeFlagBits::eNone,
-    .frontFace = vk::FrontFace::eCounterClockwise,
-    .depthBiasEnable = vk::False,
-    .lineWidth = 1.0F,
-  };
-
-  vk::PipelineMultisampleStateCreateInfo multisample_state{
-    .rasterizationSamples = vk::SampleCountFlagBits::e1,
-    .sampleShadingEnable = vk::False,
-  };
-
-  vk::PipelineColorBlendAttachmentState color_blend_attachment{
-    .blendEnable = vk::False,
-    .colorWriteMask =
-      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
-  };
-
-  vk::PipelineColorBlendStateCreateInfo color_blend_state{
-    .logicOpEnable = vk::False,
-    .attachmentCount = 1U,
-    .pAttachments = &color_blend_attachment,
-  };
-
-  std::array<vk::DynamicState, 2U> dynamic_states{
-    vk::DynamicState::eViewport,
-    vk::DynamicState::eScissor,
-  };
-
-  vk::PipelineDynamicStateCreateInfo dynamic_state{
-    .dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
-    .pDynamicStates = dynamic_states.data(),
-  };
-
-  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{
-    .depthTestEnable = vk::True,
-    .depthWriteEnable = vk::True,
-    .depthCompareOp = vk::CompareOp::eLessOrEqual,
-    .depthBoundsTestEnable = vk::False,
-    .stencilTestEnable = vk::False,
-    .minDepthBounds = 0.0F,
-    .maxDepthBounds = 1.0F,
-  };
-
-  vk::PushConstantRange trace_push_constant_range{
-    .stageFlags = vk::ShaderStageFlagBits::eVertex,
-    .offset = 0U,
-    .size = sizeof(ScenePushConstants),
-  };
-
-  vk::PipelineLayoutCreateInfo pipeline_layout_create_info{
-    .pushConstantRangeCount = 1U,
-    .pPushConstantRanges = &trace_push_constant_range,
-  };
-
-  trace_pipeline_layout_ =
-    vk::raii::PipelineLayout{*device_, pipeline_layout_create_info};
-
-  vk::PipelineRenderingCreateInfo rendering_create_info{
-    .colorAttachmentCount = 1U,
-    .pColorAttachmentFormats = &color_format_,
-    .depthAttachmentFormat = depth_format_,
-  };
-
-  vk::GraphicsPipelineCreateInfo pipeline_create_info{
-    .pNext = &rendering_create_info,
-    .stageCount = static_cast<std::uint32_t>(shader_stages.size()),
-    .pStages = shader_stages.data(),
-    .pVertexInputState = &vertex_input_state,
-    .pInputAssemblyState = &input_assembly_state,
-    .pViewportState = &viewport_state,
-    .pRasterizationState = &rasterization_state,
-    .pMultisampleState = &multisample_state,
-    .pDepthStencilState = &depth_stencil_state,
-    .pColorBlendState = &color_blend_state,
-    .pDynamicState = &dynamic_state,
-    .layout = *trace_pipeline_layout_,
-    .renderPass = nullptr,
-    .subpass = 0U,
-  };
-
-  trace_pipeline_ = vk::raii::Pipeline{*device_, nullptr, pipeline_create_info};
-
-  GGEMS_INFOEX("Vulkan", 2, "Vulkan scene trace pipeline created.");
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::DestroyTraceVertexBuffer() noexcept -> void {
-  trace_vertex_buffer_ = nullptr;
-  trace_vertex_memory_ = nullptr;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::CreateTraceVertexBuffer() -> void {
-  if (!(device_ != nullptr)) {
-    throw ggems::core::GGEMSInternal(
-      "A Vulkan device is required before creating the trace "
-      "vertex buffer.");
-  }
-
-  if (trace_vertices_.empty()) {
-    return;
-  }
-
-  auto const buffer_size =
-    static_cast<vk::DeviceSize>(trace_vertices_.size() * sizeof(TraceVertex));
-
-  vk::BufferCreateInfo buffer_create_info{
-    .size = buffer_size,
-    .usage = vk::BufferUsageFlagBits::eVertexBuffer,
-    .sharingMode = vk::SharingMode::eExclusive,
-  };
-
-  trace_vertex_buffer_ = vk::raii::Buffer{*device_, buffer_create_info};
-
-  vk::MemoryRequirements memory_requirements =
-    trace_vertex_buffer_.getMemoryRequirements();
-
-  vk::MemoryAllocateInfo memory_allocate_info{
-    .allocationSize = memory_requirements.size,
-    .memoryTypeIndex =
-      FindMemoryType(memory_requirements.memoryTypeBits,
-                     vk::MemoryPropertyFlagBits::eHostVisible |
-                       vk::MemoryPropertyFlagBits::eHostCoherent),
-  };
-
-  trace_vertex_memory_ = vk::raii::DeviceMemory{*device_, memory_allocate_info};
-  trace_vertex_buffer_.bindMemory(*trace_vertex_memory_, 0U);
-
-  void *mapped_memory = trace_vertex_memory_.mapMemory(0, buffer_size);
-
-  std::memcpy(mapped_memory, trace_vertices_.data(),
-              static_cast<std::size_t>(buffer_size));
-
-  trace_vertex_memory_.unmapMemory();
-
-  GGEMS_INFOEX("Vulkan", 2,
-               "Vulkan trace vertex buffer "
-               "uploaded: {} vertex/vertices.",
-               trace_vertices_.size());
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::RecordTraceCommands(
-  vk::raii::CommandBuffer const &command_buffer,
-  ScenePushConstants const &push_constants,
-  ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void {
-  if (!visibility.IsGlobalVisible()) {
-    return;
-  }
-
-  if (*trace_pipeline_ == vk::Pipeline{} ||
-      *trace_vertex_buffer_ == vk::Buffer{} || trace_vertices_.empty() ||
-      trace_draw_ranges_.empty()) {
-    return;
-  }
-
-  vk::Viewport viewport{
-    .x = 0.0F,
-    .y = 0.0F,
-    .width = static_cast<float>(viewport_extent_.width),
-    .height = static_cast<float>(viewport_extent_.height),
-    .minDepth = 0.0F,
-    .maxDepth = 1.0F,
-  };
-
-  vk::Rect2D const scissor{
-    .offset = vk::Offset2D{.x = 0, .y = 0},
-    .extent = viewport_extent_,
-  };
-
-  command_buffer.setViewport(0U, viewport);
-  command_buffer.setScissor(0U, scissor);
-
-  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                              *trace_pipeline_);
-
-  std::array<vk::Buffer, 1U> vertex_buffers{*trace_vertex_buffer_};
-  std::array<vk::DeviceSize, 1U> vertex_offsets{0U};
-
-  command_buffer.bindVertexBuffers(0U, vertex_buffers, vertex_offsets);
-
-  command_buffer.pushConstants(
-    *trace_pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
-    vk::ArrayProxy<const ScenePushConstants>{1U, &push_constants});
-
-  for (TraceDrawRange const &draw_range : trace_draw_ranges_) {
-    if (!visibility.ShouldDraw(draw_range.source_index)) {
-      continue;
-    }
-
-    command_buffer.draw(static_cast<std::uint32_t>(draw_range.vertex_count), 1U,
-                        static_cast<std::uint32_t>(draw_range.first_vertex),
-                        0U);
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::CleanupShaderModules() noexcept -> void {
-  trace_fragment_shader_module_ = nullptr;
-  trace_vertex_shader_module_ = nullptr;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::CleanupTracePipeline() noexcept -> void {
-  trace_pipeline_ = nullptr;
-  trace_pipeline_layout_ = nullptr;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::CleanupTraceResources() noexcept -> void {
-  DestroyTraceVertexBuffer();
-  trace_vertices_.clear();
-  trace_draw_ranges_.clear();
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSVulkanSceneRenderer::GetParticleTraceVertexCount() const noexcept
   -> std::uint32_t {
-  return static_cast<std::uint32_t>(trace_vertices_.size());
+  return particle_traces_.GetVertexCount();
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::SetParticleTraceSegments(
   std::span<ggems::render::GGEMSParticleTraceSegment const> segments) -> void {
-  if (!(device_ != nullptr)) {
-    throw ggems::core::GGEMSInternal(
-      "A Vulkan device is required before setting particle trace segments.");
-  }
-
-  auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
-
-  if (!(draw_data.vertices.size() <=
-        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
-    throw ggems::core::GGEMSInternal(
-      "The particle trace vertex count exceeds the Vulkan uint32_t draw "
-      "range.");
-  }
-
-  DestroyTraceVertexBuffer();
-
-  trace_vertices_ = std::move(draw_data.vertices);
-  trace_draw_ranges_ = std::move(draw_data.draw_ranges);
-
-  if (!trace_vertices_.empty()) {
-    CreateTraceVertexBuffer();
-  }
-
-  GGEMS_INFOEX(
-    "Vulkan", 1,
-    "Loaded {} particle trace segment(s) into Vulkan: {} vertex/vertices.",
-    segments.size(), trace_vertices_.size());
+  particle_traces_.SetSegments(segments);
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::ClearParticleTraces() -> void {
-  trace_vertices_.clear();
-  trace_draw_ranges_.clear();
-  DestroyTraceVertexBuffer();
-
-  GGEMS_INFOEX("Vulkan", 1, "Cleared Vulkan particle traces.");
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::CreateGeometryPipeline() -> void {
-  auto const shader_directory =
-    std::filesystem::path{GGEMS_UI_SHADER_DIRECTORY};
-
-  auto const vertex_code =
-    detail::ReadSPIRVFile(shader_directory / "GGEMSGeometry.vert.spv");
-
-  auto const fragment_code =
-    detail::ReadSPIRVFile(shader_directory / "GGEMSGeometry.frag.spv");
-
-  vk::raii::ShaderModule const vertex_module{
-    *device_, vk::ShaderModuleCreateInfo{
-                .codeSize = vertex_code.size() * sizeof(std::uint32_t),
-                .pCode = vertex_code.data(),
-              }};
-
-  vk::raii::ShaderModule const fragment_module{
-    *device_, vk::ShaderModuleCreateInfo{
-                .codeSize = fragment_code.size() * sizeof(std::uint32_t),
-                .pCode = fragment_code.data(),
-              }};
-
-  std::array<vk::PipelineShaderStageCreateInfo, 2U> const shader_stages{
-    vk::PipelineShaderStageCreateInfo{
-      .stage = vk::ShaderStageFlagBits::eVertex,
-      .module = *vertex_module,
-      .pName = "VertexMain",
-    },
-    vk::PipelineShaderStageCreateInfo{
-      .stage = vk::ShaderStageFlagBits::eFragment,
-      .module = *fragment_module,
-      .pName = "FragmentMain",
-    },
-  };
-
-  vk::VertexInputBindingDescription const vertex_binding{
-    .binding = 0U,
-    .stride = sizeof(render::GGEMSGeometryVertex),
-    .inputRate = vk::VertexInputRate::eVertex,
-  };
-
-  vk::VertexInputAttributeDescription const vertex_attribute{
-    .location = 0U,
-    .binding = 0U,
-    .format = vk::Format::eR32G32B32Sfloat,
-    .offset = 0U,
-  };
-
-  vk::PipelineVertexInputStateCreateInfo const vertex_input{
-    .vertexBindingDescriptionCount = 1U,
-    .pVertexBindingDescriptions = &vertex_binding,
-    .vertexAttributeDescriptionCount = 1U,
-    .pVertexAttributeDescriptions = &vertex_attribute,
-  };
-
-  vk::PipelineInputAssemblyStateCreateInfo const assembly{
-    .topology = vk::PrimitiveTopology::eLineList,
-  };
-
-  vk::PipelineViewportStateCreateInfo const viewport{
-    .viewportCount = 1U,
-    .scissorCount = 1U,
-  };
-
-  vk::PipelineRasterizationStateCreateInfo const rasterization{
-    .polygonMode = vk::PolygonMode::eFill,
-    .cullMode = vk::CullModeFlagBits::eNone,
-    .frontFace = vk::FrontFace::eCounterClockwise,
-    .lineWidth = 1.0F,
-  };
-
-  vk::PipelineMultisampleStateCreateInfo const multisample{
-    .rasterizationSamples = vk::SampleCountFlagBits::e1,
-  };
-
-  vk::PipelineDepthStencilStateCreateInfo const depth{
-    .depthTestEnable = vk::True,
-    .depthWriteEnable = vk::True,
-    .depthCompareOp = vk::CompareOp::eLessOrEqual,
-  };
-
-  vk::PipelineColorBlendAttachmentState const attachment{
-    .colorWriteMask =
-      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
-  };
-
-  vk::PipelineColorBlendStateCreateInfo const blend{
-    .attachmentCount = 1U,
-    .pAttachments = &attachment,
-  };
-
-  std::array<vk::DynamicState, 2U> const dynamic_states{
-    vk::DynamicState::eViewport,
-    vk::DynamicState::eScissor,
-  };
-
-  vk::PipelineDynamicStateCreateInfo const dynamic{
-    .dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
-    .pDynamicStates = dynamic_states.data(),
-  };
-
-  vk::PushConstantRange const push_range{
-    .stageFlags = vk::ShaderStageFlagBits::eVertex,
-    .offset = 0U,
-    .size = sizeof(GeometryPushConstants),
-  };
-
-  geometry_pipeline_layout_ =
-    vk::raii::PipelineLayout{*device_, vk::PipelineLayoutCreateInfo{
-                                         .pushConstantRangeCount = 1U,
-                                         .pPushConstantRanges = &push_range,
-                                       }};
-
-  vk::PipelineRenderingCreateInfo const rendering{
-    .colorAttachmentCount = 1U,
-    .pColorAttachmentFormats = &color_format_,
-    .depthAttachmentFormat = depth_format_,
-  };
-
-  vk::GraphicsPipelineCreateInfo const pipeline{
-    .pNext = &rendering,
-    .stageCount = static_cast<std::uint32_t>(shader_stages.size()),
-    .pStages = shader_stages.data(),
-    .pVertexInputState = &vertex_input,
-    .pInputAssemblyState = &assembly,
-    .pViewportState = &viewport,
-    .pRasterizationState = &rasterization,
-    .pMultisampleState = &multisample,
-    .pDepthStencilState = &depth,
-    .pColorBlendState = &blend,
-    .pDynamicState = &dynamic,
-    .layout = *geometry_pipeline_layout_,
-  };
-
-  geometry_pipeline_ = vk::raii::Pipeline{*device_, nullptr, pipeline};
+  particle_traces_.Clear();
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::SetGeometryScene(
   std::shared_ptr<render::GGEMSGeometryScene const> scene) -> void {
-  geometry_vertex_buffer_ = nullptr;
-  geometry_vertex_memory_ = nullptr;
-  geometry_scene_ = std::move(scene);
-
-  if (!geometry_scene_) {
-    return;
-  }
-
-  auto const buffer_size = static_cast<vk::DeviceSize>(
-    geometry_scene_->vertices.size() * sizeof(render::GGEMSGeometryVertex));
-  geometry_vertex_buffer_ = vk::raii::Buffer{
-    *device_, vk::BufferCreateInfo{
-                .size = buffer_size,
-                .usage = vk::BufferUsageFlagBits::eVertexBuffer,
-                .sharingMode = vk::SharingMode::eExclusive,
-              }};
-
-  auto const requirements = geometry_vertex_buffer_.getMemoryRequirements();
-  geometry_vertex_memory_ = vk::raii::DeviceMemory{
-    *device_, vk::MemoryAllocateInfo{
-                .allocationSize = requirements.size,
-                .memoryTypeIndex =
-                  FindMemoryType(requirements.memoryTypeBits,
-                                 vk::MemoryPropertyFlagBits::eHostVisible |
-                                   vk::MemoryPropertyFlagBits::eHostCoherent),
-              }};
-
-  geometry_vertex_buffer_.bindMemory(*geometry_vertex_memory_, 0U);
-
-  void *mapped = geometry_vertex_memory_.mapMemory(0U, buffer_size);
-  std::memcpy(mapped, geometry_scene_->vertices.data(),
-              static_cast<std::size_t>(buffer_size));
-  geometry_vertex_memory_.unmapMemory();
+  geometry_.SetScene(std::move(scene));
 }
 
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::RecordGeometryCommands(
-  vk::raii::CommandBuffer const &command_buffer,
-  ScenePushConstants const &world_to_clip) -> void {
-  if (!geometry_scene_) {
-    return;
-  }
-
-  vk::Viewport const viewport{
-    .x = 0.0F,
-    .y = 0.0F,
-    .width = static_cast<float>(viewport_extent_.width),
-    .height = static_cast<float>(viewport_extent_.height),
-    .minDepth = 0.0F,
-    .maxDepth = 1.0F,
-  };
-
-  vk::Rect2D const scissor{
-    .offset = vk::Offset2D{.x = 0, .y = 0},
-    .extent = viewport_extent_,
-  };
-
-  command_buffer.setViewport(0U, viewport);
-  command_buffer.setScissor(0U, scissor);
-  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                              *geometry_pipeline_);
-  std::array<vk::Buffer, 1U> const buffers{*geometry_vertex_buffer_};
-  std::array<vk::DeviceSize, 1U> const offsets{0U};
-  command_buffer.bindVertexBuffers(0U, buffers, offsets);
-
-  GeometryPushConstants constants{.color = geometry_color_};
-  for (auto const &occurrence : geometry_scene_->occurrences) {
-    for (std::size_t row = 0U; row < 4U; ++row) {
-      for (std::size_t column = 0U; column < 4U; ++column) {
-        float value = 0.0F;
-        for (std::size_t inner = 0U; inner < 4U; ++inner) {
-          value += world_to_clip[row][inner] *
-                   occurrence.local_to_world[(inner * 4U) + column];
-        }
-        constants.local_to_clip[row][column] = value;
-      }
-    }
-
-    command_buffer.pushConstants(
-      *geometry_pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
-      vk::ArrayProxy<GeometryPushConstants const>{1U, &constants});
-    auto const &mesh = geometry_scene_->meshes[occurrence.mesh_index];
-    command_buffer.draw(mesh.vertex_count, 1U, mesh.first_vertex, 0U);
-  }
-}
 } // namespace ggems::ui
