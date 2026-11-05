@@ -124,6 +124,23 @@ auto InitializeLayout(ImVec2 const &dockspace_size) -> void {
 
 // -----------------------------------------------------------------------------
 
+auto RestoreInitialCameraDockTab() -> void {
+  auto const *camera = ImGui::FindWindowByName(k_camera_window_name);
+  if (camera == nullptr || camera->DockNode == nullptr) {
+    return;
+  }
+
+  auto const *node = camera->DockNode;
+  for (auto const *window : node->Windows) {
+    if (window->TabId == node->SelectedTabId) {
+      ImGui::SetWindowFocus(window->Name);
+      return;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 auto BuildDefaultLayout(ImVec2 const &dockspace_size) -> void {
   ImGuiID const dockspace_id = GetMainDockspaceID();
 
@@ -152,7 +169,7 @@ auto BuildDefaultLayout(ImVec2 const &dockspace_size) -> void {
 
   // ImGui seeds each dock-tab identity with its window identity.
   ImGui::DockBuilderGetNode(dock_right_id)->SelectedTabId =
-    ImHashStr("#TAB", 0U, ImHashStr(k_inspector_window_name));
+    ImHashStr("#TAB", 0U, ImHashStr(k_camera_window_name));
 
   ImGui::DockBuilderFinish(dockspace_id);
 }

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Presents World-grid controls and read-only reference-plane positions.
+ * \brief Presents read-only World-grid spacing and reference-plane positions.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -36,17 +36,10 @@
 namespace ggems::ui::detail {
 
 /*!
- * \brief Builds the View submenus for grid visibility and cursor plane.
- *
- * \param[in,out] grid Presentation options changed only by menu activation.
- */
-auto BuildCartesianGridMenus(GGEMSCartesianGrid &grid) -> void;
-
-/*!
  * \brief Displays a ray-plane intersection and physical grid spacing.
  *
  * \param[in] camera Camera used for the displayed scene image.
- * \param[in] grid Current reference plane and grid intervals.
+ * \param[in] grid Current reference plane and shared shader spacing.
  * \param[in] input Current image-relative cursor, absent when unavailable.
  * \param[in] world_loaded Whether physical World bounds have been submitted.
  */

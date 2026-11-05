@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Keeps Cartesian grid commands in View and diagnostics in Camera.
+ * \brief Displays Cartesian grid diagnostics and reference-plane positions.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -65,38 +65,21 @@ constexpr std::array<char const *, 3U> k_plane_labels{
   -> std::string {
   auto const quantity =
     ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(meters, "m");
+
   if (!quantity) {
     return "N/A (outside unit range)";
   }
+
   if (quantity->value == 0) {
     return spacing ? "<1 pm" : "0 mm";
   }
+
   return ggems::units::HumanReadable(*quantity, 3);
 }
 
 } // namespace
 
 namespace ggems::ui::detail {
-
-auto BuildCartesianGridMenus(GGEMSCartesianGrid &grid) -> void {
-  if (ImGui::BeginMenu("Grids")) {
-    for (std::size_t index = 0U; index < k_plane_names.size(); ++index) {
-      ImGui::MenuItem(k_plane_names[index], nullptr, &grid.visible[index]);
-    }
-    ImGui::EndMenu();
-  }
-
-  if (ImGui::BeginMenu("Cursor plane")) {
-    for (std::size_t index = 0U; index < k_plane_labels.size(); ++index) {
-      auto const plane = static_cast<GGEMSSceneCamera::ViewPlane>(index);
-      if (ImGui::MenuItem(k_plane_labels[index], nullptr,
-                          grid.reference_plane == plane)) {
-        grid.reference_plane = plane;
-      }
-    }
-    ImGui::EndMenu();
-  }
-}
 
 // -----------------------------------------------------------------------------
 
@@ -116,6 +99,7 @@ auto BuildCartesianGridReadout(GGEMSSceneCamera const &camera,
       ? camera.IntersectReferencePlane(
           input.cursor_pixels->x, input.cursor_pixels->y, grid.reference_plane)
       : std::nullopt;
+
   if (position) {
     auto const x = FormatMeters((*position)[0]);
     auto const y = FormatMeters((*position)[1]);
@@ -135,20 +119,20 @@ auto BuildCartesianGridReadout(GGEMSSceneCamera const &camera,
     ImGui::TextUnformatted("Viewport cursor (px): N/A");
   }
 
-  auto const &planes = grid.GetPlanes();
-  for (std::size_t index = 0U; index < k_plane_names.size(); ++index) {
-    auto const &plane = planes[index];
-    if (world_loaded && plane.minor_step_m > 0.0) {
-      auto const minor = FormatMeters(plane.minor_step_m, true);
-      auto const major = FormatMeters(plane.major_step_m, true);
-      ImGui::Text("%s grid: %s | minor %s / major %s", k_plane_names[index],
-                  grid.visible[index] ? "on" : "off", minor.c_str(),
-                  major.c_str());
-    } else {
-      ImGui::Text("%s grid: %s | step N/A", k_plane_names[index],
-                  grid.visible[index] ? "on" : "off");
-    }
+  auto const plane = static_cast<std::size_t>(grid.reference_plane);
+  auto const step = grid.GetMinorStepM();
+
+  if (world_loaded && step > 0.0F) {
+    auto const minor = FormatMeters(step, true);
+    auto const major = FormatMeters(5.0F * step, true);
+    ImGui::Text("%s grid: %s | minor %s / major %s", k_plane_names[plane],
+                grid.visible[plane] ? "on" : "off", minor.c_str(),
+                major.c_str());
+  } else {
+    ImGui::Text("%s grid: %s | step N/A", k_plane_names[plane],
+                grid.visible[plane] ? "on" : "off");
   }
+
   ImGui::PopTextWrapPos();
 }
 

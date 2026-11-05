@@ -21,8 +21,8 @@
 
 /*!
  * \file
- * \brief Checks cursor reference intersections and bounded Cartesian lattice
- * density.
+ * \brief Checks cursor reference intersections and shared physical grid
+ * spacing.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -31,7 +31,6 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 
 #include <gtest/gtest.h>
@@ -243,64 +242,31 @@ TEST(GGEMSSceneCameraRay, FreeViewPlanePointsRoundTripThroughSharedProjection) {
   }
 }
 
-auto ExpectLatticePositions(Grid::PlaneLines const &plane, std::size_t axis,
-                            double tolerance) -> void {
-  for (std::uint32_t line = 0U; line < plane.line_count[axis]; ++line) {
-    double const coordinate =
-      (static_cast<double>(plane.first_index[axis]) + line) *
-      plane.minor_step_m;
-    EXPECT_GE(coordinate, plane.minimum_m[axis] - tolerance);
-    EXPECT_LE(coordinate, plane.maximum_m[axis] + tolerance);
-  }
+// The allowed physical intervals are observable in both ImGui and the shader.
+// Accept the adjacent decade at a binary32 rounding boundary.
+auto ExpectPhysicalStep(float step) -> void {
+  ASSERT_GT(step, 0.0F);
+  double const decade = std::pow(10.0, std::floor(std::log10(step)));
+  EXPECT_TRUE(step == static_cast<float>(decade) ||
+              step == static_cast<float>(2.0 * decade) ||
+              step == static_cast<float>(5.0 * decade) ||
+              step == static_cast<float>(10.0 * decade));
 }
 
-auto ExpectLatticeBounds(Grid::PlaneLines const &plane, std::size_t axis,
-                         double world_half) -> void {
-  double const tolerance = world_half * 1.0e-10;
-  EXPECT_GE(plane.minimum_m[axis], -world_half - tolerance);
-  EXPECT_LE(plane.maximum_m[axis], world_half + tolerance);
-  ExpectLatticePositions(plane, axis, tolerance);
-  if (plane.minimum_m[axis] <= 0.0 && plane.maximum_m[axis] >= 0.0) {
-    EXPECT_LE(plane.first_index[axis], 0);
-    EXPECT_GT(static_cast<std::int64_t>(plane.first_index[axis]) +
-                plane.line_count[axis],
-              0);
-  }
-}
-
-// This oracle checks physical lattice values rather than duplicating the
-// spacing selector or the frustum clipper.
-auto ExpectLattice(Grid::PlaneLines const &plane,
-                   std::array<double, 2> const &world_half) -> void {
-  ASSERT_GT(plane.minor_step_m, 0.0);
-  double const decade =
-    std::pow(10.0, std::floor(std::log10(plane.minor_step_m)));
-  double const normalized = plane.minor_step_m / decade;
-  EXPECT_TRUE(std::abs(normalized - 1.0) < 1.0e-10 ||
-              std::abs(normalized - 2.0) < 1.0e-10 ||
-              std::abs(normalized - 5.0) < 1.0e-10);
-  EXPECT_DOUBLE_EQ(plane.major_step_m, 5.0 * plane.minor_step_m);
-  EXPECT_LE(plane.line_count[0] + plane.line_count[1], 256U);
-  for (std::size_t axis = 0U; axis < 2U; ++axis) {
-    ExpectLatticeBounds(plane, axis, world_half[axis]);
-  }
-}
-
-TEST(GGEMSCartesianGrid,
-     DefaultsAreExplicitAndHiddenPlanesStillHaveDiagnostics) {
+TEST(GGEMSCartesianGrid, DefaultsAreHiddenAndSpacingIsAvailableWithoutShowing) {
   Grid grid;
-  EXPECT_EQ(grid.visible, (std::array<bool, 3>{}));
+  EXPECT_EQ(grid.visible, (std::array<bool, 3U>{}));
   EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::XY);
+  EXPECT_FLOAT_EQ(grid.GetMinorStepM(), 0.0F);
   Camera camera;
   camera.SetViewportSize(800U, 600U);
-  camera.SetView(Camera::ViewPlane::XY);
-  grid.Update(camera, {1.0, 2.0, 3.0});
-  EXPECT_GT(grid.GetPlanes()[0].minor_step_m, 0.0);
-  EXPECT_EQ(grid.GetPlanes()[1].line_count, (std::array<std::uint32_t, 2>{}));
-  EXPECT_EQ(grid.GetPlanes()[2].line_count, (std::array<std::uint32_t, 2>{}));
+  camera.SetZoom(0.5F);
+  grid.Update(camera);
+  EXPECT_FLOAT_EQ(grid.GetMinorStepM(), 0.2F);
+  EXPECT_EQ(grid.visible, (std::array<bool, 3U>{}));
 }
 
-TEST(GGEMSCartesianGrid, AllPlanesRemainBoundedAcrossScaleZoomAndAspect) {
+TEST(GGEMSCartesianGrid, SharedIntervalUsesReadablePhysicalStepsAcrossScales) {
   for (double scale : {1.0e-9, 1.0, 1.0e6}) {
     for (auto projection :
          {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
@@ -314,84 +280,92 @@ TEST(GGEMSCartesianGrid, AllPlanesRemainBoundedAcrossScaleZoomAndAspect) {
         for (float zoom_factor : {1.0F, 0.1F, 100.0F, 10000.0F}) {
           camera.Reset();
           camera.SetZoom(camera.GetDiagnostics().zoom * zoom_factor);
-          grid.Update(camera, {scale, 2.0 * scale, 3.0 * scale});
-          auto const &planes = grid.GetPlanes();
-          ExpectLattice(planes[0], {scale, 2.0 * scale});
-          ExpectLattice(planes[1], {scale, 3.0 * scale});
-          ExpectLattice(planes[2], {2.0 * scale, 3.0 * scale});
+          grid.Update(camera);
+          float const step = grid.GetMinorStepM();
+          ExpectPhysicalStep(step);
+          double const nominal_pixels =
+            0.5 * camera.GetDiagnostics().zoom * viewport[1] * step;
+          EXPECT_GE(nominal_pixels, 16.0);
+          EXPECT_LE(nominal_pixels, 72.0);
         }
       }
     }
   }
 }
 
-TEST(GGEMSCartesianGrid, ZoomHysteresisResizeAndPanKeepOriginAnchored) {
+TEST(GGEMSCartesianGrid,
+     HysteresisRetainsStepThroughPanOrbitAndPlaneSelection) {
   Camera camera;
   camera.SetViewportSize(800U, 600U);
   camera.FrameWorld({2.0, 2.0, 2.0});
-  camera.SetView(Camera::ViewPlane::XY);
   Grid grid;
-  grid.Update(camera, {2.0, 2.0, 2.0});
-  double const initial_step = grid.GetPlanes()[0].minor_step_m;
+  grid.Update(camera);
+  float const initial_step = grid.GetMinorStepM();
   float const initial_zoom = camera.GetDiagnostics().zoom;
   for (float factor : {1.01F, 0.99F, 1.005F, 1.0F}) {
     camera.SetZoom(initial_zoom * factor);
-    grid.Update(camera, {2.0, 2.0, 2.0});
-    EXPECT_DOUBLE_EQ(grid.GetPlanes()[0].minor_step_m, initial_step);
+    grid.Update(camera);
+    EXPECT_FLOAT_EQ(grid.GetMinorStepM(), initial_step);
+  }
+  for (auto plane :
+       {Camera::ViewPlane::XY, Camera::ViewPlane::XZ, Camera::ViewPlane::YZ}) {
+    grid.reference_plane = plane;
+    auto const index = static_cast<std::size_t>(plane);
+    grid.visible[index] = !grid.visible[index];
+    camera.SetView(plane);
+    camera.Pan(35.0F, -19.0F);
+    camera.Orbit(25.0F, -10.0F);
+    grid.Update(camera);
+    EXPECT_FLOAT_EQ(grid.GetMinorStepM(), initial_step);
+    EXPECT_EQ(grid.reference_plane, plane);
   }
   camera.SetZoom(initial_zoom * 100.0F);
-  grid.Update(camera, {2.0, 2.0, 2.0});
-  EXPECT_LT(grid.GetPlanes()[0].minor_step_m, initial_step);
-  camera.Pan(35.0F, -19.0F);
-  camera.SetViewportSize(1200U, 900U);
-  grid.Update(camera, {2.0, 2.0, 2.0});
-  ExpectLattice(grid.GetPlanes()[0], {2.0, 2.0});
+  grid.Update(camera);
+  EXPECT_LT(grid.GetMinorStepM(), initial_step);
+  float const zoomed_step = grid.GetMinorStepM();
+  camera.SetViewportSize(8000U, 6000U);
+  grid.Update(camera);
+  EXPECT_LT(grid.GetMinorStepM(), zoomed_step);
 }
 
-// Equivalent physical scenes must choose equivalent lattice steps even in
-// decades where dividing a represented five-step by its decade rounds upward.
-TEST(GGEMSCartesianGrid, PhysicalScaleCovarianceKeepsFiveStepsStable) {
+TEST(GGEMSCartesianGrid, PhysicalScaleCovarianceRetainsExactShaderFloat) {
   Camera large;
   large.SetViewportSize(800U, 600U);
-  large.SetView(Camera::ViewPlane::XY);
   large.SetZoom(2.0e8F);
   Camera small;
   small.SetViewportSize(800U, 600U);
-  small.SetView(Camera::ViewPlane::XY);
   small.SetZoom(2.0e17F);
   Grid large_grid;
   Grid small_grid;
-  large_grid.Update(large, {1.0, 1.0, 1.0});
-  small_grid.Update(small, {1.0e-9, 1.0e-9, 1.0e-9});
-  double const large_step = large_grid.GetPlanes()[0].minor_step_m;
-  double const small_step = small_grid.GetPlanes()[0].minor_step_m;
-  ASSERT_GT(large_step, 0.0);
-  EXPECT_NEAR(small_step / large_step, 1.0e-9, 1.0e-20);
+  large_grid.Update(large);
+  small_grid.Update(small);
+  float const large_step = large_grid.GetMinorStepM();
+  float const small_step = small_grid.GetMinorStepM();
+  ASSERT_GT(large_step, 0.0F);
+  EXPECT_FLOAT_EQ(small_step / large_step, 1.0e-9F);
   for (int frame = 0; frame < 20; ++frame) {
-    large_grid.Update(large, {1.0, 1.0, 1.0});
-    small_grid.Update(small, {1.0e-9, 1.0e-9, 1.0e-9});
-    EXPECT_DOUBLE_EQ(large_grid.GetPlanes()[0].minor_step_m, large_step);
-    EXPECT_DOUBLE_EQ(small_grid.GetPlanes()[0].minor_step_m, small_step);
+    large_grid.Update(large);
+    small_grid.Update(small);
+    EXPECT_FLOAT_EQ(large_grid.GetMinorStepM(), large_step);
+    EXPECT_FLOAT_EQ(small_grid.GetMinorStepM(), small_step);
   }
 }
 
-TEST(GGEMSCartesianGrid,
-     GrazingProjectionFadesAndNeverEmitsDenseParallelLines) {
-  Camera camera;
-  camera.SetViewportSize(800U, 600U);
-  camera.SetZoom(0.5F);
-  Grid grid;
-  camera.SetOrbitAngles(270.0F, 87.0F);
-  grid.Update(camera, {2.0, 2.0, 2.0});
-  EXPECT_GT(grid.GetPlanes()[0].opacity, 0.0F);
-  EXPECT_LT(grid.GetPlanes()[0].opacity, 1.0F);
-  EXPECT_LE(grid.GetPlanes()[0].line_count[0] +
-              grid.GetPlanes()[0].line_count[1],
-            256U);
-  camera.SetOrbitAngles(270.0F, 90.0F);
-  grid.Update(camera, {2.0, 2.0, 2.0});
-  EXPECT_FLOAT_EQ(grid.GetPlanes()[0].opacity, 0.0F);
-  EXPECT_EQ(grid.GetPlanes()[0].line_count, (std::array<std::uint32_t, 2>{}));
+TEST(GGEMSCartesianGrid, BothProjectionsPublishKnownIntervalsAtTheTargetScale) {
+  std::array const zooms{0.1F, 0.2F, 0.5F, 1.0F, 2.0F, 5.0F, 10.0F};
+  std::array const expected{1.0F, 0.5F, 0.2F, 0.1F, 0.05F, 0.02F, 0.01F};
+  for (auto projection :
+       {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
+    for (std::size_t index = 0U; index < zooms.size(); ++index) {
+      Camera camera;
+      camera.SetViewportSize(800U, 600U);
+      camera.SetProjection(projection);
+      camera.SetZoom(zooms[index]);
+      Grid grid;
+      grid.Update(camera);
+      EXPECT_FLOAT_EQ(grid.GetMinorStepM(), expected[index]);
+    }
+  }
 }
 
 } // namespace

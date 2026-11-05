@@ -76,7 +76,7 @@ struct GGEMSWorkbenchState {
   GGEMSSceneCamera camera;
 
   /*!
-   * \brief World grids and cursor reference plane, independent of navigation.
+   * \brief Shared grid and cursor plane retained between axial view selections.
    */
   GGEMSCartesianGrid cartesian_grid;
 

@@ -483,6 +483,9 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
 }
 
 TEST_F(GGEMSImGuiCameraDiagnostics, MenuCheckmarksFollowCurrentCameraState) {
+  auto &grid = workbench_.cartesian_grid;
+  grid.visible = {true, false, true};
+  auto const visibility = grid.visible;
   OpenMenu("Camera view");
   ExpectMenuChecked("Free view", true);
   for (char const *view : {"XY", "XZ", "YZ"}) {
@@ -520,6 +523,10 @@ TEST_F(GGEMSImGuiCameraDiagnostics, MenuCheckmarksFollowCurrentCameraState) {
   for (char const *view : {"XY", "XZ", "YZ"}) {
     ExpectMenuChecked(view, false);
   }
+
+  EXPECT_EQ(workbench_.cartesian_grid.reference_plane,
+            ggems::ui::detail::GGEMSSceneCamera::ViewPlane::YZ);
+  EXPECT_EQ(grid.visible, visibility);
 
   for (char const *selected : {"Orthographic", "Perspective"}) {
     Activate({"Projection", selected});
@@ -561,53 +568,82 @@ TEST_F(GGEMSImGuiCameraDiagnostics, PerspectiveViewportRoutesOrbitPanAndWheel) {
   EXPECT_TRUE(displayed_text_.contains("Mode: Perspective"));
 }
 
-TEST_F(GGEMSImGuiCameraDiagnostics, GridsAndCursorPlaneMenusAreIndependent) {
-  auto const before = workbench_.camera.BuildWorldToClipMatrix();
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       GridMenuPreservesCameraAndCursorPlaneAcrossEightMasks) {
+  using Camera = ggems::ui::detail::GGEMSSceneCamera;
   auto &grid = workbench_.cartesian_grid;
-  EXPECT_EQ(grid.reference_plane,
-            ggems::ui::detail::GGEMSSceneCamera::ViewPlane::XY);
-  for (bool const visible : grid.visible) {
-    EXPECT_FALSE(visible);
+  EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::XY);
+  EXPECT_EQ(grid.visible, (std::array{false, false, false}));
+  OpenMenu(nullptr);
+  auto *menu = GImGui->NavWindow;
+  ASSERT_NE(menu, nullptr);
+  for (int item = 0; item < 24; ++item) {
+    EXPECT_NE(GImGui->NavId, menu->GetID("Show grid"));
+    EXPECT_NE(GImGui->NavId, menu->GetID("Cursor plane"));
+    PressKey(ImGuiKey_DownArrow);
   }
 
   std::array<char const *, 3U> const names{"XY", "XZ", "YZ"};
-  for (unsigned int mask = 0U; mask < 8U; ++mask) {
-    for (std::size_t index = 0U; index < names.size(); ++index) {
-      bool const expected = (mask & (1U << index)) != 0U;
-      if (grid.visible[index] != expected) {
-        Activate({"Grids", names[index]});
+  Activate({"Camera view", "YZ"});
+  for (char const *projection : {"Orthographic", "Perspective"}) {
+    Activate({"Projection", projection});
+    auto const before = workbench_.camera.BuildWorldToClipMatrix();
+    for (unsigned int mask = 0U; mask < 8U; ++mask) {
+      SCOPED_TRACE(::testing::Message() << projection << ", mask=" << mask);
+      for (std::size_t index = 0U; index < names.size(); ++index) {
+        bool const expected = (mask & (1U << index)) != 0U;
+        if (grid.visible[index] != expected) {
+          auto expected_visibility = grid.visible;
+          expected_visibility[index] = expected;
+          Activate({"Grids", names[index]});
+          EXPECT_EQ(grid.visible, expected_visibility);
+        }
       }
-      EXPECT_EQ(grid.visible[index], expected);
+      OpenMenu("Grids");
+      for (std::size_t index = 0U; index < names.size(); ++index) {
+        ExpectMenuChecked(names[index], (mask & (1U << index)) != 0U);
+      }
+      EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::YZ);
+      EXPECT_TRUE(displayed_text_.contains((mask & 4U) != 0U ? "YZ grid: on"
+                                                             : "YZ grid: off"));
     }
-    OpenMenu("Grids");
-    for (std::size_t index = 0U; index < names.size(); ++index) {
-      ExpectMenuChecked(names[index], (mask & (1U << index)) != 0U);
-    }
+    auto const after = workbench_.camera.BuildWorldToClipMatrix();
+    EXPECT_EQ(after.row_0, before.row_0);
+    EXPECT_EQ(after.row_1, before.row_1);
+    EXPECT_EQ(after.row_2, before.row_2);
+    EXPECT_EQ(after.row_3, before.row_3);
   }
+}
 
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       CameraViewsChangeCursorPlaneWithoutChangingGridVisibility) {
+  using Camera = ggems::ui::detail::GGEMSSceneCamera;
+  auto &grid = workbench_.cartesian_grid;
+  Activate({"Grids", "XY"});
+  Activate({"Grids", "YZ"});
+  auto const visibility = grid.visible;
+  EXPECT_EQ(visibility, (std::array{true, false, true}));
+  std::array<char const *, 3U> const names{"XY", "XZ", "YZ"};
   std::array<char const *, 3U> const labels{
     "XY (Z = 0)",
     "XZ (Y = 0)",
     "YZ (X = 0)",
   };
-  for (std::size_t selected = 0U; selected < labels.size(); ++selected) {
-    Activate({"Cursor plane", labels[selected]});
-    EXPECT_EQ(static_cast<std::size_t>(grid.reference_plane), selected);
-    OpenMenu("Cursor plane");
-    for (std::size_t index = 0U; index < labels.size(); ++index) {
-      ExpectMenuChecked(labels[index], index == selected);
+  for (char const *projection : {"Orthographic", "Perspective"}) {
+    Activate({"Projection", projection});
+    for (std::size_t selected = 0U; selected < labels.size(); ++selected) {
+      Activate({"Camera view", names[selected]});
+      EXPECT_EQ(static_cast<std::size_t>(grid.reference_plane), selected);
+      EXPECT_EQ(grid.visible, visibility);
+      EXPECT_TRUE(displayed_text_.contains(labels[selected]));
     }
-    EXPECT_TRUE(displayed_text_.contains(labels[selected]));
+    Activate({"Camera view", "Free view"});
+    EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::YZ);
+    EXPECT_EQ(grid.visible, visibility);
+    Activate({"Reset Camera"});
+    EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::YZ);
+    EXPECT_EQ(grid.visible, visibility);
   }
-
-  auto const after = workbench_.camera.BuildWorldToClipMatrix();
-  EXPECT_EQ(after.row_0, before.row_0);
-  EXPECT_EQ(after.row_1, before.row_1);
-  EXPECT_EQ(after.row_2, before.row_2);
-  EXPECT_EQ(after.row_3, before.row_3);
-  Activate({"Camera view", "Free view"});
-  EXPECT_EQ(grid.reference_plane,
-            ggems::ui::detail::GGEMSSceneCamera::ViewPlane::YZ);
 }
 
 TEST_F(GGEMSImGuiCameraDiagnostics,
@@ -642,21 +678,26 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   for (auto const projection :
        {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
     workbench_.camera.SetProjection(projection);
-    io.AddMousePosEvent(
-      origin.x + (0.5F * static_cast<float>(workbench_.viewport.width)),
-      origin.y + (0.5F * static_cast<float>(workbench_.viewport.height)));
-    Frame();
-    EXPECT_TRUE(displayed_text_.contains("Cursor plane: XY (Z = 0)"));
-    EXPECT_TRUE(displayed_text_.contains("Ray-plane intersection"));
-    EXPECT_TRUE(displayed_text_.contains("Cursor world: (0 mm, 0 mm, 0 mm)"))
-      << displayed_text_;
-    EXPECT_TRUE(displayed_text_.contains("minor "));
-    EXPECT_TRUE(displayed_text_.contains(" / major "));
+    for (char const *view : {"XY", "XZ", "YZ"}) {
+      Activate({"Camera view", view});
+      io.AddMousePosEvent(
+        origin.x + (0.5F * static_cast<float>(workbench_.viewport.width)),
+        origin.y + (0.5F * static_cast<float>(workbench_.viewport.height)));
+      Frame();
+      EXPECT_TRUE(
+        displayed_text_.contains(std::string{"Cursor plane: "} + view));
+      EXPECT_TRUE(displayed_text_.contains("Ray-plane intersection"));
+      EXPECT_TRUE(displayed_text_.contains("Cursor world: (0 mm, 0 mm, 0 mm)"))
+        << displayed_text_;
+      EXPECT_TRUE(displayed_text_.contains("minor "));
+      EXPECT_TRUE(displayed_text_.contains(" / major "));
+    }
 
-    workbench_.cartesian_grid.reference_plane = Camera::ViewPlane::YZ;
+    // A free orientation may turn parallel to the retained YZ reference.
+    workbench_.camera.SetView(Camera::ViewPlane::XY);
     Frame();
     EXPECT_TRUE(displayed_text_.contains("Cursor world: N/A"));
-    workbench_.cartesian_grid.reference_plane = Camera::ViewPlane::XY;
+    workbench_.camera.SetView(Camera::ViewPlane::YZ);
     io.AddMousePosEvent(1200.0F, 750.0F);
     Frame();
     EXPECT_TRUE(displayed_text_.contains("Cursor world: N/A"));

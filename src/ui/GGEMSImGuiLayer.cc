@@ -33,8 +33,8 @@
 #include <imgui.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
-#include "GGEMS/ui/detail/GGEMSImGuiCartesianGrid.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/detail/GGEMSCartesianGrid.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiPanels.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
@@ -73,9 +73,12 @@ using Camera = ggems::ui::detail::GGEMSSceneCamera;
  * \brief Applies existing plane presets or requests the existing free reset.
  *
  * \param[in,out] camera Camera changed only when a plane is selected.
+ * \param[in,out] grid Reference plane retained until another axial selection.
  * \return True when Free view requests a camera reset.
  */
-[[nodiscard]] auto BuildCameraViewMenu(Camera &camera) -> bool {
+[[nodiscard]] auto
+BuildCameraViewMenu(Camera &camera, ggems::ui::detail::GGEMSCartesianGrid &grid)
+  -> bool {
   if (!ImGui::BeginMenu("Camera view")) {
     return false;
   }
@@ -91,16 +94,19 @@ using Camera = ggems::ui::detail::GGEMSSceneCamera;
 
   if (ImGui::MenuItem("XY", nullptr, xy)) {
     camera.SetView(Camera::ViewPlane::XY);
+    grid.reference_plane = Camera::ViewPlane::XY;
   }
   ImGui::SetItemTooltip("From +Z; screen right +X, screen up -Y.");
 
   if (ImGui::MenuItem("XZ", nullptr, xz)) {
     camera.SetView(Camera::ViewPlane::XZ);
+    grid.reference_plane = Camera::ViewPlane::XZ;
   }
   ImGui::SetItemTooltip("From +Y; screen right +X, screen up +Z.");
 
   if (ImGui::MenuItem("YZ", nullptr, yz)) {
     camera.SetView(Camera::ViewPlane::YZ);
+    grid.reference_plane = Camera::ViewPlane::YZ;
   }
   ImGui::SetItemTooltip("From +X; screen right -Z, screen up -Y.");
 
@@ -122,6 +128,7 @@ auto GGEMSImGuiLayer::BuildFrame(
   workbench.viewport.visible = false;
   detail::GGEMSImGuiViewportPanel::Result camera_input{};
 
+  bool const initial_layout = !layout_initialized_;
   MenuActions const menu_actions = BuildMainDockspace(workbench);
 
   if (workbench.show_output_panel) {
@@ -166,23 +173,26 @@ auto GGEMSImGuiLayer::BuildFrame(
   }
 
   if (inputs.geometry_scene != nullptr) {
-    workbench.cartesian_grid.Update(workbench.camera,
-                                    inputs.geometry_scene->world_half_extent_m);
+    workbench.cartesian_grid.Update(workbench.camera);
   }
 
   if (workbench.show_camera_panel) {
+    if (menu_actions.reset_layout) {
+      ImGui::SetNextWindowFocus();
+    }
+
     detail::BuildCameraPanel(workbench.show_camera_panel, workbench.camera,
                              camera_input, workbench.cartesian_grid,
                              inputs.geometry_scene != nullptr);
   }
 
   if (workbench.show_inspector_panel) {
-    if (menu_actions.reset_layout) {
-      ImGui::SetNextWindowFocus();
-    }
-
     detail::BuildInspectorPanel(workbench.show_inspector_panel,
                                 workbench.selected_scene_item);
+  }
+
+  if (initial_layout) {
+    detail::RestoreInitialCameraDockTab();
   }
 }
 
@@ -261,7 +271,12 @@ auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
 
     ImGui::Separator();
     ImGui::MenuItem("Axes", nullptr, &workbench.show_axes);
-    detail::BuildCartesianGridMenus(workbench.cartesian_grid);
+    if (ImGui::BeginMenu("Grids")) {
+      ImGui::MenuItem("XY", nullptr, &workbench.cartesian_grid.visible[0]);
+      ImGui::MenuItem("XZ", nullptr, &workbench.cartesian_grid.visible[1]);
+      ImGui::MenuItem("YZ", nullptr, &workbench.cartesian_grid.visible[2]);
+      ImGui::EndMenu();
+    }
 
     bool show_particle_traces = workbench.trace_visibility.IsGlobalVisible();
     if (ImGui::MenuItem("Particle traces", nullptr, &show_particle_traces)) {
@@ -269,7 +284,8 @@ auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
     }
 
     ImGui::Separator();
-    menu_actions.reset_camera = BuildCameraViewMenu(workbench.camera);
+    menu_actions.reset_camera =
+      BuildCameraViewMenu(workbench.camera, workbench.cartesian_grid);
 
     if (ImGui::BeginMenu("Projection")) {
       auto const projection = workbench.camera.GetDiagnostics().projection;

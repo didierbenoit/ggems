@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Declares the bounded procedural Cartesian grid renderer.
+ * \brief Declares the procedural World-plane grid renderer.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -38,10 +38,11 @@
 namespace ggems::ui::detail {
 
 /*!
- * \brief Owns a depth-tested procedural line pipeline without vertex buffers.
+ * \brief Owns a depth-tested procedural grid pipeline without vertex buffers.
  *
  * The application completes GPU use before shutdown or destruction. Grid
- * draws precede scene objects so equal-depth geometry remains authoritative.
+ * draws follow scene objects and blend only where the enabled World planes
+ * are visible.
  */
 class GGEMSVulkanCartesianGrid {
 public:
@@ -79,29 +80,29 @@ public:
   auto Shutdown() noexcept -> void;
 
   /*!
-   * \brief Records at most six bounded procedural draws in the scene pass.
+   * \brief Records up to three World-plane rectangles in the scene pass.
    *
-   * The caller sets viewport and scissor. Invisible grids emit no commands.
-   * Center lines use the major color and are shared between intersecting
-   * planes. The existing World axes retain the emphasized origin marker.
-   * A subpixel depth allowance gives coplanar objects stable priority.
+   * The caller sets viewport and scissor. Hidden grids emit no commands.
+   * Slang owns the pattern, clipping, filtering, and subpixel depth allowance.
+   * Read-only depth and alpha blending preserve antialiased line coverage.
    *
    * \param[in] command_buffer Recording buffer inside dynamic rendering.
    * \param[in] world_to_clip Shared transform from World meters to clip space.
    * \param[in] viewport_extent Physical render-target dimensions.
-   * \param[in] grid Updated physical intervals and independent visibility.
-   * \param[in] background Linear clear color used for grazing-angle fading.
+   * \param[in] world_half_extent_m Positive World half extents in meters.
+   * \param[in] grid Independent plane visibility and shared physical step.
    */
   auto Record(vk::raii::CommandBuffer const &command_buffer,
               std::array<std::array<float, 4U>, 4U> const &world_to_clip,
-              vk::Extent2D viewport_extent, GGEMSCartesianGrid const &grid,
-              std::array<float, 4U> const &background) const -> void;
+              vk::Extent2D viewport_extent,
+              std::array<double, 3U> const &world_half_extent_m,
+              GGEMSCartesianGrid const &grid) const -> void;
 
 private:
-  /*! \brief Layout of the 128-byte vertex-stage push constants. */
+  /*! \brief Layout of the shared vertex and fragment push constants. */
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
 
-  /*! \brief Depth-tested line-list pipeline with no vertex inputs. */
+  /*! \brief Depth-tested triangle pipeline with no vertex inputs. */
   vk::raii::Pipeline pipeline_{nullptr};
 
   /*! \brief Linear minor and major colors from existing semantic roles. */

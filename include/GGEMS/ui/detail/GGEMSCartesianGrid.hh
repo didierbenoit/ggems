@@ -21,8 +21,7 @@
 
 /*!
  * \file
- * \brief Defines bounded world-origin Cartesian grid sampling for the UI
- * renderer.
+ * \brief Shares grid visibility, cursor plane, and physical spacing with UI.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -31,74 +30,40 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
 
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 
 namespace ggems::ui::detail {
 
-/*!
- * \brief Maintains independent reference grids and their adaptive physical
- * steps.
- */
+/*! \brief Shares physical spacing across independently visible grids. */
 class GGEMSCartesianGrid {
 public:
-  /*!
-   * \brief Describes two procedural line families in one world-origin plane.
-   */
-  struct PlaneLines {
-    /*! \brief Minor lattice spacing in meters; zero when unavailable. */
-    double minor_step_m{};
-
-    /*! \brief Major spacing in meters, equal to five minor intervals. */
-    double major_step_m{};
-
-    /*! \brief Lower physical bounds along the two in-plane world axes. */
-    std::array<double, 2> minimum_m{};
-
-    /*! \brief Upper physical bounds along the two in-plane world axes. */
-    std::array<double, 2> maximum_m{};
-
-    /*! \brief First signed origin-relative lattice index in each family. */
-    std::array<std::int32_t, 2> first_index{};
-
-    /*! \brief Number of lines at successive lattice indices in each family. */
-    std::array<std::uint32_t, 2> line_count{};
-
-    /*! \brief Visibility weight reducing contrast near edge-on projection. */
-    float opacity{};
-  };
-
   /*! \brief Independent XY, XZ, and YZ visibility; all hidden initially. */
-  std::array<bool, 3> visible{};
+  std::array<bool, 3U> visible{};
 
-  /*! \brief Cursor reference plane, retained until explicitly changed. */
+  /*! \brief Last selected axial cursor plane; visibility does not change it. */
   GGEMSSceneCamera::ViewPlane reference_plane{GGEMSSceneCamera::ViewPlane::XY};
 
   /*!
-   * \brief Updates origin-anchored steps and bounded visible World intervals.
+   * \brief Chooses one physical 1-2-5 interval with zoom hysteresis.
    *
-   * XY uses axes X/Y, XZ uses X/Z, and YZ uses Y/Z. Each plane emits at most
-   * 256 lines. Hidden planes are also updated for spacing diagnostics.
+   * This scalar is shared by the shader and ImGui. Projection, clipping,
+   * density filtering, and line appearance remain shader responsibilities.
    *
-   * \param[in] camera Current logical viewport and shared projection.
-   * \param[in] world_half_extent_m Positive World half extents in meters.
+   * \param[in] camera Current zoom and logical viewport height.
    */
-  auto Update(GGEMSSceneCamera const &camera,
-              std::array<double, 3> const &world_half_extent_m) noexcept
-    -> void;
+  auto Update(GGEMSSceneCamera const &camera) noexcept -> void;
 
   /*!
-   * \brief Reads the current procedural line descriptions.
+   * \brief Reads the exact minor spacing supplied to the grid shader.
    *
-   * \return XY, XZ, and YZ descriptions in that order.
+   * \return Minor spacing in meters; zero before the first update.
    */
-  [[nodiscard]] auto GetPlanes() const noexcept
-    -> std::array<PlaneLines, 3> const &;
+  [[nodiscard]] auto GetMinorStepM() const noexcept -> float;
 
 private:
-  /*! \brief Current physical steps, retained between updates for hysteresis. */
-  std::array<PlaneLines, 3> planes_{};
+  /*! \brief Shared shader interval, retained between updates for hysteresis. */
+  float minor_step_m_{};
 };
 
 } // namespace ggems::ui::detail

@@ -503,12 +503,6 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
   command_buffer.setViewport(0U, viewport);
   command_buffer.setScissor(0U, scissor);
 
-  if (parameters.cartesian_grid != nullptr) {
-    cartesian_grid_.Record(command_buffer, parameters.world_to_clip,
-                           viewport_extent_, *parameters.cartesian_grid,
-                           parameters.clear_color);
-  }
-
   geometry_.Record(command_buffer, parameters.world_to_clip);
 
   auto const *scene = geometry_.GetScene();
@@ -519,6 +513,12 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   particle_traces_.Record(command_buffer, parameters.world_to_clip,
                           parameters.trace_visibility);
+
+  if (parameters.cartesian_grid != nullptr && scene != nullptr) {
+    cartesian_grid_.Record(command_buffer, parameters.world_to_clip,
+                           viewport_extent_, scene->world_half_extent_m,
+                           *parameters.cartesian_grid);
+  }
 
   command_buffer.endRendering();
 

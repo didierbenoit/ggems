@@ -84,6 +84,15 @@ inline constexpr char const *k_camera_window_name =
 auto InitializeLayout(ImVec2 const &dockspace_size) -> void;
 
 /*!
+ * \brief Restores the admitted Camera dock selection after initial windows
+ * open.
+ *
+ * Call once after submitting the first frame's panels. This preserves the
+ * saved selection or the default Camera tab despite automatic opening focus.
+ */
+auto RestoreInitialCameraDockTab() -> void;
+
+/*!
  * \brief Replaces the main docking tree with the default panel layout.
  *
  * \param[in] dockspace_size Available dockspace size in logical UI pixels.

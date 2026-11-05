@@ -47,7 +47,7 @@
 namespace ggems::ui {
 
 /*!
- * \brief Owns offscreen targets and coordinates grids, geometry, and traces.
+ * \brief Owns offscreen targets and coordinates the grid, geometry, and traces.
  *
  * Physical and logical devices are borrowed. The application completes GPU use
  * before replacing targets or scene data and before shutdown; scene texture
@@ -69,7 +69,7 @@ public:
     /*! \brief Borrowed global and per-source trace visibility. */
     ggems::render::GGEMSParticleTraceVisibility const &trace_visibility;
 
-    /*! \brief Optional updated Cartesian reference grids; null draws none. */
+    /*! \brief Optional Cartesian reference-plane grid; null draws none. */
     detail::GGEMSCartesianGrid const *cartesian_grid{};
   };
 

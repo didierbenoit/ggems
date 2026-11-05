@@ -29,6 +29,7 @@
 
 #include <array>
 #include <cstddef>
+#include <initializer_list>
 #include <memory>
 #include <string>
 
@@ -86,7 +87,8 @@ protected:
       .scene_texture_id = ImTextureID{1},
       .scene_texture_logical_width = workbench_.viewport.width,
       .scene_texture_logical_height = workbench_.viewport.height,
-      .output_state = &output_};
+      .output_state = &output_,
+    };
     layer_->BuildFrame(inputs, detail::GGEMSDeviceStatusSnapshot{}, workbench_);
     ImGui::Render();
   }
@@ -139,7 +141,7 @@ protected:
     };
   }
 
-  static auto ExpectSharedInspectorDock(bool inspector_selected) -> void {
+  static auto ExpectSharedDock() -> void {
     auto const *camera = Window(detail::k_camera_window_name);
     auto const *inspector = Window(detail::k_inspector_window_name);
     ASSERT_NE(camera, nullptr);
@@ -147,11 +149,14 @@ protected:
     ASSERT_NE(inspector->DockNode, nullptr);
     EXPECT_EQ(camera->DockNode, inspector->DockNode);
     EXPECT_NE(camera->DockId, 0U);
-    if (inspector_selected) {
-      EXPECT_EQ(inspector->DockNode->SelectedTabId, inspector->TabId);
-      EXPECT_TRUE(inspector->DockTabIsVisible);
-      EXPECT_FALSE(camera->DockTabIsVisible);
-    }
+  }
+
+  static auto ExpectSelectedTab(char const *name) -> void {
+    ASSERT_NO_FATAL_FAILURE(ExpectSharedDock());
+    auto const *selected = Window(name);
+    ASSERT_NE(selected, nullptr);
+    EXPECT_EQ(selected->DockNode->SelectedTabId, selected->TabId);
+    EXPECT_TRUE(selected->DockTabIsVisible);
   }
 
   detail::GGEMSWorkbenchState workbench_;
@@ -162,16 +167,43 @@ private:
   ggems::core::GGEMSOutputState output_;
 };
 
-TEST_F(GGEMSImGuiLayout, FreshLayoutSelectsInspectorBesideCamera) {
+TEST_F(GGEMSImGuiLayout, FreshLayoutSelectsCameraBesideInspector) {
   EXPECT_FALSE(detail::HasSavedLayout());
   Settle();
-  ExpectSharedInspectorDock(true);
+  ExpectSelectedTab(detail::k_camera_window_name);
   EXPECT_GT(Window(detail::k_inspector_window_name)->Pos.x,
             Window(detail::k_viewport_window_name)->Pos.x);
 
   Restart(Save());
   Settle();
-  ExpectSharedInspectorDock(true);
+  ExpectSelectedTab(detail::k_camera_window_name);
+}
+
+TEST_F(GGEMSImGuiLayout, ManualTabSelectionSurvivesFramesAndRestart) {
+  Settle();
+  ExpectSelectedTab(detail::k_camera_window_name);
+  auto const other_docks = OtherDocks();
+
+  for (char const *name :
+       {detail::k_inspector_window_name, detail::k_camera_window_name}) {
+    auto const *window = Window(name);
+    ASSERT_NE(window, nullptr);
+    ASSERT_NE(window->DockNode, nullptr);
+    auto *bar = window->DockNode->TabBar;
+    ASSERT_NE(bar, nullptr);
+    auto const *tab = ImGui::TabBarFindTabByID(bar, window->TabId);
+    ASSERT_NE(tab, nullptr);
+    Click({bar->BarRect.Min.x + tab->Offset + (0.5F * tab->Width),
+           0.5F * (bar->BarRect.Min.y + bar->BarRect.Max.y)});
+    Settle();
+    ExpectSelectedTab(name);
+    EXPECT_EQ(OtherDocks(), other_docks);
+
+    Restart(Save());
+    Settle();
+    ExpectSelectedTab(name);
+    EXPECT_EQ(OtherDocks(), other_docks);
+  }
 }
 
 TEST_F(GGEMSImGuiLayout, EmptyRuntimeDockspaceIsNotASavedPanelLayout) {
@@ -183,7 +215,7 @@ TEST_F(GGEMSImGuiLayout, EmptyRuntimeDockspaceIsNotASavedPanelLayout) {
   EXPECT_FALSE(detail::HasSavedLayout());
 
   Settle();
-  ExpectSharedInspectorDock(true);
+  ExpectSelectedTab(detail::k_camera_window_name);
 }
 
 TEST_F(GGEMSImGuiLayout, LegacySettingsAddOnlyMissingCameraToInspectorDock) {
@@ -200,7 +232,7 @@ TEST_F(GGEMSImGuiLayout, LegacySettingsAddOnlyMissingCameraToInspectorDock) {
     ImGui::FindWindowSettingsByID(ImHashStr(detail::k_camera_window_name)),
     nullptr);
   Settle();
-  ExpectSharedInspectorDock(false);
+  ExpectSharedDock();
   EXPECT_EQ(OtherDocks(), other_docks);
   EXPECT_FLOAT_EQ(Window(detail::k_output_window_name)->Pos.x,
                   output_position.x);
@@ -209,7 +241,7 @@ TEST_F(GGEMSImGuiLayout, LegacySettingsAddOnlyMissingCameraToInspectorDock) {
 
   Restart(Save());
   Settle();
-  ExpectSharedInspectorDock(false);
+  ExpectSharedDock();
   EXPECT_EQ(OtherDocks(), other_docks);
 }
 
@@ -273,17 +305,17 @@ TEST_F(GGEMSImGuiLayout, CameraCloseReopenResizeAndRestartPreserveDock) {
   auto const closed_settings = Save();
   workbench_.show_camera_panel = true;
   Settle();
-  ExpectSharedInspectorDock(false);
+  ExpectSharedDock();
   EXPECT_EQ(Window(detail::k_camera_window_name)->DockId, camera_dock);
 
   ImGui::GetIO().DisplaySize = {1024.0F, 720.0F};
   Settle();
-  ExpectSharedInspectorDock(false);
+  ExpectSharedDock();
   EXPECT_EQ(Window(detail::k_camera_window_name)->DockId, camera_dock);
 
   Restart(closed_settings);
   Settle();
-  ExpectSharedInspectorDock(false);
+  ExpectSharedDock();
   EXPECT_EQ(Window(detail::k_camera_window_name)->DockId, camera_dock);
 }
 
@@ -317,7 +349,7 @@ TEST_F(GGEMSImGuiLayout, ViewResetLayoutRebuildsTabsAndPanelVisibility) {
   EXPECT_TRUE(workbench_.show_viewport_panel);
   EXPECT_TRUE(workbench_.show_inspector_panel);
   EXPECT_TRUE(workbench_.show_camera_panel);
-  ExpectSharedInspectorDock(true);
+  ExpectSelectedTab(detail::k_camera_window_name);
 }
 
 } // namespace

@@ -28,11 +28,8 @@
  */
 
 #include <array>
-#include <cstddef>
-#include <cmath>
 #include <cstdint>
 #include <filesystem>
-#include <limits>
 
 #include <vulkan/vulkan_raii.hpp>
 
@@ -44,77 +41,30 @@
 
 namespace {
 
-/*! \brief Matches the 128-byte GGEMSCartesianGrid.slang vertex push block. */
+/*!
+ * \brief Matches the shader's World transform, palette, extent, and spacing.
+ */
 struct GridPushConstants {
   /*! \brief Rows mapping World meters to clip coordinates. */
   std::array<std::array<float, 4U>, 4U> world_to_clip{};
 
-  /*! \brief Opaque linear-light minor line color. */
+  /*! \brief Linear-light minor line color. */
   std::array<float, 4U> minor_color{};
 
-  /*! \brief Opaque linear-light major and center line color. */
+  /*! \brief Linear-light major line color. */
   std::array<float, 4U> major_color{};
 
-  /*! \brief Along-line minimum, maximum, lattice step, and NDC depth allowance.
-   */
+  /*! \brief World half extents and shared minor spacing, all in meters. */
   std::array<float, 4U> dimensions{};
 
-  /*! \brief First signed lattice index in the constant-coordinate direction. */
-  std::int32_t first_index{};
+  /*!
+   * \brief Converts physical pixel coordinates to normalized viewport space.
+   */
+  std::array<float, 2U> inverse_viewport{};
+
   /*! \brief XY = 0, XZ = 1, YZ = 2. */
   std::uint32_t plane{};
-  /*! \brief Constant first in-plane coordinate = 0, second = 1. */
-  std::uint32_t family{};
-  /*! \brief Whether another plane already draws this shared center line. */
-  std::uint32_t skip_origin{};
 };
-
-static_assert(sizeof(GridPushConstants) == 128U);
-static_assert(offsetof(GridPushConstants, first_index) == 112U);
-
-/*!
- * \brief Gives coplanar geometry a small, resolution-aware display priority.
- *
- * On a projected plane, NDC depth is affine in NDC x and y. The restricted
- * matrix rows give its two slopes without camera-specific projection math.
- * One 1/256-pixel allowance per screen axis plus a float roundoff floor
- * stabilizes coincident lines. This is a visual priority band, not a bound
- * on implementation-dependent Vulkan line interpolation error.
- *
- * \param[in] matrix Shared World-to-clip transform.
- * \param[in] axes Two World axes spanning the grid plane.
- * \param[in] extent Physical render-target dimensions.
- * \return Positive NDC allowance, or zero for an exactly edge-on plane.
- */
-auto GridDepthAllowance(std::array<std::array<float, 4U>, 4U> const &matrix,
-                        std::array<std::uint32_t, 2U> const &axes,
-                        vk::Extent2D extent) -> float {
-  std::array<std::array<double, 3U>, 4U> rows{};
-  for (std::size_t row = 0U; row < rows.size(); ++row) {
-    rows[row] = {matrix[row][axes[0]], matrix[row][axes[1]], matrix[row][3]};
-  }
-  auto const determinant = [](std::array<double, 3U> const &first,
-                              std::array<double, 3U> const &second,
-                              std::array<double, 3U> const &third) -> double {
-    return (first[0] * ((second[1] * third[2]) - (second[2] * third[1]))) -
-           (first[1] * ((second[0] * third[2]) - (second[2] * third[0]))) +
-           (first[2] * ((second[0] * third[1]) - (second[1] * third[0])));
-  };
-  double const divisor = determinant(rows[0], rows[1], rows[3]);
-  if (divisor == 0.0 || extent.width == 0U || extent.height == 0U) {
-    return 0.0F;
-  }
-  double const horizontal = determinant(rows[2], rows[1], rows[3]) / divisor;
-  double const vertical = determinant(rows[0], rows[2], rows[3]) / divisor;
-  double constexpr subpixel_allowance = 1.0 / 256.0;
-  double constexpr roundoff_allowance =
-    8.0 * std::numeric_limits<float>::epsilon();
-  return static_cast<float>(
-    roundoff_allowance +
-    (subpixel_allowance * 2.0 *
-     ((std::abs(horizontal) / static_cast<double>(extent.width)) +
-      (std::abs(vertical) / static_cast<double>(extent.height)))));
-}
 
 } // namespace
 
@@ -163,7 +113,7 @@ auto GGEMSVulkanCartesianGrid::Initialize(vk::raii::Device const &device,
   vk::PipelineVertexInputStateCreateInfo const vertex_input_state{};
 
   vk::PipelineInputAssemblyStateCreateInfo input_assembly_state{
-    .topology = vk::PrimitiveTopology::eLineList,
+    .topology = vk::PrimitiveTopology::eTriangleList,
     .primitiveRestartEnable = vk::False,
   };
 
@@ -188,7 +138,13 @@ auto GGEMSVulkanCartesianGrid::Initialize(vk::raii::Device const &device,
   };
 
   vk::PipelineColorBlendAttachmentState color_blend_attachment{
-    .blendEnable = vk::False,
+    .blendEnable = vk::True,
+    .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
+    .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+    .colorBlendOp = vk::BlendOp::eAdd,
+    .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+    .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+    .alphaBlendOp = vk::BlendOp::eAdd,
     .colorWriteMask =
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
       vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
@@ -212,7 +168,7 @@ auto GGEMSVulkanCartesianGrid::Initialize(vk::raii::Device const &device,
 
   vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{
     .depthTestEnable = vk::True,
-    .depthWriteEnable = vk::True,
+    .depthWriteEnable = vk::False,
     .depthCompareOp = vk::CompareOp::eLessOrEqual,
     .depthBoundsTestEnable = vk::False,
     .stencilTestEnable = vk::False,
@@ -221,7 +177,8 @@ auto GGEMSVulkanCartesianGrid::Initialize(vk::raii::Device const &device,
   };
 
   vk::PushConstantRange grid_push_constant_range{
-    .stageFlags = vk::ShaderStageFlagBits::eVertex,
+    .stageFlags =
+      vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
     .offset = 0U,
     .size = sizeof(GridPushConstants),
   };
@@ -277,67 +234,43 @@ auto GGEMSVulkanCartesianGrid::Shutdown() noexcept -> void {
 auto GGEMSVulkanCartesianGrid::Record(
   vk::raii::CommandBuffer const &command_buffer,
   std::array<std::array<float, 4U>, 4U> const &world_to_clip,
-  vk::Extent2D viewport_extent, GGEMSCartesianGrid const &grid,
-  std::array<float, 4U> const &background) const -> void {
-  auto const &planes = grid.GetPlanes();
-  std::array<bool, 3U> origin_drawn{};
-  bool pipeline_bound{};
-  GridPushConstants constants{.world_to_clip = world_to_clip};
-  std::array<std::array<std::uint32_t, 2U>, 3U> constexpr plane_axes{
-    {
-      {0U, 1U},
-      {0U, 2U},
-      {1U, 2U},
-    },
+  vk::Extent2D viewport_extent,
+  std::array<double, 3U> const &world_half_extent_m,
+  GGEMSCartesianGrid const &grid) const -> void {
+  if (grid.visible == std::array<bool, 3U>{} || grid.GetMinorStepM() <= 0.0F) {
+    return;
+  }
+
+  GridPushConstants constants{
+    .world_to_clip = world_to_clip,
+    .minor_color = colors_[0],
+    .major_color = colors_[1],
+    .dimensions =
+      {
+        static_cast<float>(world_half_extent_m[0]),
+        static_cast<float>(world_half_extent_m[1]),
+        static_cast<float>(world_half_extent_m[2]),
+        grid.GetMinorStepM(),
+      },
+    .inverse_viewport =
+      {
+        2.0F / static_cast<float>(viewport_extent.width),
+        2.0F / static_cast<float>(viewport_extent.height),
+      },
   };
 
-  for (std::uint32_t plane = 0U; plane < planes.size(); ++plane) {
-    auto const &lines = planes[plane];
-    if (!grid.visible[plane] || lines.opacity <= 0.0F) {
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline_);
+
+  for (std::uint32_t plane = 0U; plane < grid.visible.size(); ++plane) {
+    if (!grid.visible[plane]) {
       continue;
     }
     constants.plane = plane;
-    float const depth_allowance =
-      GridDepthAllowance(world_to_clip, plane_axes[plane], viewport_extent);
-    constants.minor_color = colors_[0];
-    constants.major_color = colors_[1];
-    for (std::uint32_t channel = 0U; channel < 3U; ++channel) {
-      constants.minor_color[channel] =
-        std::lerp(background[channel], colors_[0][channel], lines.opacity);
-      constants.major_color[channel] =
-        std::lerp(background[channel], colors_[1][channel], lines.opacity);
-    }
-
-    for (std::uint32_t family = 0U; family < 2U; ++family) {
-      auto const count = lines.line_count[family];
-      if (count == 0U) {
-        continue;
-      }
-      if (!pipeline_bound) {
-        command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                    *pipeline_);
-        pipeline_bound = true;
-      }
-      auto const along = 1U - family;
-      auto const world_axis = plane_axes[plane][along];
-      constants.family = family;
-      constants.first_index = lines.first_index[family];
-      constants.skip_origin = origin_drawn[world_axis] ? 1U : 0U;
-      constants.dimensions = {
-        static_cast<float>(lines.minimum_m[along]),
-        static_cast<float>(lines.maximum_m[along]),
-        static_cast<float>(lines.minor_step_m),
-        depth_allowance,
-      };
-      command_buffer.pushConstants(
-        *pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
-        vk::ArrayProxy<GridPushConstants const>{1U, &constants});
-      command_buffer.draw(2U * count, 1U, 0U, 0U);
-      if (constants.first_index <= 0 &&
-          constants.first_index + static_cast<std::int32_t>(count) > 0) {
-        origin_drawn[world_axis] = true;
-      }
-    }
+    command_buffer.pushConstants(
+      *pipeline_layout_,
+      vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0U,
+      vk::ArrayProxy<GridPushConstants const>{1U, &constants});
+    command_buffer.draw(6U, 1U, 0U, 0U);
   }
 }
 
