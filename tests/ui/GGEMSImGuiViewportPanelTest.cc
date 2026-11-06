@@ -27,7 +27,10 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <algorithm>
+#include <array>
 #include <cfloat>
+#include <cstddef>
 #include <cstdint>
 
 #include <gtest/gtest.h>
@@ -37,11 +40,18 @@
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
+#include "GGEMS/ui/detail/GGEMSViewportToolbar.hh"
+#include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 
 namespace {
 
 using Panel = ggems::ui::detail::GGEMSImGuiViewportPanel;
 using Camera = ggems::ui::detail::GGEMSSceneCamera;
+using Action = ggems::ui::detail::GGEMSViewportToolbarAction;
+
+constexpr ggems::ui::detail::GGEMSViewportToolbarIcons k_icons{
+  4U, 5U, 6U, 7U, 2U, 3U, 8U, 9U, 10U, 11U, 12U, 13U, 14U, 15U, 16U,
+};
 
 // A real ImGui context and panel need no GLFW window or Vulkan device to route
 // queued input. Settings and logs are disabled to keep this fixture in memory.
@@ -73,11 +83,12 @@ protected:
     ImGui::SetNextWindowPos({0.0F, 0.0F});
     ImGui::SetNextWindowSize(window_size_);
     bool visible = true;
-    auto const result = panel_.Build(
-      visible, ImTextureID{1}, stale_texture ? 1U : width_, height_,
-      {ImTextureID{2}, ImTextureID{3}}, camera_.GetDiagnostics().projection);
-    if (result.projection_request) {
-      camera_.SetProjection(*result.projection_request);
+    auto const result =
+      panel_.Build(visible, ImTextureID{1}, stale_texture ? 1U : width_,
+                   height_, k_icons, workbench_);
+    if (result.toolbar_action) {
+      ggems::ui::detail::ApplyViewportToolbarAction(workbench_,
+                                                    *result.toolbar_action);
     }
     width_ = result.width;
     height_ = result.height;
@@ -87,29 +98,52 @@ protected:
 
   // Measure the actual submitted image vertices instead of reconstructing
   // the toolbar offset. Each fake texture identifies one real image command.
-  static auto ImageBounds(ImTextureID texture) -> ImRect {
-    auto const *window =
-      ImGui::FindWindowByName("GGEMS Viewport###GGEMS.Viewport");
-    EXPECT_NE(window, nullptr);
+  static auto ImageBounds(ImTextureID texture, bool uv = false) -> ImRect {
     ImRect bounds{{FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX}};
-    if (window == nullptr) {
-      return bounds;
-    }
-    auto const &draw_list = *window->DrawList;
-    for (auto const &command : draw_list.CmdBuffer) {
-      if (command.GetTexID() != texture) {
-        continue;
-      }
-      for (unsigned int index = 0U; index < command.ElemCount; ++index) {
-        // These offsets refer to the same ImGui buffers, whose sizes are int.
-        int const element_index = static_cast<int>(command.IdxOffset + index);
-        int const vertex_index = static_cast<int>(
-          command.VtxOffset + draw_list.IdxBuffer[element_index]);
-        bounds.Add(draw_list.VtxBuffer[vertex_index].pos);
+    for (auto const *list : ImGui::GetDrawData()->CmdLists) {
+      for (auto const &command : list->CmdBuffer) {
+        if (command.GetTexID() != texture) {
+          continue;
+        }
+        for (unsigned int index = 0U; index < command.ElemCount; ++index) {
+          // These offsets refer to the same ImGui buffers, whose sizes are int.
+          int const element_index = static_cast<int>(command.IdxOffset + index);
+          int const vertex_index = static_cast<int>(
+            command.VtxOffset + list->IdxBuffer[element_index]);
+          auto const &vertex = list->VtxBuffer[vertex_index];
+          bounds.Add(uv ? vertex.uv : vertex.pos);
+        }
       }
     }
     EXPECT_FALSE(bounds.IsInverted());
     return bounds;
+  }
+
+  static auto ToolbarWindow() -> ImGuiWindow * {
+    auto *viewport = ImGui::FindWindowByName("GGEMS Viewport###GGEMS.Viewport");
+    if (viewport == nullptr || viewport->DC.ChildWindows.empty()) {
+      return nullptr;
+    }
+    return viewport->DC.ChildWindows.front();
+  }
+
+  static auto IsSelected(ImTextureID texture) -> bool {
+    auto bounds = ImageBounds(texture);
+    auto const *toolbar = ToolbarWindow();
+    EXPECT_NE(toolbar, nullptr);
+    if (toolbar == nullptr) {
+      return false;
+    }
+    float const scale =
+      toolbar->FontRefSize / ggems::ui::k_ggems_base_font_size;
+    bounds.Expand(4.0F * scale);
+    auto const accent = ImGui::GetColorU32(
+      ggems::ui::GetThemeColor(ggems::ui::GGEMSThemeRole::Accent));
+    return std::ranges::any_of(toolbar->DrawList->VtxBuffer,
+                               [&bounds, accent](auto const &vertex) -> bool {
+                                 return vertex.col == accent &&
+                                        bounds.Contains(vertex.pos);
+                               });
   }
 
   auto ClickImage(ImTextureID texture, bool stale_texture = false)
@@ -132,7 +166,7 @@ protected:
   }
 
   Panel panel_;
-  Camera camera_;
+  ggems::ui::detail::GGEMSWorkbenchState workbench_;
   ImVec2 window_size_{600.0F, 500.0F};
 
 private:
@@ -483,20 +517,21 @@ TEST_F(GGEMSImGuiViewportInput, CursorUsesLogicalImageCoordinatesAndClears) {
 }
 
 TEST_F(GGEMSImGuiViewportInput, ProjectionButtonsIssueOnlyProjectionCommands) {
-  auto const initial = camera_.GetDiagnostics();
+  auto const initial = workbench_.camera.GetDiagnostics();
   auto const perspective = ClickImage(ImTextureID{3});
-  ASSERT_TRUE(perspective.projection_request);
-  EXPECT_EQ(*perspective.projection_request, Camera::Projection::Perspective);
+  ASSERT_TRUE(perspective.toolbar_action);
+  EXPECT_EQ(*perspective.toolbar_action, Action::Perspective);
   ExpectNoMouseMotion(perspective);
   EXPECT_FLOAT_EQ(perspective.zoom_delta, 0.0F);
   EXPECT_FALSE(perspective.cursor_pixels);
-  EXPECT_FLOAT_EQ(camera_.GetDiagnostics().yaw_degrees, initial.yaw_degrees);
-  EXPECT_FLOAT_EQ(camera_.GetDiagnostics().pitch_degrees,
+  EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().yaw_degrees,
+                  initial.yaw_degrees);
+  EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().pitch_degrees,
                   initial.pitch_degrees);
 
   auto const orthographic = ClickImage(ImTextureID{2}, true);
-  ASSERT_TRUE(orthographic.projection_request);
-  EXPECT_EQ(*orthographic.projection_request, Camera::Projection::Orthographic);
+  ASSERT_TRUE(orthographic.toolbar_action);
+  EXPECT_EQ(*orthographic.toolbar_action, Action::Orthographic);
   ExpectNoMouseMotion(orthographic);
   EXPECT_FLOAT_EQ(orthographic.zoom_delta, 0.0F);
   EXPECT_FALSE(orthographic.cursor_pixels);
@@ -519,7 +554,7 @@ TEST_F(GGEMSImGuiViewportInput, ToolbarDragAndWheelNeverAcquireSceneInput) {
     io.AddMousePosEvent(scene.x, scene.y);
     auto const held = Frame();
     ExpectNoMouseMotion(held);
-    EXPECT_FALSE(held.projection_request);
+    EXPECT_FALSE(held.toolbar_action);
     io.AddMouseButtonEvent(button, false);
     ExpectNoMouseMotion(Frame());
   }
@@ -541,9 +576,12 @@ TEST_F(GGEMSImGuiViewportInput, ToolbarScalesAndSceneCoordinatesFollowResize) {
     ASSERT_NE(window, nullptr);
     float const font_scale =
       window->FontRefSize / ggems::ui::k_ggems_base_font_size;
-    EXPECT_FLOAT_EQ(orthographic.GetWidth(), 22.0F * font_scale);
-    EXPECT_FLOAT_EQ(orthographic.GetHeight(), 22.0F * font_scale);
-    EXPECT_FLOAT_EQ(perspective.GetWidth(), orthographic.GetWidth());
+    EXPECT_FLOAT_EQ(orthographic.Max.x,
+                    orthographic.Min.x + (22.0F * font_scale));
+    EXPECT_FLOAT_EQ(orthographic.Max.y,
+                    orthographic.Min.y + (22.0F * font_scale));
+    EXPECT_FLOAT_EQ(perspective.Max.x,
+                    perspective.Min.x + (22.0F * font_scale));
     EXPECT_FLOAT_EQ(perspective.Min.x - orthographic.Min.x, 32.0F * font_scale);
     EXPECT_GT(scene.Min.y, orthographic.Max.y);
     EXPECT_FLOAT_EQ(scene.GetWidth(), static_cast<float>(settled.width));
@@ -554,9 +592,158 @@ TEST_F(GGEMSImGuiViewportInput, ToolbarScalesAndSceneCoordinatesFollowResize) {
     EXPECT_FLOAT_EQ(cursor.cursor_pixels->x, 120.0F);
     EXPECT_FLOAT_EQ(cursor.cursor_pixels->y, 80.0F);
     auto const command = ClickImage(ImTextureID{3});
-    ASSERT_TRUE(command.projection_request);
-    EXPECT_EQ(*command.projection_request, Camera::Projection::Perspective);
+    ASSERT_TRUE(command.toolbar_action);
+    EXPECT_EQ(*command.toolbar_action, Action::Perspective);
     ExpectNoMouseMotion(command);
+  }
+}
+
+TEST_F(GGEMSImGuiViewportInput, AllToolbarTargetsKeepTheirDpiSizeAndArtworkUv) {
+  auto &io = ImGui::GetIO();
+  io.DisplaySize = {1600.0F, 1000.0F};
+  window_size_ = {1200.0F, 800.0F};
+  for (float const scale : {1.0F, 1.5F, 2.0F}) {
+    ImGui::GetStyle() = ggems::ui::BuildGGEMSStyle(1.0F, scale);
+    Frame();
+    Frame();
+    auto const *toolbar = ToolbarWindow();
+    ASSERT_NE(toolbar, nullptr);
+    EXPECT_FALSE(toolbar->ScrollbarX);
+    EXPECT_FALSE(toolbar->ScrollbarY);
+    float const font_scale =
+      toolbar->FontRefSize / ggems::ui::k_ggems_base_font_size;
+    float const row_top = ImageBounds(k_icons.front()).Min.y;
+    float previous_right = 0.0F;
+    for (std::size_t index = 0U; index < k_icons.size(); ++index) {
+      SCOPED_TRACE(index);
+      auto const bounds = ImageBounds(k_icons[index]);
+      auto const uv = ImageBounds(k_icons[index], true);
+      // Compare stored screen coordinates directly: subtracting large X
+      // endpoints loses more precision than the local 22-pixel extent.
+      EXPECT_FLOAT_EQ(bounds.Max.x, bounds.Min.x + (22.0F * font_scale));
+      EXPECT_FLOAT_EQ(bounds.Max.y, bounds.Min.y + (22.0F * font_scale));
+      EXPECT_FLOAT_EQ(bounds.Min.y, row_top);
+      EXPECT_GT(bounds.Min.x, previous_right);
+      previous_right = bounds.Max.x;
+      bool const cube = index == 4U || index == 5U;
+      EXPECT_FLOAT_EQ(uv.Min.x, cube ? 0.125F : 0.0F);
+      EXPECT_FLOAT_EQ(uv.Min.y, cube ? 0.125F : 0.0F);
+      EXPECT_FLOAT_EQ(uv.Max.x, cube ? 0.875F : 1.0F);
+      EXPECT_FLOAT_EQ(uv.Max.y, cube ? 0.875F : 1.0F);
+      auto const result = ClickImage(k_icons[index]);
+      ASSERT_TRUE(result.toolbar_action);
+      EXPECT_EQ(*result.toolbar_action, static_cast<Action>(index));
+      EXPECT_FALSE(result.cursor_pixels);
+      EXPECT_FLOAT_EQ(result.zoom_delta, 0.0F);
+      ExpectNoMouseMotion(result);
+    }
+  }
+}
+
+TEST_F(GGEMSImGuiViewportInput,
+       SelectedOutlinesFollowLiveCameraAndDisplayState) {
+  ImGui::GetIO().AddMousePosEvent(750.0F, 550.0F);
+  constexpr std::array planes{
+    Camera::ViewPlane::XY,
+    Camera::ViewPlane::XZ,
+    Camera::ViewPlane::YZ,
+  };
+  for (std::size_t plane = 0U; plane < planes.size(); ++plane) {
+    workbench_.camera.SetView(planes[plane]);
+    Frame();
+    EXPECT_FALSE(IsSelected(k_icons[0U]));
+    for (std::size_t index = 0U; index < planes.size(); ++index) {
+      EXPECT_EQ(IsSelected(k_icons[index + 1U]), index == plane);
+    }
+    workbench_.camera.OrbitByPixels(7.0F, -3.0F);
+    Frame();
+    EXPECT_TRUE(IsSelected(k_icons[0U]));
+    for (std::size_t index = 1U; index < 4U; ++index) {
+      EXPECT_FALSE(IsSelected(k_icons[index]));
+    }
+  }
+  for (auto const projection :
+       {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
+    workbench_.camera.SetProjection(projection);
+    Frame();
+    EXPECT_EQ(IsSelected(k_icons[4U]),
+              projection == Camera::Projection::Orthographic);
+    EXPECT_EQ(IsSelected(k_icons[5U]),
+              projection == Camera::Projection::Perspective);
+    for (unsigned int mask = 0U; mask < 64U; ++mask) {
+      SCOPED_TRACE(mask);
+      for (std::size_t plane = 0U; plane < planes.size(); ++plane) {
+        workbench_.cartesian_grid.visible[plane] = (mask & (1U << plane)) != 0U;
+        workbench_.cartesian_grid.polar_visible[plane] =
+          (mask & (1U << (plane + 3U))) != 0U;
+      }
+      workbench_.show_axes = (mask & 1U) != 0U;
+      workbench_.trace_visibility.SetGlobalVisible((mask & 2U) != 0U);
+      Frame();
+      for (std::size_t grid = 0U; grid < 6U; ++grid) {
+        EXPECT_EQ(IsSelected(k_icons[grid + 6U]), (mask & (1U << grid)) != 0U);
+      }
+      EXPECT_EQ(IsSelected(k_icons[12U]), workbench_.show_axes);
+      EXPECT_EQ(IsSelected(k_icons[13U]),
+                workbench_.trace_visibility.IsGlobalVisible());
+      EXPECT_FALSE(IsSelected(k_icons[14U]));
+    }
+  }
+}
+
+TEST_F(GGEMSImGuiViewportInput,
+       NarrowToolbarScrollKeepsEveryCommandAndSceneUsable) {
+  auto &io = ImGui::GetIO();
+  io.DisplaySize = {1600.0F, 1000.0F};
+  for (float const scale : {1.0F, 1.5F, 2.0F}) {
+    ImGui::GetStyle() = ggems::ui::BuildGGEMSStyle(1.0F, scale);
+    window_size_ = {1200.0F, 600.0F};
+    Frame();
+    Frame();
+    auto *toolbar = ToolbarWindow();
+    ASSERT_NE(toolbar, nullptr);
+    std::array<float, k_icons.size()> offsets{};
+    for (std::size_t index = 0U; index < k_icons.size(); ++index) {
+      offsets[index] =
+        ImageBounds(k_icons[index]).GetCenter().x - toolbar->Pos.x;
+    }
+    window_size_ = {300.0F, 500.0F};
+    Frame();
+    auto const resized = Frame();
+    ASSERT_TRUE(toolbar->ScrollbarX);
+    EXPECT_FALSE(toolbar->ScrollbarY);
+    EXPECT_GT(resized.height, 300U);
+    for (std::size_t index = 0U; index < k_icons.size(); ++index) {
+      SCOPED_TRACE(index);
+      ImGui::SetScrollX(toolbar, offsets[index] - (toolbar->Size.x * 0.5F));
+      Frame();
+      auto const bounds = ImageBounds(k_icons[index]);
+      EXPECT_GE(bounds.Min.x, toolbar->InnerRect.Min.x);
+      EXPECT_LE(bounds.Max.x, toolbar->InnerRect.Max.x);
+      auto const result = ClickImage(k_icons[index]);
+      ASSERT_TRUE(result.toolbar_action);
+      EXPECT_EQ(*result.toolbar_action, static_cast<Action>(index));
+      ExpectNoMouseMotion(result);
+      EXPECT_FALSE(result.cursor_pixels);
+    }
+    auto const scrollbar = ImGui::GetWindowScrollbarRect(toolbar, ImGuiAxis_X);
+    auto const center = scrollbar.GetCenter();
+    io.AddMousePosEvent(center.x, center.y);
+    Frame();
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+    ExpectNoMouseMotion(Frame());
+    io.AddMousePosEvent(center.x + 40.0F, center.y);
+    ExpectNoMouseMotion(Frame());
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+    ExpectNoMouseMotion(Frame());
+    auto const scene = ImageBounds(ImTextureID{1});
+    io.AddMousePosEvent(scene.Min.x + 70.0F, scene.Min.y + 80.0F);
+    auto const cursor = Frame();
+    ASSERT_TRUE(cursor.cursor_pixels);
+    EXPECT_FLOAT_EQ(cursor.cursor_pixels->x, 70.0F);
+    EXPECT_FLOAT_EQ(cursor.cursor_pixels->y, 80.0F);
+    io.AddMouseWheelEvent(0.0F, 1.0F);
+    EXPECT_FLOAT_EQ(Frame().zoom_delta, 1.0F);
   }
 }
 

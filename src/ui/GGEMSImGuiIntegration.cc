@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Manages Dear ImGui backends, projection textures, fonts, and settings.
+ * \brief Manages Dear ImGui backends, toolbar textures, fonts, and settings.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -58,12 +58,13 @@
 #include "GGEMS/ui/detail/GGEMSImGuiSettingsFile.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/detail/GGEMSPresentationScale.hh"
-#include "GGEMS/ui/detail/GGEMSProjectionIconData.hh"
+#include "GGEMS/ui/detail/GGEMSToolbarIconData.hh"
+#include "GGEMS/ui/detail/GGEMSViewportToolbar.hh"
 
 namespace {
 
 /*! \brief Descriptor-pool capacity requested from the Vulkan backend. */
-constexpr std::uint32_t k_sampled_image_pool_size{16U};
+constexpr std::uint32_t k_sampled_image_pool_size{32U};
 
 /*! \brief Minimum swapchain image count admitted by the backend. */
 constexpr std::uint32_t k_min_backend_image_count{2U};
@@ -202,7 +203,7 @@ auto GGEMSImGuiIntegration::Initialize(GLFWwindow *window,
     AttachGlfwBackend();
     ApplyContentScale(
       NormalizeContentScale(ImGui_ImplGlfw_GetContentScaleForWindow(window_)));
-    CreateProjectionIcons();
+    CreateToolbarIcons();
     AttachVulkanBackend(epoch);
   } catch (...) {
     Shutdown();
@@ -217,7 +218,7 @@ auto GGEMSImGuiIntegration::Initialize(GLFWwindow *window,
 auto GGEMSImGuiIntegration::Shutdown() noexcept -> void {
   DetachVulkanBackend();
 
-  for (ProjectionIcon &icon : projection_icons_) {
+  for (ToolbarIcon &icon : toolbar_icons_) {
     icon.view.reset();
     icon.image.reset();
     icon.memory.reset();
@@ -323,17 +324,20 @@ auto GGEMSImGuiIntegration::GetSceneTextureID() const noexcept -> ImTextureID {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSImGuiIntegration::GetProjectionIcons() const noexcept
-  -> std::array<ImTextureID, 2U> {
-  return {
-    reinterpret_cast<ImTextureID>(projection_icons_[0U].descriptor_set),
-    reinterpret_cast<ImTextureID>(projection_icons_[1U].descriptor_set),
-  };
+auto GGEMSImGuiIntegration::GetToolbarIcons() const noexcept
+  -> GGEMSViewportToolbarIcons {
+  GGEMSViewportToolbarIcons icons{};
+  for (std::size_t index = 0U; index < icons.size(); ++index) {
+    icons[index] =
+      reinterpret_cast<ImTextureID>(toolbar_icons_[index].descriptor_set);
+  }
+
+  return icons;
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSImGuiIntegration::CreateProjectionIcons() -> void {
+auto GGEMSImGuiIntegration::CreateToolbarIcons() -> void {
   vk::Device const device = handles_.device;
   auto const memory_properties = handles_.physical_device.getMemoryProperties();
 
@@ -349,12 +353,26 @@ auto GGEMSImGuiIntegration::CreateProjectionIcons() -> void {
       }
     }
     throw core::GGEMSRecoverable(
-      "No suitable Vulkan memory type was found for the projection icons.");
+      "No suitable Vulkan memory type was found for the toolbar icons.");
   };
 
-  std::array<std::span<unsigned char const>, 2U> const pixels{
+  std::array<std::span<unsigned char const>,
+             k_ggems_viewport_toolbar_icon_count> const pixels{
+    k_ggems_camera_free_icon_pixels,
+    k_ggems_camera_xy_icon_pixels,
+    k_ggems_camera_xz_icon_pixels,
+    k_ggems_camera_yz_icon_pixels,
     k_ggems_orthographic_icon_pixels,
     k_ggems_perspective_icon_pixels,
+    k_ggems_grid_cartesian_xy_icon_pixels,
+    k_ggems_grid_cartesian_xz_icon_pixels,
+    k_ggems_grid_cartesian_yz_icon_pixels,
+    k_ggems_grid_polar_xy_icon_pixels,
+    k_ggems_grid_polar_xz_icon_pixels,
+    k_ggems_grid_polar_yz_icon_pixels,
+    k_ggems_axes_icon_pixels,
+    k_ggems_particle_traces_icon_pixels,
+    k_ggems_reset_icon_pixels,
   };
 
   vk::DeviceSize const icon_bytes = pixels.front().size();
@@ -408,8 +426,8 @@ auto GGEMSImGuiIntegration::CreateProjectionIcons() -> void {
   });
 
   vk::Extent3D const extent{
-    .width = k_ggems_projection_icon_size,
-    .height = k_ggems_projection_icon_size,
+    .width = k_ggems_toolbar_icon_size,
+    .height = k_ggems_toolbar_icon_size,
     .depth = 1U,
   };
 
@@ -421,8 +439,8 @@ auto GGEMSImGuiIntegration::CreateProjectionIcons() -> void {
     .layerCount = 1U,
   };
 
-  for (std::size_t index = 0U; index < projection_icons_.size(); ++index) {
-    ProjectionIcon &icon = projection_icons_[index];
+  for (std::size_t index = 0U; index < toolbar_icons_.size(); ++index) {
+    ToolbarIcon &icon = toolbar_icons_[index];
     // Sampling decodes the unchanged sRGB bytes to the GUI's linear color
     // space.
     icon.image = device.createImageUnique(vk::ImageCreateInfo{
@@ -642,7 +660,7 @@ auto GGEMSImGuiIntegration::AttachVulkanBackend(VulkanBackendEpoch const &epoch)
 
   ThrowIfBackendFailed();
 
-  for (ProjectionIcon &icon : projection_icons_) {
+  for (ToolbarIcon &icon : toolbar_icons_) {
     VkDescriptorSet const descriptor =
       ImGui_ImplVulkan_AddTexture(static_cast<VkImageView>(*icon.view),
                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -656,7 +674,7 @@ auto GGEMSImGuiIntegration::AttachVulkanBackend(VulkanBackendEpoch const &epoch)
 auto GGEMSImGuiIntegration::DetachVulkanBackend() noexcept -> void {
   ReleaseSceneDescriptor();
 
-  for (ProjectionIcon &icon : projection_icons_) {
+  for (ToolbarIcon &icon : toolbar_icons_) {
     if (icon.descriptor_set != VK_NULL_HANDLE) {
       ImGui_ImplVulkan_RemoveTexture(icon.descriptor_set);
       icon.descriptor_set = VK_NULL_HANDLE;

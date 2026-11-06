@@ -29,15 +29,16 @@
 
 #pragma once
 
-#include <array>
 #include <cstdint>
 #include <optional>
 
 #include <imgui.h>
 
-#include "GGEMSSceneCamera.hh"
+#include "GGEMSViewportToolbar.hh"
 
 namespace ggems::ui::detail {
+
+struct GGEMSWorkbenchState;
 
 /*! \brief Owns mouse gesture state for the scene viewport. */
 class GGEMSImGuiViewportPanel {
@@ -59,8 +60,8 @@ public:
      */
     std::optional<ImVec2> cursor_pixels;
 
-    /*! \brief Projection command issued by an image button this frame. */
-    std::optional<GGEMSSceneCamera::Projection> projection_request;
+    /*! \brief Command issued by a toolbar image button this frame. */
+    std::optional<GGEMSViewportToolbarAction> toolbar_action;
 
     /*! \brief Horizontal orbit drag in logical UI pixels. */
     float orbit_delta_x_pixels{0.0F};
@@ -88,15 +89,15 @@ public:
    * \param[in] texture_width Logical width represented by the current texture.
    * \param[in] texture_height Logical height represented by the current
    *   texture.
-   * \param[in] projection_icons Borrowed orthographic and perspective images.
-   * \param[in] projection Current camera projection used for selection.
+   * \param[in] toolbar_icons Borrowed images in toolbar action order.
+   * \param[in] workbench Current state defining selected toolbar buttons.
    * \return Visible extent and camera deltas; gestures stop while the texture
    *   is stale.
    */
   auto Build(bool &show_window, ImTextureID scene_texture_id,
              std::uint32_t texture_width, std::uint32_t texture_height,
-             std::array<ImTextureID, 2U> const &projection_icons,
-             GGEMSSceneCamera::Projection projection) -> Result;
+             GGEMSViewportToolbarIcons const &toolbar_icons,
+             GGEMSWorkbenchState const &workbench) -> Result;
 
   /*! \brief Releases the current mouse gesture. */
   auto CancelGesture() noexcept -> void;

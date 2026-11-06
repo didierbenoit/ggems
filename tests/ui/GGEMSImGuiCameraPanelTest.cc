@@ -47,10 +47,18 @@
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
+#include "GGEMS/ui/detail/GGEMSViewportToolbar.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSParticleTrace.hh"
 
 namespace {
+
+using Action = ggems::ui::detail::GGEMSViewportToolbarAction;
+
+constexpr ggems::ui::detail::GGEMSViewportToolbarIcons k_icons{
+  4U, 5U, 6U, 7U, 2U, 3U, 8U, 9U, 10U, 11U, 12U, 13U, 14U, 15U, 16U,
+};
 
 // The clipboard callback captures text in memory; no native clipboard,
 // settings file, graphics device, or window backend participates in these
@@ -107,7 +115,7 @@ protected:
                                       workbench_.viewport.height);
     ggems::ui::GGEMSImGuiLayer::FrameInputs const inputs{
       .scene_texture_id = ImTextureID{1},
-      .projection_icons = {ImTextureID{2}, ImTextureID{3}},
+      .toolbar_icons = k_icons,
       .scene_texture_logical_width = workbench_.viewport.width,
       .scene_texture_logical_height = workbench_.viewport.height,
       .geometry_scene = geometry_scene_,
@@ -119,32 +127,30 @@ protected:
   }
 
   static auto ImageBounds(ImTextureID texture) -> ImRect {
-    auto const *window =
-      ImGui::FindWindowByName(ggems::ui::detail::k_viewport_window_name);
-    EXPECT_NE(window, nullptr);
     ImRect bounds{{FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX}};
-    if (window == nullptr) {
-      return bounds;
-    }
-    auto const &draw_list = *window->DrawList;
-    for (auto const &command : draw_list.CmdBuffer) {
-      if (command.GetTexID() != texture) {
-        continue;
-      }
-      for (unsigned int index = 0U; index < command.ElemCount; ++index) {
-        // These offsets refer to the same ImGui buffers, whose sizes are int.
-        int const element_index = static_cast<int>(command.IdxOffset + index);
-        int const vertex_index = static_cast<int>(
-          command.VtxOffset + draw_list.IdxBuffer[element_index]);
-        bounds.Add(draw_list.VtxBuffer[vertex_index].pos);
+    for (auto const *list : ImGui::GetDrawData()->CmdLists) {
+      for (auto const &command : list->CmdBuffer) {
+        if (command.GetTexID() != texture) {
+          continue;
+        }
+        for (unsigned int index = 0U; index < command.ElemCount; ++index) {
+          // These offsets refer to the same ImGui buffers, whose sizes are int.
+          int const element_index = static_cast<int>(command.IdxOffset + index);
+          int const vertex_index = static_cast<int>(
+            command.VtxOffset + list->IdxBuffer[element_index]);
+          bounds.Add(list->VtxBuffer[vertex_index].pos);
+        }
       }
     }
     EXPECT_FALSE(bounds.IsInverted());
     return bounds;
   }
 
-  auto ClickProjection(ImTextureID texture) -> void {
-    ImVec2 const center = ImageBounds(texture).GetCenter();
+  auto ClickToolbar(Action action) -> void {
+    PressKey(ImGuiKey_Escape);
+    PressKey(ImGuiKey_Escape);
+    ImVec2 const center =
+      ImageBounds(k_icons[static_cast<std::size_t>(action)]).GetCenter();
     auto &io = ImGui::GetIO();
     io.AddMousePosEvent(center.x, center.y);
     Frame();
@@ -156,21 +162,22 @@ protected:
     Frame();
   }
 
-  static auto ExpectProjectionSelected(ImTextureID texture, bool selected)
-    -> void {
-    ImRect bounds = ImageBounds(texture);
-    bounds.Expand(3.0F * ImGui::GetFontSize() /
-                  ggems::ui::k_ggems_base_font_size);
-    auto const *window =
+  static auto ExpectToolbarSelected(Action action, bool selected) -> void {
+    ImRect bounds = ImageBounds(k_icons[static_cast<std::size_t>(action)]);
+    auto const *viewport =
       ImGui::FindWindowByName(ggems::ui::detail::k_viewport_window_name);
-    ASSERT_NE(window, nullptr);
+    ASSERT_NE(viewport, nullptr);
+    ASSERT_FALSE(viewport->DC.ChildWindows.empty());
+    auto const *toolbar = viewport->DC.ChildWindows.front();
+    bounds.Expand(4.0F * toolbar->FontRefSize /
+                  ggems::ui::k_ggems_base_font_size);
     ImU32 const selected_color = ImGui::ColorConvertFloat4ToU32(
-      ggems::ui::GetThemeColor(ggems::ui::GGEMSThemeRole::Selection));
-    bool const selected_background = std::ranges::any_of(
-      window->DrawList->VtxBuffer, [&](ImDrawVert const &vertex) -> bool {
+      ggems::ui::GetThemeColor(ggems::ui::GGEMSThemeRole::Accent));
+    bool const selected_outline = std::ranges::any_of(
+      toolbar->DrawList->VtxBuffer, [&](ImDrawVert const &vertex) -> bool {
         return vertex.col == selected_color && bounds.Contains(vertex.pos);
       });
-    EXPECT_EQ(selected_background, selected);
+    EXPECT_EQ(selected_outline, selected) << static_cast<int>(action);
   }
 
   // Compare semantic numeric fields without fixing precision or punctuation.
@@ -515,13 +522,13 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
     ImVec2 const center = ImageBounds(ImTextureID{1}).GetCenter();
     ImGui::GetIO().AddMousePosEvent(center.x, center.y);
     Frame();
-    ExpectProjectionSelected(ImTextureID{2}, !perspective);
-    ExpectProjectionSelected(ImTextureID{3}, perspective);
+    ExpectToolbarSelected(Action::Orthographic, !perspective);
+    ExpectToolbarSelected(Action::Perspective, perspective);
   };
   auto const initial = workbench_.camera.GetDiagnostics();
   expect_selection("initial orthographic", false);
 
-  ClickProjection(ImTextureID{3});
+  ClickToolbar(Action::Perspective);
   EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
             Camera::Projection::Perspective);
   EXPECT_EQ(workbench_.camera.GetDiagnostics().target_m, initial.target_m);
@@ -541,7 +548,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   Frame();
   expect_selection("orthographic menu", false);
 
-  ClickProjection(ImTextureID{3});
+  ClickToolbar(Action::Perspective);
   Activate({"Reset Camera"});
   Frame();
   EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
@@ -554,7 +561,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   Frame();
   Frame();
   expect_selection("reopened viewport preserves perspective", true);
-  ClickProjection(ImTextureID{2});
+  ClickToolbar(Action::Orthographic);
   EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
             Camera::Projection::Orthographic);
 }
@@ -630,6 +637,10 @@ TEST_F(GGEMSImGuiCameraDiagnostics, MenuCheckmarksFollowCurrentCameraState) {
   Frame();
   imgui_io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
   Frame();
+  ExpectToolbarSelected(Action::FreeView, true);
+  for (Action action : {Action::ViewXY, Action::ViewXZ, Action::ViewYZ}) {
+    ExpectToolbarSelected(action, false);
+  }
   OpenMenu("Camera view");
   ExpectMenuChecked("Free view", true);
   for (char const *view : {"XY", "XZ", "YZ"}) {
@@ -781,6 +792,174 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   EXPECT_TRUE(workbench_.show_camera_panel);
   EXPECT_EQ(grid.visible, cartesian_visibility);
   EXPECT_EQ(grid.polar_visible, (std::array{true, true, true}));
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       ToolbarAndMenusSynchronizeAllSixGridFlagsAcross64Masks) {
+  using Camera = ggems::ui::detail::GGEMSSceneCamera;
+  auto &grid = workbench_.cartesian_grid;
+  std::array<char const *, 6U> const names{
+    "XY", "XZ", "YZ", "XY##Polar", "XZ##Polar", "YZ##Polar",
+  };
+  std::array<Action, 6U> const actions{
+    Action::CartesianXY, Action::CartesianXZ, Action::CartesianYZ,
+    Action::PolarXY,     Action::PolarXZ,     Action::PolarYZ,
+  };
+  Activate({"Camera view", "YZ"});
+  auto const camera_before = workbench_.camera.BuildWorldToClipMatrix();
+  for (bool const toolbar : {true, false}) {
+    for (unsigned int mask = 0U; mask < 64U; ++mask) {
+      SCOPED_TRACE(::testing::Message()
+                   << "toolbar=" << toolbar << ", mask=" << mask);
+      for (std::size_t index = 0U; index < actions.size(); ++index) {
+        bool const expected = (mask & (1U << index)) != 0U;
+        bool const visible =
+          index < 3U ? grid.visible[index] : grid.polar_visible[index - 3U];
+        if (visible != expected) {
+          if (toolbar) {
+            ClickToolbar(actions[index]);
+          } else {
+            Activate({"Grids", names[index]});
+          }
+        }
+      }
+      if (toolbar) {
+        OpenMenu("Grids");
+        for (std::size_t index = 0U; index < actions.size(); ++index) {
+          ExpectMenuChecked(names[index], (mask & (1U << index)) != 0U);
+        }
+      }
+      PressKey(ImGuiKey_Escape);
+      PressKey(ImGuiKey_Escape);
+      for (std::size_t index = 0U; index < actions.size(); ++index) {
+        bool const expected = (mask & (1U << index)) != 0U;
+        EXPECT_EQ(index < 3U ? grid.visible[index]
+                             : grid.polar_visible[index - 3U],
+                  expected);
+        ExpectToolbarSelected(actions[index], expected);
+      }
+      EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::YZ);
+      EXPECT_TRUE(workbench_.show_axes);
+      EXPECT_TRUE(workbench_.trace_visibility.IsGlobalVisible());
+    }
+  }
+  auto const camera_after = workbench_.camera.BuildWorldToClipMatrix();
+  EXPECT_EQ(camera_after.row_0, camera_before.row_0);
+  EXPECT_EQ(camera_after.row_1, camera_before.row_1);
+  EXPECT_EQ(camera_after.row_2, camera_before.row_2);
+  EXPECT_EQ(camera_after.row_3, camera_before.row_3);
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       ToolbarVisibilityAndMenusPreservePerSourceTraceChoices) {
+  auto &traces = workbench_.trace_visibility;
+  traces.ReconcileSourceCount(3U);
+  traces.SetSourceVisible(1U, false);
+  auto &grid = workbench_.cartesian_grid;
+  grid.visible = {true, false, true};
+  grid.polar_visible = {false, true, false};
+  auto const cartesian = grid.visible;
+  auto const polar = grid.polar_visible;
+  for (bool const toolbar : {true, false}) {
+    for (unsigned int mask = 0U; mask < 4U; ++mask) {
+      bool const axes = (mask & 1U) != 0U;
+      bool const particle_traces = (mask & 2U) != 0U;
+      if (workbench_.show_axes != axes) {
+        if (toolbar) {
+          ClickToolbar(Action::Axes);
+        } else {
+          Activate({"Axes"});
+        }
+      }
+      if (traces.IsGlobalVisible() != particle_traces) {
+        if (toolbar) {
+          ClickToolbar(Action::ParticleTraces);
+        } else {
+          Activate({"Particle traces"});
+        }
+      }
+      OpenMenu(nullptr);
+      ExpectMenuChecked("Axes", axes);
+      ExpectMenuChecked("Particle traces", particle_traces);
+      PressKey(ImGuiKey_Escape);
+      PressKey(ImGuiKey_Escape);
+      ExpectToolbarSelected(Action::Axes, axes);
+      ExpectToolbarSelected(Action::ParticleTraces, particle_traces);
+      EXPECT_EQ(workbench_.show_axes, axes);
+      EXPECT_EQ(traces.IsGlobalVisible(), particle_traces);
+      EXPECT_TRUE(traces.IsSourceVisible(0U));
+      EXPECT_FALSE(traces.IsSourceVisible(1U));
+      EXPECT_TRUE(traces.IsSourceVisible(2U));
+      EXPECT_EQ(traces.ShouldDraw(0U), particle_traces);
+      EXPECT_FALSE(traces.ShouldDraw(1U));
+      EXPECT_EQ(grid.visible, cartesian);
+      EXPECT_EQ(grid.polar_visible, polar);
+    }
+  }
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       ToolbarViewsAndResetMatchMenuActionsWithoutChangingGridFlags) {
+  using Camera = ggems::ui::detail::GGEMSSceneCamera;
+  struct Command {
+    Action action;
+    char const *label;
+  };
+  std::array<Command, 5U> const commands{
+    Command{.action = Action::ViewXY, .label = "XY"},
+    Command{.action = Action::ViewXZ, .label = "XZ"},
+    Command{.action = Action::ViewYZ, .label = "YZ"},
+    Command{.action = Action::FreeView, .label = "Free view"},
+    Command{.action = Action::ResetCamera, .label = "Reset Camera"},
+  };
+  auto &grid = workbench_.cartesian_grid;
+  grid.visible = {true, false, true};
+  grid.polar_visible = {false, true, false};
+  auto const cartesian = grid.visible;
+  auto const polar = grid.polar_visible;
+  for (char const *projection : {"Orthographic", "Perspective"}) {
+    Activate({"Projection", projection});
+    for (auto const &command : commands) {
+      SCOPED_TRACE(::testing::Message() << projection << ", " << command.label);
+      workbench_.camera.Pan(17.0F, -9.0F);
+      workbench_.camera.ZoomBy(2.0F);
+      workbench_.camera.Orbit(11.0F, -7.0F);
+      auto const before = workbench_.camera;
+      auto const cursor_before = grid.reference_plane;
+      if (command.action == Action::ResetCamera) {
+        Activate({command.label});
+      } else {
+        Activate({"Camera view", command.label});
+      }
+      auto const expected = workbench_.camera.BuildWorldToClipMatrix();
+      auto const expected_cursor = grid.reference_plane;
+      PressKey(ImGuiKey_Escape);
+      PressKey(ImGuiKey_Escape);
+      if (command.action != Action::ResetCamera) {
+        ExpectToolbarSelected(command.action, true);
+      }
+      workbench_.camera = before;
+      grid.reference_plane = cursor_before;
+      Frame();
+      ClickToolbar(command.action);
+      auto const actual = workbench_.camera.BuildWorldToClipMatrix();
+      EXPECT_EQ(actual.row_0, expected.row_0);
+      EXPECT_EQ(actual.row_1, expected.row_1);
+      EXPECT_EQ(actual.row_2, expected.row_2);
+      EXPECT_EQ(actual.row_3, expected.row_3);
+      EXPECT_EQ(grid.reference_plane, expected_cursor);
+      EXPECT_EQ(grid.visible, cartesian);
+      EXPECT_EQ(grid.polar_visible, polar);
+      ExpectToolbarSelected(Action::ResetCamera, false);
+      OpenMenu("Camera view");
+      bool const reset = command.action == Action::FreeView ||
+                         command.action == Action::ResetCamera;
+      ExpectMenuChecked(reset ? "Free view" : command.label, true);
+      EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
+                before.GetDiagnostics().projection);
+    }
+  }
+  EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::YZ);
 }
 
 TEST_F(GGEMSImGuiCameraDiagnostics,

@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include <array>
 #include <cstdint>
 
 #include <imgui.h>
@@ -37,6 +36,7 @@
 #include "GGEMSDeviceStatus.hh"
 #include "GGEMSImGuiOutputPanel.hh"
 #include "GGEMSImGuiViewportPanel.hh"
+#include "GGEMSViewportToolbar.hh"
 #include "GGEMSWorkbenchState.hh"
 #include "GGEMS/logging/GGEMSOutputState.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
@@ -51,8 +51,8 @@ public:
     /*! \brief Borrowed scene descriptor, or zero while unavailable. */
     ImTextureID scene_texture_id{};
 
-    /*! \brief Borrowed orthographic and perspective toolbar images. */
-    std::array<ImTextureID, 2U> projection_icons{};
+    /*! \brief Borrowed viewport toolbar images in their stable action order. */
+    detail::GGEMSViewportToolbarIcons toolbar_icons{};
 
     /*! \brief Logical width represented by the scene texture. */
     std::uint32_t scene_texture_logical_width{0U};

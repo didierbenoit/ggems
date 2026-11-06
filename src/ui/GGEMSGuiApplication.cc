@@ -645,7 +645,7 @@ auto GGEMSGuiApplication::BuildImGuiFrame() -> void {
   imgui_layer_->BuildFrame(
     GGEMSImGuiLayer::FrameInputs{
       .scene_texture_id = imgui_integration_->GetSceneTextureID(),
-      .projection_icons = imgui_integration_->GetProjectionIcons(),
+      .toolbar_icons = imgui_integration_->GetToolbarIcons(),
       .scene_texture_logical_width = scene_target_logical_width_,
       .scene_texture_logical_height = scene_target_logical_height_,
       .swapchain_width = swapchain_extent.width,

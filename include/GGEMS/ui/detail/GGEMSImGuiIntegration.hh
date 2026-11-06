@@ -38,6 +38,8 @@
 #include <imgui.h>
 #include <vulkan/vulkan.hpp>
 
+#include "GGEMS/ui/detail/GGEMSViewportToolbar.hh"
+
 struct GLFWwindow;
 struct ImGuiContext;
 
@@ -121,7 +123,7 @@ public:
   auto operator=(GGEMSImGuiIntegration &&) -> GGEMSImGuiIntegration & = delete;
 
   /*!
-   * \brief Creates the context, projection textures, and GLFW/Vulkan backends.
+   * \brief Creates the context, toolbar textures, and GLFW/Vulkan backends.
    *
    * An existing context makes this call a no-op; failed initialization releases
    *   the created state.
@@ -182,14 +184,14 @@ public:
   [[nodiscard]] auto GetSceneTextureID() const noexcept -> ImTextureID;
 
   /*!
-   * \brief Borrows the current orthographic and perspective texture IDs.
+   * \brief Borrows the current viewport toolbar texture IDs.
    *
-   * \return Orthographic and perspective descriptors, in that order; zero
-   *   before initialization or after shutdown. Backend replacement invalidates
-   *   previously returned IDs.
+   * \return Descriptors in GGEMSViewportToolbarAction order; zero
+   * before initialization or after shutdown. Backend replacement invalidates
+   * previously returned IDs.
    */
-  [[nodiscard]] auto GetProjectionIcons() const noexcept
-    -> std::array<ImTextureID, 2U>;
+  [[nodiscard]] auto GetToolbarIcons() const noexcept
+    -> GGEMSViewportToolbarIcons;
 
   /*!
    * \brief Starts a backend frame and refreshes settings and content scale.
@@ -237,7 +239,7 @@ private:
   /*!
    * \brief Owns one immutable icon image and its current backend descriptor.
    */
-  struct ProjectionIcon {
+  struct ToolbarIcon {
     /*! \brief Device allocation, released after the bound image. */
     vk::UniqueDeviceMemory memory;
 
@@ -253,14 +255,14 @@ private:
   };
 
   /*!
-   * \brief Allocates and uploads both embedded icons before backend attachment.
+   * \brief Uploads all embedded toolbar icons before backend attachment.
    *
    * The transfer queue is idle on return, so staging resources can be freed.
    *
    * \throws core::GGEMSRecoverable If a required memory type is unavailable.
    * \throws vk::SystemError If Vulkan allocation or transfer fails.
    */
-  auto CreateProjectionIcons() -> void;
+  auto CreateToolbarIcons() -> void;
 
   /*!
    * \brief Attaches the GLFW backend and installs its window callbacks.
@@ -337,8 +339,8 @@ private:
   /*! \brief Owned backend descriptor for sampling the scene image. */
   VkDescriptorSet scene_descriptor_set_{VK_NULL_HANDLE};
 
-  /*! \brief Two immutable GPU icons, orthographic then perspective. */
-  std::array<ProjectionIcon, 2U> projection_icons_{};
+  /*! \brief Immutable GPU icons in GGEMSViewportToolbarAction order. */
+  std::array<ToolbarIcon, k_ggems_viewport_toolbar_icon_count> toolbar_icons_{};
 
   /*! \brief Content scale currently applied to style and fonts. */
   float applied_content_scale_{0.0F};

@@ -27,9 +27,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <cmath>
-#include <cstddef>
-
 #include <imgui.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
@@ -40,50 +37,31 @@
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
+#include "GGEMS/ui/detail/GGEMSViewportToolbar.hh"
 
 namespace {
 
 /*! \brief Camera authority shared by the existing navigation menus. */
 using Camera = ggems::ui::detail::GGEMSSceneCamera;
 
-/*!
- * \brief Recognizes a preset orientation without caching navigation state.
- *
- * \param[in] current Current camera diagnostics.
- * \param[in] plane Existing preset used as the orientation authority.
- * \return True when both screen basis vectors match within display tolerance.
- */
-[[nodiscard]] auto IsCameraViewSelected(Camera::Diagnostics const &current,
-                                        Camera::ViewPlane plane) -> bool {
-  Camera reference;
-  reference.SetView(plane);
-  auto const expected = reference.GetDiagnostics();
+/*! \brief Command identities shared with the viewport's image buttons. */
+using Action = ggems::ui::detail::GGEMSViewportToolbarAction;
 
-  for (std::size_t index = 0U; index < current.right.size(); ++index) {
-    if (std::abs(current.right[index] - expected.right[index]) > 1.0e-5F ||
-        std::abs(current.up[index] - expected.up[index]) > 1.0e-5F) {
-      return false;
-    }
-  }
-
-  return true;
-}
+using ggems::ui::detail::IsCameraViewSelected;
 
 /*!
  * \brief Applies existing plane presets or requests the existing free reset.
  *
- * \param[in,out] camera Camera changed only when a plane is selected.
- * \param[in,out] grid Reference plane retained until another axial selection.
+ * \param[in,out] workbench Shared camera and cursor reference plane.
  * \return True when Free view requests a camera reset.
  */
 [[nodiscard]] auto
-BuildCameraViewMenu(Camera &camera, ggems::ui::detail::GGEMSCartesianGrid &grid)
-  -> bool {
+BuildCameraViewMenu(ggems::ui::detail::GGEMSWorkbenchState &workbench) -> bool {
   if (!ImGui::BeginMenu("Camera view")) {
     return false;
   }
 
-  auto const diagnostics = camera.GetDiagnostics();
+  auto const diagnostics = workbench.camera.GetDiagnostics();
   bool const xy = IsCameraViewSelected(diagnostics, Camera::ViewPlane::XY);
   bool const xz = IsCameraViewSelected(diagnostics, Camera::ViewPlane::XZ);
   bool const yz = IsCameraViewSelected(diagnostics, Camera::ViewPlane::YZ);
@@ -93,20 +71,17 @@ BuildCameraViewMenu(Camera &camera, ggems::ui::detail::GGEMSCartesianGrid &grid)
                         "Keep the selected projection.");
 
   if (ImGui::MenuItem("XY", nullptr, xy)) {
-    camera.SetView(Camera::ViewPlane::XY);
-    grid.reference_plane = Camera::ViewPlane::XY;
+    ggems::ui::detail::ApplyViewportToolbarAction(workbench, Action::ViewXY);
   }
   ImGui::SetItemTooltip("From +Z; screen right +X, screen up -Y.");
 
   if (ImGui::MenuItem("XZ", nullptr, xz)) {
-    camera.SetView(Camera::ViewPlane::XZ);
-    grid.reference_plane = Camera::ViewPlane::XZ;
+    ggems::ui::detail::ApplyViewportToolbarAction(workbench, Action::ViewXZ);
   }
   ImGui::SetItemTooltip("From +Y; screen right +X, screen up +Z.");
 
   if (ImGui::MenuItem("YZ", nullptr, yz)) {
-    camera.SetView(Camera::ViewPlane::YZ);
-    grid.reference_plane = Camera::ViewPlane::YZ;
+    ggems::ui::detail::ApplyViewportToolbarAction(workbench, Action::ViewYZ);
   }
   ImGui::SetItemTooltip("From +X; screen right -Z, screen up -Y.");
 
@@ -151,7 +126,7 @@ auto GGEMSImGuiLayer::BuildFrame(
     camera_input = viewport_panel_.Build(
       workbench.show_viewport_panel, inputs.scene_texture_id,
       inputs.scene_texture_logical_width, inputs.scene_texture_logical_height,
-      inputs.projection_icons, workbench.camera.GetDiagnostics().projection);
+      inputs.toolbar_icons, workbench);
     auto const &result = camera_input;
 
     workbench.viewport.visible = result.visible;
@@ -159,10 +134,6 @@ auto GGEMSImGuiLayer::BuildFrame(
     if (result.visible) {
       workbench.viewport.width = result.width;
       workbench.viewport.height = result.height;
-    }
-
-    if (result.projection_request) {
-      workbench.camera.SetProjection(*result.projection_request);
     }
 
     workbench.camera.OrbitByPixels(result.orbit_delta_x_pixels,
@@ -173,8 +144,12 @@ auto GGEMSImGuiLayer::BuildFrame(
     viewport_panel_.CancelGesture();
   }
 
+  if (camera_input.toolbar_action) {
+    detail::ApplyViewportToolbarAction(workbench, *camera_input.toolbar_action);
+  }
+
   if (menu_actions.reset_camera) {
-    workbench.camera.Reset();
+    detail::ApplyViewportToolbarAction(workbench, Action::ResetCamera);
   }
 
   if (inputs.geometry_scene != nullptr) {
@@ -297,18 +272,17 @@ auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
     }
 
     ImGui::Separator();
-    menu_actions.reset_camera =
-      BuildCameraViewMenu(workbench.camera, workbench.cartesian_grid);
+    menu_actions.reset_camera = BuildCameraViewMenu(workbench);
 
     if (ImGui::BeginMenu("Projection")) {
       auto const projection = workbench.camera.GetDiagnostics().projection;
       if (ImGui::MenuItem("Orthographic", nullptr,
                           projection == Camera::Projection::Orthographic)) {
-        workbench.camera.SetProjection(Camera::Projection::Orthographic);
+        detail::ApplyViewportToolbarAction(workbench, Action::Orthographic);
       }
       if (ImGui::MenuItem("Perspective", nullptr,
                           projection == Camera::Projection::Perspective)) {
-        workbench.camera.SetProjection(Camera::Projection::Perspective);
+        detail::ApplyViewportToolbarAction(workbench, Action::Perspective);
       }
       ImGui::EndMenu();
     }

@@ -28,6 +28,7 @@
  */
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstddef>
 #include <optional>
@@ -39,64 +40,206 @@
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
+#include "GGEMS/ui/detail/GGEMSViewportToolbar.hh"
+#include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 
 namespace {
 
 /*!
- * \brief Builds compact projection commands above the scene image.
+ * \brief Reads selected toolbar buttons from the shared presentation state.
  *
- * \param[in] icons Borrowed orthographic and perspective images.
- * \param[in] projection Camera projection defining the selected button.
- * \return Projection requested by a click, or no command.
+ * \param[in] workbench Camera and display state shared with the View menu.
+ * \return Selection flags in toolbar action order.
  */
-auto BuildProjectionToolbar(
-  std::array<ImTextureID, 2U> const &icons,
-  ggems::ui::detail::GGEMSSceneCamera::Projection projection)
-  -> std::optional<ggems::ui::detail::GGEMSSceneCamera::Projection> {
-  using Projection = ggems::ui::detail::GGEMSSceneCamera::Projection;
+auto ToolbarSelection(ggems::ui::detail::GGEMSWorkbenchState const &workbench)
+  -> std::array<bool, ggems::ui::detail::k_ggems_viewport_toolbar_icon_count> {
+  using Camera = ggems::ui::detail::GGEMSSceneCamera;
 
-  std::optional<Projection> requested;
+  auto const diagnostics = workbench.camera.GetDiagnostics();
+
+  bool const xy =
+    ggems::ui::detail::IsCameraViewSelected(diagnostics, Camera::ViewPlane::XY);
+
+  bool const xz =
+    ggems::ui::detail::IsCameraViewSelected(diagnostics, Camera::ViewPlane::XZ);
+
+  bool const yz =
+    ggems::ui::detail::IsCameraViewSelected(diagnostics, Camera::ViewPlane::YZ);
+
+  auto const &grid = workbench.cartesian_grid;
+
+  return {
+    !xy && !xz && !yz,
+    xy,
+    xz,
+    yz,
+    diagnostics.projection == Camera::Projection::Orthographic,
+    diagnostics.projection == Camera::Projection::Perspective,
+    grid.visible[0U],
+    grid.visible[1U],
+    grid.visible[2U],
+    grid.polar_visible[0U],
+    grid.polar_visible[1U],
+    grid.polar_visible[2U],
+    workbench.show_axes,
+    workbench.trace_visibility.IsGlobalVisible(),
+    false,
+  };
+}
+
+/*!
+ * \brief Draws one themed command image with a persistent selection outline.
+ *
+ * \param[in] id Invisible stable button identifier.
+ * \param[in] texture Borrowed image descriptor.
+ * \param[in] tooltip Command description displayed on hover.
+ * \param[in] selected Whether the live state selects this command.
+ * \param[in] cube Whether to retain the existing cube artwork crop.
+ * \param[in] scale Current logical font scale.
+ * \return Whether this frame activated the button.
+ */
+auto ToolbarImageButton(char const *id, ImTextureID texture,
+                        char const *tooltip, bool selected, bool cube,
+                        float scale) -> bool {
+  using Role = ggems::ui::GGEMSThemeRole;
+
+  auto background = ggems::ui::GetThemeColor(Role::WindowBackground);
+
+  if (selected) {
+    background = ggems::ui::GetThemeColor(Role::AccentStrong);
+    background.w = 0.42F;
+    auto hovered = background;
+    hovered.w = 0.58F;
+    auto pressed = background;
+    pressed.w = 0.78F;
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hovered);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, pressed);
+  }
+
+  ImGui::PushStyleColor(ImGuiCol_Button, background);
+
+  ImVec2 const uv_min = cube ? ImVec2{0.125F, 0.125F} : ImVec2{0.0F, 0.0F};
+  ImVec2 const uv_max = cube ? ImVec2{0.875F, 0.875F} : ImVec2{1.0F, 1.0F};
+  bool const activated = ImGui::ImageButton(
+    id, texture, {22.0F * scale, 22.0F * scale}, uv_min, uv_max);
+
+  ImGui::PopStyleColor(selected ? 3 : 1);
+
+  if (selected) {
+    ImGui::GetWindowDrawList()->AddRect(
+      ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+      ImGui::GetColorU32(ggems::ui::GetThemeColor(Role::Accent)),
+      ImGui::GetStyle().FrameRounding);
+  }
+
+  ImGui::SetItemTooltip("%s", tooltip);
+
+  return activated;
+}
+
+/*!
+ * \brief Builds the single scrolling command row above the scene image.
+ *
+ * \param[in] icons Borrowed images in toolbar action order.
+ * \param[in] workbench Current camera and display state.
+ * \return Action requested by a click, or no command.
+ */
+auto BuildViewportToolbar(
+  ggems::ui::detail::GGEMSViewportToolbarIcons const &icons,
+  ggems::ui::detail::GGEMSWorkbenchState const &workbench)
+  -> std::optional<ggems::ui::detail::GGEMSViewportToolbarAction> {
+  using Action = ggems::ui::detail::GGEMSViewportToolbarAction;
+  using Role = ggems::ui::GGEMSThemeRole;
+
+  constexpr std::array ids{
+    "##free_view",
+    "##view_xy",
+    "##view_xz",
+    "##view_yz",
+    "##orthographic_projection",
+    "##perspective_projection",
+    "##cartesian_xy",
+    "##cartesian_xz",
+    "##cartesian_yz",
+    "##polar_xy",
+    "##polar_xz",
+    "##polar_yz",
+    "##axes",
+    "##particle_traces",
+    "##reset_camera",
+  };
+
+  constexpr std::array tooltips{
+    "Free view",
+    "XY view",
+    "XZ view",
+    "YZ view",
+    "Orthographic projection",
+    "Perspective projection",
+    "Cartesian grid XY",
+    "Cartesian grid XZ",
+    "Cartesian grid YZ",
+    "Polar grid XY",
+    "Polar grid XZ",
+    "Polar grid YZ",
+    "Axes",
+    "Particle traces",
+    "Reset camera",
+  };
+
+  auto const selected = ToolbarSelection(workbench);
+  std::optional<Action> requested;
 
   float const scale = ImGui::GetFontSize() / ggems::ui::k_ggems_base_font_size;
 
+  float const button_size = 28.0F * scale;
+  // Four separators replace ordinary gaps: each adds one pixel plus two
+  // six-pixel margins instead of a four-pixel gap.
+  float const row_width = 512.0F * scale;
+  bool const scrolls = ImGui::GetContentRegionAvail().x < row_width;
+  // Child sizes round down; reserve the fractional button edge to prevent an
+  // unintended vertical scrollbar at fractional effective font scales.
+  float const row_height =
+    std::ceil(button_size + (scrolls ? ImGui::GetStyle().ScrollbarSize : 0.0F));
+
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0.0F, 0.0F});
   ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
                       ImVec2{3.0F * scale, 3.0F * scale});
   ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
                       ImVec2{4.0F * scale, 4.0F * scale});
 
-  for (std::size_t index = 0U; index < icons.size(); ++index) {
-    Projection const mode =
-      index == 0U ? Projection::Orthographic : Projection::Perspective;
+  ImGui::SetNextWindowContentSize({row_width, button_size});
+  if (ImGui::BeginChild(
+        "##viewport_toolbar", {0.0F, row_height}, ImGuiChildFlags_None,
+        ImGuiWindowFlags_HorizontalScrollbar |
+          ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground)) {
+    for (std::size_t index = 0U; index < icons.size(); ++index) {
+      bool const separator =
+        index == 4U || index == 6U || index == 12U || index == 14U;
 
-    char const *id =
-      index == 0U ? "##orthographic_projection" : "##perspective_projection";
+      if (separator) {
+        ImGui::SameLine(0.0F, 6.0F * scale);
+        auto const position = ImGui::GetCursorScreenPos();
+        ImGui::Dummy({scale, button_size});
+        ImGui::GetWindowDrawList()->AddLine(
+          {position.x, position.y + (5.0F * scale)},
+          {position.x, position.y + (23.0F * scale)},
+          ImGui::GetColorU32(ggems::ui::GetThemeColor(Role::Separator)));
+        ImGui::SameLine(0.0F, 6.0F * scale);
+      } else if (index != 0U) {
+        ImGui::SameLine();
+      }
 
-    char const *tooltip =
-      index == 0U ? "Orthographic projection" : "Perspective projection";
-
-    if (index != 0U) {
-      ImGui::SameLine();
+      bool const cube = index == 4U || index == 5U;
+      if (ToolbarImageButton(ids[index], icons[index], tooltips[index],
+                             selected[index], cube, scale)) {
+        requested = static_cast<Action>(index);
+      }
     }
-
-    ImGui::PushStyleColor(ImGuiCol_Button,
-                          ggems::ui::GetThemeColor(
-                            projection == mode
-                              ? ggems::ui::GGEMSThemeRole::Selection
-                              : ggems::ui::GGEMSThemeRole::WindowBackground));
-
-    // Both PNG sizes share transparent margins. Crop only those margins so
-    // the original artwork occupies the compact image area at either size.
-    if (ImGui::ImageButton(id, icons[index], {22.0F * scale, 22.0F * scale},
-                           {0.125F, 0.125F}, {0.875F, 0.875F})) {
-      requested = mode;
-    }
-
-    ImGui::PopStyleColor();
-    ImGui::SetItemTooltip("%s", tooltip);
   }
 
-  ImGui::PopStyleVar(2);
-
+  ImGui::EndChild();
+  ImGui::PopStyleVar(3);
   return requested;
 }
 
@@ -216,9 +359,8 @@ namespace ggems::ui::detail {
 
 auto GGEMSImGuiViewportPanel::Build(
   bool &show_window, ImTextureID scene_texture_id, std::uint32_t texture_width,
-  std::uint32_t texture_height,
-  std::array<ImTextureID, 2U> const &projection_icons,
-  GGEMSSceneCamera::Projection projection) -> Result {
+  std::uint32_t texture_height, GGEMSViewportToolbarIcons const &toolbar_icons,
+  GGEMSWorkbenchState const &workbench) -> Result {
   Result result{};
 
   ImGuiWindowFlags const window_flags =
@@ -230,8 +372,7 @@ auto GGEMSImGuiViewportPanel::Build(
     return result;
   }
 
-  result.projection_request =
-    BuildProjectionToolbar(projection_icons, projection);
+  result.toolbar_action = BuildViewportToolbar(toolbar_icons, workbench);
 
   ImVec2 const available_size = ImGui::GetContentRegionAvail();
 
