@@ -35,11 +35,16 @@
 
 namespace ggems::ui::detail {
 
-/*! \brief Shares physical spacing across independently visible grids. */
+/*! \brief Shares physical spacing across Cartesian and polar World grids. */
 class GGEMSCartesianGrid {
 public:
-  /*! \brief Independent XY, XZ, and YZ visibility; all hidden initially. */
+  /*! \brief Cartesian XY, XZ, and YZ visibility; all hidden initially. */
   std::array<bool, 3U> visible{};
+
+  /*!
+   * \brief Polar XY, XZ, and YZ visibility, independent and initially hidden.
+   */
+  std::array<bool, 3U> polar_visible{};
 
   /*! \brief Last selected axial cursor plane; visibility does not change it. */
   GGEMSSceneCamera::ViewPlane reference_plane{GGEMSSceneCamera::ViewPlane::XY};
@@ -47,7 +52,8 @@ public:
   /*!
    * \brief Chooses one physical 1-2-5 interval with zoom hysteresis.
    *
-   * This scalar is shared by the shader and ImGui. Projection, clipping,
+   * This scalar sets Cartesian intervals and polar ring radii and is shared
+   * by the shader and ImGui. Projection, clipping,
    * density filtering, and line appearance remain shader responsibilities.
    *
    * \param[in] camera Current zoom and logical viewport height.

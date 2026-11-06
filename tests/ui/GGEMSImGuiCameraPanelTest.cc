@@ -574,6 +574,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   auto &grid = workbench_.cartesian_grid;
   EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::XY);
   EXPECT_EQ(grid.visible, (std::array{false, false, false}));
+  EXPECT_EQ(grid.polar_visible, (std::array{false, false, false}));
   OpenMenu(nullptr);
   auto *menu = GImGui->NavWindow;
   ASSERT_NE(menu, nullptr);
@@ -584,6 +585,9 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   }
 
   std::array<char const *, 3U> const names{"XY", "XZ", "YZ"};
+  Activate({"Grids", "XY##Polar"});
+  Activate({"Grids", "YZ##Polar"});
+  auto const polar_visibility = grid.polar_visible;
   Activate({"Camera view", "YZ"});
   for (char const *projection : {"Orthographic", "Perspective"}) {
     Activate({"Projection", projection});
@@ -597,6 +601,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
           expected_visibility[index] = expected;
           Activate({"Grids", names[index]});
           EXPECT_EQ(grid.visible, expected_visibility);
+          EXPECT_EQ(grid.polar_visible, polar_visibility);
         }
       }
       OpenMenu("Grids");
@@ -604,8 +609,9 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
         ExpectMenuChecked(names[index], (mask & (1U << index)) != 0U);
       }
       EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::YZ);
-      EXPECT_TRUE(displayed_text_.contains((mask & 4U) != 0U ? "YZ grid: on"
-                                                             : "YZ grid: off"));
+      EXPECT_TRUE(displayed_text_.contains(
+        (mask & 4U) != 0U ? "YZ grids: Cartesian on / Polar on"
+                          : "YZ grids: Cartesian off / Polar on"));
     }
     auto const after = workbench_.camera.BuildWorldToClipMatrix();
     EXPECT_EQ(after.row_0, before.row_0);
@@ -616,12 +622,64 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
 }
 
 TEST_F(GGEMSImGuiCameraDiagnostics,
+       PolarMenuRetainsCartesianAndCameraAcrossEightMasks) {
+  auto &grid = workbench_.cartesian_grid;
+  EXPECT_EQ(grid.polar_visible, (std::array{false, false, false}));
+  Activate({"Grids", "XY"});
+  Activate({"Grids", "YZ"});
+  auto const cartesian_visibility = grid.visible;
+  std::array<char const *, 3U> const names{
+    "XY##Polar",
+    "XZ##Polar",
+    "YZ##Polar",
+  };
+  Activate({"Camera view", "YZ"});
+  for (char const *projection : {"Orthographic", "Perspective"}) {
+    Activate({"Projection", projection});
+    auto const before = workbench_.camera.BuildWorldToClipMatrix();
+    for (unsigned int mask = 0U; mask < 8U; ++mask) {
+      SCOPED_TRACE(::testing::Message() << projection << ", mask=" << mask);
+      for (std::size_t index = 0U; index < names.size(); ++index) {
+        bool const expected = (mask & (1U << index)) != 0U;
+        if (grid.polar_visible[index] != expected) {
+          auto expected_visibility = grid.polar_visible;
+          expected_visibility[index] = expected;
+          Activate({"Grids", names[index]});
+          EXPECT_EQ(grid.polar_visible, expected_visibility);
+          EXPECT_EQ(grid.visible, cartesian_visibility);
+        }
+      }
+      OpenMenu("Grids");
+      EXPECT_TRUE(displayed_text_.contains("Cartesian"));
+      EXPECT_TRUE(displayed_text_.contains("Polar"));
+      for (std::size_t index = 0U; index < names.size(); ++index) {
+        ExpectMenuChecked(names[index], (mask & (1U << index)) != 0U);
+      }
+    }
+    auto const after = workbench_.camera.BuildWorldToClipMatrix();
+    EXPECT_EQ(after.row_0, before.row_0);
+    EXPECT_EQ(after.row_1, before.row_1);
+    EXPECT_EQ(after.row_2, before.row_2);
+    EXPECT_EQ(after.row_3, before.row_3);
+  }
+  Activate({"Camera"});
+  EXPECT_FALSE(workbench_.show_camera_panel);
+  Frame();
+  Activate({"Camera"});
+  EXPECT_TRUE(workbench_.show_camera_panel);
+  EXPECT_EQ(grid.visible, cartesian_visibility);
+  EXPECT_EQ(grid.polar_visible, (std::array{true, true, true}));
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
        CameraViewsChangeCursorPlaneWithoutChangingGridVisibility) {
   using Camera = ggems::ui::detail::GGEMSSceneCamera;
   auto &grid = workbench_.cartesian_grid;
   Activate({"Grids", "XY"});
   Activate({"Grids", "YZ"});
+  Activate({"Grids", "XZ##Polar"});
   auto const visibility = grid.visible;
+  auto const polar_visibility = grid.polar_visible;
   EXPECT_EQ(visibility, (std::array{true, false, true}));
   std::array<char const *, 3U> const names{"XY", "XZ", "YZ"};
   std::array<char const *, 3U> const labels{
@@ -635,14 +693,17 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
       Activate({"Camera view", names[selected]});
       EXPECT_EQ(static_cast<std::size_t>(grid.reference_plane), selected);
       EXPECT_EQ(grid.visible, visibility);
+      EXPECT_EQ(grid.polar_visible, polar_visibility);
       EXPECT_TRUE(displayed_text_.contains(labels[selected]));
     }
     Activate({"Camera view", "Free view"});
     EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::YZ);
     EXPECT_EQ(grid.visible, visibility);
+    EXPECT_EQ(grid.polar_visible, polar_visibility);
     Activate({"Reset Camera"});
     EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::YZ);
     EXPECT_EQ(grid.visible, visibility);
+    EXPECT_EQ(grid.polar_visible, polar_visibility);
   }
 }
 
@@ -689,6 +750,10 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
       EXPECT_TRUE(displayed_text_.contains("Ray-plane intersection"));
       EXPECT_TRUE(displayed_text_.contains("Cursor world: (0 mm, 0 mm, 0 mm)"))
         << displayed_text_;
+      EXPECT_TRUE(displayed_text_.contains("Cursor radius: 0 mm"));
+      EXPECT_TRUE(displayed_text_.contains(
+        "Cursor azimuth (deg): N/A (origin / below length resolution)"))
+        << displayed_text_;
       EXPECT_TRUE(displayed_text_.contains("minor "));
       EXPECT_TRUE(displayed_text_.contains(" / major "));
     }
@@ -697,6 +762,8 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
     workbench_.camera.SetView(Camera::ViewPlane::XY);
     Frame();
     EXPECT_TRUE(displayed_text_.contains("Cursor world: N/A"));
+    EXPECT_TRUE(displayed_text_.contains("Cursor radius: N/A"));
+    EXPECT_TRUE(displayed_text_.contains("Cursor azimuth (deg): N/A"));
     workbench_.camera.SetView(Camera::ViewPlane::YZ);
     io.AddMousePosEvent(1200.0F, 750.0F);
     Frame();
@@ -710,7 +777,89 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   geometry_scene_ = nullptr;
   Frame();
   EXPECT_TRUE(displayed_text_.contains("Cursor world: N/A"));
+  EXPECT_TRUE(displayed_text_.contains("Cursor radius: N/A"));
+  EXPECT_TRUE(displayed_text_.contains("Cursor azimuth (deg): N/A"));
   EXPECT_TRUE(displayed_text_.contains("step N/A"));
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
+       PolarCursorReadoutUsesPhysicalPlaneAndAllAzimuthQuadrants) {
+  ggems::render::GGEMSGeometryScene const scene{
+    .vertices = {},
+    .meshes = {},
+    .occurrences = {},
+    .world_half_extent_m = {0.6, 0.4, 0.3},
+  };
+  geometry_scene_ = &scene;
+  workbench_.camera.FrameWorld(scene.world_half_extent_m);
+  Frame();
+  auto *viewport =
+    ImGui::FindWindowByName(ggems::ui::detail::k_viewport_window_name);
+  ASSERT_NE(viewport, nullptr);
+  ImGui::SetWindowSize(
+    ggems::ui::detail::k_viewport_window_name,
+    {viewport->Size.x + static_cast<float>(workbench_.viewport.width % 2U),
+     viewport->Size.y + static_cast<float>(workbench_.viewport.height % 2U)});
+  Frame();
+  Frame();
+  ASSERT_EQ(workbench_.viewport.width % 2U, 0U);
+  ASSERT_EQ(workbench_.viewport.height % 2U, 0U);
+  ImVec2 const center{
+    viewport->DC.CursorStartPos.x +
+      (0.5F * static_cast<float>(workbench_.viewport.width)),
+    viewport->DC.CursorStartPos.y +
+      (0.5F * static_cast<float>(workbench_.viewport.height)),
+  };
+
+  struct View {
+    char const *name;
+    ImVec2 positive_u;
+    ImVec2 positive_v;
+  };
+  std::array const views{
+    View{.name = "XY", .positive_u = {1, 0}, .positive_v = {0, 1}},
+    View{.name = "XZ", .positive_u = {1, 0}, .positive_v = {0, -1}},
+    View{.name = "YZ", .positive_u = {0, 1}, .positive_v = {-1, 0}},
+  };
+  struct Position {
+    float u_mm;
+    float v_mm;
+    float azimuth_degrees;
+  };
+  std::array const positions{
+    Position{.u_mm = 3, .v_mm = 4, .azimuth_degrees = 53.130F},
+    Position{.u_mm = -3, .v_mm = 4, .azimuth_degrees = 126.870F},
+    Position{.u_mm = -3, .v_mm = -4, .azimuth_degrees = 233.130F},
+    Position{.u_mm = 3, .v_mm = -4, .azimuth_degrees = 306.870F},
+    Position{.u_mm = 5, .v_mm = 0, .azimuth_degrees = 0},
+    Position{.u_mm = 0, .v_mm = 5, .azimuth_degrees = 90},
+    Position{.u_mm = -5, .v_mm = 0, .azimuth_degrees = 180},
+    Position{.u_mm = 0, .v_mm = -5, .azimuth_degrees = 270},
+  };
+
+  for (char const *projection : {"Orthographic", "Perspective"}) {
+    Activate({"Projection", projection});
+    for (auto const &view : views) {
+      Activate({"Camera view", view.name});
+      // One logical pixel represents one millimeter at the reference plane.
+      workbench_.camera.SetZoom(
+        2.0F / (0.001F * static_cast<float>(workbench_.viewport.height)));
+      for (auto const &position : positions) {
+        SCOPED_TRACE(::testing::Message()
+                     << projection << ", " << view.name
+                     << ", azimuth=" << position.azimuth_degrees);
+        ImGui::GetIO().AddMousePosEvent(
+          center.x + (position.u_mm * view.positive_u.x) +
+            (position.v_mm * view.positive_v.x),
+          center.y + (position.u_mm * view.positive_u.y) +
+            (position.v_mm * view.positive_v.y));
+        Frame();
+        EXPECT_TRUE(displayed_text_.contains("Cursor radius: 5.000 mm"))
+          << displayed_text_;
+        ExpectValues("Cursor azimuth (deg)", {position.azimuth_degrees});
+      }
+    }
+  }
 }
 
 TEST_F(GGEMSImGuiCameraDiagnostics,
@@ -728,6 +877,9 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   Frame();
   EXPECT_TRUE(displayed_text_.contains("minor <1 pm / major <1 pm"))
     << displayed_text_;
+  EXPECT_TRUE(displayed_text_.contains("Cursor radius: 0 mm"));
+  EXPECT_TRUE(displayed_text_.contains(
+    "Cursor azimuth (deg): N/A (origin / below length resolution)"));
 }
 
 } // namespace

@@ -256,6 +256,7 @@ auto ExpectPhysicalStep(float step) -> void {
 TEST(GGEMSCartesianGrid, DefaultsAreHiddenAndSpacingIsAvailableWithoutShowing) {
   Grid grid;
   EXPECT_EQ(grid.visible, (std::array<bool, 3U>{}));
+  EXPECT_EQ(grid.polar_visible, (std::array<bool, 3U>{}));
   EXPECT_EQ(grid.reference_plane, Camera::ViewPlane::XY);
   EXPECT_FLOAT_EQ(grid.GetMinorStepM(), 0.0F);
   Camera camera;
@@ -264,6 +265,44 @@ TEST(GGEMSCartesianGrid, DefaultsAreHiddenAndSpacingIsAvailableWithoutShowing) {
   grid.Update(camera);
   EXPECT_FLOAT_EQ(grid.GetMinorStepM(), 0.2F);
   EXPECT_EQ(grid.visible, (std::array<bool, 3U>{}));
+  EXPECT_EQ(grid.polar_visible, (std::array<bool, 3U>{}));
+}
+
+// All six choices survive spacing updates and camera navigation independently.
+TEST(GGEMSCartesianGrid, CartesianAndPolarVisibilitySurviveCameraUpdates) {
+  Camera camera;
+  camera.SetViewportSize(800U, 600U);
+  camera.FrameWorld({2.0, 3.0, 4.0});
+  for (unsigned cartesian = 0U; cartesian < 8U; ++cartesian) {
+    for (unsigned polar = 0U; polar < 8U; ++polar) {
+      Grid grid;
+      for (std::size_t plane = 0U; plane < 3U; ++plane) {
+        grid.visible[plane] = (cartesian & (1U << plane)) != 0U;
+        grid.polar_visible[plane] = (polar & (1U << plane)) != 0U;
+      }
+      auto const cartesian_before = grid.visible;
+      auto const polar_before = grid.polar_visible;
+      for (auto projection :
+           {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
+        camera.SetProjection(projection);
+        for (auto plane : {Camera::ViewPlane::XY, Camera::ViewPlane::XZ,
+                           Camera::ViewPlane::YZ}) {
+          camera.SetView(plane);
+          camera.Pan(35.0F, -19.0F);
+          camera.ZoomBy(2.0F);
+          camera.OrbitByPixels(10.0F, 5.0F);
+          grid.Update(camera);
+          EXPECT_EQ(grid.visible, cartesian_before);
+          EXPECT_EQ(grid.polar_visible, polar_before);
+          ExpectPhysicalStep(grid.GetMinorStepM());
+        }
+      }
+      camera.Reset();
+      grid.Update(camera);
+      EXPECT_EQ(grid.visible, cartesian_before);
+      EXPECT_EQ(grid.polar_visible, polar_before);
+    }
+  }
 }
 
 TEST(GGEMSCartesianGrid, SharedIntervalUsesReadablePhysicalStepsAcrossScales) {

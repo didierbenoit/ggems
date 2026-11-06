@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Declares the procedural World-plane grid renderer.
+ * \brief Declares the procedural Cartesian and polar World-plane renderer.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -38,11 +38,11 @@
 namespace ggems::ui::detail {
 
 /*!
- * \brief Owns a depth-tested procedural grid pipeline without vertex buffers.
+ * \brief Owns one Cartesian/polar grid pipeline without vertex buffers.
  *
  * The application completes GPU use before shutdown or destruction. Grid
  * draws follow scene objects and blend only where the enabled World planes
- * are visible.
+ * are visible. Both patterns on one plane share a draw and coverage union.
  */
 class GGEMSVulkanCartesianGrid {
 public:
@@ -85,12 +85,14 @@ public:
    * The caller sets viewport and scissor. Hidden grids emit no commands.
    * Slang owns the pattern, clipping, filtering, and subpixel depth allowance.
    * Read-only depth and alpha blending preserve antialiased line coverage.
+   * The positive depth allowance gives coplanar scene objects display priority.
+   * Different planes retain the existing XY, XZ, YZ blending order.
    *
    * \param[in] command_buffer Recording buffer inside dynamic rendering.
    * \param[in] world_to_clip Shared transform from World meters to clip space.
    * \param[in] viewport_extent Physical render-target dimensions.
    * \param[in] world_half_extent_m Positive World half extents in meters.
-   * \param[in] grid Independent plane visibility and shared physical step.
+   * \param[in] grid Independent Cartesian/polar visibility and physical step.
    */
   auto Record(vk::raii::CommandBuffer const &command_buffer,
               std::array<std::array<float, 4U>, 4U> const &world_to_clip,

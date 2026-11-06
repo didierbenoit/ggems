@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Owns the bounded procedural Cartesian grid pipeline and its draws.
+ * \brief Owns the shared procedural Cartesian/polar grid pipeline and draws.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -64,6 +64,9 @@ struct GridPushConstants {
 
   /*! \brief XY = 0, XZ = 1, YZ = 2. */
   std::uint32_t plane{};
+
+  /*! \brief Cartesian bit 1 and polar bit 2, completing the 128-byte block. */
+  std::uint32_t mode{};
 };
 
 } // namespace
@@ -237,7 +240,9 @@ auto GGEMSVulkanCartesianGrid::Record(
   vk::Extent2D viewport_extent,
   std::array<double, 3U> const &world_half_extent_m,
   GGEMSCartesianGrid const &grid) const -> void {
-  if (grid.visible == std::array<bool, 3U>{} || grid.GetMinorStepM() <= 0.0F) {
+  if ((grid.visible == std::array<bool, 3U>{} &&
+       grid.polar_visible == std::array<bool, 3U>{}) ||
+      grid.GetMinorStepM() <= 0.0F) {
     return;
   }
 
@@ -262,9 +267,13 @@ auto GGEMSVulkanCartesianGrid::Record(
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline_);
 
   for (std::uint32_t plane = 0U; plane < grid.visible.size(); ++plane) {
-    if (!grid.visible[plane]) {
+    constants.mode =
+      (grid.visible[plane] ? 1U : 0U) | (grid.polar_visible[plane] ? 2U : 0U);
+
+    if (constants.mode == 0U) {
       continue;
     }
+
     constants.plane = plane;
     command_buffer.pushConstants(
       *pipeline_layout_,

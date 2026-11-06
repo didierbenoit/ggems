@@ -272,9 +272,17 @@ auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
     ImGui::Separator();
     ImGui::MenuItem("Axes", nullptr, &workbench.show_axes);
     if (ImGui::BeginMenu("Grids")) {
+      ImGui::SeparatorText("Cartesian");
       ImGui::MenuItem("XY", nullptr, &workbench.cartesian_grid.visible[0]);
       ImGui::MenuItem("XZ", nullptr, &workbench.cartesian_grid.visible[1]);
       ImGui::MenuItem("YZ", nullptr, &workbench.cartesian_grid.visible[2]);
+      ImGui::SeparatorText("Polar");
+      ImGui::MenuItem("XY##Polar", nullptr,
+                      &workbench.cartesian_grid.polar_visible[0]);
+      ImGui::MenuItem("XZ##Polar", nullptr,
+                      &workbench.cartesian_grid.polar_visible[1]);
+      ImGui::MenuItem("YZ##Polar", nullptr,
+                      &workbench.cartesian_grid.polar_visible[2]);
       ImGui::EndMenu();
     }
 

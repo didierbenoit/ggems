@@ -21,13 +21,15 @@
 
 /*!
  * \file
- * \brief Displays Cartesian grid diagnostics and reference-plane positions.
+ * \brief Displays physical grid intervals and Cartesian/polar cursor positions.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #include <array>
+#include <cmath>
+#include <numbers>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -93,6 +95,7 @@ auto BuildCartesianGridReadout(GGEMSSceneCamera const &camera,
   ImGui::Text("Cursor plane: %s",
               k_plane_labels[static_cast<std::size_t>(grid.reference_plane)]);
   ImGui::TextDisabled("Ray-plane intersection (not a surface hit)");
+  auto const plane = static_cast<std::size_t>(grid.reference_plane);
 
   auto const position =
     world_loaded && input.cursor_pixels
@@ -105,11 +108,48 @@ auto BuildCartesianGridReadout(GGEMSSceneCamera const &camera,
     auto const y = FormatMeters((*position)[1]);
     auto const z = FormatMeters((*position)[2]);
     ImGui::Text("Cursor world: (%s, %s, %s)", x.c_str(), y.c_str(), z.c_str());
+
+    auto const first = plane == 2U ? 1U : 0U;
+    auto const second = plane == 0U ? 1U : 2U;
+
+    double const radius = std::hypot((*position)[first], (*position)[second]);
+    auto const radius_quantity =
+      ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(radius, "m");
+    bool const zero_radius = radius_quantity && radius_quantity->value == 0;
+
+    std::string radius_text{"N/A (outside unit range)"};
+
+    if (radius_quantity) {
+      radius_text =
+        zero_radius ? "0 mm" : ggems::units::HumanReadable(*radius_quantity, 3);
+    }
+
+    ImGui::Text("Cursor radius: %s", radius_text.c_str());
+
+    if (zero_radius) {
+      ImGui::TextUnformatted(
+        "Cursor azimuth (deg): N/A (origin / below length resolution)");
+    } else {
+      double const degrees =
+        std::atan2((*position)[second], (*position)[first]) *
+        (180.0 / std::numbers::pi);
+
+      // Wrap after rounding so the displayed value also stays below 360.
+      double const azimuth =
+        std::fmod((std::round(degrees * 1000.0) / 1000.0) + 360.0, 360.0);
+
+      ImGui::Text("Cursor azimuth (deg): %.3f", azimuth);
+    }
+    ImGui::SetItemTooltip("From +%c toward +%c in [0,360) degrees; unavailable "
+                          "when the radius rounds to zero picometers.",
+                          "XYZ"[first], "XYZ"[second]);
   } else {
     ImGui::TextUnformatted("Cursor world: N/A");
     ImGui::SetItemTooltip("Requires a loaded World, a cursor over the current "
                           "viewport image, and a nonparallel ray intersecting "
                           "the selected plane inside the camera depth range.");
+    ImGui::TextUnformatted("Cursor radius: N/A");
+    ImGui::TextUnformatted("Cursor azimuth (deg): N/A");
   }
 
   if (input.cursor_pixels) {
@@ -119,18 +159,17 @@ auto BuildCartesianGridReadout(GGEMSSceneCamera const &camera,
     ImGui::TextUnformatted("Viewport cursor (px): N/A");
   }
 
-  auto const plane = static_cast<std::size_t>(grid.reference_plane);
   auto const step = grid.GetMinorStepM();
+  ImGui::Text("%s grids: Cartesian %s / Polar %s", k_plane_names[plane],
+              grid.visible[plane] ? "on" : "off",
+              grid.polar_visible[plane] ? "on" : "off");
 
   if (world_loaded && step > 0.0F) {
     auto const minor = FormatMeters(step, true);
     auto const major = FormatMeters(5.0F * step, true);
-    ImGui::Text("%s grid: %s | minor %s / major %s", k_plane_names[plane],
-                grid.visible[plane] ? "on" : "off", minor.c_str(),
-                major.c_str());
+    ImGui::Text("Interval: minor %s / major %s", minor.c_str(), major.c_str());
   } else {
-    ImGui::Text("%s grid: %s | step N/A", k_plane_names[plane],
-                grid.visible[plane] ? "on" : "off");
+    ImGui::TextUnformatted("Interval: step N/A");
   }
 
   ImGui::PopTextWrapPos();

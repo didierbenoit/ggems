@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Presents read-only World-grid spacing and reference-plane positions.
+ * \brief Presents World-grid spacing and Cartesian/polar cursor coordinates.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -37,6 +37,11 @@ namespace ggems::ui::detail {
 
 /*!
  * \brief Displays a ray-plane intersection and physical grid spacing.
+ * Polar coordinates use (u,v) = (X,Y), (X,Z), or (Y,Z) on the reference
+ * plane. Azimuth runs from +u toward +v in [0,360) degrees. It is omitted when
+ * the radius rounds to zero under the existing picometer length policy.
+ * Both coordinate forms use the same ray-plane intersection.
+ * This read-only presentation does not select a plane or change visibility.
  *
  * \param[in] camera Camera used for the displayed scene image.
  * \param[in] grid Current reference plane and shared shader spacing.

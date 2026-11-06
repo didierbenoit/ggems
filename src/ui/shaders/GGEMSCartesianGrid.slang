@@ -21,7 +21,10 @@
 
 /*!
  * \file
- * \brief Draws a filtered physical lattice on one finite World reference plane.
+ * \brief Draws Cartesian and polar patterns on one finite World plane.
+ *
+ * Planar coordinates (u,v) are (X,Y), (X,Z), or (Y,Z). Polar radius is
+ * measured from World origin; azimuth increases from +u toward +v.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -56,6 +59,9 @@ struct GridPushConstants {
 
   /*! \brief XY = 0, XZ = 1, YZ = 2. */
   uint plane;
+
+  /*! \brief Cartesian bit 1 and polar bit 2, completing the 128-byte block. */
+  uint mode;
 };
 
 /*! \brief Carries the projected World plane into rasterization. */
@@ -83,11 +89,12 @@ ConstantBuffer<GridPushConstants> g_grid;
  * \param[in] vertex_id Sequential corner index in the six-vertex draw.
  * \return Shared-camera clip position of one World rectangle corner.
  */
-[shader("vertex")] VertexOutput
-VertexMain(uint vertex_id /*! \cond */ : SV_VertexID /*! \endcond */) {
-  float2 corners[6] = {float2(-1.0, -1.0), float2(1.0, -1.0),
-                       float2(1.0, 1.0),   float2(-1.0, -1.0),
-                       float2(1.0, 1.0),   float2(-1.0, 1.0)};
+[shader("vertex")]
+VertexOutput
+VertexMain(uint vertex_id /*! \cond */: SV_VertexID /*! \endcond */) {
+  float2 corners[6] = { float2(-1.0, -1.0), float2(1.0, -1.0),
+                        float2(1.0, 1.0),   float2(-1.0, -1.0),
+                        float2(1.0, 1.0),   float2(-1.0, 1.0) };
   float2 corner = corners[vertex_id];
   float3 world;
   float2 in_plane;
@@ -132,12 +139,76 @@ float GridCoverage(float2 coordinate, float2 footprint) {
 }
 
 /*!
+ * \brief Filters concentric rings while omitting the zero-radius ring.
+ *
+ * \param[in] radius Origin distance in radial intervals.
+ * \param[in] footprint Radial intervals per physical pixel.
+ * \return One-pixel ring coverage, faded below four-to-eight-pixel spacing.
+ */
+float RingCoverage(float radius, float footprint) {
+  float distance = abs(frac(radius + 0.5) - 0.5);
+
+  float coverage =
+    1.0 - smoothstep(0.0, 1.0, distance / max(footprint, 1.0e-6));
+  coverage *= 1.0 - smoothstep(0.125, 0.25, footprint);
+
+  return radius >= 0.5 ? coverage : 0.0;
+}
+
+/*!
+ * \brief Filters physical rings and nested 15/30/90-degree ray families.
+ *
+ * \param[in] coordinate Origin-relative (u,v) in shared minor intervals.
+ * \param[in] horizontal Coordinate derivative along a physical pixel row.
+ * \param[in] vertical Coordinate derivative along a physical pixel column.
+ * \param[in] footprint Intervals per pixel in each coordinate-normal direction.
+ * \return Minor and major coverage; five-interval rings and 90-degree rays
+ * are major. Fine rays fade toward the origin; principal directions remain.
+ */
+float2 PolarCoverage(float2 coordinate, float2 horizontal, float2 vertical,
+                     float2 footprint) {
+  // Scale before taking the norm to avoid squaring large lattice coordinates.
+  float scale = max(max(abs(coordinate.x), abs(coordinate.y)), 1.0);
+  float2 reduced = coordinate / scale;
+  float reduced_radius = length(reduced);
+  float radius = scale * reduced_radius;
+
+  float2 direction =
+    reduced_radius > 0.0 ? reduced / reduced_radius : float2(1.0, 0.0);
+
+  float radial_footprint =
+    length(float2(dot(direction, horizontal), dot(direction, vertical)));
+
+  float2 tangent = float2(-direction.y, direction.x);
+  float angular_footprint =
+    length(float2(dot(tangent, horizontal), dot(tangent, vertical))) /
+    max(radius, 1.0e-6);
+
+  // Differentiate azimuth analytically, never across atan2's branch seam.
+  float angle = atan2(direction.y, direction.x);
+  float2 angular_intervals = 3.14159265358979323846 / float2(12.0, 6.0);
+
+  float rays = GridCoverage(angle / angular_intervals,
+                            angular_footprint / angular_intervals);
+
+  float minor = max(RingCoverage(radius, radial_footprint), rays);
+
+  float2 principal =
+    1.0 - smoothstep(0.0, 1.0, abs(coordinate) / max(footprint, 1.0e-6));
+
+  float major = max(RingCoverage(radius / 5.0, radial_footprint / 5.0),
+                    max(principal.x, principal.y));
+  return float2(minor, major);
+}
+
+/*!
  * \brief Filters minor/major lines and fades unresolved or grazing projections.
  *
  * \param[in] input Physical pixel position and rasterized plane depth.
  * \return Line coverage and depth for alpha blending after scene objects.
  */
-[shader("fragment")] FragmentOutput FragmentMain(VertexOutput input) {
+[shader("fragment")]
+FragmentOutput FragmentMain(VertexOutput input) {
   float2 ndc = input.position.xy * g_grid.inverse_viewport - 1.0;
   uint2 axes = g_grid.plane == 0   ? uint2(0, 1)
                : g_grid.plane == 1 ? uint2(0, 2)
@@ -181,13 +252,29 @@ float GridCoverage(float2 coordinate, float2 footprint) {
     max(max(dot(horizontal, horizontal), dot(vertical, vertical)), 1.0e-12);
   float grazing = saturate((compression - 0.01) / 0.09);
   float depth_allowance = 9.5367431640625e-7 + 0.5 * fwidth(input.position.z);
-  float minor = GridCoverage(coordinate, footprint);
-  float major = GridCoverage(coordinate / 5.0, footprint / 5.0);
-  float coverage = max(minor, major);
+
   // Fade when a lattice coordinate's FP32 spacing approaches a physical pixel.
   float2 precision =
     abs(coordinate) * 1.1920928955078125e-7 / max(footprint, 1.0e-6);
+
   float resolved = 1.0 - smoothstep(0.25, 1.0, max(precision.x, precision.y));
+
+  float minor = 0.0;
+  float major = 0.0;
+
+  if ((g_grid.mode & 1U) != 0U) {
+    minor = GridCoverage(coordinate, footprint);
+    major = GridCoverage(coordinate / 5.0, footprint / 5.0);
+  }
+
+  if ((g_grid.mode & 2U) != 0U && grazing > 0.0 && resolved > 0.0) {
+    float2 polar = PolarCoverage(coordinate, horizontal, vertical, footprint);
+    minor = max(minor, polar.x);
+    major = max(major, polar.y);
+  }
+
+  // A shared plane blends once, including intersections of both patterns.
+  float coverage = max(minor, major);
   float opacity = coverage * grazing * resolved;
 
   if (opacity <= 0.0) {

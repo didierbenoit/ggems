@@ -363,12 +363,15 @@ auto GGEMSSceneCamera::BuildScreenRay(double x, double y) const noexcept
       ray.origin_m[axis] += (offset_x * right[axis]) + (offset_y * up[axis]);
     }
     auto const matrix = BuildWorldToClipMatrix();
+
     double depth = matrix.row_2[3];
     double slope = 0.0;
+
     for (std::size_t axis = 0U; axis < 3U; ++axis) {
       depth += matrix.row_2[axis] * ray.origin_m[axis];
       slope += matrix.row_2[axis] * forward[axis];
     }
+
     for (std::size_t axis = 0U; axis < 3U; ++axis) {
       ray.origin_m[axis] -= (depth / slope) * forward[axis];
     }
