@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cfloat>
 #include <cmath>
 #include <cstddef>
 #include <iomanip>
@@ -44,6 +45,7 @@
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
@@ -105,6 +107,7 @@ protected:
                                       workbench_.viewport.height);
     ggems::ui::GGEMSImGuiLayer::FrameInputs const inputs{
       .scene_texture_id = ImTextureID{1},
+      .projection_icons = {ImTextureID{2}, ImTextureID{3}},
       .scene_texture_logical_width = workbench_.viewport.width,
       .scene_texture_logical_height = workbench_.viewport.height,
       .geometry_scene = geometry_scene_,
@@ -113,6 +116,61 @@ protected:
                       workbench_);
     ImGui::LogFinish();
     ImGui::Render();
+  }
+
+  static auto ImageBounds(ImTextureID texture) -> ImRect {
+    auto const *window =
+      ImGui::FindWindowByName(ggems::ui::detail::k_viewport_window_name);
+    EXPECT_NE(window, nullptr);
+    ImRect bounds{{FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX}};
+    if (window == nullptr) {
+      return bounds;
+    }
+    auto const &draw_list = *window->DrawList;
+    for (auto const &command : draw_list.CmdBuffer) {
+      if (command.GetTexID() != texture) {
+        continue;
+      }
+      for (unsigned int index = 0U; index < command.ElemCount; ++index) {
+        // These offsets refer to the same ImGui buffers, whose sizes are int.
+        int const element_index = static_cast<int>(command.IdxOffset + index);
+        int const vertex_index = static_cast<int>(
+          command.VtxOffset + draw_list.IdxBuffer[element_index]);
+        bounds.Add(draw_list.VtxBuffer[vertex_index].pos);
+      }
+    }
+    EXPECT_FALSE(bounds.IsInverted());
+    return bounds;
+  }
+
+  auto ClickProjection(ImTextureID texture) -> void {
+    ImVec2 const center = ImageBounds(texture).GetCenter();
+    auto &io = ImGui::GetIO();
+    io.AddMousePosEvent(center.x, center.y);
+    Frame();
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+    Frame();
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+    Frame();
+    io.AddMousePosEvent(100.0F, 120.0F);
+    Frame();
+  }
+
+  static auto ExpectProjectionSelected(ImTextureID texture, bool selected)
+    -> void {
+    ImRect bounds = ImageBounds(texture);
+    bounds.Expand(3.0F * ImGui::GetFontSize() /
+                  ggems::ui::k_ggems_base_font_size);
+    auto const *window =
+      ImGui::FindWindowByName(ggems::ui::detail::k_viewport_window_name);
+    ASSERT_NE(window, nullptr);
+    ImU32 const selected_color = ImGui::ColorConvertFloat4ToU32(
+      ggems::ui::GetThemeColor(ggems::ui::GGEMSThemeRole::Selection));
+    bool const selected_background = std::ranges::any_of(
+      window->DrawList->VtxBuffer, [&](ImDrawVert const &vertex) -> bool {
+        return vertex.col == selected_color && bounds.Contains(vertex.pos);
+      });
+    EXPECT_EQ(selected_background, selected);
   }
 
   // Compare semantic numeric fields without fixing precision or punctuation.
@@ -448,6 +506,60 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
 }
 
 TEST_F(GGEMSImGuiCameraDiagnostics,
+       ToolbarAndMenuFollowCameraProjectionWithoutMovingTheView) {
+  using Camera = ggems::ui::detail::GGEMSSceneCamera;
+  auto expect_selection = [&](char const *stage, bool perspective) -> void {
+    SCOPED_TRACE(stage);
+    // Leave both mouse and restored keyboard hover before checking the
+    // persistent selected background rather than ImGui's hover color.
+    ImVec2 const center = ImageBounds(ImTextureID{1}).GetCenter();
+    ImGui::GetIO().AddMousePosEvent(center.x, center.y);
+    Frame();
+    ExpectProjectionSelected(ImTextureID{2}, !perspective);
+    ExpectProjectionSelected(ImTextureID{3}, perspective);
+  };
+  auto const initial = workbench_.camera.GetDiagnostics();
+  expect_selection("initial orthographic", false);
+
+  ClickProjection(ImTextureID{3});
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
+            Camera::Projection::Perspective);
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().target_m, initial.target_m);
+  EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().zoom, initial.zoom);
+  EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().yaw_degrees,
+                  initial.yaw_degrees);
+  EXPECT_FLOAT_EQ(workbench_.camera.GetDiagnostics().pitch_degrees,
+                  initial.pitch_degrees);
+  expect_selection("perspective button", true);
+  EXPECT_FALSE(displayed_text_.contains("Orthographic projection"));
+  EXPECT_FALSE(displayed_text_.contains("Perspective projection"));
+
+  OpenMenu("Projection");
+  ExpectMenuChecked("Perspective", true);
+  ExpectMenuChecked("Orthographic", false);
+  Activate({"Projection", "Orthographic"});
+  Frame();
+  expect_selection("orthographic menu", false);
+
+  ClickProjection(ImTextureID{3});
+  Activate({"Reset Camera"});
+  Frame();
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
+            Camera::Projection::Perspective);
+  expect_selection("reset preserves perspective", true);
+
+  workbench_.show_viewport_panel = false;
+  Frame();
+  workbench_.show_viewport_panel = true;
+  Frame();
+  Frame();
+  expect_selection("reopened viewport preserves perspective", true);
+  ClickProjection(ImTextureID{2});
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().projection,
+            Camera::Projection::Orthographic);
+}
+
+TEST_F(GGEMSImGuiCameraDiagnostics,
        MenusWorkWithoutCameraControlsInDiagnostics) {
   workbench_.show_camera_panel = false;
   Frame();
@@ -733,7 +845,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   Frame();
   ASSERT_EQ(workbench_.viewport.width % 2U, 0U);
   ASSERT_EQ(workbench_.viewport.height % 2U, 0U);
-  ImVec2 const origin = viewport->DC.CursorStartPos;
+  ImVec2 const origin = ImageBounds(ImTextureID{1}).Min;
   auto &io = ImGui::GetIO();
 
   for (auto const projection :
@@ -805,9 +917,9 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
   ASSERT_EQ(workbench_.viewport.width % 2U, 0U);
   ASSERT_EQ(workbench_.viewport.height % 2U, 0U);
   ImVec2 const center{
-    viewport->DC.CursorStartPos.x +
+    ImageBounds(ImTextureID{1}).Min.x +
       (0.5F * static_cast<float>(workbench_.viewport.width)),
-    viewport->DC.CursorStartPos.y +
+    ImageBounds(ImTextureID{1}).Min.y +
       (0.5F * static_cast<float>(workbench_.viewport.height)),
   };
 

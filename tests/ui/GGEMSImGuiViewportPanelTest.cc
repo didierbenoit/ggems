@@ -35,10 +35,13 @@
 #include <imgui_internal.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 
 namespace {
 
 using Panel = ggems::ui::detail::GGEMSImGuiViewportPanel;
+using Camera = ggems::ui::detail::GGEMSSceneCamera;
 
 // A real ImGui context and panel need no GLFW window or Vulkan device to route
 // queued input. Settings and logs are disabled to keep this fixture in memory.
@@ -68,14 +71,57 @@ protected:
   auto Frame(bool stale_texture = false) -> Panel::Result {
     ImGui::NewFrame();
     ImGui::SetNextWindowPos({0.0F, 0.0F});
-    ImGui::SetNextWindowSize({600.0F, 500.0F});
+    ImGui::SetNextWindowSize(window_size_);
     bool visible = true;
-    auto const result = panel_.Build(visible, ImTextureID{1},
-                                     stale_texture ? 1U : width_, height_);
+    auto const result = panel_.Build(
+      visible, ImTextureID{1}, stale_texture ? 1U : width_, height_,
+      {ImTextureID{2}, ImTextureID{3}}, camera_.GetDiagnostics().projection);
+    if (result.projection_request) {
+      camera_.SetProjection(*result.projection_request);
+    }
     width_ = result.width;
     height_ = result.height;
     ImGui::Render();
     return result;
+  }
+
+  // Measure the actual submitted image vertices instead of reconstructing
+  // the toolbar offset. Each fake texture identifies one real image command.
+  static auto ImageBounds(ImTextureID texture) -> ImRect {
+    auto const *window =
+      ImGui::FindWindowByName("GGEMS Viewport###GGEMS.Viewport");
+    EXPECT_NE(window, nullptr);
+    ImRect bounds{{FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX}};
+    if (window == nullptr) {
+      return bounds;
+    }
+    auto const &draw_list = *window->DrawList;
+    for (auto const &command : draw_list.CmdBuffer) {
+      if (command.GetTexID() != texture) {
+        continue;
+      }
+      for (unsigned int index = 0U; index < command.ElemCount; ++index) {
+        // These offsets refer to the same ImGui buffers, whose sizes are int.
+        int const element_index = static_cast<int>(command.IdxOffset + index);
+        int const vertex_index = static_cast<int>(
+          command.VtxOffset + draw_list.IdxBuffer[element_index]);
+        bounds.Add(draw_list.VtxBuffer[vertex_index].pos);
+      }
+    }
+    EXPECT_FALSE(bounds.IsInverted());
+    return bounds;
+  }
+
+  auto ClickImage(ImTextureID texture, bool stale_texture = false)
+    -> Panel::Result {
+    ImVec2 const center = ImageBounds(texture).GetCenter();
+    auto &io = ImGui::GetIO();
+    io.AddMousePosEvent(center.x, center.y);
+    Frame(stale_texture);
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+    ExpectNoMouseMotion(Frame(stale_texture));
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+    return Frame(stale_texture);
   }
 
   static auto ExpectNoMouseMotion(Panel::Result const &result) -> void {
@@ -86,6 +132,8 @@ protected:
   }
 
   Panel panel_;
+  Camera camera_;
+  ImVec2 window_size_{600.0F, 500.0F};
 
 private:
   ImGuiContext *context_{};
@@ -411,9 +459,7 @@ TEST_F(GGEMSImGuiViewportInput, FocusedKeyboardPanKeepsModifierSpeeds) {
 
 TEST_F(GGEMSImGuiViewportInput, CursorUsesLogicalImageCoordinatesAndClears) {
   auto const initial = Frame();
-  auto *window = ImGui::FindWindowByName("GGEMS Viewport###GGEMS.Viewport");
-  ASSERT_NE(window, nullptr);
-  ImVec2 const origin = window->DC.CursorStartPos;
+  ImVec2 const origin = ImageBounds(ImTextureID{1}).Min;
   auto &io = ImGui::GetIO();
 
   for (float const density : {1.0F, 1.5F, 2.0F}) {
@@ -434,6 +480,84 @@ TEST_F(GGEMSImGuiViewportInput, CursorUsesLogicalImageCoordinatesAndClears) {
   EXPECT_FALSE(Frame().cursor_pixels);
   io.AddMousePosEvent(-10000.0F, -10000.0F);
   EXPECT_FALSE(Frame().cursor_pixels);
+}
+
+TEST_F(GGEMSImGuiViewportInput, ProjectionButtonsIssueOnlyProjectionCommands) {
+  auto const initial = camera_.GetDiagnostics();
+  auto const perspective = ClickImage(ImTextureID{3});
+  ASSERT_TRUE(perspective.projection_request);
+  EXPECT_EQ(*perspective.projection_request, Camera::Projection::Perspective);
+  ExpectNoMouseMotion(perspective);
+  EXPECT_FLOAT_EQ(perspective.zoom_delta, 0.0F);
+  EXPECT_FALSE(perspective.cursor_pixels);
+  EXPECT_FLOAT_EQ(camera_.GetDiagnostics().yaw_degrees, initial.yaw_degrees);
+  EXPECT_FLOAT_EQ(camera_.GetDiagnostics().pitch_degrees,
+                  initial.pitch_degrees);
+
+  auto const orthographic = ClickImage(ImTextureID{2}, true);
+  ASSERT_TRUE(orthographic.projection_request);
+  EXPECT_EQ(*orthographic.projection_request, Camera::Projection::Orthographic);
+  ExpectNoMouseMotion(orthographic);
+  EXPECT_FLOAT_EQ(orthographic.zoom_delta, 0.0F);
+  EXPECT_FALSE(orthographic.cursor_pixels);
+}
+
+TEST_F(GGEMSImGuiViewportInput, ToolbarDragAndWheelNeverAcquireSceneInput) {
+  for (auto const button : {ImGuiMouseButton_Left, ImGuiMouseButton_Middle}) {
+    auto &io = ImGui::GetIO();
+    ImVec2 const start = ImageBounds(ImTextureID{3}).GetCenter();
+    io.AddMousePosEvent(start.x, start.y);
+    Frame();
+    io.AddMouseWheelEvent(0.0F, 2.0F);
+    auto const wheel = Frame();
+    ExpectNoMouseMotion(wheel);
+    EXPECT_FLOAT_EQ(wheel.zoom_delta, 0.0F);
+    EXPECT_FALSE(wheel.cursor_pixels);
+    io.AddMouseButtonEvent(button, true);
+    ExpectNoMouseMotion(Frame());
+    ImVec2 const scene = ImageBounds(ImTextureID{1}).GetCenter();
+    io.AddMousePosEvent(scene.x, scene.y);
+    auto const held = Frame();
+    ExpectNoMouseMotion(held);
+    EXPECT_FALSE(held.projection_request);
+    io.AddMouseButtonEvent(button, false);
+    ExpectNoMouseMotion(Frame());
+  }
+}
+
+TEST_F(GGEMSImGuiViewportInput, ToolbarScalesAndSceneCoordinatesFollowResize) {
+  auto &io = ImGui::GetIO();
+  for (float const scale : {1.0F, 1.5F, 2.0F}) {
+    ImGui::GetStyle() = ggems::ui::BuildGGEMSStyle(1.0F, scale);
+    window_size_ = {500.0F + (50.0F * scale), 400.0F + (40.0F * scale)};
+    Frame();
+    auto const settled = Frame();
+    auto const orthographic = ImageBounds(ImTextureID{2});
+    auto const perspective = ImageBounds(ImTextureID{3});
+    auto const scene = ImageBounds(ImTextureID{1});
+    // ImGui rounds the effective font size, including at fractional DPI.
+    auto const *window =
+      ImGui::FindWindowByName("GGEMS Viewport###GGEMS.Viewport");
+    ASSERT_NE(window, nullptr);
+    float const font_scale =
+      window->FontRefSize / ggems::ui::k_ggems_base_font_size;
+    EXPECT_FLOAT_EQ(orthographic.GetWidth(), 22.0F * font_scale);
+    EXPECT_FLOAT_EQ(orthographic.GetHeight(), 22.0F * font_scale);
+    EXPECT_FLOAT_EQ(perspective.GetWidth(), orthographic.GetWidth());
+    EXPECT_FLOAT_EQ(perspective.Min.x - orthographic.Min.x, 32.0F * font_scale);
+    EXPECT_GT(scene.Min.y, orthographic.Max.y);
+    EXPECT_FLOAT_EQ(scene.GetWidth(), static_cast<float>(settled.width));
+    EXPECT_FLOAT_EQ(scene.GetHeight(), static_cast<float>(settled.height));
+    io.AddMousePosEvent(scene.Min.x + 120.0F, scene.Min.y + 80.0F);
+    auto const cursor = Frame();
+    ASSERT_TRUE(cursor.cursor_pixels);
+    EXPECT_FLOAT_EQ(cursor.cursor_pixels->x, 120.0F);
+    EXPECT_FLOAT_EQ(cursor.cursor_pixels->y, 80.0F);
+    auto const command = ClickImage(ImTextureID{3});
+    ASSERT_TRUE(command.projection_request);
+    EXPECT_EQ(*command.projection_request, Camera::Projection::Perspective);
+    ExpectNoMouseMotion(command);
+  }
 }
 
 } // namespace

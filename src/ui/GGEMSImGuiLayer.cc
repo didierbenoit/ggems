@@ -150,7 +150,8 @@ auto GGEMSImGuiLayer::BuildFrame(
   if (workbench.show_viewport_panel) {
     camera_input = viewport_panel_.Build(
       workbench.show_viewport_panel, inputs.scene_texture_id,
-      inputs.scene_texture_logical_width, inputs.scene_texture_logical_height);
+      inputs.scene_texture_logical_width, inputs.scene_texture_logical_height,
+      inputs.projection_icons, workbench.camera.GetDiagnostics().projection);
     auto const &result = camera_input;
 
     workbench.viewport.visible = result.visible;
@@ -158,6 +159,10 @@ auto GGEMSImGuiLayer::BuildFrame(
     if (result.visible) {
       workbench.viewport.width = result.width;
       workbench.viewport.height = result.height;
+    }
+
+    if (result.projection_request) {
+      workbench.camera.SetProjection(*result.projection_request);
     }
 
     workbench.camera.OrbitByPixels(result.orbit_delta_x_pixels,

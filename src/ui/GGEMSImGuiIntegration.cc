@@ -21,12 +21,15 @@
 
 /*!
  * \file
- * \brief Manages Dear ImGui backends, scaling, fonts, and persisted settings.
+ * \brief Manages Dear ImGui backends, projection textures, fonts, and settings.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <array>
+#include <cstring>
+#include <span>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -46,6 +49,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "GGEMS/ui/detail/GGEMSImGuiIntegration.hh"
 
@@ -54,6 +58,7 @@
 #include "GGEMS/ui/detail/GGEMSImGuiSettingsFile.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/detail/GGEMSPresentationScale.hh"
+#include "GGEMS/ui/detail/GGEMSProjectionIconData.hh"
 
 namespace {
 
@@ -197,6 +202,7 @@ auto GGEMSImGuiIntegration::Initialize(GLFWwindow *window,
     AttachGlfwBackend();
     ApplyContentScale(
       NormalizeContentScale(ImGui_ImplGlfw_GetContentScaleForWindow(window_)));
+    CreateProjectionIcons();
     AttachVulkanBackend(epoch);
   } catch (...) {
     Shutdown();
@@ -210,6 +216,13 @@ auto GGEMSImGuiIntegration::Initialize(GLFWwindow *window,
 
 auto GGEMSImGuiIntegration::Shutdown() noexcept -> void {
   DetachVulkanBackend();
+
+  for (ProjectionIcon &icon : projection_icons_) {
+    icon.view.reset();
+    icon.image.reset();
+    icon.memory.reset();
+  }
+
   DetachGlfwBackend();
 
   if (context_ != nullptr) {
@@ -306,6 +319,192 @@ auto GGEMSImGuiIntegration::UnregisterSceneTexture() noexcept -> void {
 
 auto GGEMSImGuiIntegration::GetSceneTextureID() const noexcept -> ImTextureID {
   return reinterpret_cast<ImTextureID>(scene_descriptor_set_);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSImGuiIntegration::GetProjectionIcons() const noexcept
+  -> std::array<ImTextureID, 2U> {
+  return {
+    reinterpret_cast<ImTextureID>(projection_icons_[0U].descriptor_set),
+    reinterpret_cast<ImTextureID>(projection_icons_[1U].descriptor_set),
+  };
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSImGuiIntegration::CreateProjectionIcons() -> void {
+  vk::Device const device = handles_.device;
+  auto const memory_properties = handles_.physical_device.getMemoryProperties();
+
+  auto const FindMemoryType =
+    [&](std::uint32_t type_bits,
+        vk::MemoryPropertyFlags properties) -> std::uint32_t {
+    for (std::uint32_t index = 0U; index < memory_properties.memoryTypeCount;
+         ++index) {
+      if ((type_bits & (1U << index)) != 0U &&
+          (memory_properties.memoryTypes[index].propertyFlags & properties) ==
+            properties) {
+        return index;
+      }
+    }
+    throw core::GGEMSRecoverable(
+      "No suitable Vulkan memory type was found for the projection icons.");
+  };
+
+  std::array<std::span<unsigned char const>, 2U> const pixels{
+    k_ggems_orthographic_icon_pixels,
+    k_ggems_perspective_icon_pixels,
+  };
+
+  vk::DeviceSize const icon_bytes = pixels.front().size();
+  vk::DeviceSize const staging_bytes = icon_bytes * pixels.size();
+  vk::UniqueDeviceMemory staging_memory;
+
+  auto staging_buffer = device.createBufferUnique(vk::BufferCreateInfo{
+    .size = staging_bytes,
+    .usage = vk::BufferUsageFlagBits::eTransferSrc,
+    .sharingMode = vk::SharingMode::eExclusive,
+  });
+
+  auto const staging_requirements =
+    device.getBufferMemoryRequirements(*staging_buffer);
+
+  staging_memory = device.allocateMemoryUnique(vk::MemoryAllocateInfo{
+    .allocationSize = staging_requirements.size,
+    .memoryTypeIndex =
+      FindMemoryType(staging_requirements.memoryTypeBits,
+                     vk::MemoryPropertyFlagBits::eHostVisible |
+                       vk::MemoryPropertyFlagBits::eHostCoherent),
+  });
+
+  device.bindBufferMemory(*staging_buffer, *staging_memory, 0U);
+
+  auto *mapped = static_cast<unsigned char *>(
+    device.mapMemory(*staging_memory, 0U, staging_bytes));
+
+  for (std::size_t index = 0U; index < pixels.size(); ++index) {
+    std::memcpy(mapped + (index * icon_bytes), pixels[index].data(),
+                pixels[index].size());
+  }
+
+  device.unmapMemory(*staging_memory);
+
+  auto command_pool = device.createCommandPoolUnique(vk::CommandPoolCreateInfo{
+    .flags = vk::CommandPoolCreateFlagBits::eTransient,
+    .queueFamilyIndex = handles_.graphics_queue_family,
+  });
+
+  auto command_buffers =
+    device.allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo{
+      .commandPool = *command_pool,
+      .level = vk::CommandBufferLevel::ePrimary,
+      .commandBufferCount = 1U,
+    });
+
+  vk::CommandBuffer const command_buffer = *command_buffers.front();
+  command_buffer.begin(vk::CommandBufferBeginInfo{
+    .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
+  });
+
+  vk::Extent3D const extent{
+    .width = k_ggems_projection_icon_size,
+    .height = k_ggems_projection_icon_size,
+    .depth = 1U,
+  };
+
+  vk::ImageSubresourceRange const color_range{
+    .aspectMask = vk::ImageAspectFlagBits::eColor,
+    .baseMipLevel = 0U,
+    .levelCount = 1U,
+    .baseArrayLayer = 0U,
+    .layerCount = 1U,
+  };
+
+  for (std::size_t index = 0U; index < projection_icons_.size(); ++index) {
+    ProjectionIcon &icon = projection_icons_[index];
+    // Sampling decodes the unchanged sRGB bytes to the GUI's linear color
+    // space.
+    icon.image = device.createImageUnique(vk::ImageCreateInfo{
+      .imageType = vk::ImageType::e2D,
+      .format = vk::Format::eR8G8B8A8Srgb,
+      .extent = extent,
+      .mipLevels = 1U,
+      .arrayLayers = 1U,
+      .samples = vk::SampleCountFlagBits::e1,
+      .tiling = vk::ImageTiling::eOptimal,
+      .usage =
+        vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+      .sharingMode = vk::SharingMode::eExclusive,
+      .initialLayout = vk::ImageLayout::eUndefined,
+    });
+
+    auto const requirements = device.getImageMemoryRequirements(*icon.image);
+
+    icon.memory = device.allocateMemoryUnique(vk::MemoryAllocateInfo{
+      .allocationSize = requirements.size,
+      .memoryTypeIndex = FindMemoryType(
+        requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal),
+    });
+
+    device.bindImageMemory(*icon.image, *icon.memory, 0U);
+
+    icon.view = device.createImageViewUnique(vk::ImageViewCreateInfo{
+      .image = *icon.image,
+      .viewType = vk::ImageViewType::e2D,
+      .format = vk::Format::eR8G8B8A8Srgb,
+      .subresourceRange = color_range,
+    });
+
+    vk::ImageMemoryBarrier2 barrier{
+      .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+      .srcAccessMask = vk::AccessFlagBits2::eNone,
+      .dstStageMask = vk::PipelineStageFlagBits2::eCopy,
+      .dstAccessMask = vk::AccessFlagBits2::eTransferWrite,
+      .oldLayout = vk::ImageLayout::eUndefined,
+      .newLayout = vk::ImageLayout::eTransferDstOptimal,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image = *icon.image,
+      .subresourceRange = color_range,
+    };
+
+    vk::DependencyInfo const dependency{
+      .imageMemoryBarrierCount = 1U,
+      .pImageMemoryBarriers = &barrier,
+    };
+
+    command_buffer.pipelineBarrier2(dependency);
+    command_buffer.copyBufferToImage(
+      *staging_buffer, *icon.image, vk::ImageLayout::eTransferDstOptimal,
+      vk::BufferImageCopy{
+        .bufferOffset = index * icon_bytes,
+        .imageSubresource =
+          {
+            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .mipLevel = 0U,
+            .baseArrayLayer = 0U,
+            .layerCount = 1U,
+          },
+        .imageExtent = extent,
+      });
+
+    barrier.srcStageMask = vk::PipelineStageFlagBits2::eCopy;
+    barrier.srcAccessMask = vk::AccessFlagBits2::eTransferWrite;
+    barrier.dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader;
+    barrier.dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead;
+    barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+    barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    command_buffer.pipelineBarrier2(dependency);
+  }
+
+  command_buffer.end();
+  handles_.graphics_queue.submit(vk::SubmitInfo{
+    .commandBufferCount = 1U,
+    .pCommandBuffers = &command_buffer,
+  });
+
+  handles_.graphics_queue.waitIdle();
 }
 
 // -----------------------------------------------------------------------------
@@ -442,12 +641,27 @@ auto GGEMSImGuiIntegration::AttachVulkanBackend(VulkanBackendEpoch const &epoch)
   epoch_ = epoch;
 
   ThrowIfBackendFailed();
+
+  for (ProjectionIcon &icon : projection_icons_) {
+    VkDescriptorSet const descriptor =
+      ImGui_ImplVulkan_AddTexture(static_cast<VkImageView>(*icon.view),
+                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    ThrowIfBackendFailed();
+    icon.descriptor_set = descriptor;
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiIntegration::DetachVulkanBackend() noexcept -> void {
   ReleaseSceneDescriptor();
+
+  for (ProjectionIcon &icon : projection_icons_) {
+    if (icon.descriptor_set != VK_NULL_HANDLE) {
+      ImGui_ImplVulkan_RemoveTexture(icon.descriptor_set);
+      icon.descriptor_set = VK_NULL_HANDLE;
+    }
+  }
 
   if (vulkan_backend_attached_) {
     ImGui_ImplVulkan_Shutdown();

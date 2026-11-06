@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Owns Dear ImGui backends, scene texture binding, and settings.
+ * \brief Owns Dear ImGui backends, textures, and persisted settings.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <filesystem>
@@ -120,7 +121,7 @@ public:
   auto operator=(GGEMSImGuiIntegration &&) -> GGEMSImGuiIntegration & = delete;
 
   /*!
-   * \brief Creates the context and attaches GLFW and Vulkan backends.
+   * \brief Creates the context, projection textures, and GLFW/Vulkan backends.
    *
    * An existing context makes this call a no-op; failed initialization releases
    *   the created state.
@@ -129,7 +130,9 @@ public:
    * \param[in] handles Borrowed Vulkan objects valid until shutdown.
    * \param[in] epoch Initial swapchain rendering compatibility.
    * \throws core::GGEMSInternal If the window is null.
-   * \throws core::GGEMSRecoverable If a backend cannot initialize.
+   * \throws core::GGEMSRecoverable If a backend cannot initialize or required
+   *   icon memory is unavailable.
+   * \throws vk::SystemError If icon allocation or upload fails.
    */
   auto Initialize(GLFWwindow *window, VulkanHandles const &handles,
                   VulkanBackendEpoch const &epoch) -> void;
@@ -144,8 +147,9 @@ public:
   /*!
    * \brief Replaces the backends when rendering compatibility changes.
    *
-   * Equal parameters leave the backends intact. A retained scene view is
-   *   registered again after replacement; GPU use must already be complete.
+   * Equal parameters leave the backends intact. Retained scene and icon views
+   * receive new descriptors; the icon images are not uploaded again.
+   * GPU use must already be complete.
    *
    * \param[in] epoch New swapchain compatibility parameters.
    * \throws core::GGEMSInternal If no Vulkan backend is attached.
@@ -176,6 +180,16 @@ public:
    * \return Borrowed texture ID, or zero when no scene is registered.
    */
   [[nodiscard]] auto GetSceneTextureID() const noexcept -> ImTextureID;
+
+  /*!
+   * \brief Borrows the current orthographic and perspective texture IDs.
+   *
+   * \return Orthographic and perspective descriptors, in that order; zero
+   *   before initialization or after shutdown. Backend replacement invalidates
+   *   previously returned IDs.
+   */
+  [[nodiscard]] auto GetProjectionIcons() const noexcept
+    -> std::array<ImTextureID, 2U>;
 
   /*!
    * \brief Starts a backend frame and refreshes settings and content scale.
@@ -221,6 +235,34 @@ public:
 
 private:
   /*!
+   * \brief Owns one immutable icon image and its current backend descriptor.
+   */
+  struct ProjectionIcon {
+    /*! \brief Device allocation, released after the bound image. */
+    vk::UniqueDeviceMemory memory;
+
+    /*! \brief Sampled sRGB image retained across backend replacement. */
+    vk::UniqueImage image;
+
+    /*! \brief Color view released before its image. */
+    vk::UniqueImageView view;
+
+    /*! \brief Owned descriptor from the backend pool, removed before teardown.
+     */
+    VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
+  };
+
+  /*!
+   * \brief Allocates and uploads both embedded icons before backend attachment.
+   *
+   * The transfer queue is idle on return, so staging resources can be freed.
+   *
+   * \throws core::GGEMSRecoverable If a required memory type is unavailable.
+   * \throws vk::SystemError If Vulkan allocation or transfer fails.
+   */
+  auto CreateProjectionIcons() -> void;
+
+  /*!
    * \brief Attaches the GLFW backend and installs its window callbacks.
    *
    * \throws core::GGEMSRecoverable If GLFW backend initialization fails.
@@ -239,7 +281,7 @@ private:
    */
   auto AttachVulkanBackend(VulkanBackendEpoch const &epoch) -> void;
 
-  /*! \brief Releases the scene descriptor and attached Vulkan backend. */
+  /*! \brief Releases scene/icon descriptors and the attached Vulkan backend. */
   auto DetachVulkanBackend() noexcept -> void;
 
   /*! \brief Releases only the scene descriptor while retaining its view. */
@@ -294,6 +336,9 @@ private:
 
   /*! \brief Owned backend descriptor for sampling the scene image. */
   VkDescriptorSet scene_descriptor_set_{VK_NULL_HANDLE};
+
+  /*! \brief Two immutable GPU icons, orthographic then perspective. */
+  std::array<ProjectionIcon, 2U> projection_icons_{};
 
   /*! \brief Content scale currently applied to style and fonts. */
   float applied_content_scale_{0.0F};

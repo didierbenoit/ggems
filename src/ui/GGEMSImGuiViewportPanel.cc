@@ -29,14 +29,79 @@
 
 #include <array>
 #include <cstdint>
+#include <cstddef>
+#include <optional>
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 
 namespace {
+
+/*!
+ * \brief Builds compact projection commands above the scene image.
+ *
+ * \param[in] icons Borrowed orthographic and perspective images.
+ * \param[in] projection Camera projection defining the selected button.
+ * \return Projection requested by a click, or no command.
+ */
+auto BuildProjectionToolbar(
+  std::array<ImTextureID, 2U> const &icons,
+  ggems::ui::detail::GGEMSSceneCamera::Projection projection)
+  -> std::optional<ggems::ui::detail::GGEMSSceneCamera::Projection> {
+  using Projection = ggems::ui::detail::GGEMSSceneCamera::Projection;
+
+  std::optional<Projection> requested;
+
+  float const scale = ImGui::GetFontSize() / ggems::ui::k_ggems_base_font_size;
+
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                      ImVec2{3.0F * scale, 3.0F * scale});
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
+                      ImVec2{4.0F * scale, 4.0F * scale});
+
+  for (std::size_t index = 0U; index < icons.size(); ++index) {
+    Projection const mode =
+      index == 0U ? Projection::Orthographic : Projection::Perspective;
+
+    char const *id =
+      index == 0U ? "##orthographic_projection" : "##perspective_projection";
+
+    char const *tooltip =
+      index == 0U ? "Orthographic projection" : "Perspective projection";
+
+    if (index != 0U) {
+      ImGui::SameLine();
+    }
+
+    ImGui::PushStyleColor(ImGuiCol_Button,
+                          ggems::ui::GetThemeColor(
+                            projection == mode
+                              ? ggems::ui::GGEMSThemeRole::Selection
+                              : ggems::ui::GGEMSThemeRole::WindowBackground));
+
+    // Both PNG sizes share transparent margins. Crop only those margins so
+    // the original artwork occupies the compact image area at either size.
+    if (ImGui::ImageButton(id, icons[index], {22.0F * scale, 22.0F * scale},
+                           {0.125F, 0.125F}, {0.875F, 0.875F})) {
+      requested = mode;
+    }
+
+    ImGui::PopStyleColor();
+    ImGui::SetItemTooltip("%s", tooltip);
+  }
+
+  ImGui::PopStyleVar(2);
+
+  return requested;
+}
+
+// =============================================================================
+// =============================================================================
 
 /*! \brief Unmodified keyboard pan speed in logical pixels per second. */
 constexpr float k_keyboard_pan_speed_pixels_per_second{360.0F};
@@ -149,10 +214,11 @@ namespace ggems::ui::detail {
 // =============================================================================
 // =============================================================================
 
-auto GGEMSImGuiViewportPanel::Build(bool &show_window,
-                                    ImTextureID scene_texture_id,
-                                    std::uint32_t texture_width,
-                                    std::uint32_t texture_height) -> Result {
+auto GGEMSImGuiViewportPanel::Build(
+  bool &show_window, ImTextureID scene_texture_id, std::uint32_t texture_width,
+  std::uint32_t texture_height,
+  std::array<ImTextureID, 2U> const &projection_icons,
+  GGEMSSceneCamera::Projection projection) -> Result {
   Result result{};
 
   ImGuiWindowFlags const window_flags =
@@ -163,6 +229,9 @@ auto GGEMSImGuiViewportPanel::Build(bool &show_window,
     ImGui::End();
     return result;
   }
+
+  result.projection_request =
+    BuildProjectionToolbar(projection_icons, projection);
 
   ImVec2 const available_size = ImGui::GetContentRegionAvail();
 

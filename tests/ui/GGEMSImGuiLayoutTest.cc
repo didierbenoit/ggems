@@ -85,6 +85,7 @@ protected:
     ImGui::NewFrame();
     ggems::ui::GGEMSImGuiLayer::FrameInputs const inputs{
       .scene_texture_id = ImTextureID{1},
+      .projection_icons = {ImTextureID{2}, ImTextureID{3}},
       .scene_texture_logical_width = workbench_.viewport.width,
       .scene_texture_logical_height = workbench_.viewport.height,
       .output_state = &output_,
