@@ -32,6 +32,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <format>
+#include <span>
+#include <string>
+#include <string_view>
 #include <limits>
 #include <numbers>
 #include <type_traits>
@@ -48,14 +52,21 @@
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTrap.hh"
+#include "GGEMS/geometry/GGEMSTrd.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/units/GGEMSQuantity.hh"
+#include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/materials/GGEMSMaterial.hh"
 
 namespace {
 
 using namespace ggems::geometry;
+using ggems::render::GGEMSGeometryOccurrence;
+using ggems::render::GGEMSGeometryProperty;
 using ggems::render::GGEMSGeometryVertex;
 
 /*! \brief Packed line-list endpoints in local meters. */
@@ -503,6 +514,197 @@ auto Transform(GGEMSWorld::Pose const &pose) -> std::array<float, 16> {
   };
 }
 
+/*!
+ * \brief Formats one canonical physical parameter for immutable inspection.
+ * \tparam Quantity GGEMS quantity type.
+ * \param[in] name Parameter label.
+ * \param[in] value Canonical parameter value.
+ * \return Owned label and formatted value.
+ */
+template <ggems::units::QuantityType Quantity>
+auto Property(std::string_view name, Quantity value) -> GGEMSGeometryProperty {
+  return {
+    .name = std::string{name},
+    .value = ggems::units::HumanReadable(value),
+  };
+}
+
+/*!
+ * \brief Formats full axis lengths from canonical rectangular half extents.
+ * \param[in] half Canonical half extents in picometers.
+ * \return Labeled full X, Y, and Z lengths.
+ */
+auto BoxDimensions(HalfExtent3PM half) -> std::vector<GGEMSGeometryProperty> {
+  using ggems::units::Length;
+  return {
+    Property("Size X", Length{2U * half.x}),
+    Property("Size Y", Length{2U * half.y}),
+    Property("Size Z", Length{2U * half.z}),
+  };
+}
+
+/*!
+ * \brief Describes the two canonical end faces of a trapezoidal solid.
+ * \tparam Shape GGEMSTrd or GGEMSTrap.
+ * \param[in,out] occurrence Presentation record to populate.
+ * \param[in] shape Authored solid with canonical dimensions and local angles.
+ */
+template <typename Shape>
+auto DescribeTrapezoid(GGEMSGeometryOccurrence &occurrence, Shape const &shape)
+  -> void {
+  using ggems::units::Length;
+  auto &dimensions = occurrence.dimensions;
+  dimensions = {Property("Length Z", Length{2U * shape.GetHalfLengthPM()})};
+
+  for (std::size_t end = 0; end < 2; ++end) {
+    auto const half = end == 0 ? shape.GetNegativeZHalfSizePM()
+                               : shape.GetPositiveZHalfSizePM();
+    auto const *face = end == 0 ? "-Z" : "+Z";
+
+    if constexpr (std::is_same_v<Shape, GGEMSTrd>) {
+      occurrence.shape_name = "Trd";
+      dimensions.push_back(
+        Property(std::format("Size X at {}", face), Length{2U * half[0]}));
+      dimensions.push_back(
+        Property(std::format("Size Y at {}", face), Length{2U * half[1]}));
+    } else {
+      occurrence.shape_name = "Trap";
+      dimensions.push_back(
+        Property(std::format("Height Y at {}", face), Length{2U * half[0]}));
+      dimensions.push_back(
+        Property(std::format("Width X at {}, -Y", face), Length{2U * half[1]}));
+      dimensions.push_back(
+        Property(std::format("Width X at {}, +Y", face), Length{2U * half[2]}));
+      dimensions.push_back(Property(std::format("Skew at {}", face),
+                                    end == 0 ? shape.GetNegativeZSkew()
+                                             : shape.GetPositiveZSkew()));
+    }
+  }
+
+  if constexpr (std::is_same_v<Shape, GGEMSTrap>) {
+    dimensions.push_back(
+      Property("Inclination theta", shape.GetInclinationTheta()));
+    dimensions.push_back(
+      Property("Inclination phi", shape.GetInclinationPhi()));
+  }
+}
+
+/*!
+ * \brief Copies the actual analytic family's canonical inspection parameters.
+ * \param[in,out] occurrence Presentation record to populate.
+ * \param[in] volume Validated authored shape, borrowed during construction.
+ */
+auto DescribeShape(GGEMSGeometryOccurrence &occurrence,
+                   GGEMSWorld::Volume const &volume) -> void {
+  using ggems::units::Length;
+  std::visit(
+    [&occurrence](auto const &shape) -> void {
+      using Shape = std::decay_t<decltype(shape)>;
+      auto &dimensions = occurrence.dimensions;
+
+      if constexpr (std::is_same_v<Shape, GGEMSBox>) {
+        occurrence.shape_name = "Box";
+        dimensions = BoxDimensions(shape.GetHalfExtentPM());
+      } else if constexpr (std::is_same_v<Shape, GGEMSSphere>) {
+        occurrence.shape_name = "Sphere";
+        dimensions = {Property("Radius", Length{shape.GetRadiusPM()})};
+      } else if constexpr (std::is_same_v<Shape, GGEMSEllipsoid>) {
+        occurrence.shape_name = "Ellipsoid";
+        auto const axes = shape.GetSemiAxesPM();
+        dimensions = {
+          Property("Semiaxis X", Length{axes.x}),
+          Property("Semiaxis Y", Length{axes.y}),
+          Property("Semiaxis Z", Length{axes.z}),
+        };
+      } else if constexpr (std::is_same_v<Shape, GGEMSTubs>) {
+        occurrence.shape_name = "Tubs";
+        dimensions = {
+          Property("Outer radius", Length{shape.GetOuterRadiusPM()}),
+          Property("Inner radius", Length{shape.GetInnerRadiusPM()}),
+          Property("Length Z", Length{2U * shape.GetHalfLengthPM()}),
+        };
+      } else if constexpr (std::is_same_v<Shape, GGEMSCons>) {
+        occurrence.shape_name = "Cons";
+        dimensions = {
+          Property("Outer radius at -Z",
+                   Length{shape.GetNegativeZOuterRadiusPM()}),
+          Property("Inner radius at -Z",
+                   Length{shape.GetNegativeZInnerRadiusPM()}),
+          Property("Outer radius at +Z",
+                   Length{shape.GetPositiveZOuterRadiusPM()}),
+          Property("Inner radius at +Z",
+                   Length{shape.GetPositiveZInnerRadiusPM()}),
+          Property("Length Z", Length{2U * shape.GetHalfLengthPM()}),
+        };
+      } else if constexpr (std::is_same_v<Shape, GGEMSPolyhedra>) {
+        occurrence.shape_name = "Polyhedra";
+        dimensions = {
+          {.name = "Sides", .value = std::to_string(shape.GetSideCount())},
+          Property("Start angle", shape.GetStartAngle()),
+        };
+
+        auto const profile = shape.GetZProfilePM();
+
+        for (std::size_t index = 0; index < profile.size(); ++index) {
+          auto const &plane = profile[index];
+          dimensions.push_back(
+            Property(std::format("Plane {} Z", index),
+                     ggems::units::PositionCoordinate{plane.z_pm}));
+          dimensions.push_back(
+            Property(std::format("Plane {} inner apothem", index),
+                     Length{plane.inner_radius_pm}));
+          dimensions.push_back(
+            Property(std::format("Plane {} outer apothem", index),
+                     Length{plane.outer_radius_pm}));
+        }
+      } else {
+        DescribeTrapezoid(occurrence, shape);
+      }
+    },
+    volume);
+}
+
+/*!
+ * \brief Copies physical metadata and bounds the occurrence's displayed mesh.
+ * \param[in,out] occurrence Presentation record with its existing render pose.
+ * \param[in] pose Composed host pose before float rendering conversion.
+ * \param[in] material Actual Material borrowed only for copying metadata.
+ * \param[in] vertices Local line endpoints belonging to this occurrence.
+ */
+auto DescribePlacement(GGEMSGeometryOccurrence &occurrence,
+                       GGEMSWorld::Pose const &pose,
+                       ggems::core::materials::GGEMSMaterial const &material,
+                       std::span<GGEMSGeometryVertex const> vertices) -> void {
+  auto const &rotation = pose.rotation;
+
+  occurrence.orientation = {
+    rotation.axis_x.x, rotation.axis_y.x, rotation.axis_z.x,
+    rotation.axis_x.y, rotation.axis_y.y, rotation.axis_z.y,
+    rotation.axis_x.z, rotation.axis_y.z, rotation.axis_z.z,
+  };
+
+  occurrence.material_name = material.GetName();
+  occurrence.material_density = material.GetDensity();
+
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    occurrence.position_m[axis] = pose.position_pm[axis] * k_pm_to_m;
+    occurrence.minimum_m[axis] = std::numeric_limits<double>::infinity();
+    occurrence.maximum_m[axis] = -std::numeric_limits<double>::infinity();
+
+    auto const *row = occurrence.local_to_world.data() + (4U * axis);
+
+    for (auto const &vertex : vertices) {
+      auto const coordinate = (static_cast<double>(row[0]) * vertex.x) +
+                              (static_cast<double>(row[1]) * vertex.y) +
+                              (static_cast<double>(row[2]) * vertex.z) + row[3];
+      occurrence.minimum_m[axis] =
+        std::min(occurrence.minimum_m[axis], coordinate);
+      occurrence.maximum_m[axis] =
+        std::max(occurrence.maximum_m[axis], coordinate);
+    }
+  }
+}
+
 } // namespace
 
 namespace ggems::render {
@@ -511,12 +713,15 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
   -> GGEMSGeometryScene {
   GGEMSGeometryScene scene;
   auto const half = world.GetHalfExtentPM();
+
   scene.world_half_extent_m = {
     static_cast<double>(half.x) * k_pm_to_m,
     static_cast<double>(half.y) * k_pm_to_m,
     static_cast<double>(half.z) * k_pm_to_m,
   };
+
   BoxEdges(scene.vertices, half);
+
   scene.meshes.push_back({.first_vertex = 0U, .vertex_count = 24U});
   scene.occurrences.reserve(world.GetVolumeCount() + 1U);
   scene.occurrences.push_back({
@@ -524,9 +729,16 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
     .parent_volume_id = 0U,
     .mesh_index = 0U,
     .local_to_world = Transform({.position_pm = {}, .rotation = {}}),
+    .shape_name = "GGEMSWorld",
+    .dimensions = BoxDimensions(half),
   });
 
+  DescribePlacement(scene.occurrences.front(),
+                    {.position_pm = {}, .rotation = {}}, world.GetMaterial(),
+                    scene.vertices);
+
   auto const links = world.BuildOccurrenceRecords();
+
   std::vector<std::size_t> mesh_sources;
   for (std::size_t index = 0; index < world.GetVolumeCount(); ++index) {
     auto const &shape = world.GetVolume(index);
@@ -534,15 +746,19 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
       std::ranges::find_if(mesh_sources, [&](std::size_t source) -> bool {
         return SameShape(shape, world.GetVolume(source));
       });
+
     auto const mesh_index =
       static_cast<std::uint32_t>(found - mesh_sources.begin()) + 1U;
+
     if (found == mesh_sources.end()) {
       auto const first = scene.vertices.size();
       ShapeEdges(scene.vertices, shape);
+
       if (scene.vertices.size() > std::numeric_limits<std::uint32_t>::max()) {
         throw core::GGEMSRecoverable(
           "Geometry wireframe exceeds the Vulkan vertex range.");
       }
+
       scene.meshes.push_back({
         .first_vertex = static_cast<std::uint32_t>(first),
         .vertex_count =
@@ -550,12 +766,28 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
       });
       mesh_sources.push_back(index);
     }
+
+    auto const pose = world.BuildVolumePose(index);
     scene.occurrences.push_back({
       .volume_id = static_cast<std::uint32_t>(index) + 1U,
       .parent_volume_id = links[index].parent_volume_id,
       .mesh_index = mesh_index,
-      .local_to_world = Transform(world.BuildVolumePose(index)),
+      .local_to_world = Transform(pose),
+      .shape_name = {},
+      .dimensions = {},
     });
+
+    auto &occurrence = scene.occurrences.back();
+    DescribeShape(occurrence, shape);
+
+    auto const &mesh = scene.meshes[mesh_index];
+
+    DescribePlacement(
+      occurrence, pose, *world.GetVolumeMaterial(index),
+      std::span{scene.vertices}.subspan(mesh.first_vertex, mesh.vertex_count));
+
+    scene.occurrences[occurrence.parent_volume_id].children.push_back(
+      occurrence.volume_id);
   }
   return scene;
 }

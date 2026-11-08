@@ -97,6 +97,8 @@ protected:
     workbench_.show_status_panel = false;
     workbench_.show_scene_panel = false;
     workbench_.show_inspector_panel = false;
+    workbench_.show_source_panel = false;
+    workbench_.show_volumes_panel = false;
 
     for (int frame = 0; frame < 3; ++frame) {
       Frame();

@@ -503,7 +503,8 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
   command_buffer.setViewport(0U, viewport);
   command_buffer.setScissor(0U, scissor);
 
-  geometry_.Record(command_buffer, parameters.world_to_clip);
+  geometry_.Record(command_buffer, parameters.world_to_clip,
+                   parameters.selected_volume_id);
 
   auto const *scene = geometry_.GetScene();
   if (parameters.show_axes && scene != nullptr) {

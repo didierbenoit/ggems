@@ -282,8 +282,8 @@ TEST(GGEMSCartesianGrid, CartesianAndPolarVisibilitySurviveCameraUpdates) {
       }
       auto const cartesian_before = grid.visible;
       auto const polar_before = grid.polar_visible;
-      for (auto projection :
-           {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
+      for (auto projection : {Camera::Projection::Orthographic,
+                              Camera::Projection::Perspective}) {
         camera.SetProjection(projection);
         for (auto plane : {Camera::ViewPlane::XY, Camera::ViewPlane::XZ,
                            Camera::ViewPlane::YZ}) {

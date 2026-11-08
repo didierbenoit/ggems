@@ -142,6 +142,28 @@ auto GGEMSSceneCamera::FrameWorld(
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSSceneCamera::FrameBounds(
+  std::array<double, 3> const &minimum_m,
+  std::array<double, 3> const &maximum_m) noexcept -> void {
+
+  target_m_ = Vector3{
+    .x = static_cast<float>((minimum_m[0] + maximum_m[0]) * 0.5),
+    .y = static_cast<float>((minimum_m[1] + maximum_m[1]) * 0.5),
+    .z = static_cast<float>((minimum_m[2] + maximum_m[2]) * 0.5),
+  };
+
+  auto const radius = static_cast<float>(std::hypot(
+    (maximum_m[0] - minimum_m[0]) * 0.5, (maximum_m[1] - minimum_m[1]) * 0.5,
+    (maximum_m[2] - minimum_m[2]) * 0.5));
+
+  float const aspect =
+    static_cast<float>(viewport_width_) / static_cast<float>(viewport_height_);
+
+  SetZoom(0.85F * std::min(1.0F, aspect) / radius);
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSSceneCamera::Orbit(float delta_yaw_degrees, float delta_pitch_degrees)
   -> void {
   auto const delta_yaw = static_cast<float>(units::ToRadians(

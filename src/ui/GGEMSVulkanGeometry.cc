@@ -34,6 +34,7 @@
 #include <filesystem>
 #include <memory>
 #include <utility>
+#include <optional>
 
 #include "GGEMS/ui/detail/GGEMSVulkanGeometry.hh"
 
@@ -188,6 +189,8 @@ auto GGEMSVulkanGeometry::Initialize(
 
   pipeline_ = vk::raii::Pipeline{device, nullptr, pipeline};
   color_ = ToVulkanClearColor(GetThemeColorKey(GGEMSThemeRole::PrimaryText));
+  selected_color_ =
+    ToVulkanClearColor(GetThemeColorKey(GGEMSThemeRole::Accent));
 }
 
 // -----------------------------------------------------------------------------
@@ -276,7 +279,8 @@ auto GGEMSVulkanGeometry::GetScene() const noexcept
 
 auto GGEMSVulkanGeometry::Record(
   vk::raii::CommandBuffer const &command_buffer,
-  std::array<std::array<float, 4U>, 4U> const &world_to_clip) const -> void {
+  std::array<std::array<float, 4U>, 4U> const &world_to_clip,
+  std::optional<std::uint32_t> selected_volume_id) const -> void {
   if (!scene_) {
     return;
   }
@@ -288,6 +292,9 @@ auto GGEMSVulkanGeometry::Record(
 
   GeometryPushConstants constants{.color = color_};
   for (auto const &occurrence : scene_->occurrences) {
+    constants.color =
+      selected_volume_id == occurrence.volume_id ? selected_color_ : color_;
+
     for (std::size_t row = 0U; row < 4U; ++row) {
       for (std::size_t column = 0U; column < 4U; ++column) {
         float value = 0.0F;
@@ -302,6 +309,7 @@ auto GGEMSVulkanGeometry::Record(
     command_buffer.pushConstants(
       *pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
       vk::ArrayProxy<GeometryPushConstants const>{1U, &constants});
+
     auto const &mesh = scene_->meshes[occurrence.mesh_index];
     command_buffer.draw(mesh.vertex_count, 1U, mesh.first_vertex, 0U);
   }

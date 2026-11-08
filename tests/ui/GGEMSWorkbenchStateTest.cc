@@ -41,15 +41,18 @@ using Workbench = ggems::ui::detail::GGEMSWorkbenchState;
 
 // The initial workbench must expose its panels and use the reset view before a
 // viewport is opened.
-TEST(GGEMSWorkbenchState, DefaultsPresentEverythingWithCanonicalCamera) {
+TEST(GGEMSWorkbenchState, DefaultsPresentExplorerWithCanonicalCamera) {
   Workbench const workbench{};
 
   EXPECT_TRUE(workbench.show_output_panel);
   EXPECT_TRUE(workbench.show_status_panel);
-  EXPECT_TRUE(workbench.show_scene_panel);
+  EXPECT_FALSE(workbench.show_scene_panel);
   EXPECT_TRUE(workbench.show_viewport_panel);
-  EXPECT_TRUE(workbench.show_inspector_panel);
+  EXPECT_FALSE(workbench.show_inspector_panel);
   EXPECT_TRUE(workbench.show_camera_panel);
+  EXPECT_TRUE(workbench.show_source_panel);
+  EXPECT_TRUE(workbench.show_volumes_panel);
+  EXPECT_FALSE(workbench.selected_volume_id);
   EXPECT_TRUE(workbench.show_axes);
   EXPECT_TRUE(workbench.trace_visibility.IsGlobalVisible());
   EXPECT_EQ(workbench.selected_scene_item, Workbench::SceneSelection::World);

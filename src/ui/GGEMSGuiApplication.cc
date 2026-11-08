@@ -482,6 +482,7 @@ auto GGEMSGuiApplication::RenderFrame(bool framebuffer_resized) -> void {
       .trace_visibility = workbench_.trace_visibility,
       .cartesian_grid =
         displayed_geometry_scene_ ? &workbench_.cartesian_grid : nullptr,
+      .selected_volume_id = workbench_.selected_volume_id,
     };
 
     scene_renderer_->RecordSceneCommands(command_buffer, render_parameters);
@@ -556,6 +557,7 @@ auto GGEMSGuiApplication::ApplyPendingScene() -> void {
     device_->GetDevice().waitIdle();
     scene_renderer_->SetGeometryScene(*geometry);
     displayed_geometry_scene_ = std::move(*geometry);
+    workbench_.selected_volume_id.reset();
 
     if (displayed_geometry_scene_) {
       workbench_.camera.FrameWorld(

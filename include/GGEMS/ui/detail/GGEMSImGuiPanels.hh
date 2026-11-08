@@ -74,6 +74,18 @@ auto BuildScenePanel(
   render::GGEMSGeometryScene const *geometry_scene) -> void;
 
 /*!
+ * \brief Displays the real completed source snapshot in its own panel.
+ *
+ * \param[in,out] show_window Panel visibility, updated when the window closes.
+ * \param[in,out] workbench Shared source revision and trace visibility.
+ * \param[in] source_run_snapshot Borrowed completed snapshot, or null if
+ * absent.
+ */
+auto BuildSourcePanel(
+  bool &show_window, GGEMSWorkbenchState &workbench,
+  core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot) -> void;
+
+/*!
  * \brief Displays the selected category and unavailable-property labels.
  *
  * \param[in,out] show_window Panel visibility, updated when the window closes.

@@ -187,6 +187,18 @@ public:
   auto FrameWorld(std::array<double, 3> const &half_extent_m) noexcept -> void;
 
   /*!
+   * \brief Centers and frames an object's World-space bounds.
+   *
+   * Preserves orbit angles, projection, and full-World depth coverage.
+   * Rotation then orbits the bounds center; Reset still frames the full World.
+   *
+   * \param[in] minimum_m Lower corner of finite, nonempty bounds in meters.
+   * \param[in] maximum_m Upper corner of the same bounds in meters.
+   */
+  auto FrameBounds(std::array<double, 3> const &minimum_m,
+                   std::array<double, 3> const &maximum_m) noexcept -> void;
+
+  /*!
    * \brief Adds angular motion while retaining the pitch limit.
    *
    * \param[in] delta_yaw_degrees Yaw increment in degrees.

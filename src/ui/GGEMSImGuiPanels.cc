@@ -692,6 +692,19 @@ auto BuildScenePanel(
 
 // -----------------------------------------------------------------------------
 
+auto BuildSourcePanel(
+  bool &show_window, GGEMSWorkbenchState &workbench,
+  core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot) -> void {
+
+  if (ImGui::Begin(k_source_window_name, &show_window)) {
+    BuildSourceEntries(workbench, source_run_snapshot);
+  }
+
+  ImGui::End();
+}
+
+// -----------------------------------------------------------------------------
+
 auto BuildInspectorPanel(bool &show_window,
                          GGEMSWorkbenchState::SceneSelection selection)
   -> void {

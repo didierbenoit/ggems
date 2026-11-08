@@ -89,12 +89,11 @@ ConstantBuffer<GridPushConstants> g_grid;
  * \param[in] vertex_id Sequential corner index in the six-vertex draw.
  * \return Shared-camera clip position of one World rectangle corner.
  */
-[shader("vertex")]
-VertexOutput
-VertexMain(uint vertex_id /*! \cond */: SV_VertexID /*! \endcond */) {
-  float2 corners[6] = { float2(-1.0, -1.0), float2(1.0, -1.0),
-                        float2(1.0, 1.0),   float2(-1.0, -1.0),
-                        float2(1.0, 1.0),   float2(-1.0, 1.0) };
+[shader("vertex")] VertexOutput
+VertexMain(uint vertex_id /*! \cond */ : SV_VertexID /*! \endcond */) {
+  float2 corners[6] = {float2(-1.0, -1.0), float2(1.0, -1.0),
+                       float2(1.0, 1.0),   float2(-1.0, -1.0),
+                       float2(1.0, 1.0),   float2(-1.0, 1.0)};
   float2 corner = corners[vertex_id];
   float3 world;
   float2 in_plane;
@@ -207,8 +206,7 @@ float2 PolarCoverage(float2 coordinate, float2 horizontal, float2 vertical,
  * \param[in] input Physical pixel position and rasterized plane depth.
  * \return Line coverage and depth for alpha blending after scene objects.
  */
-[shader("fragment")]
-FragmentOutput FragmentMain(VertexOutput input) {
+[shader("fragment")] FragmentOutput FragmentMain(VertexOutput input) {
   float2 ndc = input.position.xy * g_grid.inverse_viewport - 1.0;
   uint2 axes = g_grid.plane == 0   ? uint2(0, 1)
                : g_grid.plane == 1 ? uint2(0, 2)

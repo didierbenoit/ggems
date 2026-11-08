@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <memory>
 #include <span>
+#include <optional>
 
 #include <vulkan/vulkan_raii.hpp>
 
@@ -71,6 +72,11 @@ public:
 
     /*! \brief Optional Cartesian reference-plane grid; null draws none. */
     detail::GGEMSCartesianGrid const *cartesian_grid{};
+
+    /*!
+     * \brief Physical occurrence to accent without changing depth or geometry.
+     */
+    std::optional<std::uint32_t> selected_volume_id;
   };
 
   /*! \brief Creates an inactive UI component. */

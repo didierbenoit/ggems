@@ -33,6 +33,8 @@
 
 namespace ggems::ui::detail {
 
+struct GGEMSWorkbenchState;
+
 /*! \brief Display label and persistent ID of the dockspace host. */
 inline constexpr char const *k_main_dockspace_window_name =
   "GGEMS Main Dockspace###GGEMS.MainDockspace";
@@ -47,6 +49,14 @@ inline constexpr char const *k_status_window_name =
 
 /*! \brief Display label and persistent ID of the scene panel. */
 inline constexpr char const *k_scene_window_name = "GGEMS Scene###GGEMS.Scene";
+
+/*! \brief Display label and persistent ID of the Source panel. */
+inline constexpr char const *k_source_window_name =
+  "GGEMS Source###GGEMS.Source";
+
+/*! \brief Display label and persistent ID of the physical-volume explorer. */
+inline constexpr char const *k_volumes_window_name =
+  "GGEMS Volumes###GGEMS.Volumes";
 
 /*! \brief Display label and persistent ID of the viewport panel. */
 inline constexpr char const *k_viewport_window_name =
@@ -77,20 +87,21 @@ inline constexpr char const *k_camera_window_name =
 /*!
  * \brief Restores panel placements or creates the default docking layout.
  *
- * A missing Camera joins the saved Inspector dock when available. Existing
- * Camera settings, including a floating placement, are preserved.
+ * Existing placements are preserved. Missing Source and Volumes panels join
+ * an available saved side dock; legacy panels with usable settings reopen.
  * \param[in] dockspace_size Available dockspace size in logical UI pixels.
+ * \param[in,out] workbench Panel visibility admitting retained legacy panels.
  */
-auto InitializeLayout(ImVec2 const &dockspace_size) -> void;
+auto InitializeLayout(ImVec2 const &dockspace_size,
+                      GGEMSWorkbenchState &workbench) -> void;
 
 /*!
- * \brief Restores the admitted Camera dock selection after initial windows
- * open.
+ * \brief Restores admitted dock selections after initial windows open.
  *
- * Call once after submitting the first frame's panels. This preserves the
- * saved selection or the default Camera tab despite automatic opening focus.
+ * Call after submitting the first frame's panels or resetting the layout.
+ * Saved selections and the default tabs survive automatic opening focus.
  */
-auto RestoreInitialCameraDockTab() -> void;
+auto RestoreInitialDockTabs() -> void;
 
 /*!
  * \brief Replaces the main docking tree with the default panel layout.

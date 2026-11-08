@@ -34,6 +34,7 @@
 #include "GGEMS/ui/detail/GGEMSCartesianGrid.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiPanels.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiVolumesPanel.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
@@ -122,6 +123,11 @@ auto GGEMSImGuiLayer::BuildFrame(
                             inputs.source_run_snapshot, inputs.geometry_scene);
   }
 
+  if (workbench.show_source_panel) {
+    detail::BuildSourcePanel(workbench.show_source_panel, workbench,
+                             inputs.source_run_snapshot);
+  }
+
   if (workbench.show_viewport_panel) {
     camera_input = viewport_panel_.Build(
       workbench.show_viewport_panel, inputs.scene_texture_id,
@@ -152,15 +158,21 @@ auto GGEMSImGuiLayer::BuildFrame(
     detail::ApplyViewportToolbarAction(workbench, Action::ResetCamera);
   }
 
+  if (workbench.show_volumes_panel) {
+    auto const focus = detail::BuildVolumesPanel(workbench.show_volumes_panel,
+                                                 workbench.selected_volume_id,
+                                                 inputs.geometry_scene);
+    if (focus) {
+      auto const &occurrence = inputs.geometry_scene->occurrences[*focus];
+      workbench.camera.FrameBounds(occurrence.minimum_m, occurrence.maximum_m);
+    }
+  }
+
   if (inputs.geometry_scene != nullptr) {
     workbench.cartesian_grid.Update(workbench.camera);
   }
 
   if (workbench.show_camera_panel) {
-    if (menu_actions.reset_layout) {
-      ImGui::SetNextWindowFocus();
-    }
-
     detail::BuildCameraPanel(workbench.show_camera_panel, workbench.camera,
                              camera_input, workbench.cartesian_grid,
                              inputs.geometry_scene != nullptr);
@@ -171,8 +183,8 @@ auto GGEMSImGuiLayer::BuildFrame(
                                 workbench.selected_scene_item);
   }
 
-  if (initial_layout) {
-    detail::RestoreInitialCameraDockTab();
+  if (initial_layout || menu_actions.reset_layout) {
+    detail::RestoreInitialDockTabs();
   }
 }
 
@@ -206,7 +218,7 @@ auto GGEMSImGuiLayer::BuildMainDockspace(detail::GGEMSWorkbenchState &workbench)
   MenuActions const menu_actions = BuildMainMenuBar(workbench);
 
   if (!layout_initialized_) {
-    detail::InitializeLayout(viewport->Size);
+    detail::InitializeLayout(viewport->Size, workbench);
     layout_initialized_ = true;
   }
 
@@ -215,10 +227,12 @@ auto GGEMSImGuiLayer::BuildMainDockspace(detail::GGEMSWorkbenchState &workbench)
 
     workbench.show_output_panel = true;
     workbench.show_status_panel = true;
-    workbench.show_scene_panel = true;
+    workbench.show_scene_panel = false;
     workbench.show_viewport_panel = true;
-    workbench.show_inspector_panel = true;
+    workbench.show_inspector_panel = false;
     workbench.show_camera_panel = true;
+    workbench.show_source_panel = true;
+    workbench.show_volumes_panel = true;
   }
 
   ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
@@ -248,6 +262,8 @@ auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
     ImGui::MenuItem("Viewport", nullptr, &workbench.show_viewport_panel);
     ImGui::MenuItem("Inspector", nullptr, &workbench.show_inspector_panel);
     ImGui::MenuItem("Camera", nullptr, &workbench.show_camera_panel);
+    ImGui::MenuItem("Source", nullptr, &workbench.show_source_panel);
+    ImGui::MenuItem("Volumes", nullptr, &workbench.show_volumes_panel);
 
     ImGui::Separator();
     ImGui::MenuItem("Axes", nullptr, &workbench.show_axes);

@@ -30,6 +30,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 
 #include "GGEMSSceneCamera.hh"
 #include "GGEMSCartesianGrid.hh"
@@ -87,16 +88,25 @@ struct GGEMSWorkbenchState {
   bool show_status_panel{true};
 
   /*! \brief Whether to show the scene hierarchy. */
-  bool show_scene_panel{true};
+  bool show_scene_panel{false};
 
   /*! \brief Whether to show the scene image and camera controls. */
   bool show_viewport_panel{true};
 
   /*! \brief Whether to show the selected category inspector. */
-  bool show_inspector_panel{true};
+  bool show_inspector_panel{false};
 
   /*! \brief Whether to show live camera and input diagnostics. */
   bool show_camera_panel{true};
+
+  /*! \brief Whether to show the completed source snapshot. */
+  bool show_source_panel{true};
+
+  /*! \brief Whether to show the physical volume tree and metadata. */
+  bool show_volumes_panel{true};
+
+  /*! \brief Selected physical VolumeID, cleared when the snapshot changes. */
+  std::optional<std::uint32_t> selected_volume_id;
 
   /*! \brief Whether to draw the reference axes. */
   bool show_axes{true};

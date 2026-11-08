@@ -30,6 +30,8 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
+#include <optional>
 #include <memory>
 
 #include <vulkan/vulkan_raii.hpp>
@@ -67,7 +69,7 @@ public:
   auto operator=(GGEMSVulkanGeometry &&) -> GGEMSVulkanGeometry & = delete;
 
   /*!
-   * \brief Creates the line pipeline and resolves the neutral theme color once.
+   * \brief Creates the line pipeline and resolves neutral and accent colors.
    *
    * Initialize an inactive component; call Shutdown before reinitializing it.
    *
@@ -116,9 +118,13 @@ public:
    *
    * \param[in] command_buffer Recording buffer inside dynamic rendering.
    * \param[in] world_to_clip Rows mapping World meters to clip coordinates.
+   * \param[in] selected_volume_id Occurrence to accent, or none; depth is
+   * unchanged.
    */
-  auto Record(vk::raii::CommandBuffer const &command_buffer,
-              std::array<std::array<float, 4U>, 4U> const &world_to_clip) const
+  auto
+  Record(vk::raii::CommandBuffer const &command_buffer,
+         std::array<std::array<float, 4U>, 4U> const &world_to_clip,
+         std::optional<std::uint32_t> selected_volume_id = std::nullopt) const
     -> void;
 
 private:
@@ -127,7 +133,7 @@ private:
     /*! \brief Rows mapping local meters to clip coordinates. */
     std::array<std::array<float, 4U>, 4U> local_to_clip{};
 
-    /*! \brief Linear RGBA shared by all geometry edges. */
+    /*! \brief Linear RGBA for the current occurrence's edges. */
     std::array<float, 4U> color{};
   };
 
@@ -142,6 +148,11 @@ private:
 
   /*! \brief Linear neutral palette color prepared at initialization. */
   std::array<float, 4U> color_{};
+
+  /*!
+   * \brief Linear theme accent used only for the selected physical occurrence.
+   */
+  std::array<float, 4U> selected_color_{};
 
   /*! \brief Layout of the 80-byte transform and color vertex push constants. */
   vk::raii::PipelineLayout pipeline_layout_{nullptr};

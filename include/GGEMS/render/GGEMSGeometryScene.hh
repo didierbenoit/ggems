@@ -31,7 +31,10 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 #include <vector>
+
+#include "GGEMS/units/GGEMSDensityUnits.hh"
 
 namespace ggems::geometry {
 class GGEMSWorld;
@@ -60,7 +63,18 @@ struct GGEMSGeometryMesh {
   std::uint32_t vertex_count;
 };
 
-/*! \brief Retains one physical identity and its display placement. */
+/*! \brief Owns one labeled analytic parameter formatted with GGEMS units. */
+struct GGEMSGeometryProperty {
+  /*! \brief Physical parameter name, including its local axis when relevant. */
+  std::string name;
+
+  /*! \brief Human-readable canonical parameter value and unit. */
+  std::string value;
+};
+
+/*!
+ * \brief Retains one physical identity, placement, and owned inspection data.
+ */
 struct GGEMSGeometryOccurrence {
   /*! \brief Snapshot-local physical VolumeID; zero identifies World. */
   std::uint32_t volume_id;
@@ -73,6 +87,34 @@ struct GGEMSGeometryOccurrence {
 
   /*! \brief Row-major local-to-World matrix, with translations in meters. */
   std::array<float, 16> local_to_world;
+
+  /*! \brief Actual analytic family, or GGEMSWorld for the root. */
+  std::string shape_name;
+
+  /*! \brief Canonical shape parameters formatted once for inspection. */
+  std::vector<GGEMSGeometryProperty> dimensions;
+
+  /*! \brief Composed local origin in World meters before render rounding. */
+  std::array<double, 3> position_m{};
+
+  /*! \brief Row-major composed local-to-World rotation before render rounding.
+   */
+  std::array<double, 9> orientation{};
+
+  /*! \brief Owned display name of this occurrence's actual Material. */
+  std::string material_name{};
+
+  /*! \brief Actual Material density in the canonical GGEMS representation. */
+  units::Density material_density{};
+
+  /*! \brief Minimum World-meter coordinates of this occurrence's wire mesh. */
+  std::array<double, 3> minimum_m{};
+
+  /*! \brief Maximum World-meter coordinates of this occurrence's wire mesh. */
+  std::array<double, 3> maximum_m{};
+
+  /*! \brief Direct physical child VolumeIDs in snapshot order. */
+  std::vector<std::uint32_t> children{};
 };
 
 /*! \brief Owns display-only meshes and occurrences, including World first. */
@@ -95,7 +137,9 @@ struct GGEMSGeometryScene {
  *
  * Curved surfaces use fixed visual tessellation; physical geometry is
  * unchanged. Equal shape parameters share line topology, independently of pose
- * or Material.
+ * or Material. Inspection metadata is owned independently of World. Bounds
+ * enclose each displayed wire mesh only, including its composed placement;
+ * curved bounds follow the existing visual tessellation, not a physics query.
  * \param[in] world Validated Run-owned World, borrowed only during this call.
  * \return Owned presentation data with unchanged physical IDs and parent links.
  */

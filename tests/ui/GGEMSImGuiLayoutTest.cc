@@ -120,42 +120,64 @@ protected:
     return {settings, size};
   }
 
-  [[nodiscard]] static auto WithoutCamera(std::string settings) -> std::string {
+  [[nodiscard]] static auto WithoutWindow(std::string settings,
+                                          char const *identity) -> std::string {
     // ImGui may omit the label and ### prefix when writing persistent names.
-    auto const identity = settings.find("GGEMS.Camera]");
-    EXPECT_NE(identity, std::string::npos);
-    if (identity != std::string::npos) {
-      auto const start = settings.rfind("[Window][", identity);
-      auto const end = settings.find("\n[", identity);
+    auto const position = settings.find(identity);
+    EXPECT_NE(position, std::string::npos);
+    if (position != std::string::npos) {
+      auto const start = settings.rfind("[Window][", position);
+      auto const end = settings.find("\n[", position);
       settings.erase(start, end == std::string::npos ? end : end - start);
     }
     return settings;
   }
 
+  auto MakeLegacyLayout() -> void {
+    Settle();
+    workbench_.show_scene_panel = true;
+    workbench_.show_inspector_panel = true;
+    Settle();
+    auto const left = Window(detail::k_status_window_name)->DockId;
+    auto const right = Window(detail::k_volumes_window_name)->DockId;
+    ImGui::DockBuilderDockWindow(detail::k_scene_window_name, left);
+    ImGui::DockBuilderDockWindow(detail::k_inspector_window_name, right);
+    ImGui::DockBuilderDockWindow(detail::k_camera_window_name, right);
+    ImGui::DockBuilderFinish(detail::GetMainDockspaceID());
+    Settle();
+  }
+
+  [[nodiscard]] static auto DockID(char const *name) -> ImGuiID {
+    auto const *window = Window(name);
+    return window != nullptr ? window->DockId : 0U;
+  }
+
   [[nodiscard]] static auto OtherDocks() -> std::array<ImGuiID, 5> {
     return {
-      Window(detail::k_output_window_name)->DockId,
-      Window(detail::k_status_window_name)->DockId,
-      Window(detail::k_scene_window_name)->DockId,
-      Window(detail::k_viewport_window_name)->DockId,
-      Window(detail::k_inspector_window_name)->DockId,
+      DockID(detail::k_output_window_name),
+      DockID(detail::k_status_window_name),
+      DockID(detail::k_scene_window_name),
+      DockID(detail::k_viewport_window_name),
+      DockID(detail::k_inspector_window_name),
     };
   }
 
-  static auto ExpectSharedDock() -> void {
+  static auto
+  ExpectSharedDock(char const *neighbor = detail::k_status_window_name)
+    -> void {
     auto const *camera = Window(detail::k_camera_window_name);
-    auto const *inspector = Window(detail::k_inspector_window_name);
+    auto const *other = Window(neighbor);
     ASSERT_NE(camera, nullptr);
-    ASSERT_NE(inspector, nullptr);
-    ASSERT_NE(inspector->DockNode, nullptr);
-    EXPECT_EQ(camera->DockNode, inspector->DockNode);
+    ASSERT_NE(other, nullptr);
+    ASSERT_NE(other->DockNode, nullptr);
+    EXPECT_EQ(camera->DockNode, other->DockNode);
     EXPECT_NE(camera->DockId, 0U);
   }
 
   static auto ExpectSelectedTab(char const *name) -> void {
-    ASSERT_NO_FATAL_FAILURE(ExpectSharedDock());
     auto const *selected = Window(name);
     ASSERT_NE(selected, nullptr);
+    ASSERT_NE(selected->DockNode, nullptr);
     EXPECT_EQ(selected->DockNode->SelectedTabId, selected->TabId);
     EXPECT_TRUE(selected->DockTabIsVisible);
   }
@@ -168,16 +190,31 @@ private:
   ggems::core::GGEMSOutputState output_;
 };
 
-TEST_F(GGEMSImGuiLayout, FreshLayoutSelectsCameraBesideInspector) {
+TEST_F(GGEMSImGuiLayout, FreshLayoutPlacesExplorerRightAndCameraLeft) {
   EXPECT_FALSE(detail::HasSavedLayout());
   Settle();
+  ExpectSharedDock();
   ExpectSelectedTab(detail::k_camera_window_name);
-  EXPECT_GT(Window(detail::k_inspector_window_name)->Pos.x,
+  ExpectSelectedTab(detail::k_volumes_window_name);
+  EXPECT_EQ(DockID(detail::k_source_window_name),
+            DockID(detail::k_volumes_window_name));
+  EXPECT_GT(Window(detail::k_volumes_window_name)->Pos.x,
             Window(detail::k_viewport_window_name)->Pos.x);
+  EXPECT_LT(Window(detail::k_camera_window_name)->Pos.x,
+            Window(detail::k_viewport_window_name)->Pos.x);
+  EXPECT_GT(Window(detail::k_output_window_name)->Pos.y,
+            Window(detail::k_viewport_window_name)->Pos.y);
+  EXPECT_FALSE(workbench_.show_scene_panel);
+  EXPECT_FALSE(workbench_.show_inspector_panel);
+  EXPECT_EQ(Window(detail::k_scene_window_name), nullptr);
+  EXPECT_EQ(Window(detail::k_inspector_window_name), nullptr);
 
   Restart(Save());
   Settle();
   ExpectSelectedTab(detail::k_camera_window_name);
+  ExpectSelectedTab(detail::k_volumes_window_name);
+  EXPECT_FALSE(workbench_.show_scene_panel);
+  EXPECT_FALSE(workbench_.show_inspector_panel);
 }
 
 TEST_F(GGEMSImGuiLayout, ManualTabSelectionSurvivesFramesAndRestart) {
@@ -185,8 +222,12 @@ TEST_F(GGEMSImGuiLayout, ManualTabSelectionSurvivesFramesAndRestart) {
   ExpectSelectedTab(detail::k_camera_window_name);
   auto const other_docks = OtherDocks();
 
-  for (char const *name :
-       {detail::k_inspector_window_name, detail::k_camera_window_name}) {
+  for (char const *name : {
+         detail::k_status_window_name,
+         detail::k_camera_window_name,
+         detail::k_source_window_name,
+         detail::k_volumes_window_name,
+       }) {
     auto const *window = Window(name);
     ASSERT_NE(window, nullptr);
     ASSERT_NE(window->DockNode, nullptr);
@@ -220,7 +261,7 @@ TEST_F(GGEMSImGuiLayout, EmptyRuntimeDockspaceIsNotASavedPanelLayout) {
 }
 
 TEST_F(GGEMSImGuiLayout, LegacySettingsAddOnlyMissingCameraToInspectorDock) {
-  Settle();
+  MakeLegacyLayout();
   ImGui::DockBuilderDockWindow(detail::k_output_window_name, 0U);
   ImGui::SetWindowPos(detail::k_output_window_name, ImVec2{30.0F, 350.0F});
   ImGui::SetWindowSize(detail::k_output_window_name, ImVec2{320.0F, 180.0F});
@@ -228,12 +269,12 @@ TEST_F(GGEMSImGuiLayout, LegacySettingsAddOnlyMissingCameraToInspectorDock) {
   auto const other_docks = OtherDocks();
   auto const output_position = Window(detail::k_output_window_name)->Pos;
 
-  Restart(WithoutCamera(Save()));
+  Restart(WithoutWindow(Save(), "GGEMS.Camera]"));
   ASSERT_EQ(
     ImGui::FindWindowSettingsByID(ImHashStr(detail::k_camera_window_name)),
     nullptr);
   Settle();
-  ExpectSharedDock();
+  ExpectSharedDock(detail::k_inspector_window_name);
   EXPECT_EQ(OtherDocks(), other_docks);
   EXPECT_FLOAT_EQ(Window(detail::k_output_window_name)->Pos.x,
                   output_position.x);
@@ -242,8 +283,66 @@ TEST_F(GGEMSImGuiLayout, LegacySettingsAddOnlyMissingCameraToInspectorDock) {
 
   Restart(Save());
   Settle();
-  ExpectSharedDock();
+  ExpectSharedDock(detail::k_inspector_window_name);
   EXPECT_EQ(OtherDocks(), other_docks);
+}
+
+TEST_F(GGEMSImGuiLayout, LegacyLayoutAdmitsOnlyMissingExplorerPanels) {
+  for (bool const floating_inspector : {false, true}) {
+    SCOPED_TRACE(floating_inspector);
+    Restart({});
+    MakeLegacyLayout();
+    if (floating_inspector) {
+      ImGui::DockBuilderDockWindow(detail::k_inspector_window_name, 0U);
+      ImGui::SetWindowPos(detail::k_inspector_window_name, {40.0F, 80.0F});
+      Settle();
+    }
+    auto const expected_dock =
+      DockID(floating_inspector ? detail::k_scene_window_name
+                                : detail::k_inspector_window_name);
+    auto const other_docks = OtherDocks();
+    auto const camera_dock = DockID(detail::k_camera_window_name);
+    ImGui::SetWindowFocus(detail::k_camera_window_name);
+    Settle();
+    Restart(
+      WithoutWindow(WithoutWindow(Save(), "GGEMS.Source]"), "GGEMS.Volumes]"));
+    Settle();
+    EXPECT_TRUE(workbench_.show_scene_panel);
+    EXPECT_TRUE(workbench_.show_inspector_panel);
+    EXPECT_EQ(OtherDocks(), other_docks);
+    EXPECT_EQ(DockID(detail::k_camera_window_name), camera_dock);
+    EXPECT_EQ(DockID(detail::k_source_window_name), expected_dock);
+    EXPECT_EQ(DockID(detail::k_volumes_window_name), expected_dock);
+    ExpectSelectedTab(detail::k_camera_window_name);
+    Restart(Save());
+    Settle();
+    EXPECT_EQ(OtherDocks(), other_docks);
+    EXPECT_EQ(DockID(detail::k_source_window_name), expected_dock);
+    EXPECT_EQ(DockID(detail::k_volumes_window_name), expected_dock);
+  }
+}
+
+TEST_F(GGEMSImGuiLayout, UserSourceDockAndFloatingVolumesSurviveRestart) {
+  Settle();
+  auto const source_dock = DockID(detail::k_status_window_name);
+  ImGui::DockBuilderDockWindow(detail::k_source_window_name, source_dock);
+  ImGui::DockBuilderDockWindow(detail::k_volumes_window_name, 0U);
+  ImGui::DockBuilderFinish(detail::GetMainDockspaceID());
+  ImGui::SetWindowPos(detail::k_volumes_window_name, {400.0F, 90.0F});
+  ImGui::SetWindowSize(detail::k_volumes_window_name, {360.0F, 540.0F});
+  Settle();
+  auto const other_docks = OtherDocks();
+  auto const position = Window(detail::k_volumes_window_name)->Pos;
+  auto const size = Window(detail::k_volumes_window_name)->Size;
+  Restart(Save());
+  Settle();
+  EXPECT_EQ(DockID(detail::k_source_window_name), source_dock);
+  EXPECT_EQ(DockID(detail::k_volumes_window_name), 0U);
+  EXPECT_EQ(OtherDocks(), other_docks);
+  EXPECT_FLOAT_EQ(Window(detail::k_volumes_window_name)->Pos.x, position.x);
+  EXPECT_FLOAT_EQ(Window(detail::k_volumes_window_name)->Pos.y, position.y);
+  EXPECT_FLOAT_EQ(Window(detail::k_volumes_window_name)->Size.x, size.x);
+  EXPECT_FLOAT_EQ(Window(detail::k_volumes_window_name)->Size.y, size.y);
 }
 
 TEST_F(GGEMSImGuiLayout, UserFloatingCameraPlacementSurvivesRestart) {
@@ -269,7 +368,7 @@ TEST_F(GGEMSImGuiLayout, UserFloatingCameraPlacementSurvivesRestart) {
 
 TEST_F(GGEMSImGuiLayout, UserCameraDockSurvivesRestart) {
   Settle();
-  ImGuiID const custom_dock = Window(detail::k_scene_window_name)->DockId;
+  ImGuiID const custom_dock = Window(detail::k_source_window_name)->DockId;
   ImGui::DockBuilderDockWindow(detail::k_camera_window_name, custom_dock);
   ImGui::DockBuilderFinish(detail::GetMainDockspaceID());
   Settle();
@@ -278,18 +377,18 @@ TEST_F(GGEMSImGuiLayout, UserCameraDockSurvivesRestart) {
   Restart(Save());
   Settle();
   EXPECT_EQ(Window(detail::k_camera_window_name)->DockId, custom_dock);
-  EXPECT_NE(Window(detail::k_inspector_window_name)->DockId, custom_dock);
+  EXPECT_NE(Window(detail::k_status_window_name)->DockId, custom_dock);
   EXPECT_EQ(OtherDocks(), other_docks);
 }
 
 TEST_F(GGEMSImGuiLayout, LegacyFloatingInspectorDoesNotResetOtherPanels) {
-  Settle();
+  MakeLegacyLayout();
   ImGui::DockBuilderDockWindow(detail::k_inspector_window_name, 0U);
   ImGui::SetWindowPos(detail::k_inspector_window_name, ImVec2{40.0F, 80.0F});
   Settle();
   auto const other_docks = OtherDocks();
 
-  Restart(WithoutCamera(Save()));
+  Restart(WithoutWindow(Save(), "GGEMS.Camera]"));
   Settle();
   EXPECT_EQ(Window(detail::k_camera_window_name)->DockId, 0U);
   EXPECT_EQ(Window(detail::k_inspector_window_name)->DockId, 0U);
@@ -321,7 +420,7 @@ TEST_F(GGEMSImGuiLayout, CameraCloseReopenResizeAndRestartPreserveDock) {
 }
 
 TEST_F(GGEMSImGuiLayout, ViewResetLayoutRebuildsTabsAndPanelVisibility) {
-  Settle();
+  MakeLegacyLayout();
   ImGui::DockBuilderDockWindow(detail::k_camera_window_name, 0U);
   workbench_.show_camera_panel = false;
   workbench_.show_output_panel = false;
@@ -346,11 +445,20 @@ TEST_F(GGEMSImGuiLayout, ViewResetLayoutRebuildsTabsAndPanelVisibility) {
 
   EXPECT_TRUE(workbench_.show_output_panel);
   EXPECT_TRUE(workbench_.show_status_panel);
-  EXPECT_TRUE(workbench_.show_scene_panel);
+  EXPECT_FALSE(workbench_.show_scene_panel);
   EXPECT_TRUE(workbench_.show_viewport_panel);
-  EXPECT_TRUE(workbench_.show_inspector_panel);
+  EXPECT_FALSE(workbench_.show_inspector_panel);
   EXPECT_TRUE(workbench_.show_camera_panel);
+  EXPECT_TRUE(workbench_.show_source_panel);
+  EXPECT_TRUE(workbench_.show_volumes_panel);
   ExpectSelectedTab(detail::k_camera_window_name);
+  ExpectSelectedTab(detail::k_volumes_window_name);
+  Restart(Save());
+  Settle();
+  EXPECT_FALSE(workbench_.show_scene_panel);
+  EXPECT_FALSE(workbench_.show_inspector_panel);
+  ExpectSelectedTab(detail::k_camera_window_name);
+  ExpectSelectedTab(detail::k_volumes_window_name);
 }
 
 } // namespace

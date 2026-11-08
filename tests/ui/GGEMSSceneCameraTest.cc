@@ -27,6 +27,7 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -262,6 +263,137 @@ TEST_P(GGEMSSceneCameraProjection, ResetPreservesProjectionAndDefaultFraming) {
   EXPECT_NEAR(reset.pitch_degrees, -25.0F, k_tolerance);
   EXPECT_EQ(reset.target_m, (std::array<float, 3>{}));
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), original);
+}
+
+// Focus fits only the selected bounds, including millimeter-sized objects near
+// a World corner, while retaining orientation, projection, and World clipping.
+TEST_P(GGEMSSceneCameraProjection, FrameBoundsFitsTinyOffAxisObjects) {
+  for (double scale : {1.0e-6, 1.0, 1.0e5}) {
+    SCOPED_TRACE(scale);
+    for (auto const viewport :
+         {std::array{1200U, 700U}, std::array{320U, 720U}}) {
+      SCOPED_TRACE(viewport[0]);
+      Camera camera{};
+      camera.SetViewportSize(viewport[0], viewport[1]);
+      camera.SetProjection(GetParam());
+      camera.FrameWorld({2.0 * scale, 3.0 * scale, scale});
+      camera.SetOrbitAngles(721.0F, 35.0F);
+      auto const before = camera.GetDiagnostics();
+      for (auto const center :
+           {std::array{0.3, -0.1, 0.2}, std::array{1.995, 2.995, 0.995}}) {
+        SCOPED_TRACE(center[0]);
+        std::array<double, 3> minimum{};
+        std::array<double, 3> maximum{};
+        for (std::size_t axis = 0U; axis < center.size(); ++axis) {
+          minimum[axis] = (center[axis] - 0.003) * scale;
+          maximum[axis] = (center[axis] + 0.003) * scale;
+        }
+        camera.FrameBounds(minimum, maximum);
+        auto const focused = camera.GetDiagnostics();
+        EXPECT_EQ(focused.projection, before.projection);
+        EXPECT_EQ(focused.yaw_degrees, before.yaw_degrees);
+        EXPECT_EQ(focused.pitch_degrees, before.pitch_degrees);
+        EXPECT_GT(focused.zoom, before.zoom * 100.0F);
+        for (std::size_t axis = 0U; axis < center.size(); ++axis) {
+          EXPECT_FLOAT_EQ(focused.target_m[axis],
+                          static_cast<float>(center[axis] * scale));
+        }
+        auto const matrix = camera.BuildWorldToClipMatrix();
+        auto const projected_center =
+          TransformPoint(matrix, Point3{
+                                   .x = static_cast<float>(center[0] * scale),
+                                   .y = static_cast<float>(center[1] * scale),
+                                   .z = static_cast<float>(center[2] * scale),
+                                 });
+        // FP32 translation cancellation at the corner is below 0.12 logical
+        // pixels at the largest viewport in this fixture.
+        EXPECT_NEAR(projected_center[0] / projected_center[3], 0.0F, 2.0e-4F);
+        EXPECT_NEAR(projected_center[1] / projected_center[3], 0.0F, 2.0e-4F);
+        float largest_extent = 0.0F;
+        for (unsigned int corner = 0U; corner < 8U; ++corner) {
+          auto const projected = TransformPoint(
+            matrix, Point3{
+                      .x = static_cast<float>((corner & 1U) != 0U ? maximum[0]
+                                                                  : minimum[0]),
+                      .y = static_cast<float>((corner & 2U) != 0U ? maximum[1]
+                                                                  : minimum[1]),
+                      .z = static_cast<float>((corner & 4U) != 0U ? maximum[2]
+                                                                  : minimum[2]),
+                    });
+          ASSERT_GT(projected[3], 0.0F);
+          EXPECT_LT(std::abs(projected[0] / projected[3]), 0.92F);
+          EXPECT_LT(std::abs(projected[1] / projected[3]), 0.92F);
+          EXPECT_GT(projected[2], 0.0F);
+          EXPECT_LT(projected[2], projected[3]);
+          largest_extent = std::max({
+            largest_extent,
+            std::abs(projected[0] / projected[3]),
+            std::abs(projected[1] / projected[3]),
+          });
+        }
+        EXPECT_GT(largest_extent, 0.25F);
+        for (auto const &corner : k_world_corners) {
+          auto const projected =
+            TransformPoint(matrix, Point3{
+                                     .x = corner.x * static_cast<float>(scale),
+                                     .y = corner.y * static_cast<float>(scale),
+                                     .z = corner.z * static_cast<float>(scale),
+                                   });
+          EXPECT_GT(projected[3], 0.0F);
+          EXPECT_GT(projected[2], 0.0F);
+          EXPECT_LT(projected[2], projected[3]);
+        }
+        if (GetParam() == Camera::Projection::Perspective) {
+          EXPECT_GT(focused.near_m, 0.0F);
+          EXPECT_GT(focused.far_m, focused.near_m);
+          EXPECT_LE(focused.vertical_fov_degrees, 45.0F + k_tolerance);
+        }
+      }
+    }
+  }
+}
+
+// Focus changes the orbit center without changing subsequent controls or the
+// full-World reference used by Reset and axial presets.
+TEST_P(GGEMSSceneCameraProjection, FocusRetainsOrbitCenterAndFullWorldReset) {
+  Camera camera{};
+  camera.SetViewportSize(1200U, 700U);
+  camera.SetProjection(GetParam());
+  camera.FrameWorld({2.0, 3.0, 1.0});
+  camera.SetOrbitAngles(719.0F, -32.0F);
+  camera.FrameBounds({1.59, -2.41, 0.69}, {1.61, -2.39, 0.71});
+  auto const focused = camera.GetDiagnostics();
+  camera.OrbitByPixels(38.0F, -21.0F);
+  auto const orbited = camera.GetDiagnostics();
+  EXPECT_EQ(orbited.target_m, focused.target_m);
+  EXPECT_EQ(orbited.zoom, focused.zoom);
+  EXPECT_NEAR(orbited.yaw_degrees, focused.yaw_degrees - 7.6F, 1.0e-4F);
+  EXPECT_NEAR(orbited.pitch_degrees, focused.pitch_degrees + 4.2F, k_tolerance);
+  for (auto const projection :
+       {Camera::Projection::Orthographic, Camera::Projection::Perspective}) {
+    camera.SetProjection(projection);
+    auto const switched = camera.GetDiagnostics();
+    EXPECT_EQ(switched.target_m, orbited.target_m);
+    EXPECT_EQ(switched.zoom, orbited.zoom);
+    EXPECT_EQ(switched.yaw_degrees, orbited.yaw_degrees);
+    EXPECT_EQ(switched.pitch_degrees, orbited.pitch_degrees);
+  }
+  camera.SetProjection(GetParam());
+  camera.Pan(12.0F, -5.0F);
+  camera.ZoomBy(2.0F);
+  camera.SetViewportSize(320U, 720U);
+  camera.Reset();
+  Camera expected{};
+  expected.SetViewportSize(320U, 720U);
+  expected.SetProjection(GetParam());
+  expected.FrameWorld({2.0, 3.0, 1.0});
+  ExpectMatrixNear(camera.BuildWorldToClipMatrix(),
+                   expected.BuildWorldToClipMatrix());
+  camera.FrameBounds({1.59, -2.41, 0.69}, {1.61, -2.39, 0.71});
+  camera.SetView(Camera::ViewPlane::XY);
+  expected.SetView(Camera::ViewPlane::XY);
+  ExpectMatrixNear(camera.BuildWorldToClipMatrix(),
+                   expected.BuildWorldToClipMatrix());
 }
 
 // At either exact pole, outward pitch clamps and inward drag moves by the
