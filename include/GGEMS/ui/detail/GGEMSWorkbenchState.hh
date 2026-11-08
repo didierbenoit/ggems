@@ -31,10 +31,12 @@
 
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 #include "GGEMSSceneCamera.hh"
 #include "GGEMSCartesianGrid.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 
 namespace ggems::ui::detail {
 
@@ -107,6 +109,11 @@ struct GGEMSWorkbenchState {
 
   /*! \brief Selected physical VolumeID, cleared when the snapshot changes. */
   std::optional<std::uint32_t> selected_volume_id;
+
+  /*!
+   * \brief Snapshot-local display-mode overrides, indexed by physical VolumeID.
+   */
+  std::vector<render::GGEMSGeometryAppearance> geometry_appearance;
 
   /*! \brief Whether to draw the reference axes. */
   bool show_axes{true};

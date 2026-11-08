@@ -549,7 +549,7 @@ auto BuildSceneNode(
     switch (selection) {
     case SceneSelection::World:
       ImGui::TextUnformatted(geometry_scene != nullptr
-                               ? "World volume: loaded (wireframe)"
+                               ? "World volume: loaded"
                                : "World volume: not loaded yet");
       break;
     case SceneSelection::Sources:
@@ -654,7 +654,7 @@ auto BuildStatusPanel(bool &show_window,
   ImGui::Text("Particle traces: %s",
               particle_traces_visible ? "visible" : "hidden");
   ImGui::TextUnformatted(geometry_scene != nullptr
-                           ? "GGEMSWorld: loaded (wireframe)"
+                           ? "GGEMSWorld: loaded"
                            : "GGEMSWorld: not loaded yet");
   ImGui::TextUnformatted("Output console: connected");
 

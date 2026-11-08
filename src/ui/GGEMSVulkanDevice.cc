@@ -503,7 +503,9 @@ auto GGEMSVulkanDevice::SupportsRequiredFeatures(
   vk::PhysicalDeviceVulkan13Features const &vulkan_13_features =
     features.get<vk::PhysicalDeviceVulkan13Features>();
 
-  return vulkan_13_features.dynamicRendering == vk::True &&
+  return features.get<vk::PhysicalDeviceFeatures2>()
+             .features.fillModeNonSolid == vk::True &&
+         vulkan_13_features.dynamicRendering == vk::True &&
          vulkan_13_features.synchronization2 == vk::True &&
          vulkan_11_features.shaderDrawParameters == vk::True;
 }
@@ -585,8 +587,9 @@ auto GGEMSVulkanDevice::BuildPhysicalDeviceCandidate(
   }
 
   if (supports_vulkan_1_3 && !candidate.required_features_available) {
-    AppendRejectionReason(candidate.rejection_reason,
-                          "required Vulkan 1.1/1.3 features are unavailable");
+    AppendRejectionReason(
+      candidate.rejection_reason,
+      "required Vulkan features (including fillModeNonSolid) are unavailable");
   }
 
   if (candidate.required_extensions_available &&
@@ -764,7 +767,7 @@ auto GGEMSVulkanDevice::CreateLogicalDevice() -> void {
     });
   }
 
-  vk::PhysicalDeviceFeatures device_features{};
+  vk::PhysicalDeviceFeatures device_features{.fillModeNonSolid = vk::True};
 
   vk::PhysicalDeviceVulkan13Features vulkan_13_features{
     .synchronization2 = vk::True,

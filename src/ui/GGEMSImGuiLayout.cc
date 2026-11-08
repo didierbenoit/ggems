@@ -217,10 +217,10 @@ auto BuildDefaultLayout(ImVec2 const &dockspace_size) -> void {
 
   // ImGui seeds each dock-tab identity with its window identity.
   ImGui::DockBuilderGetNode(dock_left_id)->SelectedTabId =
-    ImHashStr("#TAB", 0U, ImHashStr(k_camera_window_name));
+    ImHashStr("#TAB", 0U, ImHashStr(k_status_window_name));
 
   ImGui::DockBuilderGetNode(dock_right_id)->SelectedTabId =
-    ImHashStr("#TAB", 0U, ImHashStr(k_volumes_window_name));
+    ImHashStr("#TAB", 0U, ImHashStr(k_source_window_name));
 
   ImGui::DockBuilderFinish(dockspace_id);
 }

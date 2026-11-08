@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines owned wireframe presentation data derived from a real World.
+ * \brief Defines owned analytic presentation data derived from a real World.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -42,24 +42,74 @@ class GGEMSWorld;
 
 namespace ggems::render {
 
-/*! \brief Stores one local wireframe position in meters. */
-struct GGEMSGeometryVertex {
-  /*! \brief Local X coordinate in meters. */
-  float x;
+/*! \brief Identifies the procedural family in the host and Slang ABI. */
+enum class GGEMSGeometryKind : std::uint32_t {
+  /*! \brief Centered rectangular solid. */
+  Box = 0U,
 
-  /*! \brief Local Y coordinate in meters. */
-  float y;
+  /*! \brief Complete sphere. */
+  Sphere = 1U,
 
-  /*! \brief Local Z coordinate in meters. */
-  float z;
+  /*! \brief Complete tube, optionally hollow. */
+  Tubs = 2U,
+
+  /*! \brief Complete conical frustum, optionally hollow or pointed. */
+  Cons = 3U,
+
+  /*! \brief Polygonal solid described by an ordered apothem profile. */
+  Polyhedra = 4U,
+
+  /*! \brief Complete ellipsoid. */
+  Ellipsoid = 5U,
+
+  /*! \brief Trapezoid with rectangular end faces. */
+  Trd = 6U,
+
+  /*! \brief General planar trapezoid. */
+  Trap = 7U,
 };
 
-/*! \brief Selects a shared line-list range in the scene vertex array. */
-struct GGEMSGeometryMesh {
-  /*! \brief Index of the first line endpoint. */
-  std::uint32_t first_vertex;
+/*!
+ * \brief Packs one immutable analytic shape in the 64-byte Slang ABI.
+ *
+ * Dimensions are meters and angles are radians. Box, Sphere, and Ellipsoid
+ * use parameters[0].xyz for half extents or semiaxes. Tubs and Cons use
+ * parameters[0] for outer -Z, outer +Z, inner -Z, inner +Z radii and
+ * parameters[1].x for half length. Polyhedra uses parameters[0].x for the
+ * first-vertex azimuth. Trd and Trap use parameters[0].xyz and
+ * parameters[1].xyz for each end's half height and two half widths,
+ * parameters[0].w for half length, and parameters[2] for the two skews,
+ * inclination theta, and inclination phi. Unused components are zero.
+ */
+struct GGEMSGeometryShape {
+  /*! \brief Family, azimuth side count, first profile, and profile count. */
+  std::array<std::uint32_t, 4> header;
 
-  /*! \brief Number of line endpoints, always even. */
+  /*! \brief Family-specific scalar parameters; contains no visual vertices. */
+  std::array<std::array<float, 4>, 3> parameters;
+};
+
+/*! \brief Stores one authored Polyhedra plane in the 16-byte Slang ABI. */
+struct GGEMSGeometryProfile {
+  /*! \brief Local Z coordinate in meters. */
+  float z_m;
+
+  /*! \brief Inner apothem in meters; zero closes the bore. */
+  float inner_apothem_m;
+
+  /*! \brief Outer apothem in meters. */
+  float outer_apothem_m;
+
+  /*! \brief Cumulative lateral triangles per sector before this plane. */
+  std::uint32_t first_triangle;
+};
+
+/*! \brief Owns a shared descriptor and its procedural triangle draw count. */
+struct GGEMSGeometryMesh {
+  /*! \brief Immutable parameters uploaded independently of the draw count. */
+  GGEMSGeometryShape shape;
+
+  /*! \brief Number of generated triangle vertices, always divisible by three.*/
   std::uint32_t vertex_count;
 };
 
@@ -82,7 +132,7 @@ struct GGEMSGeometryOccurrence {
   /*! \brief Physical parent VolumeID; zero selects World. */
   std::uint32_t parent_volume_id;
 
-  /*! \brief Index of the shared line mesh. */
+  /*! \brief Index of the shared analytic descriptor and draw count. */
   std::uint32_t mesh_index;
 
   /*! \brief Row-major local-to-World matrix, with translations in meters. */
@@ -107,22 +157,27 @@ struct GGEMSGeometryOccurrence {
   /*! \brief Actual Material density in the canonical GGEMS representation. */
   units::Density material_density{};
 
-  /*! \brief Minimum World-meter coordinates of this occurrence's wire mesh. */
+  /*!
+   * \brief Conservative analytic minimum in World meters, excluding
+   * children.
+   */
   std::array<double, 3> minimum_m{};
 
-  /*! \brief Maximum World-meter coordinates of this occurrence's wire mesh. */
+  /*!
+   * \brief Conservative analytic maximum in World meters, excluding children.
+   */
   std::array<double, 3> maximum_m{};
 
   /*! \brief Direct physical child VolumeIDs in snapshot order. */
   std::vector<std::uint32_t> children{};
 };
 
-/*! \brief Owns display-only meshes and occurrences, including World first. */
+/*! \brief Owns analytic display parameters and occurrences, including World. */
 struct GGEMSGeometryScene {
-  /*! \brief Packed shared local line endpoints in meters. */
-  std::vector<GGEMSGeometryVertex> vertices;
+  /*! \brief Shared authored polygon profiles; no CPU tessellation is stored. */
+  std::vector<GGEMSGeometryProfile> profiles;
 
-  /*! \brief Shared line-list ranges for exact shape parameters. */
+  /*! \brief Shared descriptors for exact shape parameters. */
   std::vector<GGEMSGeometryMesh> meshes;
 
   /*! \brief World followed by every physical occurrence in identity order. */
@@ -133,13 +188,14 @@ struct GGEMSGeometryScene {
 };
 
 /*!
- * \brief Builds independent wire meshes from a validated World.
+ * \brief Packs independent analytic display descriptors from a validated World.
  *
- * Curved surfaces use fixed visual tessellation; physical geometry is
- * unchanged. Equal shape parameters share line topology, independently of pose
- * or Material. Inspection metadata is owned independently of World. Bounds
- * enclose each displayed wire mesh only, including its composed placement;
- * curved bounds follow the existing visual tessellation, not a physics query.
+ * Slang generates all visual triangles and normals from these parameters;
+ * wireframe and solid modes share that topology. Equal shape parameters share
+ * descriptors independently of pose or Material. Inspection metadata is owned
+ * independently of World. Bounds use conservative analytic envelopes under
+ * the render transform, without tessellation or a physics query. World uses
+ * a Box descriptor and remains restricted to None or Wireframe by appearance.
  * \param[in] world Validated Run-owned World, borrowed only during this call.
  * \return Owned presentation data with unchanged physical IDs and parent links.
  */

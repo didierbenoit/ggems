@@ -190,12 +190,12 @@ private:
   ggems::core::GGEMSOutputState output_;
 };
 
-TEST_F(GGEMSImGuiLayout, FreshLayoutPlacesExplorerRightAndCameraLeft) {
+TEST_F(GGEMSImGuiLayout, FreshLayoutSelectsStatusAndSource) {
   EXPECT_FALSE(detail::HasSavedLayout());
   Settle();
   ExpectSharedDock();
-  ExpectSelectedTab(detail::k_camera_window_name);
-  ExpectSelectedTab(detail::k_volumes_window_name);
+  ExpectSelectedTab(detail::k_status_window_name);
+  ExpectSelectedTab(detail::k_source_window_name);
   EXPECT_EQ(DockID(detail::k_source_window_name),
             DockID(detail::k_volumes_window_name));
   EXPECT_GT(Window(detail::k_volumes_window_name)->Pos.x,
@@ -211,15 +211,15 @@ TEST_F(GGEMSImGuiLayout, FreshLayoutPlacesExplorerRightAndCameraLeft) {
 
   Restart(Save());
   Settle();
-  ExpectSelectedTab(detail::k_camera_window_name);
-  ExpectSelectedTab(detail::k_volumes_window_name);
+  ExpectSelectedTab(detail::k_status_window_name);
+  ExpectSelectedTab(detail::k_source_window_name);
   EXPECT_FALSE(workbench_.show_scene_panel);
   EXPECT_FALSE(workbench_.show_inspector_panel);
 }
 
 TEST_F(GGEMSImGuiLayout, ManualTabSelectionSurvivesFramesAndRestart) {
   Settle();
-  ExpectSelectedTab(detail::k_camera_window_name);
+  ExpectSelectedTab(detail::k_status_window_name);
   auto const other_docks = OtherDocks();
 
   for (char const *name : {
@@ -257,7 +257,7 @@ TEST_F(GGEMSImGuiLayout, EmptyRuntimeDockspaceIsNotASavedPanelLayout) {
   EXPECT_FALSE(detail::HasSavedLayout());
 
   Settle();
-  ExpectSelectedTab(detail::k_camera_window_name);
+  ExpectSelectedTab(detail::k_status_window_name);
 }
 
 TEST_F(GGEMSImGuiLayout, LegacySettingsAddOnlyMissingCameraToInspectorDock) {
@@ -451,14 +451,14 @@ TEST_F(GGEMSImGuiLayout, ViewResetLayoutRebuildsTabsAndPanelVisibility) {
   EXPECT_TRUE(workbench_.show_camera_panel);
   EXPECT_TRUE(workbench_.show_source_panel);
   EXPECT_TRUE(workbench_.show_volumes_panel);
-  ExpectSelectedTab(detail::k_camera_window_name);
-  ExpectSelectedTab(detail::k_volumes_window_name);
+  ExpectSelectedTab(detail::k_status_window_name);
+  ExpectSelectedTab(detail::k_source_window_name);
   Restart(Save());
   Settle();
   EXPECT_FALSE(workbench_.show_scene_panel);
   EXPECT_FALSE(workbench_.show_inspector_panel);
-  ExpectSelectedTab(detail::k_camera_window_name);
-  ExpectSelectedTab(detail::k_volumes_window_name);
+  ExpectSelectedTab(detail::k_status_window_name);
+  ExpectSelectedTab(detail::k_source_window_name);
 }
 
 } // namespace

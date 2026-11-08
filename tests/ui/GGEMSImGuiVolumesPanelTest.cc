@@ -41,6 +41,7 @@
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
@@ -88,7 +89,8 @@ protected:
     auto &io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
-    io.ConfigFlags = ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags =
+      ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
     io.DisplaySize = {1200.0F, 800.0F};
     io.DeltaTime = 1.0F / 60.0F;
     unsigned char *pixels{};
@@ -110,6 +112,7 @@ protected:
     workbench_.show_camera_panel = false;
     workbench_.show_source_panel = false;
     scene_ = MakeNestedScene();
+    workbench_.geometry_appearance.resize(scene_.occurrences.size());
     workbench_.camera.SetViewportSize(600U, 650U);
     workbench_.camera.FrameWorld(scene_.world_half_extent_m);
     Settle();
@@ -171,13 +174,52 @@ protected:
   [[nodiscard]] static auto Row(int row, int depth, bool arrow = false)
     -> ImVec2 {
     auto const *tree = Child("##volume_tree");
-    return {
-      tree->DC.CursorStartPos.x +
-        (static_cast<float>(depth) * ImGui::GetStyle().IndentSpacing) +
-        ((arrow ? 0.5F : 2.0F) * ImGui::GetFontSize()),
-      tree->DC.CursorStartPos.y +
-        (static_cast<float>(row) * ImGui::GetTextLineHeightWithSpacing()) +
-        (0.5F * ImGui::GetFontSize())};
+    return {tree->DC.CursorStartPos.x +
+              (static_cast<float>(depth) * ImGui::GetStyle().IndentSpacing) +
+              (arrow ? 0.5F * ImGui::GetFontSize()
+                     : (2.0F * (ImGui::GetFontSize() +
+                                (2.0F * ImGui::GetStyle().FramePadding.x))) +
+                         (2.0F * ImGui::GetStyle().ItemSpacing.x) +
+                         (0.5F * ImGui::GetFontSize())),
+            tree->DC.CursorStartPos.y +
+              (static_cast<float>(row) * ImGui::GetFrameHeightWithSpacing()) +
+              (0.5F * ImGui::GetFrameHeight())};
+  }
+
+  [[nodiscard]] static auto ModeControl(int row, int depth) -> ImVec2 {
+    auto point = Row(row, depth, true);
+    float const cell =
+      ImGui::GetFontSize() + (2.0F * ImGui::GetStyle().FramePadding.x);
+    point.x += (1.5F * cell) + ImGui::GetStyle().ItemSpacing.x -
+               (0.5F * ImGui::GetFontSize());
+    return point;
+  }
+
+  auto PressKey(ImGuiKey key) -> void {
+    ImGui::GetIO().AddKeyEvent(key, true);
+    Frame();
+    ImGui::GetIO().AddKeyEvent(key, false);
+    Frame();
+  }
+
+  auto SelectPopup(char const *label) -> void {
+    auto &context = *ImGui::GetCurrentContext();
+    ASSERT_FALSE(context.OpenPopupStack.empty());
+    auto *popup = context.OpenPopupStack.back().Window;
+    ASSERT_NE(popup, nullptr);
+    auto const target = popup->GetID(label);
+    PressKey(ImGuiKey_Home);
+    for (int step = 0; step < 16 && context.NavId != target; ++step) {
+      PressKey(ImGuiKey_DownArrow);
+    }
+    ASSERT_EQ(context.NavId, target);
+    PressKey(ImGuiKey_Enter);
+    Settle();
+  }
+
+  auto ChangeMode(int row, int depth, char const *label) -> void {
+    Click(ModeControl(row, depth));
+    SelectPopup(label);
   }
 
   auto OpenMother() -> void {
@@ -248,6 +290,7 @@ TEST_F(GGEMSImGuiVolumes, EmptyAndWorldOnlyScenesRemainInspectable) {
   EXPECT_NE(text_.find("No World loaded yet"), std::string::npos);
   EXPECT_FALSE(workbench_.selected_volume_id);
   scene_ = ggems::render::BuildGeometryScene(MakeWorld());
+  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
   loaded_ = true;
   Settle();
   Click(Row(0, 0));
@@ -269,6 +312,7 @@ TEST_F(GGEMSImGuiVolumes,
   }
   world.Validate();
   scene_ = ggems::render::BuildGeometryScene(world);
+  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
   workbench_.selected_volume_id.reset();
   Settle();
   auto *tree = Child("##volume_tree");
@@ -299,6 +343,123 @@ TEST_F(GGEMSImGuiVolumes,
   EXPECT_EQ(after.row_1, before.row_1);
   EXPECT_EQ(after.row_2, before.row_2);
   EXPECT_EQ(after.row_3, before.row_3);
+}
+
+TEST_F(GGEMSImGuiVolumes,
+       RowModeControlsNeverSelectExpandOrFocusAndKeepChildrenIndependent) {
+  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+  OpenMother();
+  Click(Row(2, 2));
+  ASSERT_EQ(workbench_.selected_volume_id, 2U);
+  for (auto const projection : {
+         detail::GGEMSSceneCamera::Projection::Orthographic,
+         detail::GGEMSSceneCamera::Projection::Perspective,
+       }) {
+    workbench_.camera.SetProjection(projection);
+    auto const before = workbench_.camera.BuildWorldToClipMatrix();
+    float const tree_height = Child("##volume_tree")->ContentSize.y;
+    ChangeMode(1, 1, "None");
+    EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::None);
+    EXPECT_FALSE(workbench_.geometry_appearance[2].mode_override);
+    EXPECT_FALSE(workbench_.geometry_appearance[3].mode_override);
+    EXPECT_EQ(workbench_.selected_volume_id, 2U);
+    EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, tree_height);
+    auto const after = workbench_.camera.BuildWorldToClipMatrix();
+    EXPECT_EQ(after.row_0, before.row_0);
+    EXPECT_EQ(after.row_1, before.row_1);
+    EXPECT_EQ(after.row_2, before.row_2);
+    EXPECT_EQ(after.row_3, before.row_3);
+    ChangeMode(1, 1, "Solid");
+    EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::Solid);
+    ChangeMode(1, 1, "Wireframe");
+    EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::Wireframe);
+  }
+  ChangeMode(2, 2, "None");
+  PauseClicks();
+  Click(Row(3, 2));
+  Click(Row(2, 2));
+  EXPECT_EQ(workbench_.selected_volume_id, 2U);
+  auto expected = workbench_.camera;
+  expected.FrameBounds(scene_.occurrences[2].minimum_m,
+                       scene_.occurrences[2].maximum_m);
+  Click(Row(2, 2));
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().target_m,
+            expected.GetDiagnostics().target_m);
+  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::None);
+  EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::Wireframe);
+}
+
+TEST_F(GGEMSImGuiVolumes, WorldModePopupHasNoSolidAndWorksAtScaledMetrics) {
+  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+  ImGui::GetStyle().ScaleAllSizes(1.5F);
+  ImGui::GetStyle().FontScaleMain = 1.5F;
+  Settle();
+  auto const before = workbench_.camera.BuildWorldToClipMatrix();
+  Click(ModeControl(0, 0));
+  Frame(true);
+  EXPECT_NE(text_.find("Wireframe"), std::string::npos);
+  EXPECT_EQ(text_.find("Solid"), std::string::npos);
+  EXPECT_EQ(text_.find("Automatic"), std::string::npos);
+  EXPECT_FALSE(workbench_.selected_volume_id);
+  SelectPopup("None");
+  EXPECT_EQ(workbench_.geometry_appearance[0].mode_override, Mode::None);
+  ChangeMode(0, 0, "Wireframe");
+  EXPECT_EQ(workbench_.geometry_appearance[0].mode_override, Mode::Wireframe);
+  auto const after = workbench_.camera.BuildWorldToClipMatrix();
+  EXPECT_EQ(after.row_0, before.row_0);
+  EXPECT_EQ(after.row_1, before.row_1);
+  EXPECT_EQ(after.row_2, before.row_2);
+  EXPECT_EQ(after.row_3, before.row_3);
+}
+
+TEST_F(GGEMSImGuiVolumes,
+       LeafModesPersistDuringNavigationSelectionAndFramingWithoutAppearance) {
+  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+  OpenMother();
+  Click(Row(2, 2));
+  ASSERT_EQ(workbench_.selected_volume_id, 2U);
+  Click(ModeControl(2, 2));
+  Frame(true);
+  EXPECT_NE(text_.find("None"), std::string::npos);
+  EXPECT_NE(text_.find("Wireframe"), std::string::npos);
+  EXPECT_NE(text_.find("Solid"), std::string::npos);
+  EXPECT_EQ(text_.find("Automatic"), std::string::npos);
+  EXPECT_EQ(text_.find("Appearance"), std::string::npos);
+  EXPECT_EQ(text_.find("Color"), std::string::npos);
+  EXPECT_NE(text_.find("Production Cuts: not available in this scene snapshot"),
+            std::string::npos);
+  SelectPopup("None");
+  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::None);
+  ChangeMode(2, 2, "Wireframe");
+  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::Wireframe);
+  ChangeMode(2, 2, "Solid");
+  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::Solid);
+  ChangeMode(1, 1, "None");
+  ChangeMode(3, 2, "None");
+
+  auto const *viewport =
+    ImGui::FindWindowByName(detail::k_viewport_window_name);
+  ASSERT_NE(viewport, nullptr);
+  auto &io = ImGui::GetIO();
+  io.AddMousePosEvent(viewport->Pos.x + (0.5F * viewport->Size.x),
+                      viewport->Pos.y + (0.5F * viewport->Size.y));
+  Settle();
+  auto const zoom = workbench_.camera.GetDiagnostics().zoom;
+  io.AddMouseWheelEvent(0.0F, 1.0F);
+  Settle();
+  EXPECT_NE(workbench_.camera.GetDiagnostics().zoom, zoom);
+  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::Solid);
+
+  PauseClicks();
+  Click(Row(3, 2));
+  EXPECT_EQ(workbench_.selected_volume_id, 3U);
+  PauseClicks();
+  Click(Row(2, 2));
+  Click(Row(2, 2));
+  EXPECT_EQ(workbench_.selected_volume_id, 2U);
+  EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::None);
+  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::Solid);
+  EXPECT_EQ(workbench_.geometry_appearance[3].mode_override, Mode::None);
 }
 
 } // namespace

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Declares the Vulkan wireframe geometry renderer.
+ * \brief Declares the Vulkan procedural triangle geometry renderer.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -33,15 +33,18 @@
 #include <cstdint>
 #include <optional>
 #include <memory>
+#include <span>
 
 #include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 
 namespace ggems::ui::detail {
 
 /*!
- * \brief Owns the geometry pipeline, immutable scene, and vertex buffer.
+ * \brief Owns the shared triangle pipelines, immutable scene, and analytic
+ * buffers.
  *
  * Physical and logical devices are borrowed and must outlive this component.
  * The application completes GPU use before replacing the scene, shutting down,
@@ -69,11 +72,13 @@ public:
   auto operator=(GGEMSVulkanGeometry &&) -> GGEMSVulkanGeometry & = delete;
 
   /*!
-   * \brief Creates the line pipeline and resolves neutral and accent colors.
+   * \brief Creates shared wire/solid triangle pipelines and resolves the accent
+   * color.
    *
    * Initialize an inactive component; call Shutdown before reinitializing it.
    *
-   * \param[in] physical_device Device providing vertex-memory capabilities.
+   * \param[in] physical_device Device providing analytic-buffer memory
+   * capabilities.
    * \param[in] device Logical device that must outlive the owned resources.
    * \param[in] color_format Existing offscreen color attachment format.
    * \param[in] depth_format Existing scene depth attachment format.
@@ -88,14 +93,16 @@ public:
   auto Shutdown() noexcept -> void;
 
   /*!
-   * \brief Retains an immutable scene and uploads its shared line vertices.
+   * \brief Retains an immutable scene and uploads only shared analytic shape
+   * and profile descriptors.
    *
    * Initialize before supplying a nonnull scene. The caller must finish GPU use
    * of the previous buffer first. Occurrences, physical identities, parent
    * links, and local-to-World transforms remain in the shared scene unchanged.
    *
    * \param[in] scene Prepared scene, or null to clear the displayed geometry.
-   * \throws core::GGEMSInternal If no host-visible coherent memory type exists.
+   * \throws core::GGEMSInternal If descriptor ranges exceed the device limit or
+   * no host-visible coherent memory type exists.
    * \throws vk::SystemError If buffer allocation, binding, or mapping fails.
    */
   auto SetScene(std::shared_ptr<ggems::render::GGEMSGeometryScene const> scene)
@@ -111,7 +118,8 @@ public:
     -> ggems::render::GGEMSGeometryScene const *;
 
   /*!
-   * \brief Records each physical occurrence with its shared wireframe mesh.
+   * \brief Records visible occurrences using the same procedural triangles in
+   * both modes.
    *
    * No commands are recorded when no scene is retained. The caller has already
    * set the dynamic viewport and scissor.
@@ -120,24 +128,52 @@ public:
    * \param[in] world_to_clip Rows mapping World meters to clip coordinates.
    * \param[in] selected_volume_id Occurrence to accent, or none; depth is
    * unchanged.
+   * \param[in] appearance Per-VolumeID mode overrides covering all occurrences,
+   * or explicitly empty for hierarchical defaults.
    */
-  auto
-  Record(vk::raii::CommandBuffer const &command_buffer,
-         std::array<std::array<float, 4U>, 4U> const &world_to_clip,
-         std::optional<std::uint32_t> selected_volume_id = std::nullopt) const
+  auto Record(vk::raii::CommandBuffer const &command_buffer,
+              std::array<std::array<float, 4U>, 4U> const &world_to_clip,
+              std::optional<std::uint32_t> selected_volume_id,
+              std::span<render::GGEMSGeometryAppearance const> appearance) const
     -> void;
 
 private:
-  /*! \brief Per-occurrence clip transform and linear wireframe color. */
+  /*!
+   * \brief 128-byte vertex push contract: transform, color, rigid rotation,
+   * and draw indices.
+   */
   struct GeometryPushConstants {
     /*! \brief Rows mapping local meters to clip coordinates. */
     std::array<std::array<float, 4U>, 4U> local_to_clip{};
 
-    /*! \brief Linear RGBA for the current occurrence's edges. */
+    /*! \brief Linear RGBA for the current occurrence. */
     std::array<float, 4U> color{};
+
+    /*!
+     * \brief First rigid rotation row, followed by the descriptor index at
+     * byte 92.
+     */
+    std::array<float, 3U> normal_row_0{};
+
+    /*! \brief Index of the shared analytic shape descriptor. */
+    std::uint32_t shape_index{};
+
+    /*! \brief Second rigid rotation row at byte 96. */
+    std::array<float, 3U> normal_row_1{};
+
+    /*! \brief One for solid lighting, zero for unlit triangle edges. */
+    std::uint32_t shaded{};
+
+    /*! \brief Third rigid rotation row at byte 112. */
+    std::array<float, 3U> normal_row_2{};
+
+    /*! \brief Reserved scalar completing the 128-byte push range. */
+    std::uint32_t padding{};
   };
 
-  /*! \brief Borrowed physical device used to select coherent vertex memory. */
+  /*!
+   * \brief Borrowed physical device used to select coherent descriptor memory.
+   */
   vk::raii::PhysicalDevice const *physical_device_{nullptr};
 
   /*! \brief Borrowed logical device used to allocate geometry resources. */
@@ -146,25 +182,38 @@ private:
   /*! \brief Immutable meshes, occurrences, and physical hierarchy. */
   std::shared_ptr<ggems::render::GGEMSGeometryScene const> scene_;
 
-  /*! \brief Linear neutral palette color prepared at initialization. */
-  std::array<float, 4U> color_{};
-
   /*!
    * \brief Linear theme accent used only for the selected physical occurrence.
    */
   std::array<float, 4U> selected_color_{};
 
-  /*! \brief Layout of the 80-byte transform and color vertex push constants. */
+  /*! \brief Read-only analytic shape and Polyhedra profile storage bindings. */
+  vk::raii::DescriptorSetLayout descriptor_layout_{nullptr};
+
+  /*! \brief Shared descriptor set and 128-byte vertex push layout. */
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
 
-  /*! \brief Depth-tested line-list pipeline for physical geometry edges. */
-  vk::raii::Pipeline pipeline_{nullptr};
+  /*! \brief Depth-tested TriangleList rasterized as edges. */
+  vk::raii::Pipeline wire_pipeline_{nullptr};
+
+  /*! \brief Identical TriangleList rasterized as opaque surfaces. */
+  vk::raii::Pipeline solid_pipeline_{nullptr};
+
+  /*! \brief Pool for the current scene's two analytic storage bindings. */
+  vk::raii::DescriptorPool descriptor_pool_{nullptr};
 
   /*! \brief Host-visible coherent allocation that outlives its bound buffer. */
-  vk::raii::DeviceMemory vertex_memory_{nullptr};
+  vk::raii::DeviceMemory descriptor_memory_{nullptr};
 
-  /*! \brief One vertex buffer shared by every occurrence in the scene. */
-  vk::raii::Buffer vertex_buffer_{nullptr};
+  /*!
+   * \brief Shared analytic parameters only; contains no positions or normals.
+   */
+  vk::raii::Buffer descriptor_buffer_{nullptr};
+
+  /*!
+   * \brief Current immutable scene descriptors, released before their buffer.
+   */
+  vk::raii::DescriptorSet descriptor_set_{nullptr};
 };
 
 } // namespace ggems::ui::detail

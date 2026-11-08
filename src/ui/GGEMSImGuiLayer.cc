@@ -159,9 +159,10 @@ auto GGEMSImGuiLayer::BuildFrame(
   }
 
   if (workbench.show_volumes_panel) {
-    auto const focus = detail::BuildVolumesPanel(workbench.show_volumes_panel,
-                                                 workbench.selected_volume_id,
-                                                 inputs.geometry_scene);
+    auto const focus = detail::BuildVolumesPanel(
+      workbench.show_volumes_panel, workbench.selected_volume_id,
+      inputs.geometry_scene, workbench.geometry_appearance);
+
     if (focus) {
       auto const &occurrence = inputs.geometry_scene->occurrences[*focus];
       workbench.camera.FrameBounds(occurrence.minimum_m, occurrence.maximum_m);

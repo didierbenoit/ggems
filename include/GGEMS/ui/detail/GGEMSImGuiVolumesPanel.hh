@@ -31,8 +31,10 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 
 namespace ggems::ui::detail {
 
@@ -44,10 +46,14 @@ namespace ggems::ui::detail {
  * \param[in,out] show_window Panel visibility, updated on close.
  * \param[in,out] selected_volume_id Snapshot-local selection, or no selection.
  * \param[in] scene Borrowed immutable scene, or null before World submission.
- * \return VolumeID to frame after a double click, otherwise no request.
+ * \param[in,out] appearance One presentation record per scene occurrence.
+ * \return VolumeID to frame after a label double click, otherwise no request.
  */
-[[nodiscard]] auto BuildVolumesPanel(
-  bool &show_window, std::optional<std::uint32_t> &selected_volume_id,
-  render::GGEMSGeometryScene const *scene) -> std::optional<std::uint32_t>;
+[[nodiscard]] auto
+BuildVolumesPanel(bool &show_window,
+                  std::optional<std::uint32_t> &selected_volume_id,
+                  render::GGEMSGeometryScene const *scene,
+                  std::span<render::GGEMSGeometryAppearance> appearance)
+  -> std::optional<std::uint32_t>;
 
 } // namespace ggems::ui::detail

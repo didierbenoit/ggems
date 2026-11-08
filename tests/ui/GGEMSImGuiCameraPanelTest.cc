@@ -1004,7 +1004,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
        CursorReadoutUsesPlaneAndNeverKeepsOldPoint) {
   using Camera = ggems::ui::detail::GGEMSSceneCamera;
   ggems::render::GGEMSGeometryScene const scene{
-    .vertices = {},
+    .profiles = {},
     .meshes = {},
     .occurrences = {},
     .world_half_extent_m = {0.6, 0.4, 0.3},
@@ -1078,7 +1078,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
 TEST_F(GGEMSImGuiCameraDiagnostics,
        PolarCursorReadoutUsesPhysicalPlaneAndAllAzimuthQuadrants) {
   ggems::render::GGEMSGeometryScene const scene{
-    .vertices = {},
+    .profiles = {},
     .meshes = {},
     .occurrences = {},
     .world_half_extent_m = {0.6, 0.4, 0.3},
@@ -1158,7 +1158,7 @@ TEST_F(GGEMSImGuiCameraDiagnostics,
 TEST_F(GGEMSImGuiCameraDiagnostics,
        GridStepsBelowUnitResolutionAreNeverLabeledZero) {
   ggems::render::GGEMSGeometryScene const scene{
-    .vertices = {},
+    .profiles = {},
     .meshes = {},
     .occurrences = {},
     .world_half_extent_m = {1.0e-9, 1.0e-9, 1.0e-9},

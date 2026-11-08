@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Builds the physical volume tree and its immutable metadata readout.
+ * \brief Builds physical volume rows, display controls, and metadata.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -33,12 +33,16 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <array>
+#include <span>
+#include <format>
 
 #include <imgui.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiVolumesPanel.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
@@ -48,42 +52,95 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief Display modes shared with the renderer. */
+using Mode = ggems::render::GGEMSGeometryDisplayMode;
+
+/*! \brief Readable labels in display-mode order. */
+constexpr std::array<char const *, 3U> k_mode_names{
+  "None",
+  "Wireframe",
+  "Solid",
+};
+
+/*! \brief Compact row labels in the same display-mode order. */
+constexpr std::array<char const *, 3U> k_mode_letters{"N", "W", "S"};
+
 /*!
- * \brief Visits visible branches using snapshot-built physical child links.
+ * \brief Edits one occurrence's display override independently of its row.
+ *
+ * \param[in] occurrence Physical identity and default-mode hierarchy.
+ * \param[in,out] appearance Presentation overrides for this occurrence only.
+ */
+auto BuildDisplayMode(ggems::render::GGEMSGeometryOccurrence const &occurrence,
+                      ggems::render::GGEMSGeometryAppearance &appearance)
+  -> void {
+  auto const mode =
+    ggems::render::ResolveGeometryDisplayMode(occurrence, appearance);
+
+  auto const index = static_cast<std::size_t>(mode);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() +
+                          (2.0F * ImGui::GetStyle().FramePadding.x));
+
+  bool const opened = ImGui::BeginCombo("##display_mode", k_mode_letters[index],
+                                        ImGuiComboFlags_NoArrowButton);
+
+  ImGui::SetItemTooltip("Display: %s. Changes only this occurrence; "
+                        "daughters stay independent.",
+                        k_mode_names[index]);
+  if (opened) {
+    std::size_t const count = occurrence.volume_id == 0U ? 2U : 3U;
+    for (std::size_t choice = 0U; choice < count; ++choice) {
+      auto const choice_mode = static_cast<Mode>(choice);
+      if (ImGui::Selectable(k_mode_names[choice], mode == choice_mode)) {
+        appearance.mode_override = choice_mode;
+      }
+    }
+
+    ImGui::EndCombo();
+  }
+}
+
+/*!
+ * \brief Visits visible branches with separate arrow, mode, and label inputs.
  *
  * \param[in] scene Immutable physical occurrences in VolumeID order.
  * \param[in] volume_id Current physical row.
  * \param[in,out] selected_volume_id Shared physical selection.
+ * \param[in,out] appearance Per-occurrence presentation overrides.
  * \param[out] focus Double-click framing request, if any.
  */
-auto BuildVolumeNode(ggems::render::GGEMSGeometryScene const &scene,
-                     std::uint32_t volume_id,
-                     std::optional<std::uint32_t> &selected_volume_id,
-                     std::optional<std::uint32_t> &focus) -> void {
+auto BuildVolumeNode(
+  ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
+  std::optional<std::uint32_t> &selected_volume_id,
+  std::span<ggems::render::GGEMSGeometryAppearance> appearance,
+  std::optional<std::uint32_t> &focus) -> void {
   auto const &occurrence = scene.occurrences[volume_id];
   ImGui::PushID(static_cast<int>(volume_id));
 
   ImGuiTreeNodeFlags flags =
-    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+    ImGuiTreeNodeFlags_SpanLabelWidth | ImGuiTreeNodeFlags_FramePadding;
 
   if (volume_id == 0U) {
     flags |= ImGuiTreeNodeFlags_DefaultOpen;
   }
 
   if (occurrence.children.empty()) {
-    flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    flags |= ImGuiTreeNodeFlags_Leaf;
   }
 
-  if (selected_volume_id == volume_id) {
-    flags |= ImGuiTreeNodeFlags_Selected;
-  }
+  bool const opened = ImGui::TreeNodeEx("##physical_branch", flags);
 
-  bool const opened =
-    volume_id == 0U
-      ? ImGui::TreeNodeEx("##physical_volume", flags, "%s",
-                          occurrence.shape_name.c_str())
-      : ImGui::TreeNodeEx("##physical_volume", flags, "%s #%u",
-                          occurrence.shape_name.c_str(), volume_id);
+  ImGui::SameLine();
+  BuildDisplayMode(occurrence, appearance[volume_id]);
+  ImGui::SameLine();
+
+  auto const label =
+    volume_id == 0U ? occurrence.shape_name
+                    : std::format("{} #{}", occurrence.shape_name, volume_id);
+
+  ImGui::Selectable(label.c_str(), selected_volume_id == volume_id,
+                    ImGuiSelectableFlags_AllowDoubleClick);
 
   if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
     selected_volume_id = volume_id;
@@ -93,8 +150,9 @@ auto BuildVolumeNode(ggems::render::GGEMSGeometryScene const &scene,
   }
 
   if (opened && !occurrence.children.empty()) {
+    ImGui::TreePush("##children");
     for (auto const child : occurrence.children) {
-      BuildVolumeNode(scene, child, selected_volume_id, focus);
+      BuildVolumeNode(scene, child, selected_volume_id, appearance, focus);
     }
     ImGui::TreePop();
   }
@@ -157,6 +215,7 @@ auto BuildVolumeMetadata(
     ggems::units::HumanReadable(occurrence.material_density, 3);
 
   ImGui::Text("Density: %s", density.c_str());
+  ImGui::TextWrapped("Production Cuts: not available in this scene snapshot");
   ImGui::PopTextWrapPos();
 }
 
@@ -168,9 +227,11 @@ namespace ggems::ui::detail {
 // =============================================================================
 auto BuildVolumesPanel(bool &show_window,
                        std::optional<std::uint32_t> &selected_volume_id,
-                       render::GGEMSGeometryScene const *scene)
+                       render::GGEMSGeometryScene const *scene,
+                       std::span<render::GGEMSGeometryAppearance> appearance)
   -> std::optional<std::uint32_t> {
   std::optional<std::uint32_t> focus;
+
   if (ImGui::Begin(k_volumes_window_name, &show_window)) {
     float const available = std::max(1.0F, ImGui::GetContentRegionAvail().y);
     float const minimum =
@@ -183,7 +244,7 @@ auto BuildVolumesPanel(bool &show_window,
     if (ImGui::BeginChild("##volume_tree", ImVec2{0.0F, 0.5F * available},
                           ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY)) {
       if (scene != nullptr && !scene->occurrences.empty()) {
-        BuildVolumeNode(*scene, 0U, selected_volume_id, focus);
+        BuildVolumeNode(*scene, 0U, selected_volume_id, appearance, focus);
       } else {
         ImGui::TextDisabled("No World loaded yet");
       }

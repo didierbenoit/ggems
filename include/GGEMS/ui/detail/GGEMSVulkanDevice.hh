@@ -282,11 +282,13 @@ private:
     vk::raii::PhysicalDevice const &physical_device) -> bool;
 
   /*!
-   * \brief Checks dynamic rendering, synchronization, and draw parameters.
+   * \brief Checks non-solid fill, dynamic rendering, synchronization, and draw
+   * parameters.
    *
    * \param[in] physical_device Physical device admitting Vulkan feature
-   *   queries.
-   * \return True when the required Vulkan 1.1 and 1.3 features are supported.
+   * queries.
+   * \return True when fillModeNonSolid and required Vulkan 1.1/1.3 features are
+   * supported.
    */
   [[nodiscard]] static auto
   SupportsRequiredFeatures(vk::raii::PhysicalDevice const &physical_device)

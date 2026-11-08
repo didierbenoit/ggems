@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Checks physical placement and analytical wireframe presentation.
+ * \brief Checks analytic display descriptors, counts, bounds, and physical
+ * identity.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -33,7 +34,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <numbers>
-#include <span>
+#include <type_traits>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -71,19 +72,9 @@ auto World() -> GGEMSWorld {
   return world;
 }
 
-auto MeshVertices(GGEMSGeometryScene const &scene, std::size_t occurrence)
-  -> std::span<GGEMSGeometryVertex const> {
-  auto const &mesh = scene.meshes[scene.occurrences[occurrence].mesh_index];
-  return std::span{scene.vertices}.subspan(mesh.first_vertex,
-                                           mesh.vertex_count);
-}
-
-auto HasPoint(std::span<GGEMSGeometryVertex const> vertices, double x, double y,
-              double z) -> bool {
-  return std::ranges::any_of(vertices, [=](auto const &point) -> bool {
-    return std::abs(point.x - x) < 1.0e-8 && std::abs(point.y - y) < 1.0e-8 &&
-           std::abs(point.z - z) < 1.0e-8;
-  });
+auto Mesh(GGEMSGeometryScene const &scene, std::size_t occurrence)
+  -> GGEMSGeometryMesh const & {
+  return scene.meshes[scene.occurrences[occurrence].mesh_index];
 }
 } // namespace
 
@@ -110,8 +101,11 @@ TEST(GGEMSGeometryScene, OwnsWorldAndSharedMeshesWithPhysicalHierarchy) {
   ASSERT_EQ(scene.occurrences.size(), 4U);
   EXPECT_EQ(scene.world_half_extent_m, (std::array{0.5, 0.5, 0.5}));
   EXPECT_EQ(scene.occurrences[0].volume_id, 0U);
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 0), -0.5, -0.5, -0.5));
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 0), 0.5, 0.5, 0.5));
+  EXPECT_EQ(Mesh(scene, 0).shape.parameters[0],
+            (std::array{0.5F, 0.5F, 0.5F, 0.0F}));
+  EXPECT_EQ(Mesh(scene, 0).vertex_count, 36U);
+  EXPECT_TRUE(scene.profiles.empty());
+  EXPECT_EQ(scene.meshes.size(), 3U);
   EXPECT_EQ(scene.occurrences[2].volume_id, 2U);
   EXPECT_EQ(scene.occurrences[3].volume_id, 3U);
   EXPECT_EQ(scene.occurrences[2].parent_volume_id, 1U);
@@ -124,7 +118,8 @@ TEST(GGEMSGeometryScene, OwnsWorldAndSharedMeshesWithPhysicalHierarchy) {
   EXPECT_FLOAT_EQ(transform[1], -1.0F);
   EXPECT_FLOAT_EQ(transform[4], 1.0F);
   EXPECT_FLOAT_EQ(scene.occurrences[3].local_to_world[7], -0.02F);
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 2), 0.005, 0.01, 0.015));
+  EXPECT_EQ(Mesh(scene, 2).shape.parameters[0],
+            (std::array{0.005F, 0.01F, 0.015F, 0.0F}));
 
   auto const &root = scene.occurrences[0];
   EXPECT_EQ(root.shape_name, "GGEMSWorld");
@@ -211,32 +206,67 @@ TEST(GGEMSGeometryScene, PreservesAllFamiliesBoresApexAndPolygonApothems) {
   ASSERT_NO_THROW(world.Validate());
   auto const scene = BuildGeometryScene(world);
   ASSERT_EQ(scene.occurrences.size(), 10U);
-  for (std::size_t occurrence = 1; occurrence < scene.occurrences.size();
-       ++occurrence) {
-    SCOPED_TRACE(occurrence);
-    auto const vertices = MeshVertices(scene, occurrence);
-    ASSERT_FALSE(vertices.empty());
-    ASSERT_EQ(vertices.size() % 2U, 0U);
-    for (auto const &vertex : vertices) {
-      EXPECT_TRUE(std::isfinite(vertex.x));
-      EXPECT_TRUE(std::isfinite(vertex.y));
-      EXPECT_TRUE(std::isfinite(vertex.z));
+  std::array const kinds{
+    GGEMSGeometryKind::Box,       GGEMSGeometryKind::Sphere,
+    GGEMSGeometryKind::Tubs,      GGEMSGeometryKind::Cons,
+    GGEMSGeometryKind::Polyhedra, GGEMSGeometryKind::Ellipsoid,
+    GGEMSGeometryKind::Trd,       GGEMSGeometryKind::Trap,
+    GGEMSGeometryKind::Cons,
+  };
+  std::array<std::uint32_t, 9> const counts{
+    36U, 11904U, 1536U, 1152U, 180U, 11904U, 36U, 36U, 384U,
+  };
+  for (std::size_t index = 0; index < kinds.size(); ++index) {
+    SCOPED_TRACE(index);
+    auto const &mesh = Mesh(scene, index + 1U);
+    EXPECT_EQ(mesh.shape.header[0], static_cast<std::uint32_t>(kinds[index]));
+    EXPECT_EQ(mesh.vertex_count, counts[index]);
+    EXPECT_EQ(mesh.vertex_count % 3U, 0U);
+    for (auto const &parameters : mesh.shape.parameters) {
+      EXPECT_TRUE(std::ranges::all_of(
+        parameters, [](float value) -> bool { return std::isfinite(value); }));
     }
   }
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 3), 0.002, 0.0, -0.004));
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 3), 0.005, 0.0, 0.004));
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 4), 0.002, 0.0, -0.004));
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 4), 0.0, 0.0, 0.004));
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 5),
-                       0.006 / std::cos(std::numbers::pi / 6.0), 0.0, -0.004));
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 6), 0.0, 0.004, 0.0));
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 7), 0.004, 0.005, 0.006));
-  auto const tilt = std::tan(std::numbers::pi / 18.0);
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 8),
-                       (0.006 * tilt * std::cos(std::numbers::pi / 6.0)) +
-                         (0.004 * tilt) + 0.003,
-                       (0.006 * tilt * 0.5) + 0.004, 0.006));
-  EXPECT_TRUE(HasPoint(MeshVertices(scene, 9), 0.0, 0.0, 0.004));
+  EXPECT_EQ(Mesh(scene, 1).shape.parameters[0],
+            (std::array{0.002F, 0.003F, 0.004F, 0.0F}));
+  EXPECT_EQ(Mesh(scene, 2).shape.parameters[0],
+            (std::array{0.003F, 0.003F, 0.003F, 0.0F}));
+  EXPECT_EQ(Mesh(scene, 3).shape.parameters[0],
+            (std::array{0.005F, 0.005F, 0.002F, 0.002F}));
+  EXPECT_FLOAT_EQ(Mesh(scene, 3).shape.parameters[1][0], 0.004F);
+  EXPECT_EQ(Mesh(scene, 4).shape.parameters[0],
+            (std::array{0.006F, 0.003F, 0.002F, 0.0F}));
+  EXPECT_EQ(Mesh(scene, 5).shape.header,
+            (std::array<std::uint32_t, 4>{4U, 6U, 0U, 3U}));
+  ASSERT_EQ(scene.profiles.size(), 3U);
+  EXPECT_FLOAT_EQ(scene.profiles[0].z_m, -0.004F);
+  EXPECT_FLOAT_EQ(scene.profiles[0].inner_apothem_m, 0.002F);
+  EXPECT_FLOAT_EQ(scene.profiles[0].outer_apothem_m, 0.006F);
+  EXPECT_EQ(scene.profiles[0].first_triangle, 0U);
+  EXPECT_EQ(scene.profiles[1].first_triangle, 4U);
+  EXPECT_EQ(scene.profiles[2].first_triangle, 7U);
+  EXPECT_FLOAT_EQ(scene.profiles[2].z_m, 0.005F);
+  EXPECT_FLOAT_EQ(scene.profiles[2].inner_apothem_m, 0.0F);
+  EXPECT_FLOAT_EQ(scene.profiles[2].outer_apothem_m, 0.005F);
+  EXPECT_EQ(Mesh(scene, 6).shape.parameters[0],
+            (std::array{0.003F, 0.004F, 0.005F, 0.0F}));
+  EXPECT_EQ(Mesh(scene, 7).shape.parameters[0],
+            (std::array{0.003F, 0.002F, 0.002F, 0.006F}));
+  EXPECT_EQ(Mesh(scene, 7).shape.parameters[1],
+            (std::array{0.005F, 0.004F, 0.004F, 0.0F}));
+  EXPECT_EQ(Mesh(scene, 7).shape.parameters[2], (std::array<float, 4>{}));
+  EXPECT_EQ(Mesh(scene, 8).shape.parameters[0],
+            (std::array{0.004F, 0.002F, 0.003F, 0.006F}));
+  EXPECT_NEAR(Mesh(scene, 8).shape.parameters[2][0], std::numbers::pi / 18.0,
+              1.0e-8);
+  EXPECT_NEAR(Mesh(scene, 8).shape.parameters[2][1], std::numbers::pi / 18.0,
+              1.0e-8);
+  EXPECT_NEAR(Mesh(scene, 8).shape.parameters[2][2], std::numbers::pi / 18.0,
+              1.0e-8);
+  EXPECT_NEAR(Mesh(scene, 8).shape.parameters[2][3], std::numbers::pi / 6.0,
+              2.0e-8);
+  EXPECT_EQ(Mesh(scene, 9).shape.parameters[0],
+            (std::array{0.005F, 0.0F, 0.0F, 0.0F}));
 
   std::array<std::string_view, 9U> const names{
     "Box",       "Sphere", "Tubs", "Cons", "Polyhedra",
@@ -254,14 +284,10 @@ TEST(GGEMSGeometryScene, PreservesAllFamiliesBoresApexAndPolygonApothems) {
       occurrence.dimensions, [](auto const &parameter) -> bool {
         return !parameter.name.empty() && !parameter.value.empty();
       }));
-    for (auto const &vertex : MeshVertices(scene, index + 1U)) {
-      std::array const local{vertex.x, vertex.y, vertex.z};
-      for (std::size_t axis = 0; axis < 3U; ++axis) {
-        auto const coordinate = static_cast<double>(local[axis]) +
-                                occurrence.local_to_world[(4U * axis) + 3U];
-        EXPECT_GE(coordinate, occurrence.minimum_m[axis]);
-        EXPECT_LE(coordinate, occurrence.maximum_m[axis]);
-      }
+    for (std::size_t axis = 0; axis < 3U; ++axis) {
+      EXPECT_TRUE(std::isfinite(occurrence.minimum_m[axis]));
+      EXPECT_TRUE(std::isfinite(occurrence.maximum_m[axis]));
+      EXPECT_LT(occurrence.minimum_m[axis], occurrence.maximum_m[axis]);
     }
   }
   EXPECT_EQ(scene.occurrences[3].dimensions[1].value, HumanReadable(2_mm));
@@ -336,4 +362,121 @@ TEST(GGEMSGeometryScene,
   EXPECT_NEAR(rotated.maximum_m[0], 0.002, 1.0e-8);
   EXPECT_NEAR(rotated.minimum_m[1], 0.095, 1.0e-8);
   EXPECT_NEAR(rotated.maximum_m[1], 0.097, 1.0e-8);
+}
+
+TEST(GGEMSGeometryScene, DescriptorAndProfileMatchScalarShaderABI) {
+  EXPECT_TRUE(std::is_standard_layout_v<GGEMSGeometryShape>);
+  EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSGeometryShape>);
+  EXPECT_EQ(sizeof(GGEMSGeometryShape), 64U);
+  EXPECT_EQ(offsetof(GGEMSGeometryShape, header), 0U);
+  EXPECT_EQ(offsetof(GGEMSGeometryShape, parameters), 16U);
+  EXPECT_TRUE(std::is_standard_layout_v<GGEMSGeometryProfile>);
+  EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSGeometryProfile>);
+  EXPECT_EQ(sizeof(GGEMSGeometryProfile), 16U);
+  EXPECT_EQ(offsetof(GGEMSGeometryProfile, z_m), 0U);
+  EXPECT_EQ(offsetof(GGEMSGeometryProfile, inner_apothem_m), 4U);
+  EXPECT_EQ(offsetof(GGEMSGeometryProfile, outer_apothem_m), 8U);
+  EXPECT_EQ(offsetof(GGEMSGeometryProfile, first_triangle), 12U);
+  std::array const kinds{
+    GGEMSGeometryKind::Box,       GGEMSGeometryKind::Sphere,
+    GGEMSGeometryKind::Tubs,      GGEMSGeometryKind::Cons,
+    GGEMSGeometryKind::Polyhedra, GGEMSGeometryKind::Ellipsoid,
+    GGEMSGeometryKind::Trd,       GGEMSGeometryKind::Trap,
+  };
+  for (std::size_t index = 0; index < kinds.size(); ++index) {
+    EXPECT_EQ(static_cast<std::uint32_t>(kinds[index]), index);
+  }
+}
+
+TEST(GGEMSGeometryScene, SharesProfilesAndCountsOpeningAndClosingBores) {
+  GGEMSPolyhedra polygon;
+  std::array const z{
+    PositionCoordinate{-4'000'000'000LL},
+    PositionCoordinate{-2'000'000'000LL},
+    PositionCoordinate{0},
+    PositionCoordinate{2'000'000'000LL},
+    PositionCoordinate{4'000'000'000LL},
+  };
+  std::array const inner{0_pm, 2_mm, 0_pm, 0_pm, 1_mm};
+  std::array const outer{4_mm, 5_mm, 4_mm, 3_mm, 4_mm};
+  polygon.SetSideCount(7U)
+    .SetStartAngle(17_deg)
+    .SetZProfile(z, inner, outer)
+    .SetMaterial(BuildBuiltInMaterial("Water"))
+    .SetPosition(MakePositionPM(-20'000'000'000LL, 0, 0));
+  auto world = World();
+  world.AddVolume(polygon);
+  polygon.SetPosition(MakePositionPM(20'000'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Aluminum"));
+  world.AddVolume(polygon);
+  polygon.SetStartAngle(18_deg).SetPosition(
+    MakePositionPM(50'000'000'000LL, 0, 0));
+  world.AddVolume(polygon);
+  ASSERT_NO_THROW(world.Validate());
+  auto const scene = BuildGeometryScene(world);
+  ASSERT_EQ(scene.meshes.size(), 3U);
+  ASSERT_EQ(scene.profiles.size(), 10U);
+  EXPECT_EQ(scene.occurrences[1].mesh_index, scene.occurrences[2].mesh_index);
+  EXPECT_NE(scene.occurrences[1].mesh_index, scene.occurrences[3].mesh_index);
+  EXPECT_EQ(Mesh(scene, 1).vertex_count, 294U);
+  EXPECT_EQ(Mesh(scene, 1).shape.header[2], 0U);
+  EXPECT_EQ(Mesh(scene, 3).shape.header[2], 5U);
+  EXPECT_EQ(Mesh(scene, 3).shape.header[3], 5U);
+  EXPECT_NEAR(Mesh(scene, 1).shape.parameters[0][0],
+              17.0 * std::numbers::pi / 180.0, 2.0e-8);
+  std::array<std::uint32_t, 5> const prefix{0U, 3U, 6U, 8U, 11U};
+  for (std::size_t index = 0; index < prefix.size(); ++index) {
+    EXPECT_EQ(scene.profiles[index].first_triangle, prefix[index]);
+    EXPECT_EQ(scene.profiles[index + 5U].first_triangle, prefix[index]);
+  }
+}
+
+TEST(GGEMSGeometryScene, BoundsUseCanonicalAnalyticSupportWithoutTessellation) {
+  GGEMSEllipsoid ellipsoid;
+  ellipsoid.SetSemiAxes(3_mm, 4_mm, 5_mm)
+    .SetRotation(0_deg, 0_deg, 45_deg)
+    .SetPosition(MakePositionPM(100'000'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  auto world = World();
+  world.AddVolume(ellipsoid);
+  GGEMSSphere sphere;
+  sphere.SetRadius(3_mm).SetMaterial(BuildBuiltInMaterial("Water"));
+  world.AddVolume(sphere);
+  GGEMSPolyhedra polygon;
+  std::array const z{
+    PositionCoordinate{-2'000'000'000LL},
+    PositionCoordinate{6'000'000'000LL},
+  };
+  std::array const inner{1_mm, 0_pm};
+  std::array const outer{4_mm, 5_mm};
+  polygon.SetSideCount(3U)
+    .SetZProfile(z, inner, outer)
+    .SetRotation(0_deg, 90_deg, 0_deg)
+    .SetPosition(MakePositionPM(-100'000'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  world.AddVolume(polygon);
+  ASSERT_NO_THROW(world.Validate());
+  auto const scene = BuildGeometryScene(world);
+  auto const &rotated = scene.occurrences[1];
+  auto const c = static_cast<double>(rotated.local_to_world[0]);
+  auto const s = static_cast<double>(rotated.local_to_world[4]);
+  auto const half_x =
+    std::sqrt((0.003 * c * 0.003 * c) + (0.004 * s * 0.004 * s));
+  auto const half_y =
+    std::sqrt((0.003 * s * 0.003 * s) + (0.004 * c * 0.004 * c));
+  EXPECT_NEAR(rotated.minimum_m[0], rotated.local_to_world[3] - half_x,
+              1.0e-15);
+  EXPECT_NEAR(rotated.maximum_m[1], half_y, 1.0e-15);
+  EXPECT_DOUBLE_EQ(rotated.minimum_m[2], -0.005);
+  EXPECT_DOUBLE_EQ(rotated.maximum_m[2], 0.005);
+  EXPECT_EQ(scene.occurrences[2].minimum_m,
+            (std::array{-0.003, -0.003, -0.003}));
+  EXPECT_EQ(scene.occurrences[2].maximum_m, (std::array{0.003, 0.003, 0.003}));
+  auto const &asymmetric = scene.occurrences[3];
+  EXPECT_NEAR(asymmetric.minimum_m[0], asymmetric.local_to_world[3] - 0.002,
+              1.0e-15);
+  EXPECT_NEAR(asymmetric.maximum_m[0], asymmetric.local_to_world[3] + 0.006,
+              1.0e-15);
+  EXPECT_NEAR(asymmetric.minimum_m[1], -0.01, 1.0e-15);
+  EXPECT_NEAR(asymmetric.maximum_m[1], 0.01, 1.0e-15);
 }

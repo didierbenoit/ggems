@@ -59,6 +59,7 @@
 #include "GGEMS/opencl/GGEMSOpenCLStrings.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
@@ -483,6 +484,7 @@ auto GGEMSGuiApplication::RenderFrame(bool framebuffer_resized) -> void {
       .cartesian_grid =
         displayed_geometry_scene_ ? &workbench_.cartesian_grid : nullptr,
       .selected_volume_id = workbench_.selected_volume_id,
+      .geometry_appearance = workbench_.geometry_appearance,
     };
 
     scene_renderer_->RecordSceneCommands(command_buffer, render_parameters);
@@ -558,6 +560,10 @@ auto GGEMSGuiApplication::ApplyPendingScene() -> void {
     scene_renderer_->SetGeometryScene(*geometry);
     displayed_geometry_scene_ = std::move(*geometry);
     workbench_.selected_volume_id.reset();
+    workbench_.geometry_appearance.assign(
+      displayed_geometry_scene_ ? displayed_geometry_scene_->occurrences.size()
+                                : 0U,
+      render::GGEMSGeometryAppearance{});
 
     if (displayed_geometry_scene_) {
       workbench_.camera.FrameWorld(

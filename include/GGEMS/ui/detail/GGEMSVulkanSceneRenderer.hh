@@ -39,6 +39,7 @@
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanWorldAxes.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanGeometry.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanParticleTraces.hh"
@@ -77,6 +78,11 @@ public:
      * \brief Physical occurrence to accent without changing depth or geometry.
      */
     std::optional<std::uint32_t> selected_volume_id;
+
+    /*!
+     * \brief Per-VolumeID mode choices, or empty for hierarchical defaults.
+     */
+    std::span<render::GGEMSGeometryAppearance const> geometry_appearance;
   };
 
   /*! \brief Creates an inactive UI component. */
