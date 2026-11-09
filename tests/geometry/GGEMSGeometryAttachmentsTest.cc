@@ -41,6 +41,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
@@ -59,6 +60,7 @@
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "detail/GGEMSGeometryAttachments.hh"
@@ -197,17 +199,24 @@ TEST(GGEMSGeometryAttachments, AllFamiliesPreserveIndexedCompilation) {
 }
 
 // Preserves nested snapshots when the caller later mutates an attached solid.
-TEST(GGEMSGeometryAttachments, ThreeLevelsRetainCopyAtAddAndWorldIndependence) {
+TEST(GGEMSGeometryAttachments, FourLevelsRetainCopyAtAddAndWorldIndependence) {
   GGEMSGeometryAttachments attachments;
   auto world = MakeWorld();
   auto mother = MakeShape<GGEMSBox>(20_mm);
   auto daughter = MakeShape<GGEMSSphere>(8_mm);
   auto grandchild = MakeShape<GGEMSBox>(2_mm);
+  auto leaf = MakeShape<GGEMSBox>(1_mm);
+  leaf->SetPosition(MakePositionPM(500'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Aluminum"))
+    .SetColor(ggems::render::BLUE_Pure);
   attachments.AddVolume(world, mother);
   GGEMSWorld const before_daughters = *world;
   attachments.AddVolume(mother, daughter);
   attachments.AddVolume(daughter, grandchild);
+  attachments.AddVolume(grandchild, leaf);
   GGEMSWorld const copied_world = *world;
+  ggems::core::GGEMSRun run;
+  ASSERT_NO_THROW(run.SetWorld(*world));
 
   mother->SetSize(2_mm, 2_mm, 2_mm)
     .SetPosition(MakePositionPM(50'000'000'000LL, 0, 0))
@@ -215,14 +224,22 @@ TEST(GGEMSGeometryAttachments, ThreeLevelsRetainCopyAtAddAndWorldIndependence) {
     .SetMaterial(BuildBuiltInMaterial("Aluminum"));
   daughter->SetRadius(1_mm).SetMaterial(BuildBuiltInMaterial("Vacuum"));
   grandchild->SetSize(2_mm, 2_mm, 2_mm);
+  leaf->SetSize(4_mm, 4_mm, 4_mm)
+    .SetPosition(MakePositionPM(80'000'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Vacuum"))
+    .SetColor(ggems::render::RED_Pure);
   ExpectSameCompilation(*world, copied_world);
   EXPECT_EQ(before_daughters.GetVolumeCount(), 1U);
-  EXPECT_EQ(copied_world.BuildRecord().hierarchy_depth, 3U);
+  EXPECT_EQ(copied_world.BuildRecord().hierarchy_depth, 4U);
   auto const links = copied_world.BuildOccurrenceRecords();
-  ASSERT_EQ(links.size(), 3U);
+  ASSERT_EQ(links.size(), 4U);
   EXPECT_EQ(links[0].parent_volume_id, 0U);
   EXPECT_EQ(links[1].parent_volume_id, 1U);
   EXPECT_EQ(links[2].parent_volume_id, 2U);
+  EXPECT_EQ(links[3].parent_volume_id, 3U);
+  EXPECT_EQ(world->GetVolumeMaterial(3U)->GetName(), "Aluminum");
+  EXPECT_EQ(world->GetBoxes(3U).front().GetColor(), ggems::render::BLUE_Pure);
+  EXPECT_FLOAT_EQ(world->BuildBoxPoseRecord(3U)->center_x_pm, 0.5e9F);
   EXPECT_EQ(copied_world.GetBoxes().front().GetHalfExtentPM().x,
             20'000'000'000ULL);
   EXPECT_FLOAT_EQ(
@@ -234,9 +251,11 @@ TEST(GGEMSGeometryAttachments, ThreeLevelsRetainCopyAtAddAndWorldIndependence) {
   attachments.AddVolume(world, sibling);
   world->SetSize(300_mm, 300_mm, 300_mm);
   ASSERT_NO_THROW(world->Validate());
-  EXPECT_EQ(world->GetVolumeCount(), 4U);
-  EXPECT_EQ(copied_world.GetVolumeCount(), 3U);
+  EXPECT_EQ(world->GetVolumeCount(), 5U);
+  EXPECT_EQ(copied_world.GetVolumeCount(), 4U);
   EXPECT_EQ(copied_world.GetHalfExtentPM().x, 100'000'000'000ULL);
+  ASSERT_NE(run.GetWorld(), nullptr);
+  ExpectSameCompilation(*run.GetWorld(), copied_world);
 }
 
 // Keeps the child reusable after a rejected hierarchy attachment.
@@ -266,19 +285,22 @@ TEST(GGEMSGeometryAttachments, RejectsInvalidAttachmentsWithoutConsumingChild) {
   EXPECT_EQ(other_world->GetVolumeCount(), 0U);
   EXPECT_EQ(world->GetVolumeCount(), 2U);
   attachments.AddVolume(child, grandchild);
-  EXPECT_THROW(attachments.AddVolume(grandchild, leaf), GGEMSRecoverable);
-  EXPECT_EQ(world->GetVolumeCount(), 3U);
-  leaf->SetPosition(MakePositionPM(50'000'000'000LL, 0, 0));
-  EXPECT_NO_THROW(attachments.AddVolume(world, leaf));
+  attachments.AddVolume(grandchild, leaf);
+  auto rejected = MakeShape<GGEMSBox>(500_um);
+  auto const before_rejection = *world;
+  EXPECT_THROW(attachments.AddVolume(leaf, rejected), GGEMSRecoverable);
+  ExpectSameCompilation(*world, before_rejection);
+  rejected->SetPosition(MakePositionPM(50'000'000'000LL, 0, 0));
+  EXPECT_NO_THROW(attachments.AddVolume(world, rejected));
 
   auto incomplete = std::make_shared<GGEMSBox>();
   EXPECT_THROW(attachments.AddVolume(mother, incomplete), GGEMSRecoverable);
-  EXPECT_EQ(world->GetVolumeCount(), 4U);
+  EXPECT_EQ(world->GetVolumeCount(), 5U);
   incomplete->SetSize(2_mm, 2_mm, 2_mm)
     .SetPosition(MakePositionPM(60'000'000'000LL, 0, 0))
     .SetMaterial(BuildBuiltInMaterial("Water"));
   EXPECT_NO_THROW(attachments.AddVolume(world, incomplete));
-  EXPECT_EQ(world->GetVolumeCount(), 5U);
+  EXPECT_EQ(world->GetVolumeCount(), 6U);
   EXPECT_NO_THROW(world->Validate());
 }
 
@@ -736,13 +758,32 @@ TEST(GGEMSGeometryAttachments, RepeatedSubtreesPreserveParentageAndDepth) {
   EXPECT_FLOAT_EQ(world.BuildBoxPoseRecord(4U)->center_x_pm, 22.0e9F);
   EXPECT_EQ(world.BuildRecord().hierarchy_depth, 3U);
   auto outer = *MakeShape<GGEMSBox>(60_mm);
-  EXPECT_THROW(outer.AddVolume(scanner), GGEMSRecoverable);
+  outer.AddVolume(scanner);
+  auto four_levels = *MakeWorld();
+  four_levels.AddVolume(outer);
+  ASSERT_EQ(four_levels.GetVolumeCount(), 6U);
+  EXPECT_EQ(four_levels.BuildRecord().hierarchy_depth, 4U);
+  auto const captured = four_levels;
+  auto depth_extension = *MakeShape<GGEMSBox>(1_mm);
+  depth_extension.SetPosition(MakePositionPM(-5'000'000'000LL, 0, 0))
+    .AddVolume(*MakeShape<GGEMSBox>(500_um));
+  // The same subtree fits beside the existing crystal at the admitted depth.
+  auto valid_depth = world;
+  ASSERT_NO_THROW(valid_depth.AddVolume(depth_extension, 2U));
+  EXPECT_EQ(valid_depth.BuildRecord().hierarchy_depth, 4U);
+  EXPECT_THROW(four_levels.AddVolume(depth_extension, 3U), GGEMSRecoverable);
+  ExpectSameCompilation(four_levels, captured);
+  auto excessive = *MakeShape<GGEMSBox>(70_mm);
+  EXPECT_THROW(excessive.AddVolume(outer), GGEMSRecoverable);
   auto unchanged = *MakeWorld();
-  unchanged.AddVolume(outer);
+  unchanged.AddVolume(excessive);
   EXPECT_EQ(unchanged.GetVolumeCount(), 1U);
 
   auto repeated_module = *MakeShape<GGEMSBox>(5_mm);
   auto repeated_crystal = *MakeShape<GGEMSBox>(1_mm);
+  auto deep_leaf = *MakeShape<GGEMSBox>(500_um);
+  deep_leaf.SetMaterial(BuildBuiltInMaterial("Aluminum"));
+  repeated_crystal.AddVolume(deep_leaf);
   repeated_module
     .LinearRepeater(repeated_crystal, {2U, 1U, 1U}, {4_mm, 0_mm, 0_mm})
     .SetPosition(MakePositionPM(30'000'000'000LL, 0, 0));
@@ -759,13 +800,20 @@ TEST(GGEMSGeometryAttachments, RepeatedSubtreesPreserveParentageAndDepth) {
   before_pose.AddVolume(ring_before);
   after_pose.AddVolume(ring_after);
   ExpectSameCompilation(after_pose, before_pose);
-  ASSERT_EQ(after_pose.GetVolumeCount(), 22U);
+  ASSERT_EQ(after_pose.GetVolumeCount(), 36U);
+  EXPECT_EQ(after_pose.BuildRecord().hierarchy_depth, 4U);
   auto const ring_links = after_pose.BuildOccurrenceRecords();
   for (std::uint32_t index = 0U; index < 7U; ++index) {
-    auto const module_id = 2U + (3U * index);
+    auto const module_id = 2U + (5U * index);
     EXPECT_EQ(ring_links[module_id - 1U].parent_volume_id, 1U);
     EXPECT_EQ(ring_links[module_id].parent_volume_id, module_id);
-    EXPECT_EQ(ring_links[module_id + 1U].parent_volume_id, module_id);
+    EXPECT_EQ(ring_links[module_id + 1U].parent_volume_id, module_id + 1U);
+    EXPECT_EQ(ring_links[module_id + 2U].parent_volume_id, module_id);
+    EXPECT_EQ(ring_links[module_id + 3U].parent_volume_id, module_id + 3U);
+    EXPECT_EQ(after_pose.GetVolumeMaterial(module_id + 1U)->GetName(),
+              "Aluminum");
+    EXPECT_EQ(after_pose.GetVolumeMaterial(module_id + 3U)->GetName(),
+              "Aluminum");
   }
 }
 

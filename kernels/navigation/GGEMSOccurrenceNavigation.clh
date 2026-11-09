@@ -207,7 +207,7 @@ GGEMS_OccurrenceFindBoundary(__global GGEMSWorldRecord const *world,
 
 /*!
  * \brief Tests membership in a host-validated physical parent chain.
- * \param[in] occurrences Immutable descriptors with at most three levels.
+ * \param[in] occurrences Immutable descriptors with at most four levels.
  * \param[in] ancestor Nonzero candidate VolumeID.
  * \param[in] volume Leaf VolumeID, or World to represent an empty chain.
  * \return Nonzero when ancestor equals volume or one of its physical parents.
@@ -231,7 +231,7 @@ static inline uint GGEMS_HierarchyIsAncestor(
  * Only direct daughters are scanned at each admitted level. A missing daughter
  * leaves the container's material active; its descendants outside that support
  * are never visited. Multiple qualifying siblings fail without an order-based
- * priority. The host admits at most three physical levels and acyclic lists.
+ * priority. The host admits at most four physical levels and acyclic lists.
  * A certified entry supplies only that direct child's forward side; its
  * rounded endpoint does not re-prove the same crossing. All other daughters
  * and deeper descendants retain directional location.

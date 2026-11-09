@@ -86,7 +86,7 @@ inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
  * authoring object do not reach the Run. Physical identities follow insertion
  * order, starting at one after World identity zero. Each added shape supplies
  * a pose relative to its already added parent; World is parent zero. The
- * maximum physical depth is three below World. Detached solid values may own
+ * maximum physical depth is four below World. Detached solid values may own
  * immutable child/repeater descriptions; attaching such a subtree requires a
  * configured World and atomically admits its preorder physical expansion.
  * Ordinary leaf AddVolume retains its deferred Validate() behavior.
@@ -179,7 +179,7 @@ public:
    * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the Box is incomplete.
-   * Also rejects an absent parent, physical depth above three, or exhausted
+   * Also rejects an absent parent, physical depth above four, or exhausted
    * IDs.
    */
   auto AddVolume(GGEMSBox box, std::uint32_t parent_volume_id = 0U)
@@ -194,7 +194,7 @@ public:
    * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Sphere is incomplete.
-   * Also rejects an absent parent, physical depth above three, or exhausted
+   * Also rejects an absent parent, physical depth above four, or exhausted
    * IDs.
    */
   auto AddVolume(GGEMSSphere sphere, std::uint32_t parent_volume_id = 0U)
@@ -209,7 +209,7 @@ public:
    * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the tube is incomplete.
-   * Also rejects an absent parent, physical depth above three, or exhausted
+   * Also rejects an absent parent, physical depth above four, or exhausted
    * IDs.
    */
   auto AddVolume(GGEMSTubs tubs, std::uint32_t parent_volume_id = 0U)
@@ -224,7 +224,7 @@ public:
    * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the ellipsoid is incomplete.
-   * Also rejects an absent parent, physical depth above three, or exhausted
+   * Also rejects an absent parent, physical depth above four, or exhausted
    * IDs.
    */
   auto AddVolume(GGEMSEllipsoid ellipsoid, std::uint32_t parent_volume_id = 0U)
@@ -239,7 +239,7 @@ public:
    * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If the solid is incomplete.
-   * Also rejects an absent parent, physical depth above three, or exhausted
+   * Also rejects an absent parent, physical depth above four, or exhausted
    * IDs.
    */
   auto AddVolume(GGEMSTrd trd, std::uint32_t parent_volume_id = 0U)
@@ -254,7 +254,7 @@ public:
    * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Trap admission fails.
-   * Also rejects an absent parent, physical depth above three, or exhausted
+   * Also rejects an absent parent, physical depth above four, or exhausted
    * IDs.
    */
   auto AddVolume(GGEMSTrap trap, std::uint32_t parent_volume_id = 0U)
@@ -269,7 +269,7 @@ public:
    * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If Cons admission fails.
-   * Also rejects an absent parent, physical depth above three, or exhausted
+   * Also rejects an absent parent, physical depth above four, or exhausted
    * IDs.
    */
   auto AddVolume(GGEMSCons cons, std::uint32_t parent_volume_id = 0U)
@@ -284,7 +284,7 @@ public:
    * requires a configured World and complete atomic scene admission.
    * \return This World for chained configuration.
    * \throws GGEMSRecoverable If profile admission fails.
-   * Also rejects an absent parent, physical depth above three, or exhausted
+   * Also rejects an absent parent, physical depth above four, or exhausted
    * IDs.
    */
   auto AddVolume(GGEMSPolyhedra polyhedra, std::uint32_t parent_volume_id = 0U)
@@ -668,7 +668,7 @@ private:
   /*!
    * \brief Counts the parent chain from an occurrence to World.
    * \param[in] volume_id Existing physical VolumeID, or zero for World.
-   * \return Zero for World; one through three for an admitted occurrence.
+   * \return Zero for World; one through four for an admitted occurrence.
    * \pre volume_id is no larger than GetVolumeCount().
    */
   [[nodiscard]] auto GetOccurrenceDepth(std::uint32_t volume_id) const noexcept

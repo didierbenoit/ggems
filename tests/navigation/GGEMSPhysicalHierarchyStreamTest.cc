@@ -424,7 +424,9 @@ auto Scenes() -> std::vector<Scene> {
 }
 
 auto CheckScene(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
-                random::GGEMSRandom &random, Scene const &scene) -> void {
+                random::GGEMSRandom &random, Scene const &scene,
+                std::span<std::uint32_t const> expected_materials = {})
+  -> void {
   SCOPED_TRACE(scene.name);
   auto const &world = scene.world;
   ASSERT_NO_THROW(world.Validate());
@@ -463,7 +465,10 @@ auto CheckScene(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   EXPECT_EQ(result.counts.total_fake_step_count, 0U);
   EXPECT_EQ(result.counts.created_secondary_count, 0U);
   auto material = [&](std::uint32_t owner) -> std::uint32_t {
-    return owner == k_exterior ? k_exterior : ids[owner];
+    if (owner == k_exterior) {
+      return k_exterior;
+    }
+    return expected_materials.empty() ? ids[owner] : expected_materials[owner];
   };
   EXPECT_EQ(result.trace[test::k_initial_owner_index], scene.initial_owner);
   EXPECT_EQ(result.trace[test::k_initial_owner_index + 1U],
@@ -553,6 +558,83 @@ TEST_F(GGEMSNavigationDeviceTest,
     for (auto const &scene : scenes) {
       CheckScene(context, program, random, scene);
     }
+  }
+}
+
+// Explicit four-level owner and Material IDs protect the production traversal.
+TEST_F(GGEMSNavigationDeviceTest,
+       FourPhysicalLevelsPreserveOwnerAndMaterialTransitions) {
+  auto world = World();
+  world.AddVolume(Box(80_mm, 60_mm, 60_mm, {0, 0, 0}, "Air"));
+  world.AddVolume(Box(40_mm, 30_mm, 30_mm, {0, 0, 0}, "Water"), 1U);
+  world.AddVolume(Box(12_mm, 10_mm, 10_mm, {4, 0, 0}, "Aluminum"), 2U);
+  world.AddVolume(Box(4_mm, 4_mm, 4_mm, {1, 0, 0}, "LSO"), 3U);
+
+  // Distinct media are interned in physical order: Vacuum, Air, Water,
+  // Aluminum, LSO. Expected IDs do not come from the uploaded records.
+  std::array<std::uint32_t, 5U> const material_ids{0U, 1U, 2U, 3U, 4U};
+  std::array const scenes{
+    Scene{
+      .name = "Depth four forward: World, Gantry, Block, Module, Crystal",
+      .world = world,
+      .crossings =
+        {
+          {.parameter_mm = 20, .arrival = 1, .event = 2},
+          {.parameter_mm = 40, .arrival = 2, .event = 2},
+          {.parameter_mm = 58, .arrival = 3, .event = 2},
+          {.parameter_mm = 63, .arrival = 4, .event = 2},
+          {.parameter_mm = 67, .arrival = 3, .event = 3},
+          {.parameter_mm = 70, .arrival = 2, .event = 3},
+          {.parameter_mm = 80, .arrival = 1, .event = 3},
+          {.parameter_mm = 100, .arrival = 0, .event = 3},
+        },
+    },
+    Scene{
+      .name = "Depth four reverse entries and successive parent exits",
+      .world = world,
+      .start = {60, 0, 0},
+      .direction = {-1, 0, 0},
+      .crossings =
+        {
+          {.parameter_mm = 20, .arrival = 1, .event = 2},
+          {.parameter_mm = 40, .arrival = 2, .event = 2},
+          {.parameter_mm = 50, .arrival = 3, .event = 2},
+          {.parameter_mm = 53, .arrival = 4, .event = 2},
+          {.parameter_mm = 57, .arrival = 3, .event = 3},
+          {.parameter_mm = 62, .arrival = 2, .event = 3},
+          {.parameter_mm = 80, .arrival = 1, .event = 3},
+          {.parameter_mm = 100, .arrival = 0, .event = 3},
+        },
+    },
+    Scene{
+      .name = "Depth four birth locates Crystal and restores each parent",
+      .world = world,
+      .start = {5, 0, 0},
+      .crossings =
+        {
+          {.parameter_mm = 2, .arrival = 3, .event = 3},
+          {.parameter_mm = 5, .arrival = 2, .event = 3},
+          {.parameter_mm = 15, .arrival = 1, .event = 3},
+          {.parameter_mm = 35, .arrival = 0, .event = 3},
+        },
+      .initial_owner = 4U,
+    },
+  };
+
+  std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
+  auto const instrumented = test::InstrumentStream(root);
+  auto &context = ggems::test::GetSelectedOpenCLContext();
+  SCOPED_TRACE(context.GetDevice().GetName());
+  random::GGEMSRandom random;
+  random.SetEngine("philox").SetSeed(91231U);
+  auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
+    context, root / "transport", "particle_stream_transport",
+    std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
+                root.generic_string(), random.GetKernelBuildDefinition()));
+  auto const &program =
+    test::GetAnalyticTraceProgram(instrumented, production.GetBuildOptions());
+  for (auto const &scene : scenes) {
+    CheckScene(context, program, random, scene, material_ids);
   }
 }
 

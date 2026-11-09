@@ -229,7 +229,7 @@ public:
 
   /*!
    * \brief Returns the deepest authored descendant below this volume.
-   * \return Zero for a leaf, otherwise one or two physical levels.
+   * \return Zero for a leaf, otherwise one through three physical levels.
    */
   [[nodiscard]] auto GetDescendantDepth() const noexcept -> std::uint32_t;
 

@@ -102,8 +102,12 @@ TEST(GGEMSPhysicalHierarchy, RejectsUnknownParentsAndUnsupportedDepth) {
   EXPECT_EQ(world.GetVolumeCount(), 1U);
   world.AddVolume(Box(20_mm, 20_mm, 20_mm), 1U);
   world.AddVolume(Box(8_mm, 8_mm, 8_mm), 2U);
-  EXPECT_THROW(world.AddVolume(Box(2_mm, 2_mm, 2_mm), 3U), GGEMSRecoverable);
-  EXPECT_EQ(world.GetVolumeCount(), 3U);
+  world.AddVolume(Box(2_mm, 2_mm, 2_mm), 3U);
+  auto const before_rejection = world.BuildAnalyticAuxiliaryBuffer();
+  EXPECT_THROW(world.AddVolume(Box(1_mm, 1_mm, 1_mm), 4U), GGEMSRecoverable);
+  EXPECT_EQ(world.GetVolumeCount(), 4U);
+  EXPECT_EQ(world.BuildRecord().hierarchy_depth, 4U);
+  EXPECT_EQ(world.BuildAnalyticAuxiliaryBuffer(), before_rejection);
   EXPECT_NO_THROW(world.Validate());
 }
 
@@ -131,6 +135,24 @@ TEST(GGEMSPhysicalHierarchy, ComposesParentLocalTranslationAndRotation) {
   EXPECT_FLOAT_EQ(pose->axis_x_x, -1.0F);
   EXPECT_FLOAT_EQ(pose->axis_y_y, -1.0F);
   EXPECT_FLOAT_EQ(pose->axis_z_z, 1.0F);
+
+  auto grandchild = Box(4_mm, 4_mm, 4_mm);
+  grandchild.SetPosition(MakePositionPM(1'000'000'000LL, 0, 0))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  auto leaf = Box(1_mm, 1_mm, 1_mm);
+  leaf.SetPosition(MakePositionPM(0, 1'000'000'000LL, 0))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  world.AddVolume(grandchild, 2U).AddVolume(leaf, 3U);
+  ASSERT_NO_THROW(world.Validate());
+  auto const leaf_pose = world.BuildBoxPoseRecord(3U);
+  ASSERT_TRUE(leaf_pose.has_value());
+  // The last two offsets rotate to (-1,0,0) and (1,0,0), canceling exactly.
+  EXPECT_FLOAT_EQ(leaf_pose->center_x_pm, 7.0e9F);
+  EXPECT_FLOAT_EQ(leaf_pose->center_y_pm, 1.0e9F);
+  EXPECT_FLOAT_EQ(leaf_pose->center_z_pm, 2.0e9F);
+  EXPECT_FLOAT_EQ(leaf_pose->axis_x_x, 1.0F);
+  EXPECT_FLOAT_EQ(leaf_pose->axis_y_y, 1.0F);
+  EXPECT_FLOAT_EQ(leaf_pose->axis_z_z, 1.0F);
 
   auto sphere_world = World();
   GGEMSSphere sphere;
@@ -173,6 +195,15 @@ TEST(GGEMSPhysicalHierarchy, RejectsProtrudingDaughtersAtEveryLevel) {
     .AddVolume(grandchild, 2U);
   EXPECT_THROW(deepest.Validate(), GGEMSRecoverable);
 
+  auto fourth_level = World();
+  fourth_level.AddVolume(Box(40_mm, 40_mm, 40_mm))
+    .AddVolume(Box(20_mm, 20_mm, 20_mm), 1U)
+    .AddVolume(Box(8_mm, 8_mm, 8_mm), 2U);
+  auto protruding_leaf = Box(2_mm, 2_mm, 2_mm);
+  protruding_leaf.SetPosition(MakePositionPM(4'000'000'000LL, 0, 0));
+  fourth_level.AddVolume(protruding_leaf, 3U);
+  EXPECT_THROW(fourth_level.Validate(), GGEMSRecoverable);
+
   auto rotated = World();
   auto wide = Box(30_mm, 30_mm, 8_mm);
   wide.SetRotation(0_deg, 0_deg, 45_deg);
@@ -195,8 +226,10 @@ TEST(GGEMSPhysicalHierarchy, RejectsSiblingInteriorOverlapInsideAMother) {
   rotated.SetRotation(0_deg, 0_deg, 45_deg)
     .SetPosition(MakePositionPM(5'000'000'000LL, 0, 0));
   mixed.AddVolume(Box(80_mm, 60_mm, 60_mm))
-    .AddVolume(sphere, 1U)
-    .AddVolume(rotated, 1U);
+    .AddVolume(Box(50_mm, 50_mm, 50_mm), 1U)
+    .AddVolume(Box(30_mm, 30_mm, 30_mm), 2U)
+    .AddVolume(sphere, 3U)
+    .AddVolume(rotated, 3U);
   EXPECT_THROW(mixed.Validate(), GGEMSRecoverable);
 }
 

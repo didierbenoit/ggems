@@ -300,8 +300,8 @@ auto GGEMSVolumeAuthoring::AppendRecipe(detail::GGEMSVolumeRecipe recipe)
     },
     recipe.child->volume);
 
-  if (depth > 2U) {
-    throw core::GGEMSRecoverable("Detached subtree cannot exceed three "
+  if (depth > 3U) {
+    throw core::GGEMSRecoverable("Detached subtree cannot exceed four "
                                  "physical levels including its root.");
   }
 

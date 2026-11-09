@@ -276,7 +276,7 @@ auto BindAttachments(
 Detached mothers own the captured description. Later changes to the source child
 never update that copy. A detached mother may be translated or rotated before
 or after adding children, until its own value is captured by its parent.
-Position and rotation are parent-local; physical depth is at most three below
+Position and rotation are parent-local; physical depth is at most four below
 World. Physical IDs are assigned internally.
 
 World attachment copies the complete subtree independently. An explicitly
@@ -1136,7 +1136,7 @@ Detached mothers capture ordinary children and linear/circular repeater recipes
 by value. Configure the mother pose before or after its children, then attach
 its complete subtree with world.add_volume(mother). Later source edits never
 change captured copies. Position and rotation remain parent-local. Physical
-depth is limited to three below World, and Sphere rotation defines its daughter
+depth is limited to four below World, and Sphere rotation defines its daughter
 frame without changing the spherical surface. Scalar and Cartesian linear
 repeaters center their copies about the child position and add no hierarchy
 level. Circular repeaters retain their occurrence-zero angular convention.

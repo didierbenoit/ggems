@@ -88,7 +88,7 @@ struct GGEMSVolumeRecipes {
   /*! \brief Expanded physical descendants, excluding their mother. */
   std::uint32_t descendant_count{0U};
 
-  /*! \brief Deepest descendant below the mother; at most two. */
+  /*! \brief Deepest descendant below the mother; at most three. */
   std::uint32_t descendant_depth{0U};
 };
 

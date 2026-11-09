@@ -53,8 +53,9 @@ struct GGEMSWorldRecord {
   /*! \brief Proven straight-ray crossing bound, including World exit. */
   std::uint32_t max_boundary_events{1};
 
-  /*! \brief Maximum physical depth: zero when empty, one through three
-   * otherwise. */
+  /*!
+   * \brief Maximum physical depth: zero when empty, one through four otherwise.
+   */
   std::uint32_t hierarchy_depth{0};
 };
 } // namespace ggems::geometry

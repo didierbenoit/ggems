@@ -1194,9 +1194,9 @@ auto GGEMSWorld::AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
       "Physical parent must already exist in this World.");
   }
 
-  if (GetOccurrenceDepth(parent_volume_id) >= 3U) {
+  if (GetOccurrenceDepth(parent_volume_id) >= 4U) {
     throw core::GGEMSRecoverable(
-      "Physical hierarchy depth cannot exceed three below World.");
+      "Physical hierarchy depth cannot exceed four below World.");
   }
 
   if (volumes_.size() >= std::numeric_limits<std::uint32_t>::max() - 1U) {
@@ -1343,9 +1343,9 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
     },
     recipe.child->volume);
 
-  if (GetOccurrenceDepth(parent_volume_id) + depth > 3U) {
+  if (GetOccurrenceDepth(parent_volume_id) + depth > 4U) {
     throw core::GGEMSRecoverable(
-      "Physical hierarchy depth cannot exceed three below World.");
+      "Physical hierarchy depth cannot exceed four below World.");
   }
 
   auto const additional = detail::RecipeOccurrenceCount(recipe);

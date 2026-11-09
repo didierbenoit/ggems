@@ -52,7 +52,7 @@ typedef struct GGEMSWorldRecord {
   uint max_boundary_events;
 
   /*!
-   * \brief Maximum physical depth: zero when empty, one through three
+   * \brief Maximum physical depth: zero when empty, one through four
    * otherwise.
    */
   uint hierarchy_depth;
