@@ -703,7 +703,7 @@ auto DescribeTrapezoid(GGEMSGeometryOccurrence &occurrence, Shape const &shape)
 }
 
 /*!
- * \brief Copies the actual analytic family's canonical inspection parameters.
+ * \brief Copies model color and canonical analytic inspection parameters.
  * \param[in,out] occurrence Presentation record to populate.
  * \param[in] volume Validated authored shape, borrowed during construction.
  */
@@ -714,6 +714,8 @@ auto DescribeShape(GGEMSGeometryOccurrence &occurrence,
     [&occurrence](auto const &shape) -> void {
       using Shape = std::decay_t<decltype(shape)>;
       auto &dimensions = occurrence.dimensions;
+
+      occurrence.color = shape.GetColor();
 
       if constexpr (std::is_same_v<Shape, GGEMSBox>) {
         occurrence.shape_name = "Box";

@@ -72,8 +72,7 @@ public:
   auto operator=(GGEMSVulkanGeometry &&) -> GGEMSVulkanGeometry & = delete;
 
   /*!
-   * \brief Creates shared wire/solid triangle pipelines and resolves the accent
-   * color.
+   * \brief Creates shared wire/solid triangle pipelines with alpha blending.
    *
    * Initialize an inactive component; call Shutdown before reinitializing it.
    *
@@ -81,7 +80,7 @@ public:
    * capabilities.
    * \param[in] device Logical device that must outlive the owned resources.
    * \param[in] color_format Existing offscreen color attachment format.
-   * \param[in] depth_format Existing scene depth attachment format.
+   * \param[in] depth_format Existing combined depth/stencil attachment format.
    * \throws core::GGEMSInternal If compiled geometry shaders cannot be loaded.
    * \throws vk::SystemError If Vulkan resource creation fails.
    */
@@ -122,20 +121,27 @@ public:
    * both modes.
    *
    * No commands are recorded when no scene is retained. The caller has already
-   * set the dynamic viewport and scissor.
+   * set the dynamic viewport and scissor. Record opaque occurrences first,
+   * then depth-writing scene contents, then the selection before overlays in
+   * the same rendering pass.
+   * Selection resolves its nearest depth without changing color, then consumes
+   * one stencil bit to blend that surface exactly once at alpha 0.5. Farther
+   * faces and coincident Wireframe edges do not compound opacity. The caller
+   * clears stencil to zero at the start of the scene.
    *
    * \param[in] command_buffer Recording buffer inside dynamic rendering.
    * \param[in] world_to_clip Rows mapping World meters to clip coordinates.
-   * \param[in] selected_volume_id Occurrence to accent, or none; depth is
-   * unchanged.
+   * \param[in] selected_volume_id Occurrence to make translucent, or none.
    * \param[in] appearance Per-VolumeID mode overrides covering all occurrences,
    * or explicitly empty for hierarchical defaults.
+   * \param[in] selected_only False for opaque occurrences excluding selection;
+   * true for the selected occurrence depth and color draws.
    */
   auto Record(vk::raii::CommandBuffer const &command_buffer,
               std::array<std::array<float, 4U>, 4U> const &world_to_clip,
               std::optional<std::uint32_t> selected_volume_id,
-              std::span<render::GGEMSGeometryAppearance const> appearance) const
-    -> void;
+              std::span<render::GGEMSGeometryAppearance const> appearance,
+              bool selected_only) const -> void;
 
 private:
   /*!
@@ -182,11 +188,6 @@ private:
   /*! \brief Immutable meshes, occurrences, and physical hierarchy. */
   std::shared_ptr<ggems::render::GGEMSGeometryScene const> scene_;
 
-  /*!
-   * \brief Linear theme accent used only for the selected physical occurrence.
-   */
-  std::array<float, 4U> selected_color_{};
-
   /*! \brief Read-only analytic shape and Polyhedra profile storage bindings. */
   vk::raii::DescriptorSetLayout descriptor_layout_{nullptr};
 
@@ -196,7 +197,7 @@ private:
   /*! \brief Depth-tested TriangleList rasterized as edges. */
   vk::raii::Pipeline wire_pipeline_{nullptr};
 
-  /*! \brief Identical TriangleList rasterized as opaque surfaces. */
+  /*! \brief Identical TriangleList rasterized as filled surfaces. */
   vk::raii::Pipeline solid_pipeline_{nullptr};
 
   /*! \brief Pool for the current scene's two analytic storage bindings. */

@@ -40,10 +40,8 @@
 #include <span>
 
 #include "GGEMS/GGEMSException.hh"
-#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/render/GGEMSGeometryAppearance.hh"
-#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanColorConversion.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanShaderFile.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanGeometry.hh"
@@ -113,13 +111,29 @@ auto GGEMSVulkanGeometry::Initialize(
     .rasterizationSamples = vk::SampleCountFlagBits::e1,
   };
 
+  vk::StencilOpState const stencil{
+    .compareMask = 1U,
+    .writeMask = 1U,
+    .reference = 1U,
+  };
+
   vk::PipelineDepthStencilStateCreateInfo const depth{
     .depthTestEnable = vk::True,
     .depthWriteEnable = vk::True,
     .depthCompareOp = vk::CompareOp::eLessOrEqual,
+    .stencilTestEnable = vk::True,
+    .front = stencil,
+    .back = stencil,
   };
 
   vk::PipelineColorBlendAttachmentState const attachment{
+    .blendEnable = vk::True,
+    .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
+    .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+    .colorBlendOp = vk::BlendOp::eAdd,
+    .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+    .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+    .alphaBlendOp = vk::BlendOp::eAdd,
     .colorWriteMask =
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
       vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
@@ -130,9 +144,10 @@ auto GGEMSVulkanGeometry::Initialize(
     .pAttachments = &attachment,
   };
 
-  std::array<vk::DynamicState, 2U> const dynamic_states{
+  std::array<vk::DynamicState, 3U> const dynamic_states{
     vk::DynamicState::eViewport,
     vk::DynamicState::eScissor,
+    vk::DynamicState::eStencilOp,
   };
 
   vk::PipelineDynamicStateCreateInfo const dynamic{
@@ -193,6 +208,7 @@ auto GGEMSVulkanGeometry::Initialize(
     .colorAttachmentCount = 1U,
     .pColorAttachmentFormats = &color_format,
     .depthAttachmentFormat = depth_format,
+    .stencilAttachmentFormat = depth_format,
   };
 
   vk::GraphicsPipelineCreateInfo const pipeline{
@@ -213,8 +229,6 @@ auto GGEMSVulkanGeometry::Initialize(
   wire_pipeline_ = vk::raii::Pipeline{device, nullptr, pipeline};
   rasterization.polygonMode = vk::PolygonMode::eFill;
   solid_pipeline_ = vk::raii::Pipeline{device, nullptr, pipeline};
-  selected_color_ =
-    ToVulkanClearColor(GetThemeColorKey(GGEMSThemeRole::Accent));
 }
 
 // -----------------------------------------------------------------------------
@@ -381,8 +395,9 @@ auto GGEMSVulkanGeometry::Record(
   vk::raii::CommandBuffer const &command_buffer,
   std::array<std::array<float, 4U>, 4U> const &world_to_clip,
   std::optional<std::uint32_t> selected_volume_id,
-  std::span<render::GGEMSGeometryAppearance const> appearance) const -> void {
-  if (!scene_) {
+  std::span<render::GGEMSGeometryAppearance const> appearance,
+  bool selected_only) const -> void {
+  if (!scene_ || (selected_only && !selected_volume_id)) {
     return;
   }
 
@@ -390,14 +405,22 @@ auto GGEMSVulkanGeometry::Record(
                                     *pipeline_layout_, 0U, {*descriptor_set_},
                                     {});
 
+  command_buffer.setStencilOp(
+    vk::StencilFaceFlagBits::eFrontAndBack, vk::StencilOp::eKeep,
+    selected_only ? vk::StencilOp::eReplace : vk::StencilOp::eKeep,
+    vk::StencilOp::eKeep, vk::CompareOp::eAlways);
+
   std::optional<render::GGEMSGeometryDisplayMode> bound_mode;
 
   GeometryPushConstants constants;
 
   render::GGEMSGeometryAppearance const automatic;
-  auto const white_color = ToVulkanClearColor(render::WHITE_White);
 
   for (auto const &occurrence : scene_->occurrences) {
+    if ((selected_volume_id == occurrence.volume_id) != selected_only) {
+      continue;
+    }
+
     auto const &override =
       appearance.empty() ? automatic : appearance[occurrence.volume_id];
 
@@ -414,9 +437,7 @@ auto GGEMSVulkanGeometry::Record(
       bound_mode = mode;
     }
 
-    constants.color = selected_volume_id == occurrence.volume_id
-                        ? selected_color_
-                        : white_color;
+    constants.color = ToVulkanClearColor(occurrence.color);
     constants.shape_index = occurrence.mesh_index;
     constants.shaded = solid ? 1U : 0U;
 
@@ -438,11 +459,27 @@ auto GGEMSVulkanGeometry::Record(
       }
     }
 
+    auto const &mesh = scene_->meshes[occurrence.mesh_index];
+
+    if (selected_only) {
+      // Preserve scene color while marking the nearest selected surface.
+      // Consume its stencil bit once, including coincident Wireframe edges.
+      constants.color[3U] = 0.0F;
+      command_buffer.pushConstants(
+        *pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
+        vk::ArrayProxy<GeometryPushConstants const>{1U, &constants});
+      command_buffer.draw(mesh.vertex_count, 1U, 0U, 0U);
+
+      command_buffer.setStencilOp(vk::StencilFaceFlagBits::eFrontAndBack,
+                                  vk::StencilOp::eKeep, vk::StencilOp::eZero,
+                                  vk::StencilOp::eKeep, vk::CompareOp::eEqual);
+      constants.color[3U] = 0.5F;
+    }
+
     command_buffer.pushConstants(
       *pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
       vk::ArrayProxy<GeometryPushConstants const>{1U, &constants});
 
-    auto const &mesh = scene_->meshes[occurrence.mesh_index];
     command_buffer.draw(mesh.vertex_count, 1U, 0U, 0U);
   }
 }

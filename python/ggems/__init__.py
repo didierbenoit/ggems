@@ -29,7 +29,7 @@ GGEMS - GPU Geant4-based Monte Carlo Simulations.
 
 This package exposes the GGEMS C++ engine through Python bindings and provides
 access to the main runtime, OpenCL, random, materials, production cuts, source,
-radionuclide, geometry, observer, run, and optional graphical-interface
+radionuclide, geometry, colors, observer, run, and optional graphical-interface
 modules.
 
 Top-level functions control GGEMS logging and output runtime behavior.
@@ -146,6 +146,7 @@ source = ggems.source
 run = ggems.run
 observer = ggems.observer
 geometry = ggems.geometry
+colors = ggems.colors
 radionuclide = ggems.radionuclide
 cuts = ggems.cuts
 
@@ -164,6 +165,7 @@ __all__ = [
     "cuts",
     "source",
     "geometry",
+    "colors",
     "run",
     "observer",
     "radionuclide",

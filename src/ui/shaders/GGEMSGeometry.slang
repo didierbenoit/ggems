@@ -403,7 +403,7 @@ GeometryTriangle GeometryShapeTriangle(GeometryShape shape, uint triangle) {
 /*!
  * \brief Generates one analytic vertex and applies the occurrence transform.
  * \param[in] vertex_id Vertex index within the shared procedural topology.
- * \return Clip position and opaque named or selected color with optional light.
+ * \return Clip position, authored RGB with optional light, and supplied alpha.
  */
 [shader("vertex")] GeometryVertexOutput
 VertexMain(uint vertex_id /*! \cond */ : SV_VertexID
@@ -433,14 +433,14 @@ VertexMain(uint vertex_id /*! \cond */ : SV_VertexID
     float3 light = normalize(float3(0.5, -0.3, 0.8));
     shade = 0.3 + 0.7 * max(dot(normalize(world_normal), light), 0.0);
   }
-  output.color = float4(g_geometry.color.rgb * shade, 1.0);
+  output.color = float4(g_geometry.color.rgb * shade, g_geometry.color.a);
   return output;
 }
 
   /*!
-   * \brief Publishes the opaque generated face or wire color.
+   * \brief Publishes the generated face or wire color and supplied alpha.
    * \param[in] input Rasterized procedural geometry output.
-   * \return Opaque linear-light RGBA for the shared scene color attachment.
+   * \return Linear-light RGBA for blending into the shared scene attachment.
    */
   [shader("fragment")] float4
   FragmentMain(GeometryVertexOutput input) /*! \cond */

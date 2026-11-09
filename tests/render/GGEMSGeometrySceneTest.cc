@@ -55,6 +55,7 @@
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -78,20 +79,47 @@ auto Mesh(GGEMSGeometryScene const &scene, std::size_t occurrence)
 }
 } // namespace
 
+TEST(GGEMSGeometryScene, AnalyticalModelColorsDefaultToWhiteAndCopyByValue) {
+  std::array<GGEMSWorld::Volume, 8> volumes{
+    GGEMSBox{},       GGEMSSphere{},    GGEMSTubs{}, GGEMSCons{},
+    GGEMSPolyhedra{}, GGEMSEllipsoid{}, GGEMSTrd{},  GGEMSTrap{},
+  };
+
+  for (auto &volume : volumes) {
+    std::visit(
+      [](auto &shape) -> void {
+        EXPECT_EQ(shape.GetColor(), WHITE_White);
+        EXPECT_EQ(&shape.SetColor(MAGENTA_BlueViolet), &shape);
+
+        auto copy = shape;
+        EXPECT_EQ(copy.GetColor(), MAGENTA_BlueViolet);
+        copy.SetColor(YELLOW_Gold);
+        EXPECT_EQ(copy.GetColor(), YELLOW_Gold);
+        EXPECT_EQ(shape.GetColor(), MAGENTA_BlueViolet);
+      },
+      volume);
+  }
+}
+
 TEST(GGEMSGeometryScene, OwnsWorldAndSharedMeshesWithPhysicalHierarchy) {
   auto world = World();
   GGEMSBox mother;
   mother.SetSize(200_mm, 200_mm, 200_mm)
     .SetPosition(MakePositionPM(100'000'000'000LL, 0, 0))
     .SetRotation(0_deg, 0_deg, 90_deg)
+    .SetColor(GRAY_Silver)
     .SetMaterial(BuildBuiltInMaterial("Water"));
   world.AddVolume(mother);
+  mother.SetColor(BLUE_Pure);
+
   GGEMSBox child;
   child.SetSize(10_mm, 20_mm, 30_mm)
     .SetPosition(MakePositionPM(20'000'000'000LL, 0, 0))
+    .SetColor(MAGENTA_BlueViolet)
     .SetMaterial(BuildBuiltInMaterial("Aluminum"));
   world.AddVolume(child, 1U);
   child.SetPosition(MakePositionPM(-20'000'000'000LL, 0, 0))
+    .SetColor(YELLOW_Gold)
     .SetMaterial(BuildBuiltInMaterial("Water"));
   world.AddVolume(child, 1U);
   ASSERT_NO_THROW(world.Validate());
@@ -111,6 +139,10 @@ TEST(GGEMSGeometryScene, OwnsWorldAndSharedMeshesWithPhysicalHierarchy) {
   EXPECT_EQ(scene.occurrences[2].parent_volume_id, 1U);
   EXPECT_EQ(scene.occurrences[3].parent_volume_id, 1U);
   EXPECT_EQ(scene.occurrences[2].mesh_index, scene.occurrences[3].mesh_index);
+  EXPECT_EQ(scene.occurrences[0].color, WHITE_White);
+  EXPECT_EQ(scene.occurrences[1].color, GRAY_Silver);
+  EXPECT_EQ(scene.occurrences[2].color, MAGENTA_BlueViolet);
+  EXPECT_EQ(scene.occurrences[3].color, YELLOW_Gold);
   auto const &transform = scene.occurrences[2].local_to_world;
   EXPECT_FLOAT_EQ(transform[3], 0.1F);
   EXPECT_FLOAT_EQ(transform[7], 0.02F);
@@ -196,7 +228,8 @@ TEST(GGEMSGeometryScene, PreservesAllFamiliesBoresApexAndPolygonApothems) {
   for (std::size_t index = 0; index < shapes.size(); ++index) {
     std::visit(
       [&](auto shape) -> void {
-        shape.SetMaterial(BuildBuiltInMaterial("Water"))
+        shape.SetColor(MAGENTA_BlueViolet)
+          .SetMaterial(BuildBuiltInMaterial("Water"))
           .SetPosition(MakePositionPM(
             (static_cast<CoordinatePM>(index) - 4) * 50'000'000'000LL, 0, 0));
         world.AddVolume(shape);
@@ -279,6 +312,7 @@ TEST(GGEMSGeometryScene, PreservesAllFamiliesBoresApexAndPolygonApothems) {
     SCOPED_TRACE(names[index]);
     auto const &occurrence = scene.occurrences[index + 1U];
     EXPECT_EQ(occurrence.shape_name, names[index]);
+    EXPECT_EQ(occurrence.color, MAGENTA_BlueViolet);
     EXPECT_EQ(occurrence.dimensions.size(), parameter_counts[index]);
     EXPECT_TRUE(std::ranges::all_of(
       occurrence.dimensions, [](auto const &parameter) -> bool {
@@ -327,14 +361,20 @@ TEST(GGEMSGeometryScene,
      RepeatedSubtreesKeepOccurrenceIdentityAndComposedBounds) {
   GGEMSBox crystal;
   crystal.SetSize(2_mm, 4_mm, 6_mm)
+    .SetColor(MAGENTA_BlueViolet)
     .SetMaterial(BuildBuiltInMaterial("Aluminum"));
   GGEMSBox module;
   module.SetSize(20_mm, 20_mm, 20_mm)
+    .SetColor(GRAY_Silver)
     .SetMaterial(BuildBuiltInMaterial("Water"))
     .SetPosition(MakePositionPM(100'000'000'000LL, 0, 0));
   module.LinearRepeater(crystal, 2U, 8_mm, GGEMSRepeatAxis::X);
+  crystal.SetColor(YELLOW_Gold);
+
   auto world = World();
   world.CircularRepeater(module, 4U, GGEMSRepeatAxis::Z);
+  module.SetColor(BLUE_Pure);
+
   ASSERT_NO_THROW(world.Validate());
   auto const scene = BuildGeometryScene(world);
   ASSERT_EQ(scene.occurrences.size(), 13U);
@@ -342,6 +382,7 @@ TEST(GGEMSGeometryScene,
             (std::vector<std::uint32_t>{1U, 4U, 7U, 10U}));
   for (std::uint32_t parent : scene.occurrences[0].children) {
     auto const &mother = scene.occurrences[parent];
+    EXPECT_EQ(mother.color, GRAY_Silver);
     EXPECT_EQ(mother.children,
               (std::vector<std::uint32_t>{parent + 1U, parent + 2U}));
     for (auto child : mother.children) {
@@ -351,6 +392,7 @@ TEST(GGEMSGeometryScene,
       EXPECT_EQ(occurrence.mesh_index, scene.occurrences[2].mesh_index);
       EXPECT_TRUE(occurrence.children.empty());
       EXPECT_EQ(occurrence.material_name, "Aluminum");
+      EXPECT_EQ(occurrence.color, MAGENTA_BlueViolet);
       EXPECT_LT(occurrence.maximum_m[0] - occurrence.minimum_m[0], 0.005);
       EXPECT_LT(occurrence.maximum_m[1] - occurrence.minimum_m[1], 0.005);
     }

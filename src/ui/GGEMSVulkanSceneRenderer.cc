@@ -52,6 +52,13 @@ auto GGEMSVulkanSceneRenderer::Initialize(
   device_ = &device;
   color_format_ = color_format;
 
+  if (!IsDepthFormatSupported(depth_format_)) {
+    throw ggems::core::GGEMSRecoverable(std::format(
+      "Vulkan depth/stencil format '{}' is not supported as a depth/stencil "
+      "attachment.",
+      vk::to_string(depth_format_)));
+  }
+
   world_axes_.Initialize(device, color_format_, depth_format_);
   cartesian_grid_.Initialize(device, color_format_, depth_format_);
 
@@ -250,13 +257,6 @@ auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
       "depth target.");
   }
 
-  if (!IsDepthFormatSupported(depth_format_)) {
-    throw ggems::core::GGEMSRecoverable(
-      std::format("Vulkan depth format '{}' is not supported as a depth "
-                  "attachment.",
-                  vk::to_string(depth_format_)));
-  }
-
   vk::ImageCreateInfo depth_image_create_info{
     .imageType = vk::ImageType::e2D,
     .format = depth_format_,
@@ -295,7 +295,8 @@ auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
     .format = depth_format_,
     .subresourceRange =
       vk::ImageSubresourceRange{
-        .aspectMask = vk::ImageAspectFlagBits::eDepth,
+        .aspectMask =
+          vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
         .baseMipLevel = 0U,
         .levelCount = 1U,
         .baseArrayLayer = 0U,
@@ -419,7 +420,8 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
   };
 
   vk::ImageSubresourceRange depth_range{
-    .aspectMask = vk::ImageAspectFlagBits::eDepth,
+    .aspectMask =
+      vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
     .baseMipLevel = 0U,
     .levelCount = 1U,
     .baseArrayLayer = 0U,
@@ -444,7 +446,7 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
     .dstAccessMask = vk::AccessFlagBits2::eDepthStencilAttachmentRead |
                      vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
     .oldLayout = depth_image_layout_,
-    .newLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+    .newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
     .image = *depth_image_,
@@ -458,7 +460,7 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   command_buffer.pipelineBarrier2(to_depth_attachment_dependency);
 
-  depth_image_layout_ = vk::ImageLayout::eDepthAttachmentOptimal;
+  depth_image_layout_ = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
   vk::ClearValue depth_clear_value{};
   depth_clear_value.depthStencil =
@@ -466,7 +468,7 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   vk::RenderingAttachmentInfo depth_attachment{
     .imageView = *depth_image_view_,
-    .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+    .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
     .loadOp = vk::AttachmentLoadOp::eClear,
     .storeOp = vk::AttachmentStoreOp::eDontCare,
     .clearValue = depth_clear_value,
@@ -482,6 +484,7 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
     .colorAttachmentCount = 1U,
     .pColorAttachments = &color_attachment,
     .pDepthAttachment = &depth_attachment,
+    .pStencilAttachment = &depth_attachment,
   };
 
   command_buffer.beginRendering(rendering_info);
@@ -505,7 +508,7 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   geometry_.Record(command_buffer, parameters.world_to_clip,
                    parameters.selected_volume_id,
-                   parameters.geometry_appearance);
+                   parameters.geometry_appearance, false);
 
   auto const *scene = geometry_.GetScene();
   if (parameters.show_axes && scene != nullptr) {
@@ -515,6 +518,10 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   particle_traces_.Record(command_buffer, parameters.world_to_clip,
                           parameters.trace_visibility);
+
+  geometry_.Record(command_buffer, parameters.world_to_clip,
+                   parameters.selected_volume_id,
+                   parameters.geometry_appearance, true);
 
   if (parameters.cartesian_grid != nullptr && scene != nullptr) {
     cartesian_grid_.Record(command_buffer, parameters.world_to_clip,

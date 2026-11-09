@@ -198,6 +198,7 @@ auto GGEMSVulkanCartesianGrid::Initialize(vk::raii::Device const &device,
     .colorAttachmentCount = 1U,
     .pColorAttachmentFormats = &color_format,
     .depthAttachmentFormat = depth_format,
+    .stencilAttachmentFormat = depth_format,
   };
 
   vk::GraphicsPipelineCreateInfo pipeline_create_info{

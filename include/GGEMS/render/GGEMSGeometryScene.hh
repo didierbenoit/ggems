@@ -34,6 +34,8 @@
 #include <string>
 #include <vector>
 
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
 namespace ggems::geometry {
@@ -144,6 +146,9 @@ struct GGEMSGeometryOccurrence {
   /*! \brief Canonical shape parameters formatted once for inspection. */
   std::vector<GGEMSGeometryProperty> dimensions;
 
+  /*! \brief Captured model display color; World retains white. */
+  ColorKey color{WHITE_White};
+
   /*! \brief Composed local origin in World meters before render rounding. */
   std::array<double, 3> position_m{};
 
@@ -192,10 +197,11 @@ struct GGEMSGeometryScene {
  *
  * Slang generates all visual triangles and normals from these parameters;
  * wireframe and solid modes share that topology. Equal shape parameters share
- * descriptors independently of pose or Material. Inspection metadata is owned
- * independently of World. Bounds use conservative analytic envelopes under
- * the render transform, without tessellation or a physics query. World uses
- * a Box descriptor and remains restricted to None or Wireframe by appearance.
+ * descriptors independently of pose, Material, or color. Inspection metadata
+ * and model colors are owned independently of World. Bounds use conservative
+ * analytic envelopes under the render transform, without tessellation or a
+ * physics query. World uses a Box descriptor and remains restricted to None or
+ * Wireframe by appearance.
  * \param[in] world Validated Run-owned World, borrowed only during this call.
  * \return Owned presentation data with unchanged physical IDs and parent links.
  */

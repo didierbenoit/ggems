@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Owns immutable, parent-local analytical child recipes.
+ * \brief Owns model display color and immutable analytical child recipes.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -34,6 +34,8 @@
 #include <memory>
 #include <span>
 
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
 namespace ggems::geometry {
@@ -80,7 +82,7 @@ struct GGEMSVolumeRecipes;
 } // namespace detail
 
 /*!
- * \brief Gives analytical solids immutable owned child descriptions.
+ * \brief Gives analytical solids a display color and owned child descriptions.
  *
  * Each child operation captures the child's current value and descendants.
  * Later source setters or child additions cannot change that snapshot. The
@@ -88,9 +90,32 @@ struct GGEMSVolumeRecipes;
  * or World. Immutable sharing preserves deep value semantics without Python
  * references or a mutable physical tree. Final World attachment expands the
  * descriptions and performs complete geometry admission atomically.
+ * The display color defaults to white and follows copies and captures without
+ * affecting physical geometry or Material identity.
  */
 class GGEMSVolumeAuthoring {
 public:
+  /*!
+   * \brief Sets the model color inherited by its captured occurrences.
+   * \tparam Self Concrete analytical volume type.
+   * \param[in,out] self Volume whose display color changes.
+   * \param[in] color GGEMS palette key; independent of the Material.
+   * \return This concrete volume for chained configuration.
+   */
+  template <class Self>
+  auto SetColor(this Self &self, render::ColorKey color) noexcept -> Self & {
+    self.color_ = color;
+    return self;
+  }
+
+  /*!
+   * \brief Returns the model display color.
+   * \return Stored GGEMS palette key; WHITE_White before SetColor().
+   */
+  [[nodiscard]] auto GetColor() const noexcept -> render::ColorKey {
+    return color_;
+  }
+
   /*!
    * \brief Captures one complete child subtree in the mother's local frame.
    * \tparam Self Concrete analytical mother type.
@@ -318,6 +343,9 @@ private:
    */
   [[nodiscard]] static auto Capture(GGEMSTrap const &child)
     -> std::shared_ptr<detail::GGEMSAuthoredVolume const>;
+
+  /*! \brief Model display color, independent of physical state. */
+  render::ColorKey color_{render::WHITE_White};
 
   /*! \brief Shared immutable descriptions; absent for a leaf. */
   std::shared_ptr<detail::GGEMSVolumeRecipes const> children_;

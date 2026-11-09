@@ -281,10 +281,10 @@ World. Physical IDs are assigned internally.
 
 World attachment copies the complete subtree independently. An explicitly
 attached root remains a handle for top-down additions to its original live
-World; its later setters do not change the stored pose, shape, or material.
-Descendant sources captured bottom-up have no such handle. Adding children to
-those sources changes only their own authoring values. Direct self-use and reuse
-of a source already registered in a live World are rejected.
+World; its later setters do not change the stored pose, shape, material, or
+color. Descendant sources captured bottom-up have no such handle. Adding
+children to those sources changes only their own authoring values. Direct
+self-use and reuse of a source already registered in a live World are rejected.
 
 Every World or registered-mother attachment requires configured World size and
 material and validates the complete batch before publication, including a
@@ -1215,6 +1215,38 @@ Example:
            py::arg("material_name"),
            py::return_value_policy::reference_internal);
 
+  // === === ===
+  auto const bind_color =
+    []<typename Shape>(
+      py::class_<Shape, std::shared_ptr<Shape>> &binding) -> void {
+    binding.def(
+      "set_color", &ggems::geometry::GGEMSVolumeAuthoring::SetColor<Shape>,
+      R"doc(Set the volume's visualization color from the GGEMS normal palette.
+
+The default is ggems.colors.white_white. Color is independent of the material
+and is used in Wireframe and Solid modes. Child captures and repeaters retain
+the model's color at attachment; later setters do not recolor captured copies.
+Selection temporarily uses alpha 0.5 while preserving this color.
+
+Args:
+    color: A typed ggems.colors.ColorKey, such as ggems.colors.magenta_blueviolet.
+
+Returns:
+    This analytical volume for chaining.
+)doc",
+      py::arg("color"), py::return_value_policy::reference_internal);
+  };
+
+  bind_color(box_binding);
+  bind_color(sphere_binding);
+  bind_color(tubs_binding);
+  bind_color(ellipsoid_binding);
+  bind_color(trd_binding);
+  bind_color(trap_binding);
+  bind_color(cons_binding);
+  bind_color(polyhedra_binding);
+
+  // === === ===
   auto const attachments =
     std::make_shared<ggems::python::detail::GGEMSGeometryAttachments>();
   BindAttachments(box_binding, attachments);

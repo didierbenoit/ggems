@@ -75,7 +75,7 @@ public:
     detail::GGEMSCartesianGrid const *cartesian_grid{};
 
     /*!
-     * \brief Physical occurrence to accent without changing depth or geometry.
+     * \brief Physical occurrence drawn with its authored color at half opacity.
      */
     std::optional<std::uint32_t> selected_volume_id;
 
@@ -116,6 +116,7 @@ public:
    * \param[in] device Logical-device wrapper that must outlive owned GPU
    *   resources.
    * \param[in] color_format Offscreen color format used by the scene pipelines.
+   * \throws core::GGEMSRecoverable If FP32 depth/stencil is unsupported.
    */
   auto Initialize(vk::raii::PhysicalDevice const &physical_device,
                   vk::raii::Device const &device, vk::Format color_format)
@@ -243,9 +244,9 @@ private:
     -> std::uint32_t;
 
   /*!
-   * \brief Allocates the depth attachment for the requested scene extent.
+   * \brief Allocates the combined depth/stencil scene attachment.
    *
-   * \throws core::GGEMSRecoverable If the selected depth format is unsupported.
+   * \throws core::GGEMSInternal If no device is bound.
    */
   auto CreateDepthTarget() -> void;
 
@@ -282,16 +283,16 @@ private:
   /*! \brief Tracked layout of the offscreen color image. */
   vk::ImageLayout color_image_layout_{vk::ImageLayout::eUndefined};
 
-  /*! \brief Depth attachment format used by scene pipelines. */
-  vk::Format depth_format_{vk::Format::eD32Sfloat};
+  /*! \brief FP32 depth and stencil coverage for selected-volume blending. */
+  vk::Format depth_format_{vk::Format::eD32SfloatS8Uint};
 
-  /*! \brief Owned depth attachment. */
+  /*! \brief Owned combined depth/stencil attachment. */
   vk::raii::Image depth_image_{nullptr};
 
   /*! \brief Device-local allocation bound to the depth image. */
   vk::raii::DeviceMemory depth_memory_{nullptr};
 
-  /*! \brief Owned depth-attachment view. */
+  /*! \brief Owned combined depth/stencil attachment view. */
   vk::raii::ImageView depth_image_view_{nullptr};
 
   /*! \brief Tracked layout of the depth image. */
