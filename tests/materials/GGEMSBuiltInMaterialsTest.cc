@@ -57,13 +57,25 @@ using namespace ggems::units;
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<std::string_view, 24U> k_compound_names{
+constexpr std::array<std::string_view, 51U> k_compound_names{
   {
-    "Air",           "Water",         "Adipose",       "Blood", "BloodIodine5",
-    "BloodIodine10", "BloodIodine15", "BloodIodine20", "Brain", "Breast",
-    "Heart",         "Intestine",     "Kidney",        "Liver", "Lung",
-    "RibBone",       "SpineBone",     "Spleen",        "CdTe",  "CsI",
-    "GaAs",          "GOS",           "LSO",           "NaI",
+    "Air",           "Water",         "Adipose",
+    "Blood",         "BloodIodine5",  "BloodIodine10",
+    "BloodIodine15", "BloodIodine20", "Brain",
+    "Breast",        "Heart",         "Intestine",
+    "Kidney",        "Liver",         "Lung",
+    "RibBone",       "SpineBone",     "Spleen",
+    "Skin",          "SoftTissue",    "Testis",
+    "EyeLens",       "CorticalBone",  "Muscle",
+    "Cartilage",     "RedBoneMarrow", "YellowBoneMarrow",
+    "Teeth",         "SpinalCord",    "Stomach",
+    "Esophagus",     "Thyroid",       "CdTe",
+    "CsI",           "GaAs",          "GOS",
+    "BGO",           "LYSO",          "GSO",
+    "LaBr3",         "CeBr3",         "GAGG",
+    "CZT",           "aSe",           "PbWO4",
+    "CdWO4",         "YAG",           "YAP",
+    "LuAP",          "LSO",           "NaI",
   },
 };
 
@@ -79,7 +91,7 @@ struct ExpectedTotals {
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<ExpectedTotals, 116U> k_expected_totals{
+constexpr std::array<ExpectedTotals, 143U> k_expected_totals{
   {
     {
       .name = "Hydrogen",
@@ -661,6 +673,141 @@ constexpr std::array<ExpectedTotals, 116U> k_expected_totals{
       .total_atom_density = 2.94597502831913106187572366736960772e+22L,
       .electron_density = 9.43602084766863537232750709764425700e+23L,
     },
+    {
+      .name = "BGO",
+      .total_atom_density = 6.54848554746040189624734509715418379e+22L,
+      .electron_density = 1.80602679519409494809878462030287857e+24L,
+    },
+    {
+      .name = "LYSO",
+      .total_atom_density = 7.75974852926920923916381610718806095e+22L,
+      .electron_density = 1.83908419368473537124547822030725160e+24L,
+    },
+    {
+      .name = "GSO",
+      .total_atom_density = 7.63830562979029010780269291537497657e+22L,
+      .electron_density = 1.73772475286923302253960306051523130e+24L,
+    },
+    {
+      .name = "LaBr3",
+      .total_atom_density = 3.23203449541992301446847421649207077e+22L,
+      .electron_density = 1.30897289469014147563013619383673603e+24L,
+    },
+    {
+      .name = "CeBr3",
+      .total_atom_density = 3.31686505207540741556967874242124819e+22L,
+      .electron_density = 1.35162175482579030549993694390161229e+24L,
+    },
+    {
+      .name = "GAGG",
+      .total_atom_density = 8.61525836968567340737251747622981962e+22L,
+      .electron_density = 1.75321240849253532545450720309223819e+24L,
+    },
+    {
+      .name = "CZT",
+      .total_atom_density = 2.95846919819741219326166122478050428e+22L,
+      .electron_density = 1.45260560831813465100356423779151779e+24L,
+    },
+    {
+      .name = "aSe",
+      .total_atom_density = 3.24905246707794715850271549341109831e+22L,
+      .electron_density = 1.10467783880650203389092326775977343e+24L,
+    },
+    {
+      .name = "PbWO4",
+      .total_atom_density = 6.57464028119009023283278047135599414e+22L,
+      .electron_density = 2.06003359403956845076041689610076608e+24L,
+    },
+    {
+      .name = "CdWO4",
+      .total_atom_density = 7.92352275544408084623616039233224615e+22L,
+      .electron_density = 2.03373011922910919998110696692666588e+24L,
+    },
+    {
+      .name = "YAG",
+      .total_atom_density = 9.23171147925532365065832815896862918e+22L,
+      .electron_density = 1.28321594553644777438215470121981949e+24L,
+    },
+    {
+      .name = "YAP",
+      .total_atom_density = 9.86622668062801547143047764679590753e+22L,
+      .electron_density = 1.49967711146817556307117088459190933e+24L,
+    },
+    {
+      .name = "LuAP",
+      .total_atom_density = 1.00469789972696627327306135929054083e+23L,
+      .electron_density = 2.17016730524942582006292255876270582e+24L,
+    },
+    {
+      .name = "Skin",
+      .total_atom_density = 1.06631876396905335370562401636336211e+23L,
+      .electron_density = 3.63891518471136830747401839013168682e+23L,
+    },
+    {
+      .name = "SoftTissue",
+      .total_atom_density = 9.90062476202199622087038587553147298e+22L,
+      .electron_density = 3.31945396056913032201566093491909359e+23L,
+    },
+    {
+      .name = "Testis",
+      .total_atom_density = 1.00919093173126397626066892907848490e+23L,
+      .electron_density = 3.45142518198582208854294621866993114e+23L,
+    },
+    {
+      .name = "EyeLens",
+      .total_atom_density = 1.05512158398397939199362022967007257e+23L,
+      .electron_density = 3.63521590441247217428382863575018427e+23L,
+    },
+    {
+      .name = "CorticalBone",
+      .total_atom_density = 1.09822944529770715835057102786392853e+23L,
+      .electron_density = 5.80781766439254331900016893014135587e+23L,
+    },
+    {
+      .name = "Muscle",
+      .total_atom_density = 9.91115754967198784734126667479054537e+22L,
+      .electron_density = 3.44074854589726803867436058409680948e+23L,
+    },
+    {
+      .name = "Cartilage",
+      .total_atom_density = 1.01254451029669709405179271635197881e+23L,
+      .electron_density = 3.62142880102096823256219540570026649e+23L,
+    },
+    {
+      .name = "RedBoneMarrow",
+      .total_atom_density = 1.04658695746224871129708740033674666e+23L,
+      .electron_density = 3.42001917842517148270008895494988983e+23L,
+    },
+    {
+      .name = "YellowBoneMarrow",
+      .total_atom_density = 1.07855531934690308085593386609329642e+23L,
+      .electron_density = 3.28291259783894879527681298281768386e+23L,
+    },
+    {
+      .name = "Teeth",
+      .total_atom_density = 1.15996137833370283872726689338687176e+23L,
+      .electron_density = 8.41800410858755681850937109660478904e+23L,
+    },
+    {
+      .name = "SpinalCord",
+      .total_atom_density = 1.02598703752144562711255358440584757e+23L,
+      .electron_density = 3.42379792016065564616059807178059184e+23L,
+    },
+    {
+      .name = "Stomach",
+      .total_atom_density = 1.01783485754943079386658509584733905e+23L,
+      .electron_density = 3.45428778795936703986343490275952390e+23L,
+    },
+    {
+      .name = "Esophagus",
+      .total_atom_density = 1.01444351422536360123073782294685600e+23L,
+      .electron_density = 3.41753117676229725533714480176065546e+23L,
+    },
+    {
+      .name = "Thyroid",
+      .total_atom_density = 1.01199718489795593307279675313199571e+23L,
+      .electron_density = 3.45054447612930546741565575922593535e+23L,
+    },
   },
 };
 
@@ -674,7 +821,7 @@ constexpr std::array<ExpectedTotals, 116U> k_expected_totals{
 TEST(GGEMSBuiltInMaterialsTest, ExposesCanonicalNamesInRegistryOrder) {
   auto const available = builtins::GetAvailableMaterialNames();
 
-  ASSERT_EQ(available.size(), 117U);
+  ASSERT_EQ(available.size(), 144U);
   EXPECT_EQ(available.front(), "Vacuum");
 
   EXPECT_EQ(available[1U], "Hydrogen");

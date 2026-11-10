@@ -652,22 +652,10 @@ constexpr std::array<ElementalMaterialRow, 92U> k_elemental_materials{
 /*! \brief Defines the elemental mass fractions of the Air preset. */
 constexpr std::array<GGEMSMaterialComponent, 4U> k_air_composition{
   {
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.000124L,
-    },
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.755268L,
-    },
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.231781L,
-    },
-    {
-      .atomic_number = 18U,
-      .mass_fraction = 0.012827L,
-    },
+    {.atomic_number = 6U, .mass_fraction = 0.000124L},
+    {.atomic_number = 7U, .mass_fraction = 0.755268L},
+    {.atomic_number = 8U, .mass_fraction = 0.231781L},
+    {.atomic_number = 18U, .mass_fraction = 0.012827L},
   },
 };
 
@@ -677,14 +665,8 @@ constexpr std::array<GGEMSMaterialComponent, 4U> k_air_composition{
 /*! \brief Defines the elemental mass fractions of the Water preset. */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_water_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.111898L,
-    },
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.888102L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.111898L},
+    {.atomic_number = 8U, .mass_fraction = 0.888102L},
   },
 };
 
@@ -694,70 +676,19 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_water_composition{
 /*! \brief Defines the elemental mass fractions of the Adipose preset. */
 constexpr std::array<GGEMSMaterialComponent, 13U> k_adipose_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.119477L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.637240L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.007970L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.232333L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.000500L,
-    },
-
-    {
-      .atomic_number = 12U,
-      .mass_fraction = 0.000020L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.000160L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.000730L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.001190L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.000320L,
-    },
-
-    {
-      .atomic_number = 20U,
-      .mass_fraction = 0.000020L,
-    },
-
-    {
-      .atomic_number = 26U,
-      .mass_fraction = 0.000020L,
-    },
-
-    {
-      .atomic_number = 30U,
-      .mass_fraction = 0.000020L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.119477L},
+    {.atomic_number = 6U, .mass_fraction = 0.637240L},
+    {.atomic_number = 7U, .mass_fraction = 0.007970L},
+    {.atomic_number = 8U, .mass_fraction = 0.232333L},
+    {.atomic_number = 11U, .mass_fraction = 0.000500L},
+    {.atomic_number = 12U, .mass_fraction = 0.000020L},
+    {.atomic_number = 15U, .mass_fraction = 0.000160L},
+    {.atomic_number = 16U, .mass_fraction = 0.000730L},
+    {.atomic_number = 17U, .mass_fraction = 0.001190L},
+    {.atomic_number = 19U, .mass_fraction = 0.000320L},
+    {.atomic_number = 20U, .mass_fraction = 0.000020L},
+    {.atomic_number = 26U, .mass_fraction = 0.000020L},
+    {.atomic_number = 30U, .mass_fraction = 0.000020L},
   },
 };
 
@@ -767,55 +698,16 @@ constexpr std::array<GGEMSMaterialComponent, 13U> k_adipose_composition{
 /*! \brief Defines the elemental mass fractions of the Blood preset. */
 constexpr std::array<GGEMSMaterialComponent, 10U> k_blood_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.102L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.11L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.033L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.745L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.003L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 26U,
-      .mass_fraction = 0.001L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.102L},
+    {.atomic_number = 6U, .mass_fraction = 0.11L},
+    {.atomic_number = 7U, .mass_fraction = 0.033L},
+    {.atomic_number = 8U, .mass_fraction = 0.745L},
+    {.atomic_number = 11U, .mass_fraction = 0.001L},
+    {.atomic_number = 15U, .mass_fraction = 0.001L},
+    {.atomic_number = 16U, .mass_fraction = 0.002L},
+    {.atomic_number = 17U, .mass_fraction = 0.003L},
+    {.atomic_number = 19U, .mass_fraction = 0.002L},
+    {.atomic_number = 26U, .mass_fraction = 0.001L},
   },
 };
 
@@ -825,60 +717,17 @@ constexpr std::array<GGEMSMaterialComponent, 10U> k_blood_composition{
 /*! \brief Defines the elemental mass fractions of the BloodIodine5 preset. */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine5_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.0971L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.104L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.0314L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.708L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.00095L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.00095L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.0019L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.00285L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.0019L,
-    },
-
-    {
-      .atomic_number = 26U,
-      .mass_fraction = 0.00095L,
-    },
-
-    {
-      .atomic_number = 53U,
-      .mass_fraction = 0.05L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.0971L},
+    {.atomic_number = 6U, .mass_fraction = 0.104L},
+    {.atomic_number = 7U, .mass_fraction = 0.0314L},
+    {.atomic_number = 8U, .mass_fraction = 0.708L},
+    {.atomic_number = 11U, .mass_fraction = 0.00095L},
+    {.atomic_number = 15U, .mass_fraction = 0.00095L},
+    {.atomic_number = 16U, .mass_fraction = 0.0019L},
+    {.atomic_number = 17U, .mass_fraction = 0.00285L},
+    {.atomic_number = 19U, .mass_fraction = 0.0019L},
+    {.atomic_number = 26U, .mass_fraction = 0.00095L},
+    {.atomic_number = 53U, .mass_fraction = 0.05L},
   },
 };
 
@@ -888,60 +737,17 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine5_composition{
 /*! \brief Defines the elemental mass fractions of the BloodIodine10 preset. */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine10_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.0918L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.099L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.0297L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.6705L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.0009L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.0009L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.0018L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.0027L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.0018L,
-    },
-
-    {
-      .atomic_number = 26U,
-      .mass_fraction = 0.0009L,
-    },
-
-    {
-      .atomic_number = 53U,
-      .mass_fraction = 0.1L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.0918L},
+    {.atomic_number = 6U, .mass_fraction = 0.099L},
+    {.atomic_number = 7U, .mass_fraction = 0.0297L},
+    {.atomic_number = 8U, .mass_fraction = 0.6705L},
+    {.atomic_number = 11U, .mass_fraction = 0.0009L},
+    {.atomic_number = 15U, .mass_fraction = 0.0009L},
+    {.atomic_number = 16U, .mass_fraction = 0.0018L},
+    {.atomic_number = 17U, .mass_fraction = 0.0027L},
+    {.atomic_number = 19U, .mass_fraction = 0.0018L},
+    {.atomic_number = 26U, .mass_fraction = 0.0009L},
+    {.atomic_number = 53U, .mass_fraction = 0.1L},
   },
 };
 
@@ -951,60 +757,17 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine10_composition{
 /*! \brief Defines the elemental mass fractions of the BloodIodine15 preset. */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine15_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.0867L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.0935L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.02805L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.63325L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.00085L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.00085L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.0017L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.00255L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.0017L,
-    },
-
-    {
-      .atomic_number = 26U,
-      .mass_fraction = 0.00085L,
-    },
-
-    {
-      .atomic_number = 53U,
-      .mass_fraction = 0.15L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.0867L},
+    {.atomic_number = 6U, .mass_fraction = 0.0935L},
+    {.atomic_number = 7U, .mass_fraction = 0.02805L},
+    {.atomic_number = 8U, .mass_fraction = 0.63325L},
+    {.atomic_number = 11U, .mass_fraction = 0.00085L},
+    {.atomic_number = 15U, .mass_fraction = 0.00085L},
+    {.atomic_number = 16U, .mass_fraction = 0.0017L},
+    {.atomic_number = 17U, .mass_fraction = 0.00255L},
+    {.atomic_number = 19U, .mass_fraction = 0.0017L},
+    {.atomic_number = 26U, .mass_fraction = 0.00085L},
+    {.atomic_number = 53U, .mass_fraction = 0.15L},
   },
 };
 
@@ -1014,60 +777,17 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine15_composition{
 /*! \brief Defines the elemental mass fractions of the BloodIodine20 preset. */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine20_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.0816L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.088L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.0264L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.596L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.0008L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.0008L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.0016L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.0024L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.0016L,
-    },
-
-    {
-      .atomic_number = 26U,
-      .mass_fraction = 0.0008L,
-    },
-
-    {
-      .atomic_number = 53U,
-      .mass_fraction = 0.2L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.0816L},
+    {.atomic_number = 6U, .mass_fraction = 0.088L},
+    {.atomic_number = 7U, .mass_fraction = 0.0264L},
+    {.atomic_number = 8U, .mass_fraction = 0.596L},
+    {.atomic_number = 11U, .mass_fraction = 0.0008L},
+    {.atomic_number = 15U, .mass_fraction = 0.0008L},
+    {.atomic_number = 16U, .mass_fraction = 0.0016L},
+    {.atomic_number = 17U, .mass_fraction = 0.0024L},
+    {.atomic_number = 19U, .mass_fraction = 0.0016L},
+    {.atomic_number = 26U, .mass_fraction = 0.0008L},
+    {.atomic_number = 53U, .mass_fraction = 0.2L},
   },
 };
 
@@ -1077,70 +797,19 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine20_composition{
 /*! \brief Defines the elemental mass fractions of the Brain preset. */
 constexpr std::array<GGEMSMaterialComponent, 13U> k_brain_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.110667L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.125420L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.013280L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.737723L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.001840L,
-    },
-
-    {
-      .atomic_number = 12U,
-      .mass_fraction = 0.000150L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.003540L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.001770L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.002360L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.003100L,
-    },
-
-    {
-      .atomic_number = 20U,
-      .mass_fraction = 0.000090L,
-    },
-
-    {
-      .atomic_number = 26U,
-      .mass_fraction = 0.000050L,
-    },
-
-    {
-      .atomic_number = 30U,
-      .mass_fraction = 0.000010L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.110667L},
+    {.atomic_number = 6U, .mass_fraction = 0.125420L},
+    {.atomic_number = 7U, .mass_fraction = 0.013280L},
+    {.atomic_number = 8U, .mass_fraction = 0.737723L},
+    {.atomic_number = 11U, .mass_fraction = 0.001840L},
+    {.atomic_number = 12U, .mass_fraction = 0.000150L},
+    {.atomic_number = 15U, .mass_fraction = 0.003540L},
+    {.atomic_number = 16U, .mass_fraction = 0.001770L},
+    {.atomic_number = 17U, .mass_fraction = 0.002360L},
+    {.atomic_number = 19U, .mass_fraction = 0.003100L},
+    {.atomic_number = 20U, .mass_fraction = 0.000090L},
+    {.atomic_number = 26U, .mass_fraction = 0.000050L},
+    {.atomic_number = 30U, .mass_fraction = 0.000010L},
   },
 };
 
@@ -1150,45 +819,14 @@ constexpr std::array<GGEMSMaterialComponent, 13U> k_brain_composition{
 /*! \brief Defines the elemental mass fractions of the Breast preset. */
 constexpr std::array<GGEMSMaterialComponent, 8U> k_breast_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.1060L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.3320L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.0300L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.5270L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.0010L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.0010L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.0020L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.0010L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.1060L},
+    {.atomic_number = 6U, .mass_fraction = 0.3320L},
+    {.atomic_number = 7U, .mass_fraction = 0.0300L},
+    {.atomic_number = 8U, .mass_fraction = 0.5270L},
+    {.atomic_number = 11U, .mass_fraction = 0.0010L},
+    {.atomic_number = 15U, .mass_fraction = 0.0010L},
+    {.atomic_number = 16U, .mass_fraction = 0.0020L},
+    {.atomic_number = 17U, .mass_fraction = 0.0010L},
   },
 };
 
@@ -1198,50 +836,15 @@ constexpr std::array<GGEMSMaterialComponent, 8U> k_breast_composition{
 /*! \brief Defines the elemental mass fractions of the Heart preset. */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_heart_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.104L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.139L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.029L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.718L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.003L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.104L},
+    {.atomic_number = 6U, .mass_fraction = 0.139L},
+    {.atomic_number = 7U, .mass_fraction = 0.029L},
+    {.atomic_number = 8U, .mass_fraction = 0.718L},
+    {.atomic_number = 11U, .mass_fraction = 0.001L},
+    {.atomic_number = 15U, .mass_fraction = 0.002L},
+    {.atomic_number = 16U, .mass_fraction = 0.002L},
+    {.atomic_number = 17U, .mass_fraction = 0.002L},
+    {.atomic_number = 19U, .mass_fraction = 0.003L},
   },
 };
 
@@ -1251,50 +854,15 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_heart_composition{
 /*! \brief Defines the elemental mass fractions of the Intestine preset. */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_intestine_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.106L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.115L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.022L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.751L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.001L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.106L},
+    {.atomic_number = 6U, .mass_fraction = 0.115L},
+    {.atomic_number = 7U, .mass_fraction = 0.022L},
+    {.atomic_number = 8U, .mass_fraction = 0.751L},
+    {.atomic_number = 11U, .mass_fraction = 0.001L},
+    {.atomic_number = 15U, .mass_fraction = 0.001L},
+    {.atomic_number = 16U, .mass_fraction = 0.001L},
+    {.atomic_number = 17U, .mass_fraction = 0.002L},
+    {.atomic_number = 19U, .mass_fraction = 0.001L},
   },
 };
 
@@ -1304,55 +872,16 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_intestine_composition{
 /*! \brief Defines the elemental mass fractions of the Kidney preset. */
 constexpr std::array<GGEMSMaterialComponent, 10U> k_kidney_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.103L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.132L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.03L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.724L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 20U,
-      .mass_fraction = 0.001L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.103L},
+    {.atomic_number = 6U, .mass_fraction = 0.132L},
+    {.atomic_number = 7U, .mass_fraction = 0.03L},
+    {.atomic_number = 8U, .mass_fraction = 0.724L},
+    {.atomic_number = 11U, .mass_fraction = 0.002L},
+    {.atomic_number = 15U, .mass_fraction = 0.002L},
+    {.atomic_number = 16U, .mass_fraction = 0.002L},
+    {.atomic_number = 17U, .mass_fraction = 0.002L},
+    {.atomic_number = 19U, .mass_fraction = 0.002L},
+    {.atomic_number = 20U, .mass_fraction = 0.001L},
   },
 };
 
@@ -1362,50 +891,15 @@ constexpr std::array<GGEMSMaterialComponent, 10U> k_kidney_composition{
 /*! \brief Defines the elemental mass fractions of the Liver preset. */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_liver_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.102L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.139L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.03L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.716L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.003L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.003L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.003L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.102L},
+    {.atomic_number = 6U, .mass_fraction = 0.139L},
+    {.atomic_number = 7U, .mass_fraction = 0.03L},
+    {.atomic_number = 8U, .mass_fraction = 0.716L},
+    {.atomic_number = 11U, .mass_fraction = 0.002L},
+    {.atomic_number = 15U, .mass_fraction = 0.003L},
+    {.atomic_number = 16U, .mass_fraction = 0.003L},
+    {.atomic_number = 17U, .mass_fraction = 0.002L},
+    {.atomic_number = 19U, .mass_fraction = 0.003L},
   },
 };
 
@@ -1415,50 +909,15 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_liver_composition{
 /*! \brief Defines the elemental mass fractions of the Lung preset. */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_lung_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.103L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.105L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.031L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.749L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.003L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.003L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.002L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.103L},
+    {.atomic_number = 6U, .mass_fraction = 0.105L},
+    {.atomic_number = 7U, .mass_fraction = 0.031L},
+    {.atomic_number = 8U, .mass_fraction = 0.749L},
+    {.atomic_number = 11U, .mass_fraction = 0.002L},
+    {.atomic_number = 15U, .mass_fraction = 0.002L},
+    {.atomic_number = 16U, .mass_fraction = 0.003L},
+    {.atomic_number = 17U, .mass_fraction = 0.003L},
+    {.atomic_number = 19U, .mass_fraction = 0.002L},
   },
 };
 
@@ -1468,50 +927,15 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_lung_composition{
 /*! \brief Defines the elemental mass fractions of the RibBone preset. */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_rib_bone_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.034L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.155L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.042L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.435L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 12U,
-      .mass_fraction = 0.002L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.103L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.003L,
-    },
-
-    {
-      .atomic_number = 20U,
-      .mass_fraction = 0.225L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.034L},
+    {.atomic_number = 6U, .mass_fraction = 0.155L},
+    {.atomic_number = 7U, .mass_fraction = 0.042L},
+    {.atomic_number = 8U, .mass_fraction = 0.435L},
+    {.atomic_number = 11U, .mass_fraction = 0.001L},
+    {.atomic_number = 12U, .mass_fraction = 0.002L},
+    {.atomic_number = 15U, .mass_fraction = 0.103L},
+    {.atomic_number = 16U, .mass_fraction = 0.003L},
+    {.atomic_number = 20U, .mass_fraction = 0.225L},
   },
 };
 
@@ -1521,60 +945,17 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_rib_bone_composition{
 /*! \brief Defines the elemental mass fractions of the SpineBone preset. */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_spine_bone_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.063L,
-    },
-
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.261L,
-    },
-
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.039L,
-    },
-
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.436L,
-    },
-
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 12U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.061L,
-    },
-
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.003L,
-    },
-
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 19U,
-      .mass_fraction = 0.001L,
-    },
-
-    {
-      .atomic_number = 20U,
-      .mass_fraction = 0.133L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.063L},
+    {.atomic_number = 6U, .mass_fraction = 0.261L},
+    {.atomic_number = 7U, .mass_fraction = 0.039L},
+    {.atomic_number = 8U, .mass_fraction = 0.436L},
+    {.atomic_number = 11U, .mass_fraction = 0.001L},
+    {.atomic_number = 12U, .mass_fraction = 0.001L},
+    {.atomic_number = 15U, .mass_fraction = 0.061L},
+    {.atomic_number = 16U, .mass_fraction = 0.003L},
+    {.atomic_number = 17U, .mass_fraction = 0.001L},
+    {.atomic_number = 19U, .mass_fraction = 0.001L},
+    {.atomic_number = 20U, .mass_fraction = 0.133L},
   },
 };
 
@@ -1584,50 +965,277 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_spine_bone_composition{
 /*! \brief Defines the elemental mass fractions of the Spleen preset. */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_spleen_composition{
   {
-    {
-      .atomic_number = 1U,
-      .mass_fraction = 0.103L,
-    },
+    {.atomic_number = 1U, .mass_fraction = 0.103L},
+    {.atomic_number = 6U, .mass_fraction = 0.113L},
+    {.atomic_number = 7U, .mass_fraction = 0.032L},
+    {.atomic_number = 8U, .mass_fraction = 0.741L},
+    {.atomic_number = 11U, .mass_fraction = 0.001L},
+    {.atomic_number = 15U, .mass_fraction = 0.003L},
+    {.atomic_number = 16U, .mass_fraction = 0.002L},
+    {.atomic_number = 17U, .mass_fraction = 0.002L},
+    {.atomic_number = 19U, .mass_fraction = 0.003L},
+  },
+};
 
-    {
-      .atomic_number = 6U,
-      .mass_fraction = 0.113L,
-    },
+// =============================================================================
+// =============================================================================
 
-    {
-      .atomic_number = 7U,
-      .mass_fraction = 0.032L,
-    },
+/*! \brief Defines the elemental mass fractions of the Skin preset. */
 
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.741L,
-    },
+constexpr std::array<GGEMSMaterialComponent, 13U> k_skin_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.100588L},
+    {.atomic_number = 6U, .mass_fraction = 0.228250L},
+    {.atomic_number = 7U, .mass_fraction = 0.046420L},
+    {.atomic_number = 8U, .mass_fraction = 0.619002L},
+    {.atomic_number = 11U, .mass_fraction = 0.000070L},
+    {.atomic_number = 12U, .mass_fraction = 0.000060L},
+    {.atomic_number = 15U, .mass_fraction = 0.000330L},
+    {.atomic_number = 16U, .mass_fraction = 0.001590L},
+    {.atomic_number = 17U, .mass_fraction = 0.002670L},
+    {.atomic_number = 19U, .mass_fraction = 0.000850L},
+    {.atomic_number = 20U, .mass_fraction = 0.000150L},
+    {.atomic_number = 26U, .mass_fraction = 0.000010L},
+    {.atomic_number = 30U, .mass_fraction = 0.000010L},
+  },
+};
 
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.001L,
-    },
+// =============================================================================
+// =============================================================================
 
-    {
-      .atomic_number = 15U,
-      .mass_fraction = 0.003L,
-    },
+/*! \brief Defines the elemental mass fractions of the SoftTissue preset. */
+constexpr std::array<GGEMSMaterialComponent, 13U> k_soft_tissue_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.104472L},
+    {.atomic_number = 6U, .mass_fraction = 0.232190L},
+    {.atomic_number = 7U, .mass_fraction = 0.024880L},
+    {.atomic_number = 8U, .mass_fraction = 0.630238L},
+    {.atomic_number = 11U, .mass_fraction = 0.001130L},
+    {.atomic_number = 12U, .mass_fraction = 0.000130L},
+    {.atomic_number = 15U, .mass_fraction = 0.001330L},
+    {.atomic_number = 16U, .mass_fraction = 0.001990L},
+    {.atomic_number = 17U, .mass_fraction = 0.001340L},
+    {.atomic_number = 19U, .mass_fraction = 0.001990L},
+    {.atomic_number = 20U, .mass_fraction = 0.000230L},
+    {.atomic_number = 26U, .mass_fraction = 0.000050L},
+    {.atomic_number = 30U, .mass_fraction = 0.000030L},
+  },
+};
 
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.002L,
-    },
+// =============================================================================
+// =============================================================================
 
-    {
-      .atomic_number = 17U,
-      .mass_fraction = 0.002L,
-    },
+/*! \brief Defines the elemental mass fractions of the Testis preset. */
+constexpr std::array<GGEMSMaterialComponent, 13U> k_testis_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.104166L},
+    {.atomic_number = 6U, .mass_fraction = 0.092270L},
+    {.atomic_number = 7U, .mass_fraction = 0.019940L},
+    {.atomic_number = 8U, .mass_fraction = 0.773884L},
+    {.atomic_number = 11U, .mass_fraction = 0.002260L},
+    {.atomic_number = 12U, .mass_fraction = 0.000110L},
+    {.atomic_number = 15U, .mass_fraction = 0.001250L},
+    {.atomic_number = 16U, .mass_fraction = 0.001460L},
+    {.atomic_number = 17U, .mass_fraction = 0.002440L},
+    {.atomic_number = 19U, .mass_fraction = 0.002080L},
+    {.atomic_number = 20U, .mass_fraction = 0.000100L},
+    {.atomic_number = 26U, .mass_fraction = 0.000020L},
+    {.atomic_number = 30U, .mass_fraction = 0.000020L},
+  },
+};
 
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the EyeLens preset. */
+constexpr std::array<GGEMSMaterialComponent, 4U> k_eye_lens_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.099269L},
+    {.atomic_number = 6U, .mass_fraction = 0.193710L},
+    {.atomic_number = 7U, .mass_fraction = 0.053270L},
+    {.atomic_number = 8U, .mass_fraction = 0.653751L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the Muscle preset. */
+constexpr std::array<GGEMSMaterialComponent, 13U> k_muscle_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.100637L},
+    {.atomic_number = 6U, .mass_fraction = 0.107830L},
+    {.atomic_number = 7U, .mass_fraction = 0.027680L},
+    {.atomic_number = 8U, .mass_fraction = 0.754773L},
+    {.atomic_number = 11U, .mass_fraction = 0.000750L},
+    {.atomic_number = 12U, .mass_fraction = 0.000190L},
+    {.atomic_number = 15U, .mass_fraction = 0.001800L},
+    {.atomic_number = 16U, .mass_fraction = 0.002410L},
+    {.atomic_number = 17U, .mass_fraction = 0.000790L},
+    {.atomic_number = 19U, .mass_fraction = 0.003020L},
+    {.atomic_number = 20U, .mass_fraction = 0.000030L},
+    {.atomic_number = 26U, .mass_fraction = 0.000040L},
+    {.atomic_number = 30U, .mass_fraction = 0.000050L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the CorticalBone preset. */
+constexpr std::array<GGEMSMaterialComponent, 9U> k_cortical_bone_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.047234L},
+    {.atomic_number = 6U, .mass_fraction = 0.144330L},
+    {.atomic_number = 7U, .mass_fraction = 0.041990L},
+    {.atomic_number = 8U, .mass_fraction = 0.446096L},
+    {.atomic_number = 12U, .mass_fraction = 0.002200L},
+    {.atomic_number = 15U, .mass_fraction = 0.104970L},
+    {.atomic_number = 16U, .mass_fraction = 0.003150L},
+    {.atomic_number = 20U, .mass_fraction = 0.209930L},
+    {.atomic_number = 30U, .mass_fraction = 0.000100L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the Cartilage preset. */
+constexpr std::array<GGEMSMaterialComponent, 8U> k_cartilage_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.096000L},
+    {.atomic_number = 6U, .mass_fraction = 0.099000L},
+    {.atomic_number = 7U, .mass_fraction = 0.022000L},
+    {.atomic_number = 8U, .mass_fraction = 0.744000L},
+    {.atomic_number = 11U, .mass_fraction = 0.005000L},
+    {.atomic_number = 15U, .mass_fraction = 0.022000L},
+    {.atomic_number = 16U, .mass_fraction = 0.009000L},
+    {.atomic_number = 17U, .mass_fraction = 0.003000L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the RedBoneMarrow preset. */
+constexpr std::array<GGEMSMaterialComponent, 9U> k_red_bone_marrow_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.105000L},
+    {.atomic_number = 6U, .mass_fraction = 0.414000L},
+    {.atomic_number = 7U, .mass_fraction = 0.034000L},
+    {.atomic_number = 8U, .mass_fraction = 0.439000L},
+    {.atomic_number = 15U, .mass_fraction = 0.001000L},
+    {.atomic_number = 16U, .mass_fraction = 0.002000L},
+    {.atomic_number = 17U, .mass_fraction = 0.002000L},
+    {.atomic_number = 19U, .mass_fraction = 0.002000L},
+    {.atomic_number = 26U, .mass_fraction = 0.001000L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the YellowBoneMarrow preset.
+ */
+constexpr std::array<GGEMSMaterialComponent, 7U>
+  k_yellow_bone_marrow_composition{
     {
-      .atomic_number = 19U,
-      .mass_fraction = 0.003L,
+      {.atomic_number = 1U, .mass_fraction = 0.115000L},
+      {.atomic_number = 6U, .mass_fraction = 0.644000L},
+      {.atomic_number = 7U, .mass_fraction = 0.007000L},
+      {.atomic_number = 8U, .mass_fraction = 0.231000L},
+      {.atomic_number = 11U, .mass_fraction = 0.001000L},
+      {.atomic_number = 16U, .mass_fraction = 0.001000L},
+      {.atomic_number = 17U, .mass_fraction = 0.001000L},
     },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the Teeth preset. */
+constexpr std::array<GGEMSMaterialComponent, 7U> k_teeth_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.022000L},
+    {.atomic_number = 6U, .mass_fraction = 0.095000L},
+    {.atomic_number = 7U, .mass_fraction = 0.029000L},
+    {.atomic_number = 8U, .mass_fraction = 0.421000L},
+    {.atomic_number = 12U, .mass_fraction = 0.007000L},
+    {.atomic_number = 15U, .mass_fraction = 0.137000L},
+    {.atomic_number = 20U, .mass_fraction = 0.289000L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the SpinalCord preset. */
+constexpr std::array<GGEMSMaterialComponent, 9U> k_spinal_cord_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.105000L},
+    {.atomic_number = 6U, .mass_fraction = 0.251000L},
+    {.atomic_number = 7U, .mass_fraction = 0.027000L},
+    {.atomic_number = 8U, .mass_fraction = 0.607000L},
+    {.atomic_number = 11U, .mass_fraction = 0.001000L},
+    {.atomic_number = 15U, .mass_fraction = 0.002000L},
+    {.atomic_number = 16U, .mass_fraction = 0.003000L},
+    {.atomic_number = 17U, .mass_fraction = 0.002000L},
+    {.atomic_number = 19U, .mass_fraction = 0.002000L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the Stomach preset. */
+constexpr std::array<GGEMSMaterialComponent, 9U> k_stomach_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.105000L},
+    {.atomic_number = 6U, .mass_fraction = 0.114000L},
+    {.atomic_number = 7U, .mass_fraction = 0.025000L},
+    {.atomic_number = 8U, .mass_fraction = 0.750000L},
+    {.atomic_number = 11U, .mass_fraction = 0.001000L},
+    {.atomic_number = 15U, .mass_fraction = 0.001000L},
+    {.atomic_number = 16U, .mass_fraction = 0.001000L},
+    {.atomic_number = 17U, .mass_fraction = 0.002000L},
+    {.atomic_number = 19U, .mass_fraction = 0.001000L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the Esophagus preset. */
+constexpr std::array<GGEMSMaterialComponent, 9U> k_esophagus_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.104000L},
+    {.atomic_number = 6U, .mass_fraction = 0.213000L},
+    {.atomic_number = 7U, .mass_fraction = 0.029000L},
+    {.atomic_number = 8U, .mass_fraction = 0.644000L},
+    {.atomic_number = 11U, .mass_fraction = 0.001000L},
+    {.atomic_number = 15U, .mass_fraction = 0.002000L},
+    {.atomic_number = 16U, .mass_fraction = 0.003000L},
+    {.atomic_number = 17U, .mass_fraction = 0.002000L},
+    {.atomic_number = 19U, .mass_fraction = 0.002000L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the Thyroid preset. */
+constexpr std::array<GGEMSMaterialComponent, 10U> k_thyroid_composition{
+  {
+    {.atomic_number = 1U, .mass_fraction = 0.104000L},
+    {.atomic_number = 6U, .mass_fraction = 0.117000L},
+    {.atomic_number = 7U, .mass_fraction = 0.026000L},
+    {.atomic_number = 8U, .mass_fraction = 0.745000L},
+    {.atomic_number = 11U, .mass_fraction = 0.002000L},
+    {.atomic_number = 15U, .mass_fraction = 0.001000L},
+    {.atomic_number = 16U, .mass_fraction = 0.001000L},
+    {.atomic_number = 17U, .mass_fraction = 0.002000L},
+    {.atomic_number = 19U, .mass_fraction = 0.001000L},
+    {.atomic_number = 53U, .mass_fraction = 0.001000L},
   },
 };
 
@@ -1637,15 +1245,8 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_spleen_composition{
 /*! \brief Defines the elemental mass fractions of the CdTe preset. */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_cdte_composition{
   {
-    {
-      .atomic_number = 48U,
-      .mass_fraction = 0.468358L,
-    },
-
-    {
-      .atomic_number = 52U,
-      .mass_fraction = 0.531642L,
-    },
+    {.atomic_number = 48U, .mass_fraction = 0.468358L},
+    {.atomic_number = 52U, .mass_fraction = 0.531642L},
   },
 };
 
@@ -1655,15 +1256,8 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_cdte_composition{
 /*! \brief Defines the elemental mass fractions of the CsI preset. */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_csi_composition{
   {
-    {
-      .atomic_number = 53U,
-      .mass_fraction = 0.488451L,
-    },
-
-    {
-      .atomic_number = 55U,
-      .mass_fraction = 0.511549L,
-    },
+    {.atomic_number = 53U, .mass_fraction = 0.488451L},
+    {.atomic_number = 55U, .mass_fraction = 0.511549L},
   },
 };
 
@@ -1673,15 +1267,8 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_csi_composition{
 /*! \brief Defines the elemental mass fractions of the GaAs preset. */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_gaas_composition{
   {
-    {
-      .atomic_number = 31U,
-      .mass_fraction = 0.482030L,
-    },
-
-    {
-      .atomic_number = 33U,
-      .mass_fraction = 0.517970L,
-    },
+    {.atomic_number = 31U, .mass_fraction = 0.482030L},
+    {.atomic_number = 33U, .mass_fraction = 0.517970L},
   },
 };
 
@@ -1691,20 +1278,21 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_gaas_composition{
 /*! \brief Defines the elemental mass fractions of the GOS preset. */
 constexpr std::array<GGEMSMaterialComponent, 3U> k_gos_composition{
   {
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.084527L,
-    },
+    {.atomic_number = 8U, .mass_fraction = 0.084527L},
+    {.atomic_number = 16U, .mass_fraction = 0.084704L},
+    {.atomic_number = 64U, .mass_fraction = 0.830769L},
+  },
+};
 
-    {
-      .atomic_number = 16U,
-      .mass_fraction = 0.084704L,
-    },
+// =============================================================================
+// =============================================================================
 
-    {
-      .atomic_number = 64U,
-      .mass_fraction = 0.830769L,
-    },
+/*! \brief Defines the elemental mass fractions of the BGO preset. */
+constexpr std::array<GGEMSMaterialComponent, 3U> k_bgo_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.154108L},
+    {.atomic_number = 32U, .mass_fraction = 0.174900L},
+    {.atomic_number = 83U, .mass_fraction = 0.670992L},
   },
 };
 
@@ -1714,20 +1302,9 @@ constexpr std::array<GGEMSMaterialComponent, 3U> k_gos_composition{
 /*! \brief Defines the elemental mass fractions of the LSO preset. */
 constexpr std::array<GGEMSMaterialComponent, 3U> k_lso_composition{
   {
-    {
-      .atomic_number = 8U,
-      .mass_fraction = 0.174L,
-    },
-
-    {
-      .atomic_number = 14U,
-      .mass_fraction = 0.062L,
-    },
-
-    {
-      .atomic_number = 71U,
-      .mass_fraction = 0.764L,
-    },
+    {.atomic_number = 8U, .mass_fraction = 0.174L},
+    {.atomic_number = 14U, .mass_fraction = 0.062L},
+    {.atomic_number = 71U, .mass_fraction = 0.764L},
   },
 };
 
@@ -1737,15 +1314,150 @@ constexpr std::array<GGEMSMaterialComponent, 3U> k_lso_composition{
 /*! \brief Defines the elemental mass fractions of the NaI preset. */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_nai_composition{
   {
-    {
-      .atomic_number = 11U,
-      .mass_fraction = 0.153L,
-    },
+    {.atomic_number = 11U, .mass_fraction = 0.153L},
+    {.atomic_number = 53U, .mass_fraction = 0.847L},
+  },
+};
 
-    {
-      .atomic_number = 53U,
-      .mass_fraction = 0.847L,
-    },
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the LYSO preset. */
+constexpr std::array<GGEMSMaterialComponent, 4U> k_lyso_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.181476L},
+    {.atomic_number = 14U, .mass_fraction = 0.063713L},
+    {.atomic_number = 39U, .mass_fraction = 0.040338L},
+    {.atomic_number = 71U, .mass_fraction = 0.714473L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the GSO preset. */
+constexpr std::array<GGEMSMaterialComponent, 3U> k_gso_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.189301L},
+    {.atomic_number = 14U, .mass_fraction = 0.066461L},
+    {.atomic_number = 64U, .mass_fraction = 0.744238L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the LaBr3 preset. */
+constexpr std::array<GGEMSMaterialComponent, 2U> k_labr3_composition{
+  {
+    {.atomic_number = 35U, .mass_fraction = 0.633125L},
+    {.atomic_number = 57U, .mass_fraction = 0.366875L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the CeBr3 preset. */
+constexpr std::array<GGEMSMaterialComponent, 2U> k_cebr3_composition{
+  {
+    {.atomic_number = 35U, .mass_fraction = 0.631107L},
+    {.atomic_number = 58U, .mass_fraction = 0.368893L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the GAGG preset. */
+constexpr std::array<GGEMSMaterialComponent, 4U> k_gagg_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.207136L},
+    {.atomic_number = 13U, .mass_fraction = 0.058221L},
+    {.atomic_number = 31U, .mass_fraction = 0.225672L},
+    {.atomic_number = 64U, .mass_fraction = 0.508971L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the CZT preset. */
+constexpr std::array<GGEMSMaterialComponent, 3U> k_czt_composition{
+  {
+    {.atomic_number = 30U, .mass_fraction = 0.027785L},
+    {.atomic_number = 48U, .mass_fraction = 0.429953L},
+    {.atomic_number = 52U, .mass_fraction = 0.542262L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the aSe preset. */
+constexpr std::array<GGEMSMaterialComponent, 1U> k_ase_composition{
+  {
+    {.atomic_number = 34U, .mass_fraction = 1.000000L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the PbWO4 preset. */
+constexpr std::array<GGEMSMaterialComponent, 3U> k_pbwo4_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.140639L},
+    {.atomic_number = 74U, .mass_fraction = 0.404012L},
+    {.atomic_number = 82U, .mass_fraction = 0.455349L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the CdWO4 preset. */
+constexpr std::array<GGEMSMaterialComponent, 3U> k_cdwo4_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.177643L},
+    {.atomic_number = 48U, .mass_fraction = 0.312044L},
+    {.atomic_number = 74U, .mass_fraction = 0.510313L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the YAG preset. */
+constexpr std::array<GGEMSMaterialComponent, 3U> k_yag_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.323423L},
+    {.atomic_number = 13U, .mass_fraction = 0.227265L},
+    {.atomic_number = 39U, .mass_fraction = 0.449312L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the YAP preset. */
+constexpr std::array<GGEMSMaterialComponent, 3U> k_yap_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.292871L},
+    {.atomic_number = 13U, .mass_fraction = 0.164638L},
+    {.atomic_number = 39U, .mass_fraction = 0.542491L},
+  },
+};
+
+// =============================================================================
+// =============================================================================
+
+/*! \brief Defines the elemental mass fractions of the LuAP preset. */
+constexpr std::array<GGEMSMaterialComponent, 3U> k_luap_composition{
+  {
+    {.atomic_number = 8U, .mass_fraction = 0.192030L},
+    {.atomic_number = 13U, .mass_fraction = 0.107950L},
+    {.atomic_number = 71U, .mass_fraction = 0.700020L},
   },
 };
 
@@ -1756,7 +1468,7 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_nai_composition{
  * \brief Associates each compound preset name with density and elemental mass
  * shares.
  */
-constexpr std::array<CompoundMaterialRow, 24U> k_compound_materials{
+constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
   {
     {
       .canonical_name = "Air",
@@ -1884,6 +1596,105 @@ constexpr std::array<CompoundMaterialRow, 24U> k_compound_materials{
     },
 
     {
+      .canonical_name = "Skin",
+      .density = 1.10_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_skin_composition},
+    },
+
+    {
+      .canonical_name = "SoftTissue",
+      .density = 1.00_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_soft_tissue_composition},
+    },
+
+    {
+      .canonical_name = "Testis",
+      .density = 1.04_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_testis_composition},
+    },
+
+    {
+      .canonical_name = "EyeLens",
+      .density = 1.10_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_eye_lens_composition},
+    },
+
+    {
+      .canonical_name = "CorticalBone",
+      .density = 1.85_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_cortical_bone_composition},
+    },
+
+    {
+      .canonical_name = "Muscle",
+      .density = 1.04_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_muscle_composition},
+    },
+
+    {
+      .canonical_name = "Cartilage",
+      .density = 1.100_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_cartilage_composition},
+    },
+
+    {
+      .canonical_name = "RedBoneMarrow",
+      .density = 1.030_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_red_bone_marrow_composition},
+    },
+
+    {
+      .canonical_name = "YellowBoneMarrow",
+      .density = 0.980_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{
+          k_yellow_bone_marrow_composition},
+    },
+
+    {
+      .canonical_name = "Teeth",
+      .density = 2.750_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_teeth_composition},
+    },
+
+    {
+      .canonical_name = "SpinalCord",
+      .density = 1.031_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_spinal_cord_composition},
+    },
+
+    {
+      .canonical_name = "Stomach",
+      .density = 1.040_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_stomach_composition},
+    },
+
+    {
+      .canonical_name = "Esophagus",
+      .density = 1.030_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_esophagus_composition},
+    },
+
+    {
+      .canonical_name = "Thyroid",
+      .density = 1.040_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_thyroid_composition},
+    },
+
+    {
       .canonical_name = "CdTe",
       .density = 6.200_g_cm3,
       .composition =
@@ -1907,6 +1718,91 @@ constexpr std::array<CompoundMaterialRow, 24U> k_compound_materials{
       .canonical_name = "GOS",
       .density = 7.440_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_gos_composition},
+    },
+
+    {
+      .canonical_name = "BGO",
+      .density = 7.13_g_cm3,
+      .composition = std::span<GGEMSMaterialComponent const>{k_bgo_composition},
+    },
+
+    {
+      .canonical_name = "LYSO",
+      .density = 7.10_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_lyso_composition},
+    },
+
+    {
+      .canonical_name = "GSO",
+      .density = 6.70_g_cm3,
+      .composition = std::span<GGEMSMaterialComponent const>{k_gso_composition},
+    },
+
+    {
+      .canonical_name = "LaBr3",
+      .density = 5.08_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_labr3_composition},
+    },
+
+    {
+      .canonical_name = "CeBr3",
+      .density = 5.23_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_cebr3_composition},
+    },
+
+    {
+      .canonical_name = "GAGG",
+      .density = 6.63_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_gagg_composition},
+    },
+
+    {
+      .canonical_name = "CZT",
+      .density = 5.78_g_cm3,
+      .composition = std::span<GGEMSMaterialComponent const>{k_czt_composition},
+    },
+
+    {
+      .canonical_name = "aSe",
+      .density = 4.26_g_cm3,
+      .composition = std::span<GGEMSMaterialComponent const>{k_ase_composition},
+    },
+
+    {
+      .canonical_name = "PbWO4",
+      .density = 8.28_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_pbwo4_composition},
+    },
+
+    {
+      .canonical_name = "CdWO4",
+      .density = 7.90_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_cdwo4_composition},
+    },
+
+    {
+      .canonical_name = "YAG",
+      .density = 4.55_g_cm3,
+      .composition = std::span<GGEMSMaterialComponent const>{k_yag_composition},
+    },
+
+    {
+      .canonical_name = "YAP",
+      .density = 5.37_g_cm3,
+      .composition = std::span<GGEMSMaterialComponent const>{k_yap_composition},
+    },
+
+    {
+      .canonical_name = "LuAP",
+      .density = 8.34_g_cm3,
+      .composition =
+        std::span<GGEMSMaterialComponent const>{k_luap_composition},
     },
 
     {

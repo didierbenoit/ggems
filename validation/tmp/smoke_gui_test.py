@@ -19,7 +19,7 @@ try:
         ggems.source.GGEMSSource()
         .set_particle("Aionino")
         .set_energy(511.0, "keV")
-        .set_primary_count(1_000_000_000)
+        .set_primary_count(1_000_000)
         .set_emission_cylinder(2.0 * 150.0, 500.0, "mm")
         .set_position(0.0, 0.0, 0.0, "mm")
         .set_angular_isotropic()

@@ -300,7 +300,7 @@ TEST(GGEMSEMMaterialPackageTest, CompilesEveryBuiltInIntoADenseFlatPackage) {
   for (auto const name : builtins::GetAvailableMaterialNames()) {
     authored.push_back(builtins::BuildBuiltInMaterial(name));
   }
-  ASSERT_EQ(authored.size(), 117U);
+  ASSERT_EQ(authored.size(), 144U);
 
   auto const package = Compile(authored);
   auto const descriptors = package.GetDescriptors();
@@ -308,7 +308,7 @@ TEST(GGEMSEMMaterialPackageTest, CompilesEveryBuiltInIntoADenseFlatPackage) {
   auto const ids = package.GetMaterialIds();
 
   ASSERT_EQ(ids.size(), authored.size());
-  EXPECT_EQ(descriptors.size(), 117U);
+  EXPECT_EQ(descriptors.size(), 144U);
 
   std::size_t expected_offset{0U};
   for (std::size_t identifier = 0U; identifier < descriptors.size();
