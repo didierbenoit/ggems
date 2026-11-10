@@ -56,6 +56,7 @@
 #include "GGEMS/geometry/GGEMSTrap.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
+#include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
 #include "GGEMS/geometry/detail/GGEMSVolumeRecipe.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
@@ -1099,8 +1100,8 @@ auto GGEMSWorld::GetNavigationTolerancePM() const noexcept -> float {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::GetVolumeNavigationTolerancePM(
-  std::size_t index) const noexcept -> float {
+auto GGEMSWorld::GetVolumeNavigationTolerancePM(std::size_t index) const
+  -> float {
   if (index >= volumes_.size()) {
     return 0.0F;
   }
@@ -1111,7 +1112,7 @@ auto GGEMSWorld::GetVolumeNavigationTolerancePM(
       return RequiredTolerancePM(BuildSurfaceScale(shape, pose),
                                  WorldSpacingPM(half_extent_pm_));
     },
-    volumes_[index].volume);
+    GetVolume(index));
 }
 
 // -----------------------------------------------------------------------------
@@ -1180,6 +1181,42 @@ auto GGEMSWorld::AddVolume(GGEMSPolyhedra polyhedra,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSWorld::AddVolume(GGEMSVoxelizedVolume volume) -> GGEMSWorld & {
+  return AttachVolume(std::move(volume));
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AttachVolume(GGEMSVoxelizedVolume volume,
+                              std::uint32_t parent_volume_id) -> GGEMSWorld & {
+  if (parent_volume_id != 0U) {
+    throw core::GGEMSRecoverable(
+      "Voxelized volumes may attach directly to World only.");
+  }
+
+  if (half_extent_pm_.x == 0ULL || !material_) {
+    throw core::GGEMSRecoverable(
+      "Configure World size and material before attaching a voxelized volume.");
+  }
+
+  if (volumes_.size() >= std::numeric_limits<std::uint32_t>::max() - 1U) {
+    throw core::GGEMSRecoverable("Physical VolumeID domain is exhausted.");
+  }
+
+  auto candidate = *this;
+
+  candidate.volumes_.push_back(
+    {.volume = std::move(volume), .parent_volume_id = 0U});
+
+  candidate.Validate();
+
+  volumes_.swap(candidate.volumes_);
+
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSWorld::AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
   -> GGEMSWorld & {
   if (std::visit([](auto const &shape)
@@ -1192,6 +1229,12 @@ auto GGEMSWorld::AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
   if (parent_volume_id > volumes_.size()) {
     throw core::GGEMSRecoverable(
       "Physical parent must already exist in this World.");
+  }
+
+  if (parent_volume_id != 0U && std::holds_alternative<GGEMSVoxelizedVolume>(
+                                  volumes_[parent_volume_id - 1U].volume)) {
+    throw core::GGEMSRecoverable(
+      "Voxelized volumes cannot contain authored child volumes.");
   }
 
   if (GetOccurrenceDepth(parent_volume_id) >= 4U) {
@@ -1262,8 +1305,10 @@ auto GGEMSWorld::ValidateBatchCapacity(detail::GGEMSVolumeRecipe const &recipe,
   };
 
   for (auto const &existing : volumes_) {
-    std::visit([&](auto const &shape) -> void { account(shape, 1U); },
-               existing.volume);
+    if (auto const *volume = std::get_if<Volume>(&existing.volume)) {
+      std::visit([&](auto const &shape) -> void { account(shape, 1U); },
+                 *volume);
+    }
   }
 
   auto const plan = [&](auto const &self, detail::GGEMSVolumeRecipe const &item,
@@ -1333,6 +1378,12 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
   if (parent_volume_id > volumes_.size()) {
     throw core::GGEMSRecoverable(
       "Physical parent must already exist in this World.");
+  }
+
+  if (parent_volume_id != 0U && std::holds_alternative<GGEMSVoxelizedVolume>(
+                                  volumes_[parent_volume_id - 1U].volume)) {
+    throw core::GGEMSRecoverable(
+      "Voxelized volumes cannot contain authored child volumes.");
   }
 
   detail::ValidateRecipe(recipe);
@@ -1434,7 +1485,18 @@ auto GGEMSWorld::Validate() const -> void {
     throw core::GGEMSRecoverable("Analytical occurrence count or crossing "
                                  "bound exceeds the device domain.");
   }
-  static_cast<void>(BuildAuxiliaryLayout());
+
+  bool analytic_only = true;
+
+  for (auto const &occurrence : volumes_) {
+    if (std::holds_alternative<GGEMSVoxelizedVolume>(occurrence.volume)) {
+      analytic_only = false;
+    }
+  }
+
+  if (analytic_only) {
+    static_cast<void>(BuildAuxiliaryLayout());
+  }
 
   ValidateHierarchy();
 }
@@ -1444,7 +1506,7 @@ auto GGEMSWorld::Validate() const -> void {
 auto GGEMSWorld::ValidateVolume(std::size_t index,
                                 GGEMSBoxPoseRecord const &pose,
                                 float world_spacing) const -> float {
-  auto const &volume = volumes_[index].volume;
+  auto const &volume = GetVolume(index);
 
   if (volumes_[index].parent_volume_id == 0U) {
     if (auto const *box = std::get_if<GGEMSBox>(&volume);
@@ -1497,8 +1559,8 @@ auto GGEMSWorld::ValidateSimplePair(std::size_t first, std::size_t second) const
   }
   // Exact integer checks reject identity-axis Boxes and coaxial Spheres only.
   // Remaining pairs also receive bounded physical-support diagnostics.
-  auto const *left_box = std::get_if<GGEMSBox>(&volumes_[first].volume);
-  auto const *right_box = std::get_if<GGEMSBox>(&volumes_[second].volume);
+  auto const *left_box = std::get_if<GGEMSBox>(&GetVolume(first));
+  auto const *right_box = std::get_if<GGEMSBox>(&GetVolume(second));
   bool overlap = false;
 
   if (left_box != nullptr && right_box != nullptr &&
@@ -1517,8 +1579,8 @@ auto GGEMSWorld::ValidateSimplePair(std::size_t first, std::size_t second) const
                 left_half.z + right_half.z;
   }
 
-  auto const *left_sphere = std::get_if<GGEMSSphere>(&volumes_[first].volume);
-  auto const *right_sphere = std::get_if<GGEMSSphere>(&volumes_[second].volume);
+  auto const *left_sphere = std::get_if<GGEMSSphere>(&GetVolume(first));
+  auto const *right_sphere = std::get_if<GGEMSSphere>(&GetVolume(second));
 
   if (left_sphere != nullptr && right_sphere != nullptr) {
     auto const left = left_sphere->GetPositionPM();
@@ -1545,18 +1607,58 @@ auto GGEMSWorld::ValidateSimplePair(std::size_t first, std::size_t second) const
 // -----------------------------------------------------------------------------
 
 auto GGEMSWorld::ValidateHierarchy() const -> void {
-  std::vector<AdmissionSolid> solids;
-  solids.reserve(volumes_.size());
+  std::vector<std::optional<AdmissionSolid>> solids(volumes_.size());
   auto const world_spacing = WorldSpacingPM(half_extent_pm_);
   auto const world_tolerance = GetNavigationTolerancePM();
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
+    if (auto const *volume = GetVoxelizedVolume(index)) {
+      auto const [center, rotation] = BuildVolumePose(index);
+      auto const &size = volume->GetSize();
+
+      // Keep fractional-picometer half extents for odd full sizes.
+      std::array const half{
+        0.5 * static_cast<double>(size[0].value),
+        0.5 * static_cast<double>(size[1].value),
+        0.5 * static_cast<double>(size[2].value),
+      };
+
+      std::array const rows{
+        std::array{rotation.axis_x.x, rotation.axis_y.x, rotation.axis_z.x},
+        std::array{rotation.axis_x.y, rotation.axis_y.y, rotation.axis_z.y},
+        std::array{rotation.axis_x.z, rotation.axis_y.z, rotation.axis_z.z},
+      };
+
+      std::array const world_half{
+        static_cast<double>(half_extent_pm_.x),
+        static_cast<double>(half_extent_pm_.y),
+        static_cast<double>(half_extent_pm_.z),
+      };
+
+      // Use the existing Box support envelope without FP32 packing or a band.
+      for (std::size_t axis = 0U; axis < half.size(); ++axis) {
+        auto envelope = std::abs(center[axis]);
+
+        for (std::size_t column = 0U; column < half.size(); ++column) {
+          envelope += std::abs(rows[axis][column]) * half[column];
+        }
+
+        if (envelope > world_half[axis]) {
+          throw core::GGEMSRecoverable(
+            "Voxelized volume outer box extends outside World.");
+        }
+      }
+      continue;
+    }
+
     auto const pose = BuildOccurrencePose(index);
     auto const tolerance = ValidateVolume(index, pose, world_spacing);
+
     auto centered_pose = pose;
     centered_pose.center_x_pm = 0.0F;
     centered_pose.center_y_pm = 0.0F;
     centered_pose.center_z_pm = 0.0F;
+
     AdmissionSolid solid{
       .record = BuildAnalyticVolumeRecord(0U, index, pose, tolerance),
       .pose = pose,
@@ -1564,19 +1666,20 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
         [&](auto const &shape) -> AdmissionPoint {
           return BuildSurfaceScale(shape, centered_pose).envelope_pm;
         },
-        volumes_[index].volume),
+        GetVolume(index)),
       .tolerance = tolerance,
       .sides = {},
       .sections = {},
       .samples = {},
     };
-    if (auto const *polygon =
-          std::get_if<GGEMSPolyhedra>(&volumes_[index].volume)) {
+
+    if (auto const *polygon = std::get_if<GGEMSPolyhedra>(&GetVolume(index))) {
       solid.sides = detail::BuildPolyhedraSides(*polygon);
       solid.sections = detail::BuildPolyhedraSections(*polygon);
     }
+
     SampleAdmissionSolid(solid);
-    solids.push_back(std::move(solid));
+    solids[index] = std::move(solid);
   }
 
   AdmissionPoint const world_half{
@@ -1584,10 +1687,16 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
     static_cast<float>(half_extent_pm_.y),
     static_cast<float>(half_extent_pm_.z),
   };
+
   for (std::size_t index = 0U; index < solids.size(); ++index) {
-    auto const &child = solids[index];
+    if (!solids[index]) {
+      continue;
+    }
+
+    auto const &child = *solids[index];
     auto const parent_id = volumes_[index].parent_volume_id;
     bool outside = false;
+
     if (parent_id == 0U) {
       auto const band = child.tolerance + world_tolerance;
       // These curved envelopes are actual supports, not conservative cylinders.
@@ -1603,6 +1712,7 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
                                  world_half[axis] + band;
         }
       }
+
       outside =
         outside ||
         std::ranges::any_of(child.samples, [&](auto const &sample) -> bool {
@@ -1611,16 +1721,21 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
                  std::abs(sample.position[2]) > world_half[2] + band;
         });
     } else {
-      auto const &parent = solids[parent_id - 1U];
+      auto const &parent = *solids[parent_id - 1U];
+
       auto const band = parent.tolerance + child.tolerance;
+
       auto const *parent_box =
-        std::get_if<GGEMSBox>(&volumes_[parent_id - 1U].volume);
-      auto const *child_box = std::get_if<GGEMSBox>(&volumes_[index].volume);
+        std::get_if<GGEMSBox>(&GetVolume(parent_id - 1U));
+
+      auto const *child_box = std::get_if<GGEMSBox>(&GetVolume(index));
+
       if (parent_box != nullptr && child_box != nullptr &&
           child_box->GetRotation().IsIdentity()) {
         outside =
           !IsAxisAlignedBoxInside(parent_box->GetHalfExtentPM(), *child_box);
       }
+
       outside =
         outside ||
         std::ranges::any_of(child.samples,
@@ -1635,6 +1750,7 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
                  AdmissionContains(child, sample.position, -band);
         });
     }
+
     if (outside) {
       throw core::GGEMSRecoverable(std::format(
         "Analytical occurrence {} protrudes outside the physical support of "
@@ -1644,15 +1760,21 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
   }
 
   for (std::size_t first = 0U; first < solids.size(); ++first) {
+    if (!solids[first]) {
+      continue;
+    }
+
     for (std::size_t second = first + 1U; second < solids.size(); ++second) {
-      if (volumes_[first].parent_volume_id !=
-          volumes_[second].parent_volume_id) {
+      if (!solids[second] || volumes_[first].parent_volume_id !=
+                               volumes_[second].parent_volume_id) {
         continue;
       }
+
       ValidateSimplePair(first, second);
 
-      auto const &left = solids[first];
-      auto const &right = solids[second];
+      auto const &left = *solids[first];
+      auto const &right = *solids[second];
+
       AdmissionPoint const separation{
         std::abs(static_cast<double>(left.pose.center_x_pm) -
                  right.pose.center_x_pm),
@@ -1661,12 +1783,15 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
         std::abs(static_cast<double>(left.pose.center_z_pm) -
                  right.pose.center_z_pm),
       };
+
       if (separation[0] >= left.radius[0] + right.radius[0] ||
           separation[1] >= left.radius[1] + right.radius[1] ||
           separation[2] >= left.radius[2] + right.radius[2]) {
         continue;
       }
+
       auto const band = left.tolerance + right.tolerance;
+
       if (std::ranges::any_of(left.samples,
                               [&](auto const &sample) -> bool {
                                 return AdmissionContains(right, sample.position,
@@ -1689,6 +1814,10 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
 auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids,
                                  std::size_t index) const
   -> std::vector<GGEMSBoxRecord> {
+  if (index < volumes_.size()) {
+    static_cast<void>(GetVolume(index));
+  }
+
   auto const boxes = GetBoxes(index);
 
   if (material_ids.size() != boxes.size()) {
@@ -1709,19 +1838,27 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids,
 auto GGEMSWorld::BuildVolumePose(std::size_t index) const noexcept -> Pose {
   auto const local_pose = [this](std::size_t local_index)
     -> std::pair<std::array<double, 3U>, GGEMSRotation3D> {
+    auto const read_pose = [](auto const &shape)
+      -> std::pair<std::array<double, 3U>, GGEMSRotation3D> {
+      auto const center = shape.GetPositionPM();
+      return std::pair{
+        std::array{
+          static_cast<double>(center.x),
+          static_cast<double>(center.y),
+          static_cast<double>(center.z),
+        },
+        shape.GetRotation(),
+      };
+    };
+
     return std::visit(
-      [](auto const &shape)
+      [&read_pose](auto const &volume)
         -> std::pair<std::array<double, 3U>, GGEMSRotation3D> {
-        auto const center = shape.GetPositionPM();
-        auto const &rotation = shape.GetRotation();
-        return std::pair{
-          std::array{
-            static_cast<double>(center.x),
-            static_cast<double>(center.y),
-            static_cast<double>(center.z),
-          },
-          rotation,
-        };
+        if constexpr (std::is_same_v<std::decay_t<decltype(volume)>, Volume>) {
+          return std::visit(read_pose, volume);
+        } else {
+          return read_pose(volume);
+        }
       },
       volumes_[local_index].volume);
   };
@@ -1775,13 +1912,13 @@ auto GGEMSWorld::BuildVolumePose(std::size_t index) const noexcept -> Pose {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::BuildOccurrencePose(std::size_t index) const noexcept
+auto GGEMSWorld::BuildOccurrencePose(std::size_t index) const
   -> GGEMSBoxPoseRecord {
   auto const [center, rotation] = BuildVolumePose(index);
 
   auto const authored_center = std::visit(
     [](auto const &shape) -> Position3PM { return shape.GetPositionPM(); },
-    volumes_[index].volume);
+    GetVolume(index));
 
   auto const direct_child = volumes_[index].parent_volume_id == 0U;
 
@@ -1809,7 +1946,7 @@ auto GGEMSWorld::BuildOccurrencePose(std::size_t index) const noexcept
 auto GGEMSWorld::BuildBoxPoseRecord(std::size_t index) const
   -> std::optional<GGEMSBoxPoseRecord> {
   if (index >= volumes_.size() ||
-      std::holds_alternative<GGEMSSphere>(volumes_[index].volume)) {
+      std::holds_alternative<GGEMSSphere>(GetVolume(index))) {
     return std::nullopt;
   }
 
@@ -1824,8 +1961,7 @@ auto GGEMSWorld::BuildAnalyticAuxiliaryData(std::size_t index) const
     return {};
   }
 
-  if (auto const *solid =
-        std::get_if<GGEMSPolyhedra>(&volumes_[index].volume)) {
+  if (auto const *solid = std::get_if<GGEMSPolyhedra>(&GetVolume(index))) {
     auto data = detail::BuildPolyhedraData(*solid);
     auto const pose = BuildOccurrencePose(index);
     std::memcpy(data.data(), &pose, sizeof(pose));
@@ -1852,8 +1988,15 @@ auto GGEMSWorld::GetVolumeCount() const noexcept -> std::size_t {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::GetVolume(std::size_t index) const noexcept -> Volume const & {
-  return volumes_[index].volume;
+auto GGEMSWorld::GetVolume(std::size_t index) const -> Volume const & {
+  auto const *volume = std::get_if<Volume>(&volumes_[index].volume);
+
+  if (volume == nullptr) {
+    throw core::GGEMSRecoverable(
+      "Voxelized volumes have no analytical shape or device record.");
+  }
+
+  return *volume;
 }
 
 // -----------------------------------------------------------------------------
@@ -1861,14 +2004,14 @@ auto GGEMSWorld::GetVolume(std::size_t index) const noexcept -> Volume const & {
 auto GGEMSWorld::CountBoundaryEvents() const noexcept -> std::uint64_t {
   std::uint64_t count = 1ULL;
 
-  for (auto const &volume : volumes_) {
-    auto const crossings = std::visit(
-      [](auto const &shape) -> std::uint64_t {
-        return ShapeBoundaryEvents(shape);
-      },
-      volume.volume);
-
-    count += crossings;
+  for (auto const &occurrence : volumes_) {
+    if (auto const *volume = std::get_if<Volume>(&occurrence.volume)) {
+      count += std::visit(
+        [](auto const &shape) -> std::uint64_t {
+          return ShapeBoundaryEvents(shape);
+        },
+        *volume);
+    }
   }
 
   return count;
@@ -1876,8 +2019,23 @@ auto GGEMSWorld::CountBoundaryEvents() const noexcept -> std::uint64_t {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSWorld::RequireAnalyticScene() const -> void {
+  for (auto const &occurrence : volumes_) {
+    if (std::holds_alternative<GGEMSVoxelizedVolume>(occurrence.volume)) {
+      throw core::GGEMSRecoverable(
+        "Voxelized volumes are host-only; analytical scene compilation "
+        "is unsupported.");
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
+  RequireAnalyticScene();
+
   AuxiliaryLayout layout;
+
   if (volumes_.size() > 1U) {
     layout.byte_count = volumes_.size() * sizeof(GGEMSAnalyticOccurrenceRecord);
   }
@@ -1891,15 +2049,17 @@ auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
       .parent_volume_id = volumes_[index].parent_volume_id,
     };
 
-    if (!std::holds_alternative<GGEMSSphere>(volumes_[index].volume)) {
+    if (!std::holds_alternative<GGEMSSphere>(GetVolume(index))) {
       occurrence.auxiliary_offset =
         static_cast<std::uint32_t>(layout.byte_count);
       layout.byte_count += sizeof(GGEMSBoxPoseRecord);
     }
+
     layout.occurrences.push_back(occurrence);
   }
 
   std::uint32_t first_world_child = 0U;
+
   for (std::size_t reverse = volumes_.size(); reverse > 0U; --reverse) {
     auto &occurrence = layout.occurrences[reverse - 1U];
     auto &first_child =
@@ -1911,14 +2071,14 @@ auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
   }
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
-    auto const *shape = std::get_if<GGEMSPolyhedra>(&volumes_[index].volume);
+    auto const *shape = std::get_if<GGEMSPolyhedra>(&GetVolume(index));
 
     if (shape == nullptr) {
       continue;
     }
 
     for (auto const source : layout.profile_sources) {
-      auto const &candidate = std::get<GGEMSPolyhedra>(volumes_[source].volume);
+      auto const &candidate = std::get<GGEMSPolyhedra>(GetVolume(source));
 
       if (SamePolyhedraProfile(*shape, candidate)) {
         layout.profile_offsets[index] = layout.profile_offsets[source];
@@ -1949,6 +2109,15 @@ auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSWorld::GetVoxelizedVolume(std::size_t index) const noexcept
+  -> GGEMSVoxelizedVolume const * {
+  return index < volumes_.size()
+           ? std::get_if<GGEMSVoxelizedVolume>(&volumes_[index].volume)
+           : nullptr;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSWorld::BuildOccurrenceRecords() const
   -> std::vector<GGEMSAnalyticOccurrenceRecord> {
   return BuildAuxiliaryLayout().occurrences;
@@ -1959,6 +2128,8 @@ auto GGEMSWorld::BuildOccurrenceRecords() const
 auto GGEMSWorld::BuildAnalyticDeviceRecords(
   std::span<std::uint32_t const> material_ids) const
   -> std::vector<GGEMSAnalyticVolumeRecord> {
+  RequireAnalyticScene();
+
   if (material_ids.size() != volumes_.size()) {
     throw core::GGEMSRecoverable(
       "Analytical Material identity count is inconsistent.");
@@ -1974,11 +2145,13 @@ auto GGEMSWorld::BuildAnalyticDeviceRecords(
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
     auto record = BuildAnalyticVolumeRecord(material_ids[index], index);
+
     if (record.kind == GGEMSAnalyticKind::Polyhedra) {
       record.parameters.polyhedra.profile_offset_bytes =
         layout.profile_offsets[index] -
         layout.occurrences[index].auxiliary_offset;
     }
+
     records.push_back(record);
   }
 
@@ -1989,6 +2162,7 @@ auto GGEMSWorld::BuildAnalyticDeviceRecords(
 
 auto GGEMSWorld::BuildAnalyticAuxiliaryBuffer() const
   -> std::vector<std::byte> {
+  RequireAnalyticScene();
 
   if (volumes_.size() <= 1U) {
     return BuildAnalyticAuxiliaryData();
@@ -2008,8 +2182,8 @@ auto GGEMSWorld::BuildAnalyticAuxiliaryBuffer() const
   }
 
   for (auto const source : layout.profile_sources) {
-    auto const profile = detail::BuildPolyhedraData(
-      std::get<GGEMSPolyhedra>(volumes_[source].volume));
+    auto const profile =
+      detail::BuildPolyhedraData(std::get<GGEMSPolyhedra>(GetVolume(source)));
     std::memcpy(data.data() + layout.profile_offsets[source],
                 profile.data() + sizeof(GGEMSBoxPoseRecord),
                 profile.size() - sizeof(GGEMSBoxPoseRecord));
@@ -2057,12 +2231,16 @@ auto GGEMSWorld::Contains(Position3PM position) const noexcept -> bool {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::BuildRecord() const noexcept -> GGEMSWorldRecord {
+auto GGEMSWorld::BuildRecord() const -> GGEMSWorldRecord {
+  RequireAnalyticScene();
+
   std::uint32_t depth = 0U;
+
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
     depth = std::max(
       depth, GetOccurrenceDepth(static_cast<std::uint32_t>(index) + 1U));
   }
+
   return {
     .half_extent_x_pm = static_cast<float>(half_extent_pm_.x),
     .half_extent_y_pm = static_cast<float>(half_extent_pm_.y),
@@ -2092,7 +2270,8 @@ auto GGEMSWorld::GetBoxes(std::size_t index) const noexcept
     return {};
   }
 
-  auto const *box = std::get_if<GGEMSBox>(&volumes_[index].volume);
+  auto const *volume = std::get_if<Volume>(&volumes_[index].volume);
+  auto const *box = volume != nullptr ? std::get_if<GGEMSBox>(volume) : nullptr;
 
   return box != nullptr ? std::span<GGEMSBox const>{box, 1U}
                         : std::span<GGEMSBox const>{};
@@ -2106,11 +2285,16 @@ auto GGEMSWorld::GetVolumeMaterial(std::size_t index) const
     return nullptr;
   }
 
+  if (std::holds_alternative<GGEMSVoxelizedVolume>(volumes_[index].volume)) {
+    throw core::GGEMSRecoverable(
+      "Voxelized volumes have voxel-local Materials, not a single Material.");
+  }
+
   return std::visit(
     [](auto const &volume) -> core::materials::GGEMSMaterial const * {
       return &volume.GetMaterial();
     },
-    volumes_[index].volume);
+    GetVolume(index));
 }
 
 // -----------------------------------------------------------------------------
@@ -2123,12 +2307,14 @@ auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id,
   }
 
   auto const pose = BuildOccurrencePose(index);
+
   auto const tolerance = std::visit(
     [&](auto const &shape) -> float {
       return RequiredTolerancePM(BuildSurfaceScale(shape, pose),
                                  WorldSpacingPM(half_extent_pm_));
     },
-    volumes_[index].volume);
+    GetVolume(index));
+
   return BuildAnalyticVolumeRecord(material_id, index, pose, tolerance);
 }
 
@@ -2139,7 +2325,7 @@ auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id,
                                            GGEMSBoxPoseRecord const &pose,
                                            float tolerance) const
   -> GGEMSAnalyticVolumeRecord {
-  auto const &volume = volumes_[index].volume;
+  auto const &volume = GetVolume(index);
   auto const volume_id = static_cast<std::uint32_t>(index) + 1U;
 
   if (auto const *box = std::get_if<GGEMSBox>(&volume)) {

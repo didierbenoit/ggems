@@ -1,8 +1,8 @@
 import ggems
 
 ggems.set_detail_level(4)
-ggems.start("term")
-# ggems.start("gui")
+# ggems.start("term")
+ggems.start("gui")
 
 try:
     # --------------------------------------------------------------------------
@@ -19,16 +19,16 @@ try:
         ggems.source.GGEMSSource()
         .set_particle("Aionino")
         .set_energy(511.0, "keV")
-        .set_primary_count(1_000_000)
+        .set_primary_count(1_000)
         .set_emission_cylinder(2.0 * 150.0, 500.0, "mm")
         .set_position(0.0, 0.0, 0.0, "mm")
         .set_angular_isotropic()
     )
 
     # --------------------------------------------------------------------------
-    # observer = (
-    #    ggems.observer.GGEMSTransportObserver().enable().capture_first_primaries(512)
-    # )
+    observer = (
+        ggems.observer.GGEMSTransportObserver().enable().capture_first_primaries(512)
+    )
 
     # --------------------------------------------------------------------------
     world = ggems.geometry.GGEMSWorld()
@@ -59,14 +59,14 @@ try:
     gantry.circular_repeater(block, count=56, axis="Z")
 
     # --------------------------------------------------------------------------
-    phantom = ggems.geometry.GGEMSTubs()
-    phantom.set_radii(150.0, 0.0, "mm")
-    phantom.set_length(500.0, "mm")
-    phantom.set_material("Water")
-    phantom.set_color(ggems.colors.blue_babyblue)
+    # phantom = ggems.geometry.GGEMSTubs()
+    # phantom.set_radii(150.0, 0.0, "mm")
+    # phantom.set_length(500.0, "mm")
+    # phantom.set_material("Water")
+    # phantom.set_color(ggems.colors.blue_babyblue)
 
     # --------------------------------------------------------------------------
-    world.add_volume(phantom)
+    # world.add_volume(phantom)
     world.add_volume(gantry)
 
     # --------------------------------------------------------------------------
@@ -74,22 +74,22 @@ try:
     run.set_world(world)
     run.set_random(random)
     run.add_source(source)
-    # run.set_observer(observer)
+    run.set_observer(observer)
     # run.set_time(0.0, 1.0, 1.0, "s")
     run.initialize()
     run.run()
 
     # --------------------------------------------------------------------------
 
-    # gui = ggems.gui.GGEMSGuiApplication()
-    # gui.set_vulkan_device(0)
-    # gui.initialize()
+    gui = ggems.gui.GGEMSGuiApplication()
+    gui.set_vulkan_device(0)
+    gui.initialize()
 
-    # gui.submit_last_run_source_snapshot(run)
-    # gui.submit_particle_traces_from_observer(observer)
+    gui.submit_last_run_source_snapshot(run)
+    gui.submit_particle_traces_from_observer(observer)
 
-    # gui.submit_run_geometry(run)
-    # gui.run()
+    gui.submit_run_geometry(run)
+    gui.run()
 
 finally:
     ggems.stop()

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines Python bindings for GGEMS World and analytic volume authoring.
+ * \brief Defines Python bindings for GGEMS World and physical volume authoring.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -30,6 +30,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -37,6 +38,7 @@
 
 // Keep Python C API inclusion behind pybind11's Windows Debug boundary.
 #include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
@@ -44,6 +46,7 @@
 #include "detail/GGEMSPythonQuantityConversion.hh"
 #include "detail/GGEMSGeometryAttachments.hh"
 
+#include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
@@ -83,8 +86,8 @@ using ggems::python::detail::MakeQuantityOrThrow;
 }
 
 /*!
- * \brief Converts a parent-local position for any analytical shape.
- * \tparam Shape Analytical shape with a parent-local pose.
+ * \brief Converts a parent-local position for a physical volume.
+ * \tparam Shape Physical volume with a parent-local pose.
  * \param[in,out] shape Shape receiving the absolute position.
  * \param[in] x Parent-local X coordinate.
  * \param[in] y Parent-local Y coordinate.
@@ -102,8 +105,8 @@ auto SetPosition(Shape &shape, double x, double y, double z,
 }
 
 /*!
- * \brief Converts absolute parent-axis angles for any analytical shape.
- * \tparam Shape Analytical shape with a parent-local pose.
+ * \brief Converts absolute parent-axis angles for a physical volume.
+ * \tparam Shape Physical volume with a parent-local pose.
  * \param[in,out] shape Shape receiving the absolute rotation.
  * \param[in] x Rotation about the parent X axis.
  * \param[in] y Rotation about the parent Y axis.
@@ -464,7 +467,7 @@ Returns:
 /*!
  * \brief Registers GGEMS geometry authoring bindings in a Python module.
  *
- * Analytic volumes are registered before World so that add_volume() exposes the
+ * Volume classes are registered before World so that add_volume() exposes the
  * Python type of its argument.
  *
  * \param[in,out] module Python module receiving the bindings.
@@ -478,6 +481,7 @@ auto BindGeometry(py::module_ &module) -> void {
   using ggems::geometry::GGEMSTrap;
   using ggems::geometry::GGEMSTrd;
   using ggems::geometry::GGEMSTubs;
+  using ggems::geometry::GGEMSVoxelizedVolume;
   using ggems::geometry::GGEMSWorld;
 
   // === === ===
@@ -1120,6 +1124,58 @@ The material becomes registered as used by the scene. Return this solid.
         py::arg("name"), py::return_value_policy::reference_internal);
 
   // === === ===
+  py::class_<GGEMSVoxelizedVolume, std::shared_ptr<GGEMSVoxelizedVolume>>(
+    module, "GGEMSVoxelizedVolume",
+    R"doc(Import one host voxelized volume from MetaImage and material files.
+
+The external RAW payload is little-endian MET_USHORT with X varying fastest.
+Its path is relative to the MHD file. The material file maps original labels
+to existing GGEMS materials. The grid is centered on its local origin; its
+full size is DimSize * ElementSpacing, with spacing interpreted in millimeters.
+
+Only direct World attachment is supported. This volume has no analytical
+children, repeaters, or single global material. Its display color defaults to
+ggems.colors.white_white. OpenCL Navigation and voxel rendering are not yet
+implemented.
+)doc")
+    .def(py::init<std::filesystem::path const &,
+                  std::filesystem::path const &>(),
+         py::arg("mhd"), py::arg("materials"))
+
+    .def("set_position", &SetPosition<GGEMSVoxelizedVolume>,
+         R"doc(Set the World-frame position of the grid center.
+
+Args:
+    x: World X coordinate of the center.
+    y: World Y coordinate of the center.
+    z: World Z coordinate of the center.
+    unit: GGEMS length unit.
+
+Returns:
+    This voxelized volume for chained configuration.
+)doc",
+         py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+         py::return_value_policy::reference_internal)
+
+    .def("set_rotation", &SetRotation<GGEMSVoxelizedVolume>,
+         R"doc(Assign the absolute right-handed active rotation Rz * Ry * Rx.
+
+The grid rotates about its center. Fixed World-axis X, Y, then Z rotations
+replace the previous rotation; positive angles follow the right-hand rule.
+
+Args:
+    rx: Rotation about World X.
+    ry: Rotation about World Y.
+    rz: Rotation about World Z.
+    unit: Angle unit, "deg" or "rad".
+
+Returns:
+    This voxelized volume for chained configuration.
+)doc",
+         py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+         py::return_value_policy::reference_internal);
+
+  // === === ===
   auto world_binding =
     py::class_<GGEMSWorld, std::shared_ptr<GGEMSWorld>>(
       module, "GGEMSWorld",
@@ -1132,7 +1188,9 @@ Sizes are converted once to the integer picometer lattice; each full size
 must be an even number of picometers.
 
 Physical occurrences may use any of the eight supported analytical families.
-Detached mothers capture ordinary children and linear/circular repeater recipes
+A GGEMSVoxelizedVolume can also be captured directly under World as one host-only
+physical occurrence; voxel Navigation and visualization remain unsupported.
+Detached analytical mothers capture ordinary children and repeater recipes
 by value. Configure the mother pose before or after its children, then attach
 its complete subtree with world.add_volume(mother). Later source edits never
 change captured copies. Position and rotation remain parent-local. Physical
@@ -1258,4 +1316,28 @@ Returns:
   BindAttachments(cons_binding, attachments);
   BindAttachments(polyhedra_binding, attachments);
   BindAttachments(world_binding, attachments);
+
+  world_binding.def(
+    "add_volume",
+    [attachments](std::shared_ptr<GGEMSWorld> const &world,
+                  std::shared_ptr<GGEMSVoxelizedVolume> const &volume)
+      -> GGEMSWorld & {
+      attachments->AddVolume(world, volume);
+      return *world;
+    },
+    R"doc(Capture one voxelized volume directly under World by value.
+
+Configure World size and material before attachment. The imported labels,
+material palette, and current pose become an independent World snapshot.
+Later source setters do not change that occurrence. Reusing an object already
+registered in a live World is rejected. A failed attachment leaves World and
+registrations unchanged.
+
+Args:
+    volume: Imported GGEMSVoxelizedVolume to capture as one physical occurrence.
+
+Returns:
+    This World for chaining.
+)doc",
+    py::arg("volume"), py::return_value_policy::reference_internal);
 }
