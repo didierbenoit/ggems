@@ -50,12 +50,18 @@ struct GGEMSWorldRecord {
   /*! \brief Number of physical occurrences, excluding the World. */
   std::uint32_t occurrence_count{0};
 
-  /*! \brief Proven straight-ray crossing bound, including World exit. */
+  /*!
+   * \brief Analytical crossing bound including World exit; zero defers voxel
+   * traversal.
+   */
   std::uint32_t max_boundary_events{1};
 
   /*!
    * \brief Maximum physical depth: zero when empty, one through four otherwise.
    */
   std::uint32_t hierarchy_depth{0};
+
+  /*! \brief Number of voxelized direct World children. */
+  std::uint32_t voxelized_count{0};
 };
 } // namespace ggems::geometry

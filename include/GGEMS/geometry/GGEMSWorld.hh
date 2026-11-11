@@ -54,6 +54,7 @@
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
+#include "GGEMS/geometry/GGEMSVoxelizedVolumeRecord.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -69,6 +70,19 @@ namespace ggems::geometry {
  * only; direct children are bounded by containment in the World.
  */
 inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
+
+/*! \brief Immutable voxel assets prepared for the common device scene. */
+struct GGEMSVoxelizedSceneData {
+  /*! \brief Dense voxel records in physical occurrence insertion order. */
+  std::vector<GGEMSVoxelizedVolumeRecord> records;
+
+  /*! \brief Concatenated X-fastest local palette indices, two bytes per cell.
+   */
+  std::vector<std::uint16_t> material_labels;
+
+  /*! \brief Concatenated local palettes mapped to dense scene MaterialIDs. */
+  std::vector<std::uint32_t> material_ids;
+};
 
 /*!
  * \brief Owns a finite World, analytical hierarchies, and host voxel imports.
@@ -92,16 +106,16 @@ inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
  * Ordinary analytical leaf AddVolume retains its deferred Validate() behavior.
  * Voxelized imports are direct World children with one physical identity and
  * no single Material. Their posed outer boxes must fit the closed World bounds.
- * Their payload and pose remain host-only; voxel overlap checks remain
- * deferred. Device compilation and visualization are not supported. Descendants
- * must fit in their immediate parent's physical support and replace its medium
- * there. Sibling interiors must be disjoint; surface contact is permitted.
- * There is no automatic overlap correction. BuildAnalyticDeviceRecords()
- * compiles the occurrences into tagged device records with shared variable
- * profile data. The World packs the device-visible GGEMSWorldRecord and offers
- * Contains() for static validation of authored positions only. Per-particle
- * location, intersection and World exit are computed by OpenCL
- * Navigation/Transport.
+ * Compact labels and poses compile into immutable device location assets.
+ * Voxel overlap certification, boundary traversal, and visualization remain
+ * deferred. Descendants must fit in their immediate parent's physical support
+ * and replace its medium there. Sibling interiors must be disjoint; surface
+ * contact is permitted. There is no automatic overlap correction.
+ * BuildAnalyticDeviceRecords() compiles the occurrences into tagged device
+ * records with shared variable profile data. The World packs the device-visible
+ * GGEMSWorldRecord and offers Contains() for static validation of authored
+ * positions only. Per-particle location, intersection and World exit are
+ * computed by OpenCL Navigation/Transport.
  */
 class GGEMSWorld {
 public:
@@ -161,7 +175,8 @@ public:
    * contact.
    * \param[in] index Zero-based physical occurrence index.
    * \return Effective half-band in FP32 pm, or zero when index is absent.
-   * \throws GGEMSRecoverable If the occurrence is voxelized.
+   * \throws GGEMSRecoverable If a voxel grid exceeds the admitted device
+   * dimension domain or its cells are unresolved under the FP32 profile.
    */
   [[nodiscard]] auto
   GetVolumeNavigationTolerancePM(std::size_t index = 0U) const -> float;
@@ -294,7 +309,7 @@ public:
     -> GGEMSWorld &;
 
   /*!
-   * \brief Captures one host-only voxelized import directly under World.
+   * \brief Captures one immutable voxelized import directly under World.
    * \param[in] volume Imported labels, shared immutable materials, and pose.
    * \return This World after appending one physical VolumeID.
    * \throws GGEMSRecoverable If World configuration or physical ID capacity
@@ -485,16 +500,29 @@ public:
     -> std::vector<GGEMSAnalyticOccurrenceRecord>;
 
   /*!
-   * \brief Packs all evaluated records with exact snapshot-local Materials.
-   * \param[in] material_ids One dense Material identity per occurrence.
-   * \return Insertion-ordered records, or one None record for World-only.
+   * \brief Packs analytical records with exact snapshot-local Materials.
+   * \param[in] material_ids One dense Material identity per analytical
+   * occurrence in insertion order; voxelized occurrences are excluded.
+   * \return Dense analytical records retaining global VolumeIDs, one None
+   * record for World-only, or no records for a voxel-only scene.
    * \pre Validate() has succeeded since the last scene edit.
-   * \throws GGEMSRecoverable If the Material identity count is inconsistent
-   * or any occurrence is voxelized.
+   * \throws GGEMSRecoverable If the analytical Material count is inconsistent.
    */
   [[nodiscard]] auto
   BuildAnalyticDeviceRecords(std::span<std::uint32_t const> material_ids) const
     -> std::vector<GGEMSAnalyticVolumeRecord>;
+
+  /*!
+   * \brief Packs all voxel grids and their compact material fields.
+   * \param[in] palette_material_ids Dense scene identities in voxel occurrence
+   * and local-palette order, resolved by the normal Materials authority.
+   * \return Records, compact labels, and dense MaterialID palettes.
+   * \throws GGEMSRecoverable If the palette count or device index domain is
+   * inconsistent, or a cell is unresolved under the existing FP32 profile.
+   */
+  [[nodiscard]] auto BuildVoxelizedDeviceData(
+    std::span<std::uint32_t const> palette_material_ids) const
+    -> GGEMSVoxelizedSceneData;
 
   /*!
    * \brief Packs occurrence poses and deduplicated immutable Polyhedra data.
@@ -503,14 +531,13 @@ public:
    * poses and shared side/section profiles. At most one occurrence retains
    * the established pose-then-profile format without a descriptor prefix.
    * \return Flat immutable bytes; empty for World-only or a single Sphere.
-   * \throws GGEMSRecoverable If any occurrence is voxelized.
    * \pre Validate() has succeeded since the last scene edit.
    */
   [[nodiscard]] auto BuildAnalyticAuxiliaryBuffer() const
     -> std::vector<std::byte>;
 
   /*!
-   * \brief Checks World configuration and the analytical physical hierarchy.
+   * \brief Checks World configuration and physical hierarchy admission.
    *
    * Each daughter must fit within its mother's physical support, including
    * hollow walls, and sibling interiors must be disjoint. Coincident surfaces
@@ -521,8 +548,9 @@ public:
    * Gaps within adjacent surface bands may behave as contact; admission does
    * not guarantee a distinct material interval for an unresolved gap.
    * Voxelized imports retain their constructor-validated payload and rigid
-   * pose. Their outer boxes must fit the closed World bounds; voxel overlap
-   * checks and device admission remain deferred.
+   * pose. Their outer boxes must fit the closed World bounds, and their cells
+   * must remain resolved under the shared FP32 profile. Voxel overlap checks
+   * and boundary traversal remain deferred.
    *
    * \throws GGEMSRecoverable If World size or Material is absent, detected
    * containment or automatic feature/band admission fails, or a checked
@@ -590,9 +618,9 @@ public:
    *
    * \return FP32 half extents and surface half-band in pm; these geometric
    * fields are zero before SetSize(), denoting an unconfigured World.
-   * Occurrence count, physical depth and the crossing bound accompany the box.
+   * Physical occurrence/family counts and depth accompany the box. The
+   * crossing bound is zero while voxelized boundary traversal is unavailable.
    * \pre Validate() has succeeded before a configured scene is uploaded.
-   * \throws GGEMSRecoverable If any occurrence is voxelized.
    */
   [[nodiscard]] auto BuildRecord() const -> GGEMSWorldRecord;
 
@@ -636,10 +664,11 @@ private:
   /*! \brief Owned World medium, absent until SetMaterial(). */
   std::optional<core::materials::GGEMSMaterial> material_;
 
-  /*! \brief One owned local authoring value and its existing physical parent.
+  /*!
+   * \brief One owned local authoring value and its existing physical parent.
    */
   struct Occurrence {
-    /*! \brief Analytical value or host-only voxelized payload and pose. */
+    /*! \brief Analytical value or immutable voxelized payload and pose. */
     std::variant<Volume, GGEMSVoxelizedVolume> volume;
 
     /*! \brief Existing physical parent VolumeID, or zero for World. */
@@ -726,8 +755,7 @@ private:
    * \brief Composes canonical local poses and packs one global FP32 pose.
    * \param[in] index Existing zero-based occurrence index.
    * \return Global center and local-to-global axes, with Sphere's inherited
-   * frame.
-   * \throws GGEMSRecoverable If the occurrence is voxelized.
+   * frame and the same pose convention for voxelized grids.
    * \pre index is smaller than GetVolumeCount().
    * \note The complete chain uses FP64 working arithmetic; only the final pose
    * is converted to FP32. Authored integer positions are never rewritten.
@@ -781,18 +809,38 @@ private:
   };
 
   /*!
-   * \brief Rejects host-only voxel imports at analytical device boundaries.
-   * \throws GGEMSRecoverable If any occurrence is voxelized.
+   * \brief Validates one voxelized outer box and its FP32 cell scale.
+   * \param[in] index Existing voxelized physical occurrence index.
+   * \throws GGEMSRecoverable If containment or cell representability fails.
    */
-  auto RequireAnalyticScene() const -> void;
+  auto ValidateVoxelizedVolume(std::size_t index) const -> void;
+
+  /*!
+   * \brief Packs one posed grid using the shared automatic surface band.
+   * \param[in] index Existing voxelized physical occurrence index.
+   * \param[in] label_offset Element offset in the compact label field.
+   * \param[in] palette_offset Element offset in the scene MaterialID palettes.
+   * \return Scalar grid record retaining its global physical VolumeID.
+   * \throws GGEMSRecoverable If a dimension exceeds its device domain or a
+   * cell is unresolved under the existing FP32 profile.
+   */
+  [[nodiscard]] auto
+  BuildVoxelizedVolumeRecord(std::size_t index, std::uint64_t label_offset,
+                             std::uint32_t palette_offset) const
+    -> GGEMSVoxelizedVolumeRecord;
 
   /*!
    * \brief Plans flat auxiliary offsets without copying profile payloads.
    * \return Checked layout with independently placed poses and shared profiles.
-   * \throws GGEMSRecoverable If a byte offset exceeds the 32-bit device domain
-   * or any occurrence is voxelized.
+   * \throws GGEMSRecoverable If a byte offset exceeds the 32-bit device domain.
    */
   [[nodiscard]] auto BuildAuxiliaryLayout() const -> AuxiliaryLayout;
+
+  /*!
+   * \brief Appends shared analytical profile placements after occurrence poses.
+   * \param[in,out] layout Existing global occurrence references and byte count.
+   */
+  auto AppendPolyhedraProfiles(AuxiliaryLayout &layout) const -> void;
 
   /*!
    * \brief Counts a conservative straight-ray boundary-event bound.

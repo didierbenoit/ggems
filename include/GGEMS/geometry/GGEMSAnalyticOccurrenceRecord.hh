@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines flat references for physically placed analytical
+ * \brief Defines flat references for physically placed analytic and voxelized
  * occurrences.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
@@ -34,19 +34,26 @@
 
 namespace ggems::geometry {
 
+/*! \brief Selects one of the implemented physical geometry families. */
+enum class GGEMSOccurrenceFamily : std::uint32_t {
+  Analytic = 0U,  /*!< \brief Evaluated analytical solid. */
+  Voxelized = 1U, /*!< \brief Regular material grid. */
+};
+
 /*!
- * \brief Stores 20-byte geometry references and physical hierarchy links.
+ * \brief Stores 24-byte family references and physical hierarchy links.
  *
- * Multi-occurrence auxiliary buffers begin with occurrence_count descriptors.
- * The offset is measured in bytes from that buffer's beginning. Sphere has no
- * separate pose and uses offset zero. Record indices preserve insertion order;
- * physical VolumeID is that index plus one, after World identity zero.
- * Parent and child/sibling links use physical VolumeIDs. Zero denotes World
- * for the parent and no occurrence for child/sibling links; the first World
- * child is always VolumeID one. Parents precede children in insertion order.
+ * Multi-occurrence and voxelized scene auxiliary buffers begin with
+ * occurrence_count descriptors. Physical VolumeID is the descriptor index
+ * plus one; record_index is dense within the selected geometry family.
+ * Analytical pose offsets are bytes from the auxiliary buffer's beginning.
+ * Sphere and voxelized entries use offset zero; the voxel record owns its pose.
+ * Links use global physical VolumeIDs: zero denotes World for the parent and
+ * no occurrence for child/sibling links. The first World child is VolumeID one.
+ * Parents precede children in insertion order.
  */
 struct GGEMSAnalyticOccurrenceRecord {
-  /*! \brief Index in the contiguous evaluated analytical record array. */
+  /*! \brief Index in the contiguous record array selected by family. */
   std::uint32_t record_index{0};
 
   /*! \brief Byte offset of the occurrence pose within the auxiliary buffer. */
@@ -60,6 +67,9 @@ struct GGEMSAnalyticOccurrenceRecord {
 
   /*! \brief Next direct sibling VolumeID; zero ends the sibling list. */
   std::uint32_t next_sibling_id{0};
+
+  /*! \brief Physical geometry family selected by record_index. */
+  GGEMSOccurrenceFamily family{GGEMSOccurrenceFamily::Analytic};
 };
 
 } // namespace ggems::geometry

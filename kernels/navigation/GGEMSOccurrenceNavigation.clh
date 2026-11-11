@@ -35,9 +35,11 @@
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
 #include "geometry/GGEMSBoxRecord.clh"
 #include "geometry/GGEMSWorldRecord.clh"
+#include "geometry/GGEMSVoxelizedVolumeRecord.clh"
 #include "navigation/GGEMSNavigation.clh"
 #include "navigation/GGEMSWorldNavigation.clh"
 #include "navigation/GGEMSAnalyticNavigation.clh"
+#include "navigation/GGEMSVoxelizedNavigation.clh"
 
 /*!
  * \brief Resolves an occurrence's auxiliary view in the immutable scene buffer.
@@ -59,7 +61,8 @@ static inline __global void const *GGEMS_OccurrenceAuxiliary(
  * does not provide an overlap priority. The ray is already World-validated.
  * \param[in] volumes Immutable evaluated analytical records.
  * \param[in] auxiliary Descriptor array followed by poses and shared profiles.
- * \param[in] count Number of descriptors; identities are index plus one.
+ * \param[in] count Number of physical descriptors; voxelized entries are
+ * considered separately by SceneLocate. Identities are index plus one.
  * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.
  * \param[in] excluded_volume Accepted departure to exclude at its exit, or
@@ -79,7 +82,8 @@ GGEMS_OccurrenceLocate(__global GGEMSAnalyticVolumeRecord const *volumes,
   *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
 
   for (uint index = 0U; index < count; ++index) {
-    if (index + 1U == excluded_volume) {
+    if (index + 1U == excluded_volume ||
+        occurrences[index].family == GGEMS_OCCURRENCE_VOXELIZED) {
       continue;
     }
 
@@ -266,7 +270,8 @@ GGEMS_HierarchyDescend(__global GGEMSAnalyticVolumeRecord const *volumes,
       __global GGEMSAnalyticOccurrenceRecord const *occurrence =
         &occurrences[child - 1U];
 
-      if (child != excluded_volume) {
+      if (child != excluded_volume &&
+          occurrence->family == GGEMS_OCCURRENCE_ANALYTIC) {
         ulong candidate = entering_owner;
 
         if (child != (uint)(entering_owner >> 32U)) {
@@ -526,10 +531,17 @@ GGEMS_HierarchyFindBoundary(__global GGEMSWorldRecord const *world,
 }
 
 /*!
- * \brief Locates a birth in World or its deepest forward physical owner.
+ * \brief Locates a birth in World or its unique physical owner across families.
+ *
+ * Analytical hierarchies retain their deepest directional owner. Voxelized
+ * direct World children qualify only at unambiguous interior cells. Multiple
+ * qualifying physical owners are unresolved, without insertion-order priority.
  * \param[in] world World bounds, automatic band, and occurrence count.
  * \param[in] volumes Immutable analytical array, or one None record.
  * \param[in] auxiliary Single N1 view or multi-volume descriptors and assets.
+ * \param[in] voxelized_volumes Immutable voxelized occurrence array.
+ * \param[in] material_labels Concatenated compact local voxel material labels.
+ * \param[in] material_palette Concatenated dense scene MaterialID palettes.
  * \param[in] position Global FP32 birth position in pm.
  * \param[in] direction Actual stored direction.
  * \param[out] owner Packed VolumeID/MaterialID on success.
@@ -538,30 +550,63 @@ GGEMS_HierarchyFindBoundary(__global GGEMSWorldRecord const *world,
 static inline uint
 GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
                   __global GGEMSAnalyticVolumeRecord const *volumes,
-                  __global void const *auxiliary, float3 position,
+                  __global void const *auxiliary,
+                  __global GGEMSVoxelizedVolumeRecord const *voxelized_volumes,
+                  __global ushort const *material_labels,
+                  __global uint const *material_palette, float3 position,
                   float3 direction, ulong *owner) {
-  if (world->occurrence_count <= 1U) {
+  if (world->voxelized_count == 0U && world->occurrence_count <= 1U) {
     return GGEMS_AnalyticLocate(world, volumes, auxiliary, position, direction,
                                 owner);
   }
 
-  uint const status = GGEMS_WorldValidateRay(world, position, direction);
+  uint status = GGEMS_WorldValidateRay(world, position, direction);
 
-  if (status == GGEMS_NAVIGATION_RESOLVED && world->hierarchy_depth > 1U) {
-    *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
-    return GGEMS_HierarchyDescend(volumes, auxiliary, position, direction,
-                                  GGEMS_VOLUME_ID_WORLD, 0UL, owner);
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
   }
 
-  return status == GGEMS_NAVIGATION_RESOLVED
-           ? GGEMS_OccurrenceLocate(volumes, auxiliary, world->occurrence_count,
-                                    position, direction, GGEMS_VOLUME_ID_WORLD,
-                                    owner)
-           : status;
+  if (world->hierarchy_depth > 1U) {
+    *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+    status = GGEMS_HierarchyDescend(volumes, auxiliary, position, direction,
+                                    GGEMS_VOLUME_ID_WORLD, 0UL, owner);
+  } else {
+    status =
+      GGEMS_OccurrenceLocate(volumes, auxiliary, world->occurrence_count,
+                             position, direction, GGEMS_VOLUME_ID_WORLD, owner);
+  }
+
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
+  }
+
+  for (uint index = 0U; index < world->voxelized_count; ++index) {
+    ulong candidate;
+    status =
+      GGEMS_VoxelizedLocate(&voxelized_volumes[index], material_labels,
+                            material_palette, position, direction, &candidate);
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+
+    if ((uint)(candidate >> 32U) != GGEMS_VOLUME_ID_WORLD) {
+      if ((uint)(*owner >> 32U) != GGEMS_VOLUME_ID_WORLD) {
+        return GGEMS_NAVIGATION_UNRESOLVED;
+      }
+
+      *owner = candidate;
+    }
+  }
+
+  return GGEMS_NAVIGATION_RESOLVED;
 }
 
 /*!
  * \brief Dispatches a scene query while keeping the ordinary N1 path direct.
+ *
+ * Voxelized boundary traversal is not implemented. Any scene containing a grid
+ * is unresolved here, including a ray currently owned by World or an analytic
+ * occurrence: returning an analytic distance could silently skip a grid.
  * \param[in] world World bounds and immutable scene counts.
  * \param[in] volumes Evaluated analytical array, or one None record.
  * \param[in] auxiliary Single N1 view or descriptors followed by scene
@@ -581,6 +626,10 @@ GGEMS_SceneFindBoundary(__global GGEMSWorldRecord const *world,
                         __global void const *auxiliary, float3 position,
                         float3 direction, uint current_owner, uint last_event,
                         uint previous_volume, GGEMSBoundaryWitness *result) {
+  if (world->voxelized_count != 0U) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
   if (world->occurrence_count <= 1U) {
     return GGEMS_AnalyticFindBoundary(world, volumes, auxiliary, position,
                                       direction, current_owner, last_event,

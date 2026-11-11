@@ -40,7 +40,8 @@
  *
  * FP32 frame-origin subtraction and packed column axes apply R^T to position
  * and stored direction, including identity poses. All nonspherical
- * analytical families share this transform; directions are not renormalized.
+ * analytical families and regular voxel grids share this transform; directions
+ * are not renormalized.
  * \param[in] pose Immutable frame origin and local axes in global coordinates.
  * \param[in] position Global FP32 position in pm.
  * \param[in] direction Actual stored direction.

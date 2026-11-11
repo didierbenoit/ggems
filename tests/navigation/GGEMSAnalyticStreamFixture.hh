@@ -122,8 +122,9 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
                 "  volatile __global GGEMSTransportCounters *counters) {",
                 "  volatile __global GGEMSTransportCounters *counters,\n"
                 "  __global long *trace) {");
-  ReplaceUnique(source, "  __global void const *box_pose) {",
-                "  __global void const *box_pose, __global long *trace) {");
+  ReplaceUnique(
+    source, "  __global uint const *material_palette) {",
+    "  __global uint const *material_palette, __global long *trace) {");
   ReplaceUnique(
     source, "counters) != 0U)",
     std::format("counters, trace + {}UL * global_primary_id) != 0U)",
@@ -343,8 +344,12 @@ RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   // Match production: every oriented analytic family shares the pose argument.
   kernel.SetArgSVMPointer(22U, pose_buffer ? pose_buffer->GetData()
                                            : volume_buffer.GetData());
+  // Zero voxelized_count leaves these valid SVM placeholders unread.
+  kernel.SetArgSVMPointer(23U, volume_buffer.GetData());
+  kernel.SetArgSVMPointer(24U, volume_buffer.GetData());
+  kernel.SetArgSVMPointer(25U, volume_buffer.GetData());
   if (capture_trace) {
-    kernel.SetArgSVMPointer(23U, trace_buffer.GetData());
+    kernel.SetArgSVMPointer(26U, trace_buffer.GetData());
   }
   kernel.Run({64U}, {64U});
 

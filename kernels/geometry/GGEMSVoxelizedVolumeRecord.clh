@@ -1,0 +1,82 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the immutable regular material-grid record transferred to
+ * OpenCL.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_VOXELIZED_VOLUME_RECORD_CLH
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
+#define GGEMS_VOXELIZED_VOLUME_RECORD_CLH
+
+#include "geometry/GGEMSBoxPoseRecord.clh"
+
+/*! \brief Host-mirrored regular material grid (104 bytes, 8-byte alignment). */
+typedef struct GGEMSVoxelizedVolumeRecord {
+  /*! \brief World-frame center and local-to-World axes. */
+  GGEMSBoxPoseRecord pose;
+
+  /*! \brief Number of cells along local X. */
+  uint dimension_x;
+
+  /*! \brief Number of cells along local Y. */
+  uint dimension_y;
+
+  /*! \brief Number of cells along local Z. */
+  uint dimension_z;
+
+  /*! \brief Global physical VolumeID of the complete grid. */
+  uint volume_id;
+
+  /*! \brief Cell width along local X in FP32 pm. */
+  float spacing_x_pm;
+
+  /*! \brief Cell width along local Y in FP32 pm. */
+  float spacing_y_pm;
+
+  /*! \brief Cell width along local Z in FP32 pm. */
+  float spacing_z_pm;
+
+  /*! \brief Automatic outer-support surface half-band in FP32 pm. */
+  float tolerance_pm;
+
+  /*! \brief Centered grid X half extent in FP32 pm. */
+  float half_extent_x_pm;
+
+  /*! \brief Centered grid Y half extent in FP32 pm. */
+  float half_extent_y_pm;
+
+  /*! \brief Centered grid Z half extent in FP32 pm. */
+  float half_extent_z_pm;
+
+  /*! \brief Element offset in the concatenated dense MaterialID palettes. */
+  uint palette_offset;
+
+  /*! \brief Element offset in the concatenated X-fastest ushort labels. */
+  ulong material_label_offset;
+} GGEMSVoxelizedVolumeRecord;
+
+#endif

@@ -24,7 +24,9 @@
  * \brief Claims source primaries and executes the selected transport path.
  *
  * Process-free species traverse the host-authored finite World and its
- * independent analytical occurrences and exit geometrically. Other species keep
+ * analytical occurrences and exit geometrically. Voxelized scenes support birth
+ * location only and explicitly fail the unimplemented boundary query.
+ * Other species keep
  * the diagnostic one-meter projection and Killed status until their Processes
  * exist. No interaction, energy loss, time-of-flight update, or secondary is
  * modeled.
@@ -45,7 +47,9 @@
 #include "sources/GGEMSSourceEmissionRange.clh"
 #include "sources/GGEMSEnergyDistributionRecord.clh"
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
-#include "navigation/GGEMSAnalyticNavigation.clh"
+#include "geometry/GGEMSVoxelizedVolumeRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "navigation/GGEMSOccurrenceNavigation.clh"
 #include "geometry/GGEMSWorldRecord.clh"
 #include "navigation/GGEMSNavigation.clh"
 #include "sources/GGEMSSource.clh"
@@ -88,6 +92,9 @@
  * \param[in] volume Immutable analytical array or one None record.
  * \param[in] box_pose Single N1 auxiliary view or occurrence descriptors,
  * rigid poses, and shared immutable profile data.
+ * \param[in] voxelized_volumes Immutable voxelized occurrence array.
+ * \param[in] material_labels Concatenated compact local voxel material labels.
+ * \param[in] material_palette Concatenated dense scene MaterialID palettes.
  * \param[in,out] particle Private state; moved to the World boundary on
  * success, owner identities updated at every accepted boundary.
  * \param[in,out] counters Transport counters receiving the outcome.
@@ -95,15 +102,19 @@
  * the birth was outside the World or a transaction was unresolved.
  */
 static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
-GGEMS_TransportGeometry(__global GGEMSWorldRecord const *world,
-                        __global GGEMSAnalyticVolumeRecord const *volume,
-                        __global void const *box_pose,
-                        GGEMSParticleState *particle,
-                        volatile __global GGEMSTransportCounters *counters) {
+GGEMS_TransportGeometry(
+  __global GGEMSWorldRecord const *world,
+  __global GGEMSAnalyticVolumeRecord const *volume,
+  __global void const *box_pose,
+  __global GGEMSVoxelizedVolumeRecord const *voxelized_volumes,
+  __global ushort const *material_labels, __global uint const *material_palette,
+  GGEMSParticleState *particle,
+  volatile __global GGEMSTransportCounters *counters) {
   ulong owner;
 
   uint const locate_status =
-    GGEMS_SceneLocate(world, volume, box_pose,
+    GGEMS_SceneLocate(world, volume, box_pose, voxelized_volumes,
+                      material_labels, material_palette,
                       (float3)(particle->position_x_pm, particle->position_y_pm,
                                particle->position_z_pm),
                       (float3)(particle->direction_x, particle->direction_y,
@@ -232,6 +243,9 @@ GGEMS_TransportGeometry(__global GGEMSWorldRecord const *world,
  * \param[in] volume Analytical record array, or one None record.
  * \param[in] box_pose Single N1 auxiliary view or flat occurrence descriptors,
  * independent poses, and shared immutable profile data.
+ * \param[in] voxelized_volumes Immutable voxelized occurrence array.
+ * \param[in] material_labels Concatenated compact local voxel material labels.
+ * \param[in] material_palette Concatenated dense scene MaterialID palettes.
  */
 __kernel void particle_stream_transport(
   __global GGEMSRandomState *random_states,
@@ -252,7 +266,10 @@ __kernel void particle_stream_transport(
   __global GGEMSSourceEmissionRange const *source_emission_ranges,
   __global GGEMSWorldRecord const *world,
   __global GGEMSAnalyticVolumeRecord const *volume,
-  __global void const *box_pose) {
+  __global void const *box_pose,
+  __global GGEMSVoxelizedVolumeRecord const *voxelized_volumes,
+  __global ushort const *material_labels,
+  __global uint const *material_palette) {
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
@@ -331,7 +348,8 @@ __kernel void particle_stream_transport(
 #endif
 
     if (GGEMS_ParticleIsProcessFree(particle.particle_type) != 0U) {
-      if (GGEMS_TransportGeometry(world, volume, box_pose, &particle,
+      if (GGEMS_TransportGeometry(world, volume, box_pose, voxelized_volumes,
+                                  material_labels, material_palette, &particle,
                                   counters) != 0U) {
         continue;
       }

@@ -112,6 +112,10 @@ world_abi_probe(__global GGEMSWorldRecord const *worlds,
   layout[33] = occurrences[1].parent_volume_id;
   layout[34] = occurrences[1].first_child_id;
   layout[35] = occurrences[1].next_sibling_id;
+  layout[36] = __builtin_offsetof(GGEMSWorldRecord, voxelized_count);
+  layout[37] = worlds[1].voxelized_count;
+  layout[38] = __builtin_offsetof(GGEMSAnalyticOccurrenceRecord, family);
+  layout[39] = occurrences[1].family;
 
   counts[1].outside_world_count = 7U;
   counts[1].unresolved_geometry_count = 11U;

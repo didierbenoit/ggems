@@ -31,7 +31,7 @@
 /*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_WORLD_RECORD_CLH
 
-/*! \brief Host-mirrored box parameters in signed FP32 pm (28 bytes). */
+/*! \brief Host-mirrored box parameters in signed FP32 pm (32 bytes). */
 typedef struct GGEMSWorldRecord {
   /*! \brief Positive X half extent; zero extents denote no World. */
   float half_extent_x_pm;
@@ -48,7 +48,10 @@ typedef struct GGEMSWorldRecord {
   /*! \brief Number of physical occurrences, excluding the World. */
   uint occurrence_count;
 
-  /*! \brief Proven straight-ray crossing bound, including World exit. */
+  /*!
+   * \brief Analytical crossing bound including World exit; zero defers voxel
+   * traversal.
+   */
   uint max_boundary_events;
 
   /*!
@@ -56,6 +59,9 @@ typedef struct GGEMSWorldRecord {
    * otherwise.
    */
   uint hierarchy_depth;
+
+  /*! \brief Number of voxelized direct World children. */
+  uint voxelized_count;
 } GGEMSWorldRecord;
 
 #endif

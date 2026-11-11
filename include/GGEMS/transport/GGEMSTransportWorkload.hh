@@ -295,9 +295,12 @@ public:
    * zero to select the largest limit preserving atomic-cursor headroom.
    * \param[in] world Optional World copied to SVM; required for navigated
    * (Process-free) species.
-   * \param[in] volumes Immutable analytical records in occurrence order,
-   * copied into workload-owned SVM during construction. Empty binds None
+   * \param[in] volumes Immutable analytical records in analytical occurrence
+   * order, copied into workload-owned SVM during construction. Empty binds None
    * only when the World has no analytical occurrences.
+   * \param[in] voxelized_data Immutable voxel records, compact labels, and
+   * dense material palettes. Copied once per context; anatomical labels stay on
+   * host.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
    * are invalid, or analytical record count disagrees with the World.
    * \throws GGEMSInternal If energy and cumulative-ticket table lengths
@@ -306,14 +309,16 @@ public:
    * operation fails.
    */
   GGEMSTransportWorkload(
-    ggems::ocl::GGEMSOpenCLContext &context, std::filesystem::path kernel_root,
-    random::GGEMSRandom const &random, std::uint32_t worker_count,
+    ggems::ocl::GGEMSOpenCLContext &context,
+    std::filesystem::path const &kernel_root, random::GGEMSRandom const &random,
+    std::uint32_t worker_count,
     sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
     std::uint64_t random_stream_offset = 0ULL, std::uint32_t context_index = 0U,
     std::uint32_t observer_record_capacity = 1U,
     std::uint32_t launch_primary_count_limit = 0U,
     geometry::GGEMSWorld const *world = nullptr,
-    std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes = {});
+    std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes = {},
+    geometry::GGEMSVoxelizedSceneData const &voxelized_data = {});
 
   /*! \brief Releases the bound kernel and all workload-owned SVM storage. */
   ~GGEMSTransportWorkload() = default;
@@ -355,7 +360,7 @@ public:
    *
    * \param[in] config Proposed run assignment.
    * \throws GGEMSRecoverable If source arrays, ranges, identities, or canonical
-   * source descriptors are invalid.
+   * source descriptors are invalid, or voxel traversal would be required.
    */
   auto ValidateRunConfig(GGEMSTransportRunConfig const &config) const -> void;
 
@@ -466,6 +471,9 @@ private:
    */
   geometry::GGEMSWorld const *world_{nullptr};
 
+  /*! \brief Voxel location is available, but traversal is not implemented. */
+  bool has_voxelized_volumes_{false};
+
   /*!
    * \brief Immutable origin-centered World box, or default record if absent.
    */
@@ -473,6 +481,15 @@ private:
 
   /*! \brief Immutable analytical occurrence records, or one None record. */
   ggems::ocl::GGEMSOpenCLSVMBuffer volume_buffer_;
+
+  /*! \brief Immutable voxel descriptors, or one dummy record. */
+  ggems::ocl::GGEMSOpenCLSVMBuffer voxelized_volume_buffer_;
+
+  /*! \brief Immutable compact uint16 material labels, or one dummy label. */
+  ggems::ocl::GGEMSOpenCLSVMBuffer voxel_material_labels_buffer_;
+
+  /*! \brief Immutable local-palette to dense scene material IDs. */
+  ggems::ocl::GGEMSOpenCLSVMBuffer voxel_material_ids_buffer_;
 
   /*!
    * \brief Immutable FP32 pose and optional Polyhedra data; absent for

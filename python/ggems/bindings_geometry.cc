@@ -1138,9 +1138,9 @@ children, repeaters, or single global material. Its display color defaults to
 ggems.colors.white_white. OpenCL Navigation and voxel rendering are not yet
 implemented.
 )doc")
-    .def(py::init<std::filesystem::path const &,
-                  std::filesystem::path const &>(),
-         py::arg("mhd"), py::arg("materials"))
+    .def(
+      py::init<std::filesystem::path const &, std::filesystem::path const &>(),
+      py::arg("mhd"), py::arg("materials"))
 
     .def("set_position", &SetPosition<GGEMSVoxelizedVolume>,
          R"doc(Set the World-frame position of the grid center.
@@ -1319,9 +1319,9 @@ Returns:
 
   world_binding.def(
     "add_volume",
-    [attachments](std::shared_ptr<GGEMSWorld> const &world,
-                  std::shared_ptr<GGEMSVoxelizedVolume> const &volume)
-      -> GGEMSWorld & {
+    [attachments](
+      std::shared_ptr<GGEMSWorld> const &world,
+      std::shared_ptr<GGEMSVoxelizedVolume> const &volume) -> GGEMSWorld & {
       attachments->AddVolume(world, volume);
       return *world;
     },

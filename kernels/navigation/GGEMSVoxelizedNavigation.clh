@@ -1,0 +1,121 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Locates strict-interior cells in immutable regular material grids.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_VOXELIZED_NAVIGATION_CLH
+/*! \brief Prevents repeated inclusion of voxelized location. */
+#define GGEMS_VOXELIZED_NAVIGATION_CLH
+
+#include "geometry/GGEMSVoxelizedVolumeRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "navigation/GGEMSBoxNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*!
+ * \brief Resolves one unambiguous grid cell and its physical material owner.
+ *
+ * The existing rigid transform and host-derived external surface band apply.
+ * Outside the expanded support the grid does not qualify; the external band
+ * and exactly represented internal cell planes remain unresolved. Directional
+ * face ownership and boundary traversal are deferred. No index is clamped and
+ * no physical or classification displacement is applied.
+ * \param[in] volume Immutable placed grid and shared-array offsets.
+ * \param[in] material_labels Concatenated X-fastest compact local labels.
+ * \param[in] material_palette Concatenated dense scene MaterialID palettes.
+ * \param[in] position Global FP32 position already validated against World.
+ * \param[in] direction Actual stored direction for the shared rigid transform.
+ * \param[out] owner Packed VolumeID/MaterialID, or World outside this grid.
+ * \return Resolved for an interior cell or outside support; otherwise
+ * unresolved.
+ */
+static inline uint
+GGEMS_VoxelizedLocate(__global GGEMSVoxelizedVolumeRecord const *volume,
+                      __global ushort const *material_labels,
+                      __global uint const *material_palette, float3 position,
+                      float3 direction, ulong *owner) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(&volume->pose, position, direction, &local_position,
+                    &local_direction);
+
+  *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+
+  float coordinates[3] = {local_position.x, local_position.y, local_position.z};
+  float half_extent[3] = {volume->half_extent_x_pm, volume->half_extent_y_pm,
+                          volume->half_extent_z_pm};
+  float spacing[3] = {volume->spacing_x_pm, volume->spacing_y_pm,
+                      volume->spacing_z_pm};
+  uint dimensions[3] = {volume->dimension_x, volume->dimension_y,
+                        volume->dimension_z};
+  uint surface = 0U;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    if (GGEMS_NavigationIsFinite(coordinates[axis]) == 0U) {
+      return GGEMS_NAVIGATION_UNRESOLVED;
+    }
+
+    if (fabs(coordinates[axis]) > half_extent[axis] + volume->tolerance_pm) {
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+
+    surface |=
+      fabs(coordinates[axis]) >= half_extent[axis] - volume->tolerance_pm;
+  }
+
+  if (surface != 0U) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  uint indices[3];
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    float coordinate = (coordinates[axis] + half_extent[axis]) / spacing[axis];
+    float index = floor(coordinate);
+
+    if (GGEMS_NavigationIsFinite(coordinate) == 0U || coordinate == index ||
+        index < 0.0F || index >= (float)dimensions[axis]) {
+      return GGEMS_NAVIGATION_UNRESOLVED;
+    }
+
+    indices[axis] = (uint)index;
+  }
+
+  ulong linear_index =
+    (ulong)indices[0] +
+    (ulong)dimensions[0] *
+      ((ulong)indices[1] + (ulong)dimensions[1] * (ulong)indices[2]);
+
+  ushort label = material_labels[volume->material_label_offset + linear_index];
+  uint material_id = material_palette[volume->palette_offset + (uint)label];
+
+  *owner = ((ulong)volume->volume_id << 32U) | material_id;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

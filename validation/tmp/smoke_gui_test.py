@@ -32,7 +32,7 @@ try:
 
     # --------------------------------------------------------------------------
     world = ggems.geometry.GGEMSWorld()
-    world.set_size(1200, 1200, 1200, "mm")
+    world.set_size(1200, 1200, 2200, "mm")
     world.set_material("Air")
 
     gantry = ggems.geometry.GGEMSTubs()
@@ -65,19 +65,26 @@ try:
     # phantom.set_material("Water")
     # phantom.set_color(ggems.colors.blue_babyblue)
 
+    xcat = ggems.geometry.GGEMSVoxelizedVolume(
+        "validation/tmp/xcat.mhd", "validation/tmp/xcat_materials.txt"
+    )
+    xcat.set_position(0.0, 0.0, 0.0, "mm")
+    xcat.set_rotation(0.0, 0.0, 0.0, "deg")
+
     # --------------------------------------------------------------------------
     # world.add_volume(phantom)
+    # world.add_volume(xcat)
     world.add_volume(gantry)
 
     # --------------------------------------------------------------------------
     run = ggems.run.GGEMSRun()
     run.set_world(world)
-    run.set_random(random)
-    run.add_source(source)
-    run.set_observer(observer)
+    # run.set_random(random)
+    # run.add_source(source)
+    # run.set_observer(observer)
     # run.set_time(0.0, 1.0, 1.0, "s")
-    run.initialize()
-    run.run()
+    # run.initialize()
+    # run.run()
 
     # --------------------------------------------------------------------------
 
@@ -85,8 +92,8 @@ try:
     gui.set_vulkan_device(0)
     gui.initialize()
 
-    gui.submit_last_run_source_snapshot(run)
-    gui.submit_particle_traces_from_observer(observer)
+    # gui.submit_last_run_source_snapshot(run)
+    # gui.submit_particle_traces_from_observer(observer)
 
     gui.submit_run_geometry(run)
     gui.run()

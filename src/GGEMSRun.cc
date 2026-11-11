@@ -46,6 +46,7 @@
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/GGEMSException.hh"
@@ -143,6 +144,71 @@ auto ValidateObserverCapture(
                   config.capture_source_local_primary_id, source_index,
                   source_primary_count));
   }
+}
+
+/*! \brief Immutable family arrays prepared once for every active context. */
+struct PreparedSceneRecords {
+  /*! \brief Dense analytical family records, with a None record if absent. */
+  std::vector<geometry::GGEMSAnalyticVolumeRecord> analytical{1U};
+
+  /*! \brief Voxel descriptors and their shared compact material arrays. */
+  geometry::GGEMSVoxelizedSceneData voxelized;
+};
+
+/*!
+ * \brief Compiles both geometry families with one exact scene material
+ * registry.
+ * \param[in] world Optional finite World; its medium is interned first.
+ * \return Owning arrays copied into each context's immutable SVM storage.
+ * \throws GGEMSRecoverable If geometry or material packing fails.
+ */
+auto BuildSceneRecords(geometry::GGEMSWorld const *world)
+  -> PreparedSceneRecords {
+
+  PreparedSceneRecords records;
+
+  if (world == nullptr) {
+    return records;
+  }
+
+  std::vector<materials::GGEMSMaterial> scene_materials;
+  scene_materials.reserve(world->GetVolumeCount() + 1U);
+  scene_materials.push_back(world->GetMaterial());
+  for (std::size_t index = 0U; index < world->GetVolumeCount(); ++index) {
+    if (world->GetVoxelizedVolume(index) == nullptr) {
+      scene_materials.push_back(*world->GetVolumeMaterial(index));
+    }
+  }
+
+  std::size_t const analytic_count = scene_materials.size() - 1U;
+  for (std::size_t index = 0U; index < world->GetVolumeCount(); ++index) {
+    if (auto const *voxelized = world->GetVoxelizedVolume(index)) {
+      auto const palette = voxelized->GetMaterials();
+      scene_materials.insert(scene_materials.end(), palette.begin(),
+                             palette.end());
+    }
+  }
+
+  // World is the first input, hence dense identity 0. No Cut couple is bound
+  // in this geometry-only slice; voxel palettes share exact Material identity.
+  materials::GGEMSEMMaterialPackage const package{scene_materials};
+
+  std::span<std::uint32_t const> const material_ids = package.GetMaterialIds();
+
+  records.analytical =
+    world->BuildAnalyticDeviceRecords(material_ids.subspan(1U, analytic_count));
+
+  records.voxelized =
+    world->BuildVoxelizedDeviceData(material_ids.subspan(1U + analytic_count));
+
+  if (analytic_count != 0U) {
+    GGEMS_WARN("Geometry",
+               "Ordinary analytical overlap/containment verification is "
+               "not exhaustive. Users must verify their scene; absence "
+               "of detected errors is not a geometry certification.");
+  }
+
+  return records;
 }
 
 } // namespace
@@ -379,34 +445,7 @@ auto GGEMSRun::Initialize() -> void {
 
   std::filesystem::path const kernel_root{GGEMS_KERNEL_ROOT};
 
-  // Compile independent occurrences after interning the World medium first.
-  std::vector<geometry::GGEMSAnalyticVolumeRecord> volume_records(1U);
-
-  if (world_) {
-    std::vector<materials::GGEMSMaterial> scene_materials;
-    scene_materials.reserve(world_->GetVolumeCount() + 1U);
-    scene_materials.push_back(world_->GetMaterial());
-
-    for (std::size_t index = 0U; index < world_->GetVolumeCount(); ++index) {
-      scene_materials.push_back(*world_->GetVolumeMaterial(index));
-    }
-
-    // Exact dense Material identities from the Materials authority: the World
-    // medium is the first input, hence identity 0. No Cut couple is bound in
-    // this geometry-only slice.
-    materials::GGEMSEMMaterialPackage const package{scene_materials};
-    std::span<std::uint32_t const> const material_ids =
-      package.GetMaterialIds();
-    volume_records =
-      world_->BuildAnalyticDeviceRecords(material_ids.subspan(1U));
-
-    if (world_->GetVolumeCount() != 0U) {
-      GGEMS_WARN("Geometry",
-                 "Ordinary analytical overlap/containment verification is "
-                 "not exhaustive. Users must verify their scene; absence "
-                 "of detected errors is not a geometry certification.");
-    }
-  }
+  auto const scene_records = BuildSceneRecords(world_ ? &*world_ : nullptr);
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
     new_transport_workloads;
@@ -424,7 +463,7 @@ auto GGEMSRun::Initialize() -> void {
         opencl.GetWorkerCount(), *new_source_configuration,
         random_stream_offset, static_cast<std::uint32_t>(context_index),
         observer_record_capacity, 0U, world_ ? &*world_ : nullptr,
-        volume_records));
+        scene_records.analytical, scene_records.voxelized));
   }
 
   GGEMS_INFO("Core", "{} transport workload(s) prepared.",

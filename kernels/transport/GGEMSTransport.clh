@@ -98,6 +98,8 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
  * Process competes here; a future Process proposal is compared with the witness
  * before this commit, strictly earlier Process first and geometry first on
  * exact ties.
+ * Scenes containing voxelized occurrences currently return unresolved before
+ * any movement because voxel boundary traversal is not implemented.
  *
  * This transaction and GGEMS_TransportMoveToBoundary are deliberately kept
  * out of line. In the former -cl-fast-relaxed-math profile, inlining the

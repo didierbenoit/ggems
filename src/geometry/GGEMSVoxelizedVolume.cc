@@ -130,6 +130,31 @@ auto ParseValues(std::string_view text, std::filesystem::path const &file,
 
 /*! \brief Shared immutable import data, separate from the authored pose. */
 struct GGEMSVoxelizedVolume::Data {
+  /*!
+   * \brief Validates MHD metadata and initializes the centered grid dimensions.
+   * \param[in] image_file MHD metadata path.
+   * \return External RAW path resolved against the MHD directory.
+   * \throws core::GGEMSRecoverable If metadata or canonical quantities are
+   * invalid.
+   */
+  auto ReadMetadata(std::filesystem::path const &image_file)
+    -> std::filesystem::path;
+
+  /*!
+   * \brief Loads the exact original label field after metadata admission.
+   * \param[in] raw_path Resolved external RAW path.
+   * \throws core::GGEMSRecoverable If the file size or read fails.
+   */
+  auto ReadLabels(std::filesystem::path const &raw_path) -> void;
+
+  /*!
+   * \brief Builds the owned exact palette and one compact label per voxel.
+   * \param[in] material_file MIN MAX MATERIAL mapping path.
+   * \throws core::GGEMSRecoverable If ranges, materials, or label coverage
+   * fail.
+   */
+  auto BuildMaterialLabels(std::filesystem::path const &material_file) -> void;
+
   /*! \brief Voxel counts in X, Y, Z order. */
   std::array<std::size_t, 3> dimensions{};
 
@@ -152,9 +177,8 @@ struct GGEMSVoxelizedVolume::Data {
 // =============================================================================
 // =============================================================================
 
-GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
-  std::filesystem::path const &image_file,
-  std::filesystem::path const &material_file) {
+auto GGEMSVoxelizedVolume::Data::ReadMetadata(
+  std::filesystem::path const &image_file) -> std::filesystem::path {
   std::ifstream metadata{image_file};
 
   if (!metadata) {
@@ -262,7 +286,7 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
     }
   }
 
-  for (auto const key : {"Offset", "Position"}) {
+  for (auto const *const key : {"Offset", "Position"}) {
     if (auto const found = fields.find(key); found != fields.end()) {
       if (ParseValues<double, 3>(found->second, image_file, key) !=
           std::array<double, 3>{}) {
@@ -285,29 +309,24 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
     }
   }
 
-  auto data = std::make_shared<Data>();
-
-  data->dimensions =
+  dimensions =
     ParseValues<std::size_t, 3>(required("DimSize"), image_file, "DimSize");
 
-  auto const spacing = ParseValues<long double, 3>(
+  auto const spacing_mm = ParseValues<long double, 3>(
     required("ElementSpacing"), image_file, "ElementSpacing");
 
-  std::size_t voxel_count{1U};
-
-  for (std::size_t axis = 0U; axis < data->dimensions.size(); ++axis) {
-    auto const count = data->dimensions[axis];
+  for (std::size_t axis = 0U; axis < dimensions.size(); ++axis) {
+    auto const count = dimensions[axis];
     auto const converted =
-      units::MakeQuantity<units::Length>(spacing[axis], "mm");
+      units::MakeQuantity<units::Length>(spacing_mm[axis], "mm");
 
     if (count == 0U || !converted || converted->value == 0U) {
       throw core::GGEMSRecoverable(
         "Voxel dimensions and spacing must be positive and representable.");
     }
 
-    voxel_count *= count;
-    data->spacing[axis] = *converted;
-    data->size[axis] = units::Length{converted->value * count};
+    spacing[axis] = *converted;
+    size[axis] = units::Length{converted->value * count};
   }
 
   std::filesystem::path const raw_name{required("ElementDataFile")};
@@ -320,8 +339,13 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
       "ElementDataFile must name one relative external RAW file.");
   }
 
-  auto const raw_path = image_file.parent_path() / raw_name;
+  return image_file.parent_path() / raw_name;
+}
 
+// -----------------------------------------------------------------------------
+
+auto GGEMSVoxelizedVolume::Data::ReadLabels(
+  std::filesystem::path const &raw_path) -> void {
   std::ifstream raw{raw_path, std::ios::binary | std::ios::ate};
 
   if (!raw) {
@@ -329,17 +353,18 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
       std::format("Cannot read RAW file '{}'.", raw_path.string()));
   }
 
+  auto const voxel_count = dimensions[0] * dimensions[1] * dimensions[2];
   auto const byte_count = voxel_count * sizeof(std::uint16_t);
   auto const file_size = static_cast<std::streamoff>(raw.tellg());
 
-  if (file_size < 0 || static_cast<std::uintmax_t>(file_size) != byte_count) {
+  if (!std::cmp_equal(file_size, byte_count)) {
     throw core::GGEMSRecoverable(std::format(
       "{}: RAW size must be exactly {} bytes.", raw_path.string(), byte_count));
   }
 
-  data->labels.resize(voxel_count);
+  labels.resize(voxel_count);
   raw.seekg(0, std::ios::beg);
-  raw.read(reinterpret_cast<char *>(data->labels.data()),
+  raw.read(reinterpret_cast<char *>(labels.data()),
            static_cast<std::streamsize>(byte_count));
 
   if (!raw) {
@@ -348,11 +373,16 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
   }
 
   if constexpr (std::endian::native == std::endian::big) {
-    for (auto &label : data->labels) {
+    for (auto &label : labels) {
       label = std::byteswap(label);
     }
   }
+}
 
+// -----------------------------------------------------------------------------
+
+auto GGEMSVoxelizedVolume::Data::BuildMaterialLabels(
+  std::filesystem::path const &material_file) -> void {
   std::ifstream mapping{material_file};
 
   if (!mapping) {
@@ -368,7 +398,9 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
   std::vector<std::uint32_t> material_indices(label_count, unmapped);
 
   auto &manager = core::materials::GGEMSMaterialManager::GetInstance();
-  line_number = 0U;
+
+  std::size_t line_number{};
+  std::string line;
   while (std::getline(mapping, line)) {
     ++line_number;
     auto const text = Trim(line);
@@ -410,16 +442,17 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
     }
 
     auto const &material = manager.Require(manager.GetOrAdd(name));
+
     auto const existing =
-      std::ranges::find_if(data->materials, [&](auto const &candidate) -> bool {
+      std::ranges::find_if(materials, [&](auto const &candidate) -> bool {
         return core::materials::HasSameScientificIdentity(candidate, material);
       });
 
     auto const local_index =
-      static_cast<std::uint32_t>(existing - data->materials.begin());
+      static_cast<std::uint32_t>(existing - materials.begin());
 
-    if (existing == data->materials.end()) {
-      data->materials.push_back(material);
+    if (existing == materials.end()) {
+      materials.push_back(material);
     }
 
     for (auto label = first; label < end; ++label) {
@@ -432,16 +465,29 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
       "Failed reading material file '{}'.", material_file.string()));
   }
 
-  data->material_labels.reserve(data->labels.size());
-  for (auto const label : data->labels) {
+  material_labels.reserve(labels.size());
+
+  for (auto const label : labels) {
     auto const material_index = material_indices[label];
     if (material_index == unmapped) {
       throw core::GGEMSRecoverable(
         std::format("{}: RAW label {} has no material mapping.",
                     material_file.string(), label));
     }
-    data->material_labels.push_back(static_cast<std::uint16_t>(material_index));
+    material_labels.push_back(static_cast<std::uint16_t>(material_index));
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
+  std::filesystem::path const &image_file,
+  std::filesystem::path const &material_file) {
+  auto data = std::make_shared<Data>();
+  auto const raw_path = data->ReadMetadata(image_file);
+  data->ReadLabels(raw_path);
+  data->BuildMaterialLabels(material_file);
 
   data_ = std::move(data);
 }

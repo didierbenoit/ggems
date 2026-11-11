@@ -46,10 +46,13 @@
 #include <gtest/gtest.h>
 
 #include "GGEMSFP32TestOracle.hh"
+#include "GGEMSVoxelizedTestFixture.hh"
 
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
+#include "GGEMS/geometry/GGEMSBox.hh"
+#include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
@@ -533,6 +536,10 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       kernel.SetArgSVMPointer(21U, volume_buffer.GetData());
       // World-only navigation does not read the pose argument.
       kernel.SetArgSVMPointer(22U, volume_buffer.GetData());
+      // World-only scenes leave the valid voxel SVM placeholders unread.
+      kernel.SetArgSVMPointer(23U, volume_buffer.GetData());
+      kernel.SetArgSVMPointer(24U, volume_buffer.GetData());
+      kernel.SetArgSVMPointer(25U, volume_buffer.GetData());
       kernel.Run({64U}, {64U});
 
       std::vector<std::byte> rng_after(rng_before.size());
@@ -780,13 +787,23 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
     auto &context = ggems::test::GetSelectedOpenCLContext();
     SCOPED_TRACE(context.GetDevice().GetName());
     std::array<geometry::GGEMSWorldRecord, 2> const worlds{
-      {{.half_extent_x_pm = 11, .half_extent_y_pm = 23, .half_extent_z_pm = 37},
-       {.half_extent_x_pm = 41,
-        .half_extent_y_pm = 59,
-        .half_extent_z_pm = 83,
-        .occurrence_count = 3U,
-        .max_boundary_events = 7U,
-        .hierarchy_depth = 3U}}};
+      {
+        {
+          .half_extent_x_pm = 11,
+          .half_extent_y_pm = 23,
+          .half_extent_z_pm = 37,
+        },
+        {
+          .half_extent_x_pm = 41,
+          .half_extent_y_pm = 59,
+          .half_extent_z_pm = 83,
+          .occurrence_count = 3U,
+          .max_boundary_events = 7U,
+          .hierarchy_depth = 3U,
+          .voxelized_count = 2U,
+        },
+      },
+    };
     auto world_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(worlds)});
     ocl::WriteSVMFromHost(world_buffer,
                           std::span<geometry::GGEMSWorldRecord const>{worlds});
@@ -801,18 +818,23 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
     ocl::WriteSVMFromHost(
       observer_buffer,
       std::span<observer::GGEMSObserverRecord const>{observed});
-    std::array<geometry::GGEMSAnalyticOccurrenceRecord, 2> const occurrences{{
-      {.record_index = 7U, .auxiliary_offset = 28U},
-      {.record_index = 11U,
-       .auxiliary_offset = 44U,
-       .parent_volume_id = 3U,
-       .first_child_id = 9U,
-       .next_sibling_id = 17U},
-    }};
+    std::array<geometry::GGEMSAnalyticOccurrenceRecord, 2> const occurrences{
+      {
+        {.record_index = 7U, .auxiliary_offset = 28U},
+        {
+          .record_index = 11U,
+          .auxiliary_offset = 44U,
+          .parent_volume_id = 3U,
+          .first_child_id = 9U,
+          .next_sibling_id = 17U,
+          .family = geometry::GGEMSOccurrenceFamily::Voxelized,
+        },
+      },
+    };
     auto occurrence_buffer =
       context.CreateSVMBuffer(units::Bytes{sizeof(occurrences)});
     ocl::WriteSVMFromHost(occurrence_buffer, std::span{occurrences});
-    std::array<std::uint64_t, 36> layout{};
+    std::array<std::uint64_t, 40> layout{};
     auto output = context.CreateSVMBuffer(units::Bytes{sizeof(layout)});
     std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
     auto const &program = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
@@ -827,7 +849,7 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
     kernel.SetArgSVMPointer(4U, occurrence_buffer.GetData());
     kernel.Run({1U}, {1U});
     ocl::ReadSVMToHost(output, std::span<std::uint64_t>{layout});
-    std::array<std::uint64_t, 36> const expected{
+    std::array<std::uint64_t, 40> const expected{
       sizeof(geometry::GGEMSWorldRecord),
       offsetof(geometry::GGEMSWorldRecord, half_extent_y_pm),
       offsetof(geometry::GGEMSWorldRecord, half_extent_z_pm),
@@ -863,7 +885,12 @@ TEST_F(GGEMSWorldTransportTest, DeviceLayoutsAndArrayStrides) {
       offsetof(geometry::GGEMSAnalyticOccurrenceRecord, next_sibling_id),
       occurrences[1].parent_volume_id,
       occurrences[1].first_child_id,
-      occurrences[1].next_sibling_id};
+      occurrences[1].next_sibling_id,
+      offsetof(geometry::GGEMSWorldRecord, voxelized_count),
+      worlds[1].voxelized_count,
+      offsetof(geometry::GGEMSAnalyticOccurrenceRecord, family),
+      static_cast<std::uint32_t>(occurrences[1].family),
+    };
     EXPECT_EQ(layout, expected);
     ocl::ReadSVMToHost(counter_buffer,
                        std::span<transport::GGEMSTransportCounters>{counts});
@@ -929,4 +956,45 @@ TEST_F(GGEMSWorldTransportTest, DisabledAioninoDoesNotRequireWorld) {
   EXPECT_TRUE(run.GetLastSourceRunSnapshot().has_value());
   disabled->SetPrimaryCount(1ULL);
   EXPECT_THROW(run.Run(), GGEMSRecoverable);
+}
+
+// Publishes mixed immutable assets, but never substitutes an analytic route for
+// the voxel traversal deliberately deferred beyond N3.2.
+TEST_F(GGEMSWorldTransportTest, MixedVoxelSceneUploadsButRefusesTransport) {
+  using namespace units;
+  ggems::test::GGEMSVoxelizedTestFixture const files;
+  auto world = MakeVacuumWorld(100_mm);
+  auto voxel = files.Import();
+  voxel.SetPosition(geometry::MakePositionPM(-10'000'000'000LL, 0, 0));
+  geometry::GGEMSBox box;
+  box.SetSize(4_mm, 6_mm, 8_mm)
+    .SetPosition(geometry::MakePositionPM(10'000'000'000LL, 0, 0))
+    .SetMaterial(materials::builtins::BuildBuiltInMaterial("Water"));
+  world.AddVolume(voxel).AddVolume(box);
+  for (auto type : {
+         particles::GGEMSParticleType::Aionino,
+         particles::GGEMSParticleType::Gamma,
+       }) {
+    SCOPED_TRACE(particles::ToKernelParticleType(type));
+    auto source = std::make_shared<sources::GGEMSSource>();
+    source->SetEmittedParticleType(type).SetPrimaryCount(1ULL);
+    auto observer = std::make_shared<observer::GGEMSTransportObserver>();
+    observer->Enable().SetRecordCapacity(2U).CaptureFirstPrimaries(1U);
+    GGEMSRun run;
+    run.SetRandom(std::make_shared<random::GGEMSRandom>());
+    run.AddSource(source);
+    run.SetObserver(observer);
+    run.SetWorld(world);
+    ASSERT_NO_THROW(run.Initialize());
+    try {
+      run.Run();
+      FAIL() << "N3.2 must reject unsupported voxel traversal.";
+    } catch (GGEMSRecoverable const &error) {
+      EXPECT_NE(
+        std::string{error.what()}.find("voxel traversal is not implemented"),
+        std::string::npos);
+    }
+    EXPECT_TRUE(observer->GetRecords().empty());
+    EXPECT_FALSE(run.GetLastSourceRunSnapshot().has_value());
+  }
 }

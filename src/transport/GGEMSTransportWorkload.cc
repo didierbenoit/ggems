@@ -58,6 +58,7 @@
 #include "GGEMS/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/GGEMSVoxelizedVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
@@ -417,64 +418,116 @@ auto ValidateTransportRunConfig(GGEMSTransportRunConfig const &config,
 // =============================================================================
 
 GGEMSTransportWorkload::GGEMSTransportWorkload(
-  ggems::ocl::GGEMSOpenCLContext &context, std::filesystem::path kernel_root,
-  random::GGEMSRandom const &random, std::uint32_t worker_count,
+  ggems::ocl::GGEMSOpenCLContext &context,
+  std::filesystem::path const &kernel_root, random::GGEMSRandom const &random,
+  std::uint32_t worker_count,
   sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
   std::uint64_t random_stream_offset, std::uint32_t context_index,
   std::uint32_t observer_record_capacity,
   std::uint32_t launch_primary_count_limit, geometry::GGEMSWorld const *world,
-  std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes)
+  std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes,
+  geometry::GGEMSVoxelizedSceneData const &voxelized_data)
     : context_{&context}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       emission_count_{
-        static_cast<std::uint32_t>(source_configuration.GetEmissionCount())},
+        static_cast<std::uint32_t>(source_configuration.GetEmissionCount()),
+      },
       context_index_{context_index},
       device_name_{context.GetDevice().GetName()},
       observer_record_capacity_{observer_record_capacity},
-      launch_primary_count_limit_{ResolveLaunchPrimaryCountLimit(
-        worker_count, launch_primary_count_limit)},
-      world_{world}, world_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
-                       sizeof(geometry::GGEMSWorldRecord)})},
-      volume_buffer_{context.CreateSVMBuffer(ComputeArrayBufferSize(
-        volumes.size(), sizeof(geometry::GGEMSAnalyticVolumeRecord)))},
-      random_states_buffer_{context.CreateSVMBuffer(
-        ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
-      counters_buffer_{context.CreateSVMBuffer(
-        ggems::units::Bytes{sizeof(TransportCounters)})},
-      source_records_buffer_{context.CreateSVMBuffer(
-        ggems::units::Bytes{static_cast<std::uint64_t>(source_count_) *
-                            sizeof(sources::GGEMSSourceDeviceRecord)})},
-      source_population_records_buffer_{context.CreateSVMBuffer(
-        ggems::units::Bytes{static_cast<std::uint64_t>(source_count_) *
-                            sizeof(SourcePopulationRecord)})},
-      source_ranges_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
-        static_cast<std::uint64_t>(source_count_) * sizeof(SourceRunRange)})},
-      source_emission_records_buffer_{context.CreateSVMBuffer(
-        ComputeArrayBufferSize(emission_count_, sizeof(SourceEmissionRecord)))},
-      source_emission_ranges_buffer_{context.CreateSVMBuffer(
-        ComputeArrayBufferSize(emission_count_, sizeof(SourceEmissionRange)))},
+      launch_primary_count_limit_{
+        ResolveLaunchPrimaryCountLimit(worker_count,
+                                       launch_primary_count_limit),
+      },
+      world_{world}, has_voxelized_volumes_{!voxelized_data.records.empty()},
+      world_buffer_{
+        context.CreateSVMBuffer(
+          ggems::units::Bytes{sizeof(geometry::GGEMSWorldRecord)}),
+      },
+      volume_buffer_{
+        context.CreateSVMBuffer(ComputeArrayBufferSize(
+          volumes.size(), sizeof(geometry::GGEMSAnalyticVolumeRecord))),
+      },
+      voxelized_volume_buffer_{
+        context.CreateSVMBuffer(
+          ComputeArrayBufferSize(voxelized_data.records.size(),
+                                 sizeof(geometry::GGEMSVoxelizedVolumeRecord))),
+      },
+      voxel_material_labels_buffer_{
+        context.CreateSVMBuffer(ComputeArrayBufferSize(
+          voxelized_data.material_labels.size(), sizeof(std::uint16_t))),
+      },
+      voxel_material_ids_buffer_{
+        context.CreateSVMBuffer(ComputeArrayBufferSize(
+          voxelized_data.material_ids.size(), sizeof(std::uint32_t))),
+      },
+      random_states_buffer_{
+        context.CreateSVMBuffer(
+          ComputeRandomStatesSize(random, worker_count, random_stream_offset)),
+      },
+      counters_buffer_{
+        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(TransportCounters)}),
+      },
+      source_records_buffer_{
+        context.CreateSVMBuffer(ggems::units::Bytes{
+          static_cast<std::uint64_t>(source_count_) *
+            sizeof(sources::GGEMSSourceDeviceRecord),
+        }),
+      },
+      source_population_records_buffer_{
+        context.CreateSVMBuffer(ggems::units::Bytes{
+          static_cast<std::uint64_t>(source_count_) *
+            sizeof(SourcePopulationRecord),
+        }),
+      },
+      source_ranges_buffer_{
+        context.CreateSVMBuffer(ggems::units::Bytes{
+          static_cast<std::uint64_t>(source_count_) * sizeof(SourceRunRange),
+        }),
+      },
+      source_emission_records_buffer_{
+        context.CreateSVMBuffer(ComputeArrayBufferSize(
+          emission_count_, sizeof(SourceEmissionRecord))),
+      },
+      source_emission_ranges_buffer_{
+        context.CreateSVMBuffer(
+          ComputeArrayBufferSize(emission_count_, sizeof(SourceEmissionRange))),
+      },
       energy_distribution_records_buffer_{
         context.CreateSVMBuffer(ComputeArrayBufferSize(
           static_cast<std::uint64_t>(
             source_configuration.GetEnergyDistributionRecords().size()),
-          sizeof(EnergyDistributionRecord)))},
-      energy_values_buffer_{context.CreateSVMBuffer(ComputeArrayBufferSize(
-        CheckedEnergyTableEntryCount(source_configuration),
-        sizeof(std::uint64_t)))},
+          sizeof(EnergyDistributionRecord))),
+      },
+      energy_values_buffer_{
+        context.CreateSVMBuffer(ComputeArrayBufferSize(
+          CheckedEnergyTableEntryCount(source_configuration),
+          sizeof(std::uint64_t))),
+      },
       cumulative_ticket_upper_buffer_{
         context.CreateSVMBuffer(ComputeArrayBufferSize(
           CheckedEnergyTableEntryCount(source_configuration),
-          sizeof(std::uint64_t)))},
-      observer_config_buffer_{context.CreateSVMBuffer(
-        ggems::units::Bytes{sizeof(ObserverConfigRecord)})},
+          sizeof(std::uint64_t))),
+      },
+      observer_config_buffer_{
+        context.CreateSVMBuffer(
+          ggems::units::Bytes{sizeof(ObserverConfigRecord)}),
+      },
       observer_counters_buffer_{
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(ObserverCounters)})},
-      observer_records_buffer_{context.CreateSVMBuffer(
-        ComputeObserverRecordsSize(observer_record_capacity))} {
-  if (world != nullptr && world->GetVolumeCount() != 0U &&
-      volumes.size() != world->GetVolumeCount()) {
-    throw GGEMSRecoverable("Transport analytical record count does not match "
-                           "the World occurrences.");
+        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(ObserverCounters)}),
+      },
+      observer_records_buffer_{
+        context.CreateSVMBuffer(
+          ComputeObserverRecordsSize(observer_record_capacity)),
+      } {
+  auto const world_record =
+    world != nullptr ? world->BuildRecord() : geometry::GGEMSWorldRecord{};
+  if (voxelized_data.records.size() != world_record.voxelized_count ||
+      (world_record.occurrence_count != 0U &&
+       volumes.size() !=
+         world_record.occurrence_count - world_record.voxelized_count)) {
+    throw GGEMSRecoverable("Transport geometry record counts do not match "
+                           "the World occurrence families.");
   }
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -535,9 +588,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                             source_emission_ranges_buffer_.GetData());
 
   kernel_->SetArgSVMPointer(argument_index++, world_buffer_.GetData());
-  ggems::ocl::WriteSVMFromHost(world_buffer_, world != nullptr
-                                                ? world->BuildRecord()
-                                                : geometry::GGEMSWorldRecord{});
+  ggems::ocl::WriteSVMFromHost(world_buffer_, world_record);
 
   kernel_->SetArgSVMPointer(argument_index++, volume_buffer_.GetData());
   // The immutable auxiliary buffer holds occurrence views and shared profiles.
@@ -551,6 +602,37 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                                  geometry::GGEMSAnalyticVolumeRecord{});
   } else {
     ggems::ocl::WriteSVMFromHost(volume_buffer_, volumes);
+  }
+
+  kernel_->SetArgSVMPointer(argument_index++,
+                            voxelized_volume_buffer_.GetData());
+  kernel_->SetArgSVMPointer(argument_index++,
+                            voxel_material_labels_buffer_.GetData());
+  kernel_->SetArgSVMPointer(argument_index++,
+                            voxel_material_ids_buffer_.GetData());
+  if (voxelized_data.records.empty()) {
+    ggems::ocl::WriteSVMFromHost(voxelized_volume_buffer_,
+                                 geometry::GGEMSVoxelizedVolumeRecord{});
+  } else {
+    ggems::ocl::WriteSVMFromHost(
+      voxelized_volume_buffer_,
+      std::span<geometry::GGEMSVoxelizedVolumeRecord const>{
+        voxelized_data.records});
+  }
+  if (voxelized_data.material_labels.empty()) {
+    ggems::ocl::WriteSVMFromHost(voxel_material_labels_buffer_,
+                                 std::uint16_t{0U});
+  } else {
+    ggems::ocl::WriteSVMFromHost(
+      voxel_material_labels_buffer_,
+      std::span<std::uint16_t const>{voxelized_data.material_labels});
+  }
+  if (voxelized_data.material_ids.empty()) {
+    ggems::ocl::WriteSVMFromHost(voxel_material_ids_buffer_, std::uint32_t{0U});
+  } else {
+    ggems::ocl::WriteSVMFromHost(
+      voxel_material_ids_buffer_,
+      std::span<std::uint32_t const>{voxelized_data.material_ids});
   }
 
   auto const &source_emission_records =
@@ -606,6 +688,12 @@ auto GGEMSTransportWorkload::ValidateRunConfig(
   GGEMSTransportRunConfig const &config) const -> void {
   ValidateTransportRunConfig(config, source_count_, emission_count_,
                              worker_count_, launch_primary_count_limit_);
+
+  if (has_voxelized_volumes_) {
+    throw GGEMSRecoverable(
+      "Voxelized scene location is available, but voxel traversal is not "
+      "implemented for transport.");
+  }
 
   for (std::size_t index = 0U; index < config.source_records.size(); ++index) {
     auto const &record = config.source_records[index];

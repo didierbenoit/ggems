@@ -51,7 +51,8 @@ namespace ggems::geometry {
  * Copies share immutable imported labels and materials while retaining their
  * own pose. Original anatomical labels and compact material labels retain
  * the same X-fastest order. The volume has no global Material, child volumes,
- * repeaters, device representation, or navigation implementation.
+ * or repeaters. World compiles its device location assets; cell traversal and
+ * visualization remain deferred.
  */
 class GGEMSVoxelizedVolume {
 public:
