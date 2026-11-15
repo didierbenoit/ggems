@@ -51,8 +51,8 @@ struct GGEMSWorldRecord {
   std::uint32_t occurrence_count{0};
 
   /*!
-   * \brief Analytical crossing bound including World exit; zero defers voxel
-   * traversal.
+   * \brief Conservative straight-flight bound including analytic crossings,
+   * voxel cell/outer crossings, and the final World exit.
    */
   std::uint32_t max_boundary_events{1};
 

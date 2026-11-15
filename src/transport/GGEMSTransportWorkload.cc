@@ -45,6 +45,7 @@
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/observer/GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/opencl/GGEMSOpenCLLaunchGeometry.hh"
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
@@ -136,8 +137,10 @@ ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
 
   random.ValidateStateRange(first_stream_id, worker_count);
 
-  return ggems::units::Bytes{static_cast<std::uint64_t>(worker_count) *
-                             static_cast<std::uint64_t>(random.GetStateSize())};
+  return ggems::units::Bytes{
+    static_cast<std::uint64_t>(worker_count) *
+      static_cast<std::uint64_t>(random.GetStateSize()),
+  };
 }
 
 // =============================================================================
@@ -160,7 +163,8 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
 
   return ggems::units::Bytes{
     static_cast<std::uint64_t>(observer_record_capacity) *
-    sizeof(ObserverRecord)};
+      sizeof(ObserverRecord),
+  };
 }
 
 // =============================================================================
@@ -290,18 +294,18 @@ namespace ggems::core::transport {
 // =============================================================================
 // =============================================================================
 
-auto ValidateTransportRunConfig(GGEMSTransportRunConfig const &config,
-                                std::uint32_t stable_source_count,
-                                std::uint32_t stable_emission_count,
-                                std::uint32_t, std::uint32_t) -> void {
+auto ValidateTransportRunConfig(
+  GGEMSTransportRunConfig const &config, std::uint32_t stable_source_count,
+  std::uint32_t stable_emission_count,
+  [[maybe_unused]] std::uint32_t worker_count,
+  [[maybe_unused]] std::uint32_t launch_primary_count_limit) -> void {
   if (!(config.total_primary_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
       "Transport primary count must be non-zero.");
   }
 
-  if (!(config.source_records.size() == config.source_ranges.size() &&
-        config.source_records.size() ==
-          config.source_population_records.size())) {
+  if (config.source_records.size() != config.source_ranges.size() ||
+      config.source_records.size() != config.source_population_records.size()) {
     throw ggems::core::GGEMSRecoverable(
       "Transport source record, population, and range counts must match.");
   }
@@ -439,7 +443,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         ResolveLaunchPrimaryCountLimit(worker_count,
                                        launch_primary_count_limit),
       },
-      world_{world}, has_voxelized_volumes_{!voxelized_data.records.empty()},
+      world_{world},
       world_buffer_{
         context.CreateSVMBuffer(
           ggems::units::Bytes{sizeof(geometry::GGEMSWorldRecord)}),
@@ -689,12 +693,6 @@ auto GGEMSTransportWorkload::ValidateRunConfig(
   ValidateTransportRunConfig(config, source_count_, emission_count_,
                              worker_count_, launch_primary_count_limit_);
 
-  if (has_voxelized_volumes_) {
-    throw GGEMSRecoverable(
-      "Voxelized scene location is available, but voxel traversal is not "
-      "implemented for transport.");
-  }
-
   for (std::size_t index = 0U; index < config.source_records.size(); ++index) {
     auto const &record = config.source_records[index];
     if (config.source_ranges[index].primary_count == 0ULL ||
@@ -830,7 +828,7 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
   auto const padded_global_work_size =
     ggems::ocl::detail::TryComputePaddedGlobalWorkSize(worker_count_,
                                                        k_local_size);
-  if (!(padded_global_work_size.has_value())) {
+  if (!padded_global_work_size.has_value()) {
     throw ggems::core::GGEMSInternal(
       "Unable to compute the padded OpenCL global work size.");
   }

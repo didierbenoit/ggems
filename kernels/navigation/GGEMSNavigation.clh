@@ -59,6 +59,43 @@
 /*! \brief The ray leaves the closed support of its current physical volume. */
 #define GGEMS_NAVIGATION_EVENT_VOLUME_EXIT 3U
 
+/*! \brief One internal cell crossing within the same physical voxel volume. */
+#define GGEMS_NAVIGATION_EVENT_VOXEL_BOUNDARY 4U
+
+/*! \brief No active private voxel cursor. */
+#define GGEMS_VOXEL_CURSOR_INVALID 0xFFFFFFFFU
+
+/*!
+ * \brief Private continuation for one straight-flight voxelized visit.
+ *
+ * This is not part of the particle ABI. Fresh location initializes the local
+ * ray and cell once; internal crossings advance both without another frame
+ * transform. Callers invalidate record_index before reconciling any direction
+ * change.
+ */
+typedef struct GGEMSVoxelCursor {
+  /*! \brief Dense voxel record index, or GGEMS_VOXEL_CURSOR_INVALID. */
+  uint record_index;
+
+  /*! \brief Current X/Y/Z cell coordinates. */
+  uint cell[3];
+
+  /*! \brief Local direction reciprocals; zero denotes a parallel axis. */
+  float inverse_direction[3];
+
+  /*! \brief Local anchor advanced by the accepted physical parameter. */
+  float local_position[3];
+
+  /*! \brief Stored direction transformed into this grid's local frame. */
+  float local_direction[3];
+
+  /*! \brief FP32 global-addition residual; zero at a fresh grid visit. */
+  float global_residual[3];
+
+  /*! \brief Current X-fastest index in the shared compact label field. */
+  ulong label_index;
+} GGEMSVoxelCursor;
+
 /*!
  * \brief Dense Material identity of the World medium: the host interns the
  * World medium first, so the Materials authority assigns it identity 0.
@@ -71,8 +108,8 @@
 /*!
  * \brief Selected physical event and its arrival owner.
  *
- * The FP32 parameter applies to World and analytic-solid movement. Faces is a
- * World or local planar-solid crossing mask, and zero for curved solids.
+ * The FP32 parameter applies to World, analytical, and voxelized movement.
+ * Faces is a World or local planar crossing mask, and zero for curved solids.
  */
 typedef struct GGEMSBoundaryWitness {
   /*! \brief Forward FP32 ray parameter in pm. */
@@ -109,6 +146,23 @@ typedef struct GGEMSBoundaryWitness {
 static inline uint GGEMS_NavigationIsFinite(float value) {
   volatile uint bits = as_uint(value);
   return (bits & 0x7F800000U) != 0x7F800000U;
+}
+
+/*!
+ * \brief Forms a compensated increment of the same physical ray parameter.
+ *
+ * The residual accounts for preceding FP32 additions. It is arithmetic working
+ * state, not a geometric displacement or an adjustment to the selected
+ * distance.
+ * \param[in] parameter Accepted physical ray parameter in pm.
+ * \param[in] direction Stored global direction.
+ * \param[in] residual Rounding residual of the preceding global addition.
+ * \return Increment shared by voxel-exit prediction and Transport commit.
+ */
+static inline float3 GGEMS_NavigationCompensatedIncrement(float parameter,
+                                                          float3 direction,
+                                                          float3 residual) {
+  return fma((float3)(parameter), direction, -residual);
 }
 
 #endif

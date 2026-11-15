@@ -41,6 +41,7 @@
 #include "geometry/GGEMSWorldRecord.clh"
 
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "geometry/GGEMSVoxelizedVolumeRecord.clh"
 #include "navigation/GGEMSOccurrenceNavigation.clh"
 
 /*!
@@ -48,15 +49,22 @@
  *
  * Position and parameter are in pm; direction is dimensionless. All three
  * coordinates succeed before publication. Energy, time, direction and RNG are
- * untouched. This helper remains out of line for the Intel compiler boundary
- * documented in GGEMS_TransportToNextBoundary.
+ * untouched. Geometry stepping retains the outer compiler boundaries documented
+ * in GGEMS_TransportToNextBoundary; this small helper may inline into its
+ * callers.
  *
  * \param[in] parameter Nonnegative finite ray parameter in pm.
  * \param[in,out] particle Private state; unchanged on failure.
+ * \param[in] increment Compensated global increment for a continuing grid
+ * visit.
+ * \param[in] compensated Nonzero selects increment; zero retains the analytical
+ * movement arithmetic.
  * \return Nonzero on success; zero for nonfinite input or endpoint.
  */
-static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
-GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
+static inline uint GGEMS_TransportMoveToBoundary(float parameter,
+                                                 GGEMSParticleState *particle,
+                                                 float3 increment,
+                                                 uint compensated) {
   float3 position = (float3)(particle->position_x_pm, particle->position_y_pm,
                              particle->position_z_pm);
 
@@ -75,7 +83,14 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
     return 0U;
   }
 
-  float3 endpoint = position + parameter * direction;
+  float3 endpoint;
+
+  if (compensated != 0U) {
+    endpoint = position + increment;
+  } else {
+    endpoint = position + parameter * direction;
+  }
+
   if (GGEMS_NavigationIsFinite(endpoint.x) == 0U ||
       GGEMS_NavigationIsFinite(endpoint.y) == 0U ||
       GGEMS_NavigationIsFinite(endpoint.z) == 0U) {
@@ -98,22 +113,27 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
  * Process competes here; a future Process proposal is compared with the witness
  * before this commit, strictly earlier Process first and geometry first on
  * exact ties.
- * Scenes containing voxelized occurrences currently return unresolved before
- * any movement because voxel boundary traversal is not implemented.
+ * Internal voxel crossings advance the private cell cursor without displacing
+ * the accepted endpoint beyond its selected physical witness parameter.
  *
- * This transaction and GGEMS_TransportMoveToBoundary are deliberately kept
- * out of line. In the former -cl-fast-relaxed-math profile, inlining the
+ * This transaction and GGEMS_TransportGeometry are deliberately kept out of
+ * line. In the former -cl-fast-relaxed-math profile, inlining the
  * query and move into a kernel loop let the Intel CPU OpenCL compiler mix
  * private states of neighboring work-items (multi-source histories receive each
  * other's positions or end unresolved). The attributes are a documented
  * device-compiler boundary. Current production kernels do not enable
- * -cl-fast-relaxed-math.
+ * -cl-fast-relaxed-math. The movement helper may inline inside this boundary
+ * and into the diagnostic caller; multi-source and nonfinite transaction tests
+ * cover both call paths.
  *
  * \param[in] world Immutable World record.
  * \param[in] volume Immutable analytical array, or one None record.
  * \param[in] box_pose Immutable single-occurrence auxiliary view, or flat
  * descriptors, poses, and shared profiles for multiple occurrences. Unused
  * only for a World-only scene or one Sphere.
+ * \param[in] voxelized_volumes Immutable voxel records.
+ * \param[in] material_labels Compact voxel labels.
+ * \param[in] material_palette Dense scene palettes.
  * \param[in,out] particle Private state with a valid current owner.
  * \param[in,out] event Last accepted event on entry (NONE at birth), updated
  * on success. Retained only while the straight flight direction is unchanged.
@@ -124,15 +144,19 @@ GGEMS_TransportMoveToBoundary(float parameter, GGEMSParticleState *particle) {
  * parent chain identifies simultaneously departed ancestors. A direction change
  * requires resetting event to NONE and reconciling the forward moving owner
  * before the query, without relabeling an already completed Process effect.
+ * \param[in,out] cursor Private voxel continuation, committed only on success.
  * \return GGEMS_NAVIGATION_RESOLVED after an accepted move; otherwise the
  * failed status and the particle is unchanged.
  */
 static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
-GGEMS_TransportToNextBoundary(__global GGEMSWorldRecord const *world,
-                              __global GGEMSAnalyticVolumeRecord const *volume,
-                              __global void const *box_pose,
-                              GGEMSParticleState *particle, uint *event,
-                              uint *faces, uint *previous_volume) {
+GGEMS_TransportToNextBoundary(
+  __global GGEMSWorldRecord const *world,
+  __global GGEMSAnalyticVolumeRecord const *volume,
+  __global void const *box_pose,
+  __global GGEMSVoxelizedVolumeRecord const *voxelized_volumes,
+  __global ushort const *material_labels, __global uint const *material_palette,
+  GGEMSParticleState *particle, uint *event, uint *faces, uint *previous_volume,
+  GGEMSVoxelCursor *cursor) {
   float3 position = (float3)(particle->position_x_pm, particle->position_y_pm,
                              particle->position_z_pm);
 
@@ -140,20 +164,44 @@ GGEMS_TransportToNextBoundary(__global GGEMSWorldRecord const *world,
                               particle->direction_z);
 
   GGEMSBoundaryWitness witness;
+  GGEMSVoxelCursor arrival_cursor = *cursor;
+
   uint const status = GGEMS_SceneFindBoundary(
-    world, volume, box_pose, position, direction, particle->current_volume_id,
-    *event, *previous_volume, &witness);
+    world, volume, box_pose, voxelized_volumes, material_labels,
+    material_palette, position, direction, particle->current_volume_id, *event,
+    *previous_volume, &witness, &arrival_cursor);
 
   if (status != GGEMS_NAVIGATION_RESOLVED) {
     return status;
   }
 
-  uint moved = GGEMS_TransportMoveToBoundary(witness.parameter, particle);
+  uint compensated = cursor->record_index != GGEMS_VOXEL_CURSOR_INVALID;
+  float3 increment = (float3)(0.0F);
+
+  if (compensated != 0U) {
+    increment = GGEMS_NavigationCompensatedIncrement(
+      witness.parameter, direction,
+      (float3)(cursor->global_residual[0], cursor->global_residual[1],
+               cursor->global_residual[2]));
+
+    if (cursor->record_index == arrival_cursor.record_index) {
+      // This remains a proposal until the identical endpoint passes Move.
+      float3 endpoint = position + increment;
+      float3 error = (endpoint - position) - increment;
+      arrival_cursor.global_residual[0] = error.x;
+      arrival_cursor.global_residual[1] = error.y;
+      arrival_cursor.global_residual[2] = error.z;
+    }
+  }
+
+  uint moved = GGEMS_TransportMoveToBoundary(witness.parameter, particle,
+                                             increment, compensated);
 
   if (moved == 0U) {
     return GGEMS_NAVIGATION_UNRESOLVED;
   }
 
+  *cursor = arrival_cursor;
   *previous_volume = particle->current_volume_id;
   particle->current_volume_id = witness.arrival_volume_id;
   particle->material_id = witness.arrival_material_id;

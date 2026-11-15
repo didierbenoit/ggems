@@ -42,7 +42,8 @@ diagnostic_projection_probe(__global GGEMSParticleState *particles,
   }
 
   GGEMSParticleState particle = particles[index];
-  success[index] = GGEMS_TransportMoveToBoundary(parameters[index], &particle);
+  success[index] = GGEMS_TransportMoveToBoundary(parameters[index], &particle,
+                                                 (float3)(0.0F), 0U);
   particles[index] = particle;
 
   if (index == 0U) {

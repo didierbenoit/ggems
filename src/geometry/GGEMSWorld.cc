@@ -1487,7 +1487,7 @@ auto GGEMSWorld::Validate() const -> void {
   }
 
   if (CountBoundaryEvents() > std::numeric_limits<std::uint32_t>::max()) {
-    throw core::GGEMSRecoverable("Analytical occurrence count or crossing "
+    throw core::GGEMSRecoverable("Physical occurrence count or crossing "
                                  "bound exceeds the device domain.");
   }
 
@@ -1833,7 +1833,8 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids,
   }
 
   return {
-    BuildAnalyticVolumeRecord(material_ids.front(), index).parameters.box};
+    BuildAnalyticVolumeRecord(material_ids.front(), index).parameters.box,
+  };
 }
 
 // -----------------------------------------------------------------------------
@@ -2020,6 +2021,25 @@ auto GGEMSWorld::CountBoundaryEvents() const noexcept -> std::uint64_t {
           return ShapeBoundaryEvents(shape);
         },
         *volume);
+    } else {
+      auto const &dimensions =
+        std::get<GGEMSVoxelizedVolume>(occurrence.volume).GetDimensions();
+
+      for (auto const dimension : dimensions) {
+        if (dimension > std::numeric_limits<std::uint32_t>::max()) {
+          return static_cast<std::uint64_t>(
+                   std::numeric_limits<std::uint32_t>::max()) +
+                 1ULL;
+        }
+      }
+
+      count += static_cast<std::uint64_t>(dimensions[0]) +
+               static_cast<std::uint64_t>(dimensions[1]) +
+               static_cast<std::uint64_t>(dimensions[2]) - 1ULL;
+    }
+
+    if (count > std::numeric_limits<std::uint32_t>::max()) {
+      return count;
     }
   }
 
@@ -2403,9 +2423,7 @@ auto GGEMSWorld::BuildRecord() const -> GGEMSWorldRecord {
     .half_extent_z_pm = static_cast<float>(half_extent_pm_.z),
     .tolerance_pm = GetNavigationTolerancePM(),
     .occurrence_count = static_cast<std::uint32_t>(volumes_.size()),
-    .max_boundary_events = voxelized_count == 0U
-                             ? static_cast<std::uint32_t>(CountBoundaryEvents())
-                             : 0U,
+    .max_boundary_events = static_cast<std::uint32_t>(CountBoundaryEvents()),
     .hierarchy_depth = depth,
     .voxelized_count = voxelized_count,
   };

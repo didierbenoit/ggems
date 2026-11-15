@@ -34,6 +34,7 @@
 #include <filesystem>
 #include <span>
 #include <type_traits>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -281,4 +282,29 @@ TEST(GGEMSVoxelizedVolume, ScalarDeviceRecordHasExplicitOffsetsAndStride) {
                        92U,
                        96U,
                      }));
+}
+
+// A straight ray crosses planes, not every cell in the grid's Cartesian
+// product.
+TEST(GGEMSVoxelizedVolume, BoundaryEventBoundAddsLinearGridContributions) {
+  std::vector<std::uint16_t> const labels(std::size_t{3U} * 4U * 5U, 10U);
+  GGEMSVoxelizedTestFixture const files{
+    {3U, 4U, 5U},
+    "1 1 1",
+    labels,
+    "10 10 Water\n",
+  };
+  auto world = MakeWorld();
+  auto grid = files.Import();
+  grid.SetPosition(MakePositionPM(-10'000'000'000LL, 0, 0));
+  world.AddVolume(grid);
+  EXPECT_EQ(world.BuildRecord().max_boundary_events, 1U + (3U + 4U + 5U - 1U));
+  EXPECT_LT(world.BuildRecord().max_boundary_events, labels.size());
+  GGEMSBox box;
+  box.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Air"));
+  world.AddVolume(box);
+  EXPECT_EQ(world.BuildRecord().max_boundary_events, 14U);
+  grid.SetPosition(MakePositionPM(10'000'000'000LL, 0, 0));
+  world.AddVolume(grid);
+  EXPECT_EQ(world.BuildRecord().max_boundary_events, 25U);
 }

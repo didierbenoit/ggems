@@ -42,6 +42,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSCons.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
@@ -57,6 +58,8 @@
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
+#include "GGEMSVoxelizedTestFixture.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
@@ -521,4 +524,110 @@ TEST(GGEMSGeometryScene, BoundsUseCanonicalAnalyticSupportWithoutTessellation) {
               1.0e-15);
   EXPECT_NEAR(asymmetric.minimum_m[1], -0.01, 1.0e-15);
   EXPECT_NEAR(asymmetric.maximum_m[1], 0.01, 1.0e-15);
+}
+
+TEST(GGEMSGeometryScene, VoxelSlicesKeepPhysicalIdsMetadataAndAnalyticSharing) {
+  std::array<std::uint16_t, 30> labels{};
+  labels.fill(10U);
+  labels.back() = 20U;
+  ggems::test::GGEMSVoxelizedTestFixture const fixture{
+    {3U, 2U, 5U},
+    "1 2 3",
+    labels,
+    "10 10 Water\n20 20 Air\n",
+  };
+  auto voxelized = fixture.Import();
+  voxelized
+    .SetPosition(
+      MakePositionPM(100'000'000'000LL, 20'000'000'000LL, -30'000'000'000LL))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  auto world = World();
+  GGEMSBox box;
+  box.SetSize(10_mm, 10_mm, 10_mm)
+    .SetPosition(MakePositionPM(-100'000'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  world.AddVolume(box);
+  world.AddVolume(voxelized);
+  voxelized.SetPosition(MakePositionPM(-200'000'000'000LL, 0, 0));
+  world.AddVolume(voxelized);
+  box.SetPosition(MakePositionPM(200'000'000'000LL, 0, 0));
+  world.AddVolume(box);
+
+  auto const scene = BuildGeometryScene(world);
+  world = World();
+  ASSERT_EQ(scene.occurrences.size(), 5U);
+  EXPECT_EQ(scene.meshes.size(), 4U);
+  EXPECT_TRUE(scene.profiles.empty());
+  EXPECT_EQ(scene.occurrences[0].children,
+            (std::vector<std::uint32_t>{1U, 2U, 3U, 4U}));
+  EXPECT_EQ(scene.occurrences[1].mesh_index, scene.occurrences[4].mesh_index);
+  for (std::uint32_t id = 0U; id < scene.occurrences.size(); ++id) {
+    EXPECT_EQ(scene.occurrences[id].volume_id, id);
+    EXPECT_EQ(scene.occurrences[id].parent_volume_id, 0U);
+    EXPECT_EQ(scene.occurrences[id].voxel_slices.has_value(),
+              id == 2U || id == 3U);
+  }
+
+  auto const &occurrence = scene.occurrences[2];
+  ASSERT_TRUE(occurrence.voxel_slices);
+  auto const &slices = *occurrence.voxel_slices;
+  EXPECT_EQ(slices.dimensions, (std::array{3U, 2U, 5U}));
+  EXPECT_EQ(slices.instance_counts, (std::array{6U, 15U, 10U}));
+  EXPECT_EQ(slices.spacing_m, (std::array{0.001, 0.002, 0.003}));
+  EXPECT_EQ(slices.size_m, (std::array{0.003, 0.004, 0.015}));
+  EXPECT_EQ(slices.palette_size, 2U);
+  EXPECT_EQ(occurrence.shape_name, "VoxelizedVolume");
+  EXPECT_EQ(occurrence.color, WHITE_White);
+  EXPECT_TRUE(occurrence.material_name.empty());
+  EXPECT_TRUE(occurrence.children.empty());
+  ASSERT_EQ(occurrence.dimensions.size(), 9U);
+  EXPECT_EQ(occurrence.dimensions[0].value, "3");
+  EXPECT_EQ(occurrence.dimensions[1].value, HumanReadable(1_mm));
+  EXPECT_EQ(occurrence.dimensions[2].value, HumanReadable(3_mm));
+  EXPECT_EQ(occurrence.dimensions[8].value, HumanReadable(15_mm));
+  EXPECT_EQ(Mesh(scene, 2).shape.header, (std::array{8U, 3U, 2U, 5U}));
+  EXPECT_EQ(Mesh(scene, 2).shape.parameters[0],
+            (std::array{0.001F, 0.002F, 0.003F, 0.0F}));
+  EXPECT_EQ(Mesh(scene, 2).vertex_count, 36U);
+
+  std::array const expected_min{0.098, 0.0185, -0.0375};
+  std::array const expected_max{0.102, 0.0215, -0.0225};
+  for (std::size_t axis = 0U; axis < 3U; ++axis) {
+    EXPECT_NEAR(occurrence.minimum_m[axis], expected_min[axis], 1.0e-15);
+    EXPECT_NEAR(occurrence.maximum_m[axis], expected_max[axis], 1.0e-15);
+  }
+  EXPECT_FLOAT_EQ(occurrence.local_to_world[3], 0.1F);
+  EXPECT_FLOAT_EQ(occurrence.local_to_world[7], 0.02F);
+  EXPECT_FLOAT_EQ(occurrence.local_to_world[11], -0.03F);
+  EXPECT_DOUBLE_EQ(occurrence.orientation[1], -1.0);
+  EXPECT_DOUBLE_EQ(occurrence.orientation[3], 1.0);
+
+  GGEMSGeometryAppearance appearance{};
+  EXPECT_EQ(ResolveGeometryDisplayMode(occurrence, appearance),
+            GGEMSGeometryDisplayMode::Solid);
+  for (auto mode : {
+         GGEMSGeometryDisplayMode::None,
+         GGEMSGeometryDisplayMode::Wireframe,
+         GGEMSGeometryDisplayMode::Solid,
+       }) {
+    appearance.mode_override = mode;
+    EXPECT_EQ(ResolveGeometryDisplayMode(occurrence, appearance), mode);
+  }
+}
+
+TEST(GGEMSGeometryScene, RunOwnedVoxelGeometryNeedsNoSimulationInitialization) {
+  ggems::test::GGEMSVoxelizedTestFixture const fixture;
+  auto world = World();
+  world.AddVolume(fixture.Import());
+  ggems::core::GGEMSRun run;
+  run.SetWorld(world);
+  ASSERT_NE(run.GetWorld(), nullptr);
+  auto const scene = BuildGeometryScene(*run.GetWorld());
+  ASSERT_EQ(scene.occurrences.size(), 2U);
+  ASSERT_TRUE(scene.occurrences[1].voxel_slices);
+  EXPECT_EQ(scene.occurrences[1].voxel_slices->instance_counts,
+            (std::array{4U, 4U, 4U}));
+  EXPECT_EQ(scene.occurrences[1].minimum_m,
+            (std::array{-0.001, -0.002, -0.003}));
+  EXPECT_EQ(scene.occurrences[1].maximum_m, (std::array{0.001, 0.002, 0.003}));
 }

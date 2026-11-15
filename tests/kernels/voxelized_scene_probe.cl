@@ -46,9 +46,10 @@ __kernel void voxelized_locate_probe(
   float3 const position = vload3(index, positions);
   float3 const direction = (float3)(0.0F, 0.0F, 1.0F);
   ulong owner = ~0UL;
+  GGEMSVoxelCursor cursor;
   uint const status =
     GGEMS_SceneLocate(world, analytic, auxiliary, voxels, labels, palette,
-                      position, direction, &owner);
+                      position, direction, &owner, &cursor);
   results[4U * index] = status;
   results[(4U * index) + 1U] = (uint)(owner >> 32U);
   results[(4U * index) + 2U] = (uint)owner;
@@ -56,8 +57,9 @@ __kernel void voxelized_locate_probe(
   results[(4U * index) + 3U] =
     status == GGEMS_NAVIGATION_RESOLVED
       ? GGEMS_SceneFindBoundary(
-          world, analytic, auxiliary, position, direction, (uint)(owner >> 32U),
-          GGEMS_NAVIGATION_EVENT_NONE, GGEMS_VOLUME_ID_WORLD, &witness)
+          world, analytic, auxiliary, voxels, labels, palette, position,
+          direction, (uint)(owner >> 32U), GGEMS_NAVIGATION_EVENT_NONE,
+          GGEMS_VOLUME_ID_WORLD, &witness, &cursor)
       : ~0U;
 }
 

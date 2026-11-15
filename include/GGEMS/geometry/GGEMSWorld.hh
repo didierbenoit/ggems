@@ -619,7 +619,8 @@ public:
    * \return FP32 half extents and surface half-band in pm; these geometric
    * fields are zero before SetSize(), denoting an unconfigured World.
    * Physical occurrence/family counts and depth accompany the box. The
-   * crossing bound is zero while voxelized boundary traversal is unavailable.
+   * crossing bound includes analytic crossings and Nx + Ny + Nz - 1 events
+   * per voxel grid, plus the final World exit.
    * \pre Validate() has succeeded before a configured scene is uploaded.
    */
   [[nodiscard]] auto BuildRecord() const -> GGEMSWorldRecord;

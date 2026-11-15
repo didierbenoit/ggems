@@ -65,6 +65,72 @@ constexpr std::array<char const *, 3U> k_mode_names{
 /*! \brief Compact row labels in the same display-mode order. */
 constexpr std::array<char const *, 3U> k_mode_letters{"N", "W", "S"};
 
+/*! \brief Physical hierarchy scope of a presentation-only menu action. */
+enum class ModeScope : std::uint8_t { Occurrence, Siblings, Subtree };
+
+/*!
+ * \brief Writes independent overrides on a physical branch, including its root.
+ * \param[in] scene Immutable physical child links.
+ * \param[in] volume_id Root of the requested branch.
+ * \param[in] mode Requested presentation mode; World remains wireframe in
+ * Solid.
+ * \param[in,out] appearance Snapshot-local independent overrides.
+ */
+auto SetSubtreeMode(
+  ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
+  Mode mode, std::span<ggems::render::GGEMSGeometryAppearance> appearance)
+  -> void {
+  appearance[volume_id].mode_override =
+    volume_id == 0U && mode == Mode::Solid ? Mode::Wireframe : mode;
+
+  for (auto const child : scene.occurrences[volume_id].children) {
+    SetSubtreeMode(scene, child, mode, appearance);
+  }
+}
+
+/*!
+ * \brief Presents explicit mode actions for one physical hierarchy scope.
+ * \param[in] label Visible scope name.
+ * \param[in] scope A single row, its direct siblings, or its full branch.
+ * \param[in] scene Immutable physical occurrence links.
+ * \param[in] volume_id Invoked row, independent of the current selection.
+ * \param[in,out] appearance Snapshot-local independent overrides.
+ */
+auto BuildScopeMenu(
+  char const *label, ModeScope scope,
+  ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
+  std::span<ggems::render::GGEMSGeometryAppearance> appearance) -> void {
+  if (!ImGui::BeginMenu(label)) {
+    return;
+  }
+
+  auto const &occurrence = scene.occurrences[volume_id];
+
+  std::size_t const count =
+    volume_id == 0U && scope != ModeScope::Subtree ? 2U : 3U;
+
+  for (std::size_t choice = 0U; choice < count; ++choice) {
+    if (!ImGui::MenuItem(k_mode_names[choice])) {
+      continue;
+    }
+
+    auto const mode = static_cast<Mode>(choice);
+
+    if (scope == ModeScope::Subtree) {
+      SetSubtreeMode(scene, volume_id, mode, appearance);
+    } else if (scope == ModeScope::Siblings && volume_id != 0U) {
+      for (auto const sibling :
+           scene.occurrences[occurrence.parent_volume_id].children) {
+        appearance[sibling].mode_override = mode;
+      }
+    } else {
+      appearance[volume_id].mode_override = mode;
+    }
+  }
+
+  ImGui::EndMenu();
+}
+
 /*!
  * \brief Edits one occurrence's display override independently of its row.
  *
@@ -149,6 +215,20 @@ auto BuildVolumeNode(
     }
   }
 
+  if (ImGui::BeginPopupContextItem("##appearance_scope",
+                                   ImGuiPopupFlags_MouseButtonRight)) {
+    BuildScopeMenu("This occurrence", ModeScope::Occurrence, scene, volume_id,
+                   appearance);
+
+    BuildScopeMenu("All siblings", ModeScope::Siblings, scene, volume_id,
+                   appearance);
+
+    BuildScopeMenu("This subtree", ModeScope::Subtree, scene, volume_id,
+                   appearance);
+
+    ImGui::EndPopup();
+  }
+
   if (opened && !occurrence.children.empty()) {
     ImGui::TreePush("##children");
     for (auto const child : occurrence.children) {
@@ -209,12 +289,19 @@ auto BuildVolumeMetadata(
   }
 
   ImGui::SeparatorText("Material");
-  ImGui::Text("Name: %s", occurrence.material_name.c_str());
 
-  auto const density =
-    ggems::units::HumanReadable(occurrence.material_density, 3);
+  if (occurrence.voxel_slices) {
+    ImGui::Text("Material palette: %zu entries",
+                occurrence.voxel_slices->palette_size);
+  } else {
+    ImGui::Text("Name: %s", occurrence.material_name.c_str());
 
-  ImGui::Text("Density: %s", density.c_str());
+    auto const density =
+      ggems::units::HumanReadable(occurrence.material_density, 3);
+
+    ImGui::Text("Density: %s", density.c_str());
+  }
+
   ImGui::TextWrapped("Production Cuts: not available in this scene snapshot");
   ImGui::PopTextWrapPos();
 }

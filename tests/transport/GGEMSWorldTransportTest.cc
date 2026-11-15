@@ -958,9 +958,8 @@ TEST_F(GGEMSWorldTransportTest, DisabledAioninoDoesNotRequireWorld) {
   EXPECT_THROW(run.Run(), GGEMSRecoverable);
 }
 
-// Publishes mixed immutable assets, but never substitutes an analytic route for
-// the voxel traversal deliberately deferred beyond N3.2.
-TEST_F(GGEMSWorldTransportTest, MixedVoxelSceneUploadsButRefusesTransport) {
+// Publishes mixed immutable assets and preserves each particle's existing path.
+TEST_F(GGEMSWorldTransportTest, MixedVoxelSceneTransportsAndKeepsDiagnostics) {
   using namespace units;
   ggems::test::GGEMSVoxelizedTestFixture const files;
   auto world = MakeVacuumWorld(100_mm);
@@ -977,7 +976,10 @@ TEST_F(GGEMSWorldTransportTest, MixedVoxelSceneUploadsButRefusesTransport) {
        }) {
     SCOPED_TRACE(particles::ToKernelParticleType(type));
     auto source = std::make_shared<sources::GGEMSSource>();
-    source->SetEmittedParticleType(type).SetPrimaryCount(1ULL);
+    source->SetEmittedParticleType(type)
+      .SetPrimaryCount(1ULL)
+      .SetPositionPicoMeter(-20'000'000'000LL, -500'000'000LL, -500'000'000LL)
+      .SetDirection(1, 0, 0);
     auto observer = std::make_shared<observer::GGEMSTransportObserver>();
     observer->Enable().SetRecordCapacity(2U).CaptureFirstPrimaries(1U);
     GGEMSRun run;
@@ -986,15 +988,23 @@ TEST_F(GGEMSWorldTransportTest, MixedVoxelSceneUploadsButRefusesTransport) {
     run.SetObserver(observer);
     run.SetWorld(world);
     ASSERT_NO_THROW(run.Initialize());
-    try {
-      run.Run();
-      FAIL() << "N3.2 must reject unsupported voxel traversal.";
-    } catch (GGEMSRecoverable const &error) {
-      EXPECT_NE(
-        std::string{error.what()}.find("voxel traversal is not implemented"),
-        std::string::npos);
-    }
-    EXPECT_TRUE(observer->GetRecords().empty());
-    EXPECT_FALSE(run.GetLastSourceRunSnapshot().has_value());
+    ASSERT_NO_THROW(run.Run());
+    EXPECT_TRUE(run.GetLastSourceRunSnapshot().has_value());
+    auto const records = observer->GetRecords();
+    ASSERT_EQ(records.size(), 2U);
+    auto const &terminal = records.back();
+    bool const navigates = type == particles::GGEMSParticleType::Aionino;
+    EXPECT_EQ(terminal.status,
+              particles::ToKernelParticleStatus(
+                navigates ? particles::GGEMSParticleStatus::EscapedWorld
+                          : particles::GGEMSParticleStatus::Killed));
+    // Gamma retains the established 1 m diagnostic displacement; Aionino
+    // traverses the two cells and analytic Box before escaping the finite
+    // World.
+    double const expected_x = navigates ? 50.0e9 : 980.0e9;
+    EXPECT_LE(
+      std::abs(static_cast<double>(terminal.position_x_pm) - expected_x),
+      8 * world.GetNavigationTolerancePM());
+    EXPECT_EQ(terminal.particle_type, particles::ToKernelParticleType(type));
   }
 }

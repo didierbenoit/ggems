@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Generates one analytic triangle topology for solid and wire geometry.
+ * \brief Generates procedural analytic solids and instanced voxel slice Boxes.
  *
  * Read-only shape parameters are shared by equal physical shapes. PolygonMode
  * selects filled triangles or their edges; no host position/normal mesh exists.
@@ -33,10 +33,10 @@
 
 /*! \brief Matches the 64-byte immutable GGEMSGeometryShape descriptor. */
 struct GeometryShape {
-  /*! \brief Kind, azimuth side count, first profile, and profile count. */
+  /*! \brief Kind and analytic topology, or kind and voxel X/Y/Z counts. */
   uint4 header;
 
-  /*! \brief Analytic dimensions in meters and authored angles in radians. */
+  /*! \brief Analytic parameters, or full voxel spacing in parameters[0].xyz. */
   float4 parameters[3];
 };
 
@@ -87,8 +87,8 @@ struct GeometryPushConstants {
   /*! \brief Row 2 rotating an outward local normal into World. */
   float3 normal_to_world_row_2;
 
-  /*! \brief Reserved word keeping the host block at 128 bytes. */
-  uint padding;
+  /*! \brief Central voxel slice: zero for XY, one for XZ, two for YZ. */
+  uint slice_plane;
 };
 
 /*! \brief One consistently outward triangle in occurrence-local meters. */
@@ -381,13 +381,18 @@ GeometryTriangle GeometryPolyhedraTriangle(GeometryShape shape, uint triangle) {
 }
 
 /*!
- * \brief Selects the procedural topology for the eight admitted shape kinds.
- * \param[in] shape Immutable analytic descriptor.
+ * \brief Selects an analytic solid or the Box topology shared by voxel cells.
+ * \param[in] shape Immutable procedural descriptor.
  * \param[in] triangle Index bounded by the host's derived draw count.
  * \return One occurrence-local outward triangle.
  */
 GeometryTriangle GeometryShapeTriangle(GeometryShape shape, uint triangle) {
   uint kind = shape.header.x;
+  if (kind == 8) {
+    shape.header.x = 0;
+    shape.parameters[0].xyz *= 0.5;
+    return GeometryPlanarTriangle(shape, triangle);
+  }
   if (kind == 0 || kind == 6 || kind == 7) {
     return GeometryPlanarTriangle(shape, triangle);
   }
@@ -401,18 +406,44 @@ GeometryTriangle GeometryShapeTriangle(GeometryShape shape, uint triangle) {
 }
 
 /*!
- * \brief Generates one analytic vertex and applies the occurrence transform.
+ * \brief Decodes one Box center in a central XY, XZ, or YZ cell plane.
+ * \param[in] shape Grid dimensions and anisotropic full spacing in meters.
+ * \param[in] instance_id X-fastest within XY/XZ, Y-fastest within YZ.
+ * \return Center relative to the physical grid's centered local frame.
+ */
+float3 GeometryVoxelCellCenter(GeometryShape shape, uint instance_id) {
+  uint3 dimensions = shape.header.yzw;
+  uint3 cell = dimensions / 2;
+  if (g_geometry.slice_plane == 0) {
+    cell.xy = uint2(instance_id % dimensions.x, instance_id / dimensions.x);
+  } else if (g_geometry.slice_plane == 1) {
+    cell.xz = uint2(instance_id % dimensions.x, instance_id / dimensions.x);
+  } else {
+    cell.yz = uint2(instance_id % dimensions.y, instance_id / dimensions.y);
+  }
+  return (float3(cell) + 0.5 - 0.5 * float3(dimensions)) *
+         shape.parameters[0].xyz;
+}
+
+/*!
+ * \brief Generates one procedural vertex and applies the occurrence transform.
  * \param[in] vertex_id Vertex index within the shared procedural topology.
+ * \param[in] instance_id Cell within the chosen central slice; zero for
+ * analytics.
  * \return Clip position, authored RGB with optional light, and supplied alpha.
  */
 [shader("vertex")] GeometryVertexOutput
-VertexMain(uint vertex_id /*! \cond */ : SV_VertexID
+VertexMain(uint vertex_id /*! \cond */ : SV_VertexID /*! \endcond */,
+           uint instance_id /*! \cond */ : SV_InstanceID
            /*! \endcond */) {
-  GeometryTriangle triangle = GeometryShapeTriangle(
-    g_geometry_shapes[g_geometry.shape_index], vertex_id / 3);
+  GeometryShape shape = g_geometry_shapes[g_geometry.shape_index];
+  GeometryTriangle triangle = GeometryShapeTriangle(shape, vertex_id / 3);
   uint corner = vertex_id % 3;
   float3 point = corner == 0 ? triangle.first
                              : (corner == 1 ? triangle.second : triangle.third);
+  if (shape.header.x == 8) {
+    point += GeometryVoxelCellCenter(shape, instance_id);
+  }
   float4 position = float4(point, 1.0);
   GeometryVertexOutput output;
   output.position = float4(dot(g_geometry.local_to_clip_row_0, position),

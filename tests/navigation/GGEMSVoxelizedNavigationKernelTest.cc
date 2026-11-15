@@ -99,16 +99,13 @@ auto Upload(ggems::ocl::GGEMSOpenCLContext &context,
 
 /*! \brief Compares device results with exact independent owner expectations. */
 auto CheckResults(std::span<LocateCase const> cases,
-                  std::span<std::uint32_t const> results, bool has_voxels)
-  -> void {
-  auto const expected_boundary = has_voxels ? 2U : 0U;
+                  std::span<std::uint32_t const> results) -> void {
   for (std::size_t index = 0U; index < cases.size(); ++index) {
     SCOPED_TRACE(index);
     EXPECT_EQ(results[4U * index], cases[index].status);
     if (cases[index].status != 0U) {
       continue;
     }
-    // N3.2 must not pretend it can trace through any voxel-containing scene.
     std::array const actual{
       results[(4U * index) + 1U],
       results[(4U * index) + 2U],
@@ -117,7 +114,7 @@ auto CheckResults(std::span<LocateCase const> cases,
     std::array const expected{
       cases[index].volume,
       cases[index].material,
-      expected_boundary,
+      0U,
     };
     EXPECT_EQ(actual, expected);
   }
@@ -184,7 +181,7 @@ auto CheckLocate(GGEMSWorld const &world, std::span<LocateCase const> cases)
   kernel.SetArgSVMPointer(7U, results_buffer.GetData());
   kernel.Run({cases.size()}, {1U});
   ggems::ocl::ReadSVMToHost(results_buffer, std::span{results});
-  CheckResults(cases, results, record.voxelized_count != 0U);
+  CheckResults(cases, results);
 }
 
 using GGEMSVoxelizedNavigation = GGEMSNavigationDeviceTest;

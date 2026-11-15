@@ -360,7 +360,7 @@ public:
    *
    * \param[in] config Proposed run assignment.
    * \throws GGEMSRecoverable If source arrays, ranges, identities, or canonical
-   * source descriptors are invalid, or voxel traversal would be required.
+   * source descriptors are invalid.
    */
   auto ValidateRunConfig(GGEMSTransportRunConfig const &config) const -> void;
 
@@ -470,9 +470,6 @@ private:
    * The owner (GGEMSRun) keeps the World alive for the workload lifetime.
    */
   geometry::GGEMSWorld const *world_{nullptr};
-
-  /*! \brief Voxel location is available, but traversal is not implemented. */
-  bool has_voxelized_volumes_{false};
 
   /*!
    * \brief Immutable origin-centered World box, or default record if absent.

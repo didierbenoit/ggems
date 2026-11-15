@@ -24,8 +24,7 @@
  * \brief Claims source primaries and executes the selected transport path.
  *
  * Process-free species traverse the host-authored finite World and its
- * analytical occurrences and exit geometrically. Voxelized scenes support birth
- * location only and explicitly fail the unimplemented boundary query.
+ * analytical and voxelized occurrences and exit geometrically.
  * Other species keep
  * the diagnostic one-meter projection and Killed status until their Processes
  * exist. No interaction, energy loss, time-of-flight update, or secondary is
@@ -67,7 +66,7 @@
 
 /*!
  * \brief Out-of-line geometry-only history: generic Navigation through the
- * World and its independent analytical occurrences until the World exit.
+ * World and its analytical/voxelized occurrences until the World exit.
  *
  * The birth owner is located first. Each iteration performs one accepted
  * Transport transaction from the current owner (query, canonical move, owner
@@ -75,7 +74,7 @@
  * admitted straight-flight scene, the host sums each occurrence's maximum
  * crossing count and includes the World exit. This is a finite geometric
  * bound, not a silent traversal cap. Exhaustion is reported as unresolved,
- * as unresolved, never as a silent completion. The loop carries no shape
+ * never as a silent completion. The loop carries no shape
  * intersection code.
  *
  * This function and the Transport transaction it calls are deliberately kept
@@ -112,6 +111,8 @@ GGEMS_TransportGeometry(
   volatile __global GGEMSTransportCounters *counters) {
   ulong owner;
 
+  GGEMSVoxelCursor voxel_cursor = {.record_index = GGEMS_VOXEL_CURSOR_INVALID};
+
   uint const locate_status =
     GGEMS_SceneLocate(world, volume, box_pose, voxelized_volumes,
                       material_labels, material_palette,
@@ -119,7 +120,7 @@ GGEMS_TransportGeometry(
                                particle->position_z_pm),
                       (float3)(particle->direction_x, particle->direction_y,
                                particle->direction_z),
-                      &owner);
+                      &owner, &voxel_cursor);
 
   if (locate_status != GGEMS_NAVIGATION_RESOLVED) {
     if (locate_status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {
@@ -142,7 +143,9 @@ GGEMS_TransportGeometry(
   for (uint event_index = 0U; event_index < max_boundary_events;
        ++event_index) {
     uint const status = GGEMS_TransportToNextBoundary(
-      world, volume, box_pose, particle, &event, &faces, &previous_volume);
+      world, volume, box_pose, voxelized_volumes, material_labels,
+      material_palette, particle, &event, &faces, &previous_volume,
+      &voxel_cursor);
 
     if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {
       atomic_inc(&counters->outside_world_count);
@@ -357,7 +360,7 @@ __kernel void particle_stream_transport(
       ++escaped_count;
     } else {
       if (GGEMS_TransportMoveToBoundary(GGEMS_DIAGNOSTIC_PROJECTION_DISTANCE_PM,
-                                        &particle) == 0U) {
+                                        &particle, (float3)(0.0F), 0U) == 0U) {
         atomic_inc(&counters->overflow_count);
         continue;
       }

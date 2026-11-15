@@ -258,23 +258,28 @@ private:
   void WriteObserverConfigToSVM(
     observer::GGEMSObserverConfigRecord const &observer_config);
 
-private:
   /*! \brief Borrowed OpenCL context that outlives this workload. */
   ggems::ocl::GGEMSOpenCLContext *context_{nullptr};
+
   /*! \brief Root directory used to find kernel source and shared headers. */
   std::filesystem::path kernel_root_{};
+
   /*! \brief Borrowed engine configuration used to initialize worker states. */
   random::GGEMSRandom const *random_{nullptr};
 
   /*! \brief Number of persistent workers and random-stream records. */
   std::uint32_t worker_count_{0U};
+
   /*! \brief Stable source-slot count used to size uploaded arrays. */
+
   std::uint32_t source_count_{0U};
+
   /*! \brief First stream ID in this workload's assigned RNG range. */
   std::uint64_t random_stream_offset_{0ULL};
 
   /*! \brief Active context index included in dispatch reports. */
   std::uint32_t context_index_{0U};
+
   /*! \brief Cached display name of the context's OpenCL device. */
   std::string device_name_{};
 
@@ -283,18 +288,25 @@ private:
 
   /*! \brief Owned SVM containing persistent per-worker RNG states. */
   ggems::ocl::GGEMSOpenCLSVMBuffer random_states_buffer_;
+
   /*! \brief Owned SVM containing one synthetic final particle per worker. */
   ggems::ocl::GGEMSOpenCLSVMBuffer worker_final_states_buffer_;
+
   /*! \brief Owned SVM containing per-dispatch transport counters. */
   ggems::ocl::GGEMSOpenCLSVMBuffer counters_buffer_;
+
   /*! \brief Owned SVM containing packed FP32 source birth descriptors. */
   ggems::ocl::GGEMSOpenCLSVMBuffer source_records_buffer_;
+
   /*! \brief Owned SVM containing source primary intervals for the dispatch. */
   ggems::ocl::GGEMSOpenCLSVMBuffer source_ranges_buffer_;
+
   /*! \brief Owned SVM containing diagnostic capture selectors. */
   ggems::ocl::GGEMSOpenCLSVMBuffer observer_config_buffer_;
+
   /*! \brief Owned SVM containing device diagnostic capture counters. */
   ggems::ocl::GGEMSOpenCLSVMBuffer observer_counters_buffer_;
+
   /*! \brief Owned SVM containing the bounded diagnostic record array. */
   ggems::ocl::GGEMSOpenCLSVMBuffer observer_records_buffer_;
 };

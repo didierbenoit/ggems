@@ -43,7 +43,7 @@
 namespace ggems::ui::detail {
 
 /*!
- * \brief Owns the shared triangle pipelines, immutable scene, and analytic
+ * \brief Owns the shared triangle pipelines, immutable scene, and procedural
  * buffers.
  *
  * Physical and logical devices are borrowed and must outlive this component.
@@ -92,12 +92,13 @@ public:
   auto Shutdown() noexcept -> void;
 
   /*!
-   * \brief Retains an immutable scene and uploads only shared analytic shape
+   * \brief Retains an immutable scene and uploads only procedural shape
    * and profile descriptors.
    *
    * Initialize before supplying a nonnull scene. The caller must finish GPU use
    * of the previous buffer first. Occurrences, physical identities, parent
    * links, and local-to-World transforms remain in the shared scene unchanged.
+   * Voxelized grids upload dimensions and spacing, never per-cell labels.
    *
    * \param[in] scene Prepared scene, or null to clear the displayed geometry.
    * \throws core::GGEMSInternal If descriptor ranges exceed the device limit or
@@ -119,6 +120,8 @@ public:
   /*!
    * \brief Records visible occurrences using the same procedural triangles in
    * both modes.
+   * Voxelized occurrences issue three central-plane instanced Box draws per
+   * pass, retaining the same occurrence-level visibility and selection.
    *
    * No commands are recorded when no scene is retained. The caller has already
    * set the dynamic viewport and scissor. Record opaque occurrences first,
@@ -173,9 +176,21 @@ private:
     /*! \brief Third rigid rotation row at byte 112. */
     std::array<float, 3U> normal_row_2{};
 
-    /*! \brief Reserved scalar completing the 128-byte push range. */
-    std::uint32_t padding{};
+    /*! \brief Central voxel slice: zero for XY, one for XZ, two for YZ. */
+    std::uint32_t slice_plane{};
   };
+
+  /*!
+   * \brief Draws one analytic instance or three instanced central voxel planes.
+   * \param[in] command_buffer Recording buffer with pipeline and descriptors
+   * set.
+   * \param[in] occurrence Physical occurrence and optional slice counts.
+   * \param[in,out] constants Transform and color; the slice selector is
+   * updated.
+   */
+  auto DrawOccurrence(vk::raii::CommandBuffer const &command_buffer,
+                      render::GGEMSGeometryOccurrence const &occurrence,
+                      GeometryPushConstants &constants) const -> void;
 
   /*!
    * \brief Borrowed physical device used to select coherent descriptor memory.

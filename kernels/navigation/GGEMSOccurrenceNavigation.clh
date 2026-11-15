@@ -184,6 +184,10 @@ GGEMS_OccurrenceFindBoundary(__global GGEMSWorldRecord const *world,
   }
 
   for (uint index = 0U; index < world->occurrence_count; ++index) {
+    if (occurrences[index].family == GGEMS_OCCURRENCE_VOXELIZED) {
+      continue;
+    }
+
     GGEMSBoundaryWitness candidate = world_exit;
     status = GGEMS_AnalyticVolumeFindBoundary(
       &volumes[occurrences[index].record_index],
@@ -449,8 +453,16 @@ GGEMS_HierarchyFindBoundary(__global GGEMSWorldRecord const *world,
   while (child != 0U) {
     __global GGEMSAnalyticOccurrenceRecord const *occurrence =
       &occurrences[child - 1U];
+
+    if (occurrence->family == GGEMS_OCCURRENCE_VOXELIZED) {
+      child = occurrence->next_sibling_id;
+      continue;
+    }
+
     GGEMSBoundaryWitness candidate = boundary;
+
     candidate.parameter = INFINITY;
+
     uint const continuation =
       last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
           GGEMS_HierarchyIsAncestor(occurrences, child, previous_volume) != 0U
@@ -534,7 +546,7 @@ GGEMS_HierarchyFindBoundary(__global GGEMSWorldRecord const *world,
  * \brief Locates a birth in World or its unique physical owner across families.
  *
  * Analytical hierarchies retain their deepest directional owner. Voxelized
- * direct World children qualify only at unambiguous interior cells. Multiple
+ * direct World children use forward cell ownership. Multiple
  * qualifying physical owners are unresolved, without insertion-order priority.
  * \param[in] world World bounds, automatic band, and occurrence count.
  * \param[in] volumes Immutable analytical array, or one None record.
@@ -544,17 +556,20 @@ GGEMS_HierarchyFindBoundary(__global GGEMSWorldRecord const *world,
  * \param[in] material_palette Concatenated dense scene MaterialID palettes.
  * \param[in] position Global FP32 birth position in pm.
  * \param[in] direction Actual stored direction.
+ * \param[in] excluded_volume Just-departed physical branch, or World at birth.
  * \param[out] owner Packed VolumeID/MaterialID on success.
+ * \param[out] cursor Private voxel continuation, invalid outside a grid.
  * \return Resolved, outside World, or unresolved.
  */
-static inline uint
-GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
-                  __global GGEMSAnalyticVolumeRecord const *volumes,
-                  __global void const *auxiliary,
-                  __global GGEMSVoxelizedVolumeRecord const *voxelized_volumes,
-                  __global ushort const *material_labels,
-                  __global uint const *material_palette, float3 position,
-                  float3 direction, ulong *owner) {
+static inline uint GGEMS_SceneLocateExcluding(
+  __global GGEMSWorldRecord const *world,
+  __global GGEMSAnalyticVolumeRecord const *volumes,
+  __global void const *auxiliary,
+  __global GGEMSVoxelizedVolumeRecord const *voxelized_volumes,
+  __global ushort const *material_labels, __global uint const *material_palette,
+  float3 position, float3 direction, uint excluded_volume, ulong *owner,
+  GGEMSVoxelCursor *cursor) {
+  *cursor = (GGEMSVoxelCursor){.record_index = GGEMS_VOXEL_CURSOR_INVALID};
   if (world->voxelized_count == 0U && world->occurrence_count <= 1U) {
     return GGEMS_AnalyticLocate(world, volumes, auxiliary, position, direction,
                                 owner);
@@ -569,11 +584,11 @@ GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
   if (world->hierarchy_depth > 1U) {
     *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
     status = GGEMS_HierarchyDescend(volumes, auxiliary, position, direction,
-                                    GGEMS_VOLUME_ID_WORLD, 0UL, owner);
+                                    excluded_volume, 0UL, owner);
   } else {
     status =
       GGEMS_OccurrenceLocate(volumes, auxiliary, world->occurrence_count,
-                             position, direction, GGEMS_VOLUME_ID_WORLD, owner);
+                             position, direction, excluded_volume, owner);
   }
 
   if (status != GGEMS_NAVIGATION_RESOLVED) {
@@ -581,10 +596,18 @@ GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
   }
 
   for (uint index = 0U; index < world->voxelized_count; ++index) {
+    if (voxelized_volumes[index].volume_id == excluded_volume) {
+      continue;
+    }
+
     ulong candidate;
-    status =
-      GGEMS_VoxelizedLocate(&voxelized_volumes[index], material_labels,
-                            material_palette, position, direction, &candidate);
+
+    GGEMSVoxelCursor candidate_cursor;
+
+    status = GGEMS_VoxelizedLocate(&voxelized_volumes[index], material_labels,
+                                   material_palette, position, direction,
+                                   &candidate, &candidate_cursor);
+
     if (status != GGEMS_NAVIGATION_RESOLVED) {
       return status;
     }
@@ -595,6 +618,8 @@ GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
       }
 
       *owner = candidate;
+      *cursor = candidate_cursor;
+      cursor->record_index = index;
     }
   }
 
@@ -602,11 +627,35 @@ GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
 }
 
 /*!
- * \brief Dispatches a scene query while keeping the ordinary N1 path direct.
- *
- * Voxelized boundary traversal is not implemented. Any scene containing a grid
- * is unresolved here, including a ray currently owned by World or an analytic
- * occurrence: returning an analytic distance could silently skip a grid.
+ * \brief Locates a fresh moving owner and initializes private voxel state.
+ * \param[in] world World bounds and scene counts.
+ * \param[in] volumes Analytical records.
+ * \param[in] auxiliary Physical descriptors and analytic assets.
+ * \param[in] voxelized_volumes Voxelized records.
+ * \param[in] material_labels Compact voxel labels.
+ * \param[in] material_palette Dense scene palettes.
+ * \param[in] position Global position in pm.
+ * \param[in] direction Actual stored direction; fresh reciprocals are computed.
+ * \param[out] owner Packed physical VolumeID/MaterialID.
+ * \param[out] cursor Private voxel continuation, invalid outside a grid.
+ * \return Resolved, outside World, or unresolved for ambiguous ownership.
+ */
+static inline uint
+GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
+                  __global GGEMSAnalyticVolumeRecord const *volumes,
+                  __global void const *auxiliary,
+                  __global GGEMSVoxelizedVolumeRecord const *voxelized_volumes,
+                  __global ushort const *material_labels,
+                  __global uint const *material_palette, float3 position,
+                  float3 direction, ulong *owner, GGEMSVoxelCursor *cursor) {
+  return GGEMS_SceneLocateExcluding(world, volumes, auxiliary,
+                                    voxelized_volumes, material_labels,
+                                    material_palette, position, direction,
+                                    GGEMS_VOLUME_ID_WORLD, owner, cursor);
+}
+
+/*!
+ * \brief Retains the existing analytical boundary and hierarchy dispatch.
  * \param[in] world World bounds and immutable scene counts.
  * \param[in] volumes Evaluated analytical array, or one None record.
  * \param[in] auxiliary Single N1 view or descriptors followed by scene
@@ -621,16 +670,13 @@ GGEMS_SceneLocate(__global GGEMSWorldRecord const *world,
  * \return Resolved, outside World, or unresolved.
  */
 static inline uint
-GGEMS_SceneFindBoundary(__global GGEMSWorldRecord const *world,
-                        __global GGEMSAnalyticVolumeRecord const *volumes,
-                        __global void const *auxiliary, float3 position,
-                        float3 direction, uint current_owner, uint last_event,
-                        uint previous_volume, GGEMSBoundaryWitness *result) {
-  if (world->voxelized_count != 0U) {
-    return GGEMS_NAVIGATION_UNRESOLVED;
-  }
-
-  if (world->occurrence_count <= 1U) {
+GGEMS_SceneAnalyticBoundary(__global GGEMSWorldRecord const *world,
+                            __global GGEMSAnalyticVolumeRecord const *volumes,
+                            __global void const *auxiliary, float3 position,
+                            float3 direction, uint current_owner,
+                            uint last_event, uint previous_volume,
+                            GGEMSBoundaryWitness *result) {
+  if (world->voxelized_count == 0U && world->occurrence_count <= 1U) {
     return GGEMS_AnalyticFindBoundary(world, volumes, auxiliary, position,
                                       direction, current_owner, last_event,
                                       result);
@@ -645,6 +691,226 @@ GGEMS_SceneFindBoundary(__global GGEMSWorldRecord const *world,
   return GGEMS_OccurrenceFindBoundary(world, volumes, auxiliary, position,
                                       direction, current_owner, last_event,
                                       previous_volume, result);
+}
+
+/*!
+ * \brief Selects one physical boundary across the ordinary scene families.
+ *
+ * Inside a voxel grid, the private cursor supplies direct constant-work cell
+ * stepping. Only physical occurrence transitions resolve another scene owner.
+ * Analytic branches keep their existing child-scoped traversal. The cursor is
+ * a proposed continuation: Transport commits it only after successful movement.
+ * Independent overlaps first encountered inside a grid are outside this
+ * ordinary nonoverlapping-scene contract; internal cells never scan the scene.
+ * \param[in] world World bounds and immutable scene counts.
+ * \param[in] volumes Dense analytical records.
+ * \param[in] auxiliary Physical descriptors, poses, and profiles.
+ * \param[in] voxelized_volumes Dense voxel records.
+ * \param[in] material_labels Compact voxel labels.
+ * \param[in] material_palette Dense scene palettes.
+ * \param[in] position Accepted global anchor in pm.
+ * \param[in] direction Stored straight-flight direction.
+ * \param[in] current_owner Accepted departure VolumeID.
+ * \param[in] last_event Previous accepted event for this direction.
+ * \param[in] previous_volume Previous event's departure VolumeID.
+ * \param[out] result Physical boundary and resolved arrival owner.
+ * \param[in,out] cursor Private voxel continuation; invalidate before a
+ * direction change and reconcile ownership through SceneLocate.
+ * \return Resolved, outside World, or unresolved.
+ */
+static inline uint GGEMS_SceneFindBoundary(
+  __global GGEMSWorldRecord const *world,
+  __global GGEMSAnalyticVolumeRecord const *volumes,
+  __global void const *auxiliary,
+  __global GGEMSVoxelizedVolumeRecord const *voxelized_volumes,
+  __global ushort const *material_labels, __global uint const *material_palette,
+  float3 position, float3 direction, uint current_owner, uint last_event,
+  uint previous_volume, GGEMSBoundaryWitness *result,
+  GGEMSVoxelCursor *cursor) {
+  uint record_index = cursor->record_index;
+
+  uint continuing_visit = record_index != GGEMS_VOXEL_CURSOR_INVALID;
+
+  if (continuing_visit == 0U && world->voxelized_count == 0U) {
+    return GGEMS_SceneAnalyticBoundary(world, volumes, auxiliary, position,
+                                       direction, current_owner, last_event,
+                                       previous_volume, result);
+  }
+
+  __global GGEMSAnalyticOccurrenceRecord const *occurrences =
+    (__global GGEMSAnalyticOccurrenceRecord const *)auxiliary;
+
+  if (continuing_visit != 0U ||
+      (current_owner != GGEMS_VOLUME_ID_WORLD &&
+       occurrences[current_owner - 1U].family == GGEMS_OCCURRENCE_VOXELIZED)) {
+    if (continuing_visit == 0U) {
+      record_index = occurrences[current_owner - 1U].record_index;
+    }
+
+    __global GGEMSVoxelizedVolumeRecord const *volume =
+      &voxelized_volumes[record_index];
+
+    if (continuing_visit == 0U) {
+      ulong owner;
+      uint status =
+        GGEMS_VoxelizedLocate(volume, material_labels, material_palette,
+                              position, direction, &owner, cursor);
+
+      if (status != GGEMS_NAVIGATION_RESOLVED ||
+          (uint)(owner >> 32U) != current_owner) {
+        return GGEMS_NAVIGATION_UNRESOLVED;
+      }
+      cursor->record_index = record_index;
+    }
+
+    uint status = GGEMS_VoxelizedFindBoundary(volume, material_labels,
+                                              material_palette, cursor, result);
+
+    if (status != GGEMS_NAVIGATION_RESOLVED ||
+        result->event == GGEMS_NAVIGATION_EVENT_VOXEL_BOUNDARY) {
+      return status;
+    }
+
+    float3 endpoint = position + result->parameter * direction;
+
+    if (continuing_visit != 0U) {
+      float3 residual =
+        (float3)(cursor->global_residual[0], cursor->global_residual[1],
+                 cursor->global_residual[2]);
+      endpoint = position + GGEMS_NavigationCompensatedIncrement(
+                              result->parameter, direction, residual);
+    }
+
+    uint world_faces = GGEMS_WorldForwardExitFaces(world, endpoint, direction);
+
+    if (world_faces != 0U) {
+      result->faces = world_faces;
+      result->event = GGEMS_NAVIGATION_EVENT_WORLD_EXIT;
+      result->arrival_volume_id = GGEMS_VOLUME_ID_EXTERIOR;
+      result->arrival_material_id = GGEMS_MATERIAL_ID_NONE;
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+
+    ulong owner;
+
+    status = GGEMS_SceneLocateExcluding(
+      world, volumes, auxiliary, voxelized_volumes, material_labels,
+      material_palette, endpoint, direction, current_owner, &owner, cursor);
+
+    if (status == GGEMS_NAVIGATION_RESOLVED) {
+      result->arrival_volume_id = (uint)(owner >> 32U);
+      result->arrival_material_id = (uint)owner;
+    }
+
+    return status;
+  }
+
+  cursor->record_index = GGEMS_VOXEL_CURSOR_INVALID;
+
+  uint status = GGEMS_SceneAnalyticBoundary(
+    world, volumes, auxiliary, position, direction, current_owner, last_event,
+    previous_volume, result);
+
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
+  }
+
+  uint selected_voxel = GGEMS_VOXEL_CURSOR_INVALID;
+
+  if (current_owner == GGEMS_VOLUME_ID_WORLD) {
+    for (uint index = 0U; index < world->voxelized_count; ++index) {
+      if (last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
+          voxelized_volumes[index].volume_id == previous_volume) {
+        continue;
+      }
+
+      GGEMSBoundaryWitness candidate = *result;
+      candidate.parameter = INFINITY;
+      candidate.event = GGEMS_NAVIGATION_EVENT_NONE;
+      status = GGEMS_VoxelizedFindEntry(&voxelized_volumes[index], position,
+                                        direction, &candidate);
+
+      if (status != GGEMS_NAVIGATION_RESOLVED) {
+        return status;
+      }
+
+      if (candidate.event != GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY) {
+        continue;
+      }
+
+      if (candidate.parameter < result->parameter) {
+        *result = candidate;
+        selected_voxel = index;
+      } else if (candidate.parameter == result->parameter &&
+                 result->event == GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY) {
+        return GGEMS_NAVIGATION_UNRESOLVED;
+      }
+    }
+  }
+
+  if (result->event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  float3 endpoint = position + result->parameter * direction;
+
+  if (selected_voxel != GGEMS_VOXEL_CURSOR_INVALID) {
+    __global GGEMSVoxelizedVolumeRecord const *volume =
+      &voxelized_volumes[selected_voxel];
+    ulong owner;
+
+    status = GGEMS_VoxelizedLocate(volume, material_labels, material_palette,
+                                   endpoint, direction, &owner, cursor);
+
+    if (status != GGEMS_NAVIGATION_RESOLVED ||
+        (uint)(owner >> 32U) != volume->volume_id) {
+      return GGEMS_NAVIGATION_UNRESOLVED;
+    }
+
+    cursor->record_index = selected_voxel;
+    result->arrival_material_id = (uint)owner;
+
+    ulong other_owner;
+
+    GGEMSVoxelCursor other_cursor;
+
+    status = GGEMS_SceneLocateExcluding(
+      world, volumes, auxiliary, voxelized_volumes, material_labels,
+      material_palette, endpoint, direction, volume->volume_id, &other_owner,
+      &other_cursor);
+
+    return status == GGEMS_NAVIGATION_RESOLVED &&
+               (uint)(other_owner >> 32U) == GGEMS_VOLUME_ID_WORLD
+             ? GGEMS_NAVIGATION_RESOLVED
+             : GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  // The analytic arrival is already resolved by its hierarchy. Only compare
+  // independent voxel supports here; never relocalize an internal cell step.
+  for (uint index = 0U; index < world->voxelized_count; ++index) {
+    ulong owner;
+
+    GGEMSVoxelCursor candidate_cursor;
+
+    status = GGEMS_VoxelizedLocate(&voxelized_volumes[index], material_labels,
+                                   material_palette, endpoint, direction,
+                                   &owner, &candidate_cursor);
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+
+    if ((uint)(owner >> 32U) != GGEMS_VOLUME_ID_WORLD) {
+      if (result->arrival_volume_id != GGEMS_VOLUME_ID_WORLD) {
+        return GGEMS_NAVIGATION_UNRESOLVED;
+      }
+      result->arrival_volume_id = (uint)(owner >> 32U);
+      result->arrival_material_id = (uint)owner;
+      *cursor = candidate_cursor;
+      cursor->record_index = index;
+    }
+  }
+
+  return GGEMS_NAVIGATION_RESOLVED;
 }
 
 #endif

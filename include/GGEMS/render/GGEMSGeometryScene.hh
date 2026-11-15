@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines owned analytic presentation data derived from a real World.
+ * \brief Defines owned procedural presentation data derived from a real World.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -30,6 +30,8 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <optional>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -69,10 +71,13 @@ enum class GGEMSGeometryKind : std::uint32_t {
 
   /*! \brief General planar trapezoid. */
   Trap = 7U,
+
+  /*! \brief Instanced Box cells of three central regular-grid slices. */
+  Voxelized = 8U,
 };
 
 /*!
- * \brief Packs one immutable analytic shape in the 64-byte Slang ABI.
+ * \brief Packs one immutable procedural shape in the 64-byte Slang ABI.
  *
  * Dimensions are meters and angles are radians. Box, Sphere, and Ellipsoid
  * use parameters[0].xyz for half extents or semiaxes. Tubs and Cons use
@@ -81,10 +86,12 @@ enum class GGEMSGeometryKind : std::uint32_t {
  * first-vertex azimuth. Trd and Trap use parameters[0].xyz and
  * parameters[1].xyz for each end's half height and two half widths,
  * parameters[0].w for half length, and parameters[2] for the two skews,
- * inclination theta, and inclination phi. Unused components are zero.
+ * inclination theta, and inclination phi. Voxelized uses header.yzw for grid
+ * dimensions and parameters[0].xyz for full cell spacing. Unused components
+ * are zero.
  */
 struct GGEMSGeometryShape {
-  /*! \brief Family, azimuth side count, first profile, and profile count. */
+  /*! \brief Family and analytic topology, or family and voxel X/Y/Z counts. */
   std::array<std::uint32_t, 4> header;
 
   /*! \brief Family-specific scalar parameters; contains no visual vertices. */
@@ -115,13 +122,33 @@ struct GGEMSGeometryMesh {
   std::uint32_t vertex_count;
 };
 
-/*! \brief Owns one labeled analytic parameter formatted with GGEMS units. */
+/*! \brief Owns one labeled geometry parameter formatted with GGEMS units. */
 struct GGEMSGeometryProperty {
   /*! \brief Physical parameter name, including its local axis when relevant. */
   std::string name;
 
   /*! \brief Human-readable canonical parameter value and unit. */
   std::string value;
+};
+
+/*! \brief Owns compact regular-grid inspection and central-slice draw data. */
+struct GGEMSGeometryVoxelSlices {
+  /*! \brief Local X, Y, Z cell counts; each central index is its count / 2. */
+  std::array<std::uint32_t, 3> dimensions;
+
+  /*! \brief Full cell sizes in local meters, preserving anisotropy. */
+  std::array<double, 3> spacing_m;
+
+  /*! \brief Full physical grid sizes in local meters, before render rounding.
+   */
+  std::array<double, 3> size_m;
+
+  /*! \brief Box instance counts for XY, XZ, and YZ, respectively. */
+  std::array<std::uint32_t, 3> instance_counts;
+
+  /*! \brief Number of actual local Material identities, not anatomical labels.
+   */
+  std::size_t palette_size;
 };
 
 /*!
@@ -134,13 +161,13 @@ struct GGEMSGeometryOccurrence {
   /*! \brief Physical parent VolumeID; zero selects World. */
   std::uint32_t parent_volume_id;
 
-  /*! \brief Index of the shared analytic descriptor and draw count. */
+  /*! \brief Index of the procedural descriptor and per-instance draw count. */
   std::uint32_t mesh_index;
 
   /*! \brief Row-major local-to-World matrix, with translations in meters. */
   std::array<float, 16> local_to_world;
 
-  /*! \brief Actual analytic family, or GGEMSWorld for the root. */
+  /*! \brief Actual presentation family, or GGEMSWorld for the root. */
   std::string shape_name;
 
   /*! \brief Canonical shape parameters formatted once for inspection. */
@@ -156,28 +183,34 @@ struct GGEMSGeometryOccurrence {
    */
   std::array<double, 9> orientation{};
 
-  /*! \brief Owned display name of this occurrence's actual Material. */
+  /*! \brief Actual homogeneous Material name; unused for voxelized grids. */
   std::string material_name{};
 
-  /*! \brief Actual Material density in the canonical GGEMS representation. */
+  /*! \brief Homogeneous density; unused when voxel_slices is present. */
   units::Density material_density{};
 
   /*!
-   * \brief Conservative analytic minimum in World meters, excluding
+   * \brief Conservative physical minimum in World meters, excluding
    * children.
    */
   std::array<double, 3> minimum_m{};
 
   /*!
-   * \brief Conservative analytic maximum in World meters, excluding children.
+   * \brief Conservative physical maximum in World meters, excluding children.
    */
   std::array<double, 3> maximum_m{};
 
   /*! \brief Direct physical child VolumeIDs in snapshot order. */
   std::vector<std::uint32_t> children{};
+
+  /*!
+   * \brief Present only for a voxelized occurrence, which has a Material
+   * palette instead of one homogeneous Material or density.
+   */
+  std::optional<GGEMSGeometryVoxelSlices> voxel_slices{std::nullopt};
 };
 
-/*! \brief Owns analytic display parameters and occurrences, including World. */
+/*! \brief Owns procedural display data and occurrences, including World. */
 struct GGEMSGeometryScene {
   /*! \brief Shared authored polygon profiles; no CPU tessellation is stored. */
   std::vector<GGEMSGeometryProfile> profiles;
@@ -193,7 +226,7 @@ struct GGEMSGeometryScene {
 };
 
 /*!
- * \brief Packs independent analytic display descriptors from a validated World.
+ * \brief Packs independent procedural display data from a validated World.
  *
  * Slang generates all visual triangles and normals from these parameters;
  * wireframe and solid modes share that topology. Equal shape parameters share
@@ -202,8 +235,13 @@ struct GGEMSGeometryScene {
  * analytic envelopes under the render transform, without tessellation or a
  * physics query. World uses a Box descriptor and remains restricted to None or
  * Wireframe by appearance.
+ * Voxelized occurrences retain one physical identity and a compact descriptor
+ * for the three central cell planes; no labels or per-cell meshes are copied.
+ * Their full physical outer bounds, rather than slice bounds, drive framing.
  * \param[in] world Validated Run-owned World, borrowed only during this call.
  * \return Owned presentation data with unchanged physical IDs and parent links.
+ * \throws core::GGEMSRecoverable If a voxel slice exceeds the Vulkan instance
+ * count domain.
  */
 [[nodiscard]] auto BuildGeometryScene(geometry::GGEMSWorld const &world)
   -> GGEMSGeometryScene;

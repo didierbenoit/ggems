@@ -1188,8 +1188,8 @@ Sizes are converted once to the integer picometer lattice; each full size
 must be an even number of picometers.
 
 Physical occurrences may use any of the eight supported analytical families.
-A GGEMSVoxelizedVolume can also be captured directly under World as one host-only
-physical occurrence; voxel Navigation and visualization remain unsupported.
+A GGEMSVoxelizedVolume can also be captured directly under World as one
+physical occurrence, with cell-by-cell navigation and three central viewer slices.
 Detached analytical mothers capture ordinary children and repeater recipes
 by value. Configure the mother pose before or after its children, then attach
 its complete subtree with world.add_volume(mother). Later source edits never

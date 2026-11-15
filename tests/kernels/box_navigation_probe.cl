@@ -149,9 +149,11 @@ __kernel void box_navigation_probe(
   uint event = GGEMS_NAVIGATION_EVENT_NONE;
   uint faces = 0U;
   uint previous_volume = GGEMS_VOLUME_ID_WORLD;
+  GGEMSVoxelCursor cursor = {.record_index = 0xFFFFFFFFU};
 
-  uint const status = GGEMS_TransportToNextBoundary(
-    world, volume, pose, &particle, &event, &faces, &previous_volume);
+  uint const status =
+    GGEMS_TransportToNextBoundary(world, volume, pose, 0, 0, 0, &particle,
+                                  &event, &faces, &previous_volume, &cursor);
 
   start_owners[ray] = (uint)(owner >> 32U);
   statuses[ray] = status;

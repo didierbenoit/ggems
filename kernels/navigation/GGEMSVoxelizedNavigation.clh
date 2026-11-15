@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Locates strict-interior cells in immutable regular material grids.
+ * \brief Locates and traverses immutable regular material grids.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -37,27 +37,42 @@
 #include "navigation/GGEMSNavigation.clh"
 
 /*!
- * \brief Resolves one unambiguous grid cell and its physical material owner.
+ * \brief Reads the current cell's dense scene MaterialID.
+ * \param[in] volume Placed grid and shared-array offsets.
+ * \param[in] material_labels Concatenated compact local labels.
+ * \param[in] material_palette Concatenated dense scene MaterialID palettes.
+ * \param[in] cursor Known current cell in this grid.
+ * \return Exact dense scene MaterialID.
+ */
+static inline uint
+GGEMS_VoxelizedMaterial(__global GGEMSVoxelizedVolumeRecord const *volume,
+                        __global ushort const *material_labels,
+                        __global uint const *material_palette,
+                        GGEMSVoxelCursor const *cursor) {
+  ushort label = material_labels[cursor->label_index];
+  return material_palette[volume->palette_offset + (uint)label];
+}
+
+/*!
+ * \brief Resolves a forward grid cell and initializes private continuation.
  *
- * The existing rigid transform and host-derived external surface band apply.
- * Outside the expanded support the grid does not qualify; the external band
- * and exactly represented internal cell planes remain unresolved. Directional
- * face ownership and boundary traversal are deferred. No index is clamped and
- * no physical or classification displacement is applied.
+ * The host-derived closed external band follows the same directional contracted
+ * interior rule as the analytic Box. Internal plane bands select the forward
+ * cell; a fresh tangential location uses the upper half-open cell. No
+ * coordinate is displaced. The caller assigns the selected dense record_index.
  * \param[in] volume Immutable placed grid and shared-array offsets.
  * \param[in] material_labels Concatenated X-fastest compact local labels.
  * \param[in] material_palette Concatenated dense scene MaterialID palettes.
  * \param[in] position Global FP32 position already validated against World.
  * \param[in] direction Actual stored direction for the shared rigid transform.
  * \param[out] owner Packed VolumeID/MaterialID, or World outside this grid.
- * \return Resolved for an interior cell or outside support; otherwise
- * unresolved.
+ * \param[out] cursor Local ray, current cell/index, and cached stepping data.
+ * \return Resolved, or unresolved for unrepresentable local arithmetic.
  */
-static inline uint
-GGEMS_VoxelizedLocate(__global GGEMSVoxelizedVolumeRecord const *volume,
-                      __global ushort const *material_labels,
-                      __global uint const *material_palette, float3 position,
-                      float3 direction, ulong *owner) {
+static inline uint GGEMS_VoxelizedLocate(
+  __global GGEMSVoxelizedVolumeRecord const *volume,
+  __global ushort const *material_labels, __global uint const *material_palette,
+  float3 position, float3 direction, ulong *owner, GGEMSVoxelCursor *cursor) {
   float3 local_position;
   float3 local_direction;
 
@@ -65,14 +80,22 @@ GGEMS_VoxelizedLocate(__global GGEMSVoxelizedVolumeRecord const *volume,
                     &local_direction);
 
   *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+  cursor->record_index = GGEMS_VOXEL_CURSOR_INVALID;
 
   float coordinates[3] = {local_position.x, local_position.y, local_position.z};
+
   float half_extent[3] = {volume->half_extent_x_pm, volume->half_extent_y_pm,
                           volume->half_extent_z_pm};
+
   float spacing[3] = {volume->spacing_x_pm, volume->spacing_y_pm,
                       volume->spacing_z_pm};
+
   uint dimensions[3] = {volume->dimension_x, volume->dimension_y,
                         volume->dimension_z};
+
+  float components[3] = {local_direction.x, local_direction.y,
+                         local_direction.z};
+
   uint surface = 0U;
 
   for (uint axis = 0U; axis < 3U; ++axis) {
@@ -80,7 +103,11 @@ GGEMS_VoxelizedLocate(__global GGEMSVoxelizedVolumeRecord const *volume,
       return GGEMS_NAVIGATION_UNRESOLVED;
     }
 
-    if (fabs(coordinates[axis]) > half_extent[axis] + volume->tolerance_pm) {
+    if (fabs(coordinates[axis]) > half_extent[axis] + volume->tolerance_pm ||
+        (coordinates[axis] <= -half_extent[axis] + volume->tolerance_pm &&
+         components[axis] <= 0.0F) ||
+        (coordinates[axis] >= half_extent[axis] - volume->tolerance_pm &&
+         components[axis] >= 0.0F)) {
       return GGEMS_NAVIGATION_RESOLVED;
     }
 
@@ -89,31 +116,259 @@ GGEMS_VoxelizedLocate(__global GGEMSVoxelizedVolumeRecord const *volume,
   }
 
   if (surface != 0U) {
-    return GGEMS_NAVIGATION_UNRESOLVED;
+
+    float near = -INFINITY;
+    float far = INFINITY;
+
+    for (uint axis = 0U; axis < 3U; ++axis) {
+      float half_length = half_extent[axis] - volume->tolerance_pm;
+
+      if (components[axis] == 0.0F) {
+        if (fabs(coordinates[axis]) >= half_length) {
+          return GGEMS_NAVIGATION_RESOLVED;
+        }
+        continue;
+      }
+
+      float first = (-half_length - coordinates[axis]) / components[axis];
+      float last = (half_length - coordinates[axis]) / components[axis];
+      near = fmax(near, fmin(first, last));
+      far = fmin(far, fmax(first, last));
+    }
+
+    if (near >= far || far <= 0.0F) {
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
   }
 
-  uint indices[3];
   for (uint axis = 0U; axis < 3U; ++axis) {
     float coordinate = (coordinates[axis] + half_extent[axis]) / spacing[axis];
     float index = floor(coordinate);
+    float plane_index = round(coordinate);
+    float plane = plane_index * spacing[axis] - half_extent[axis];
 
-    if (GGEMS_NavigationIsFinite(coordinate) == 0U || coordinate == index ||
-        index < 0.0F || index >= (float)dimensions[axis]) {
+    if (fabs(coordinates[axis] - plane) <= volume->tolerance_pm) {
+      index = plane_index - (components[axis] < 0.0F ? 1.0F : 0.0F);
+    }
+
+    if (GGEMS_NavigationIsFinite(coordinate) == 0U || index < 0.0F ||
+        index >= (float)dimensions[axis]) {
       return GGEMS_NAVIGATION_UNRESOLVED;
     }
 
-    indices[axis] = (uint)index;
+    cursor->cell[axis] = (uint)index;
+    cursor->local_position[axis] = coordinates[axis];
+    cursor->local_direction[axis] = components[axis];
+    cursor->global_residual[axis] = 0.0F;
+    cursor->inverse_direction[axis] =
+      components[axis] == 0.0F ? 0.0F : 1.0F / components[axis];
   }
 
-  ulong linear_index =
-    (ulong)indices[0] +
-    (ulong)dimensions[0] *
-      ((ulong)indices[1] + (ulong)dimensions[1] * (ulong)indices[2]);
+  ulong stride_z = (ulong)volume->dimension_x * (ulong)volume->dimension_y;
 
-  ushort label = material_labels[volume->material_label_offset + linear_index];
-  uint material_id = material_palette[volume->palette_offset + (uint)label];
+  cursor->label_index = volume->material_label_offset + (ulong)cursor->cell[0] +
+                        (ulong)volume->dimension_x * (ulong)cursor->cell[1] +
+                        stride_z * (ulong)cursor->cell[2];
 
-  *owner = ((ulong)volume->volume_id << 32U) | material_id;
+  *owner =
+    ((ulong)volume->volume_id << 32U) |
+    GGEMS_VoxelizedMaterial(volume, material_labels, material_palette, cursor);
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Computes a grid's outer entry without visiting any cells.
+ * \param[in] volume Grid support and pose.
+ * \param[in] position World-frame ray anchor in pm.
+ * \param[in] direction Stored ray direction.
+ * \param[in,out] result Independent upper-bound witness; replaced on entry.
+ * \return Resolved, or unresolved for nonfinite entry arithmetic.
+ */
+static inline uint
+GGEMS_VoxelizedFindEntry(__global GGEMSVoxelizedVolumeRecord const *volume,
+                         float3 position, float3 direction,
+                         GGEMSBoundaryWitness *result) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(&volume->pose, position, direction, &local_position,
+                    &local_direction);
+
+  float half_extent[3] = {volume->half_extent_x_pm, volume->half_extent_y_pm,
+                          volume->half_extent_z_pm};
+  float coordinates[3] = {local_position.x, local_position.y, local_position.z};
+  float components[3] = {local_direction.x, local_direction.y,
+                         local_direction.z};
+
+  float near = -INFINITY;
+  float inner_near = -INFINITY;
+  float inner_far = INFINITY;
+
+  uint faces = 0U;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    float component = components[axis];
+
+    if (component == 0.0F) {
+      if (fabs(coordinates[axis]) >= half_extent[axis] - volume->tolerance_pm) {
+        return GGEMS_NAVIGATION_RESOLVED;
+      }
+      continue;
+    }
+
+    uint negative = component < 0.0F;
+    float coordinate = negative != 0U ? -coordinates[axis] : coordinates[axis];
+
+    float first = (-half_extent[axis] - coordinate) / fabs(component);
+    float last = (half_extent[axis] - coordinate) / fabs(component);
+    float band = volume->tolerance_pm / fabs(component);
+    inner_near = fmax(inner_near, first + band);
+    inner_far = fmin(inner_far, last - band);
+
+    uint face = 1U << (2U * axis + negative);
+
+    if (first > near) {
+      near = first;
+      faces = face;
+    } else if (first == near) {
+      faces |= face;
+    }
+  }
+
+  if (inner_near >= inner_far || inner_far <= 0.0F) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  float parameter = fmax(0.0F, near);
+
+  if (GGEMS_NavigationIsFinite(parameter) == 0U) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  if (parameter < result->parameter) {
+    result->parameter = parameter;
+    result->faces = faces;
+    result->event = GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+    result->arrival_volume_id = volume->volume_id;
+  }
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects three next planes and directly advances the known cell.
+ *
+ * There is no frame transform, coordinate division/floor decode, scene scan,
+ * or relocation on this path. The existing volume band groups parameters whose
+ * separation is at most tolerance/max(abs(local_direction)).
+ * \param[in] volume Current grid.
+ * \param[in] material_labels Compact label field.
+ * \param[in] material_palette Dense scene palettes.
+ * \param[in,out] cursor Local departure state, proposed arrival on success.
+ * \param[out] result Internal-cell or outer-exit witness.
+ * \return Resolved, or unresolved for invalid/nonprogressing plane arithmetic.
+ */
+static inline uint GGEMS_VoxelizedFindBoundary(
+  __global GGEMSVoxelizedVolumeRecord const *volume,
+  __global ushort const *material_labels, __global uint const *material_palette,
+  GGEMSVoxelCursor *cursor, GGEMSBoundaryWitness *result) {
+  float half_extent[3] = {volume->half_extent_x_pm, volume->half_extent_y_pm,
+                          volume->half_extent_z_pm};
+
+  float spacing[3] = {volume->spacing_x_pm, volume->spacing_y_pm,
+                      volume->spacing_z_pm};
+
+  uint dimensions[3] = {volume->dimension_x, volume->dimension_y,
+                        volume->dimension_z};
+
+  float parameters[3] = {INFINITY, INFINITY, INFINITY};
+
+  float parameter = INFINITY;
+  float minimum_inverse = INFINITY;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    float inverse = cursor->inverse_direction[axis];
+
+    if (inverse == 0.0F) {
+      continue;
+    }
+
+    uint plane_index = cursor->cell[axis] + (inverse > 0.0F ? 1U : 0U);
+
+    float plane = plane_index == dimensions[axis]
+                    ? half_extent[axis]
+                    : (float)plane_index * spacing[axis] - half_extent[axis];
+    parameters[axis] = (plane - cursor->local_position[axis]) * inverse;
+    parameter = fmin(parameter, parameters[axis]);
+    minimum_inverse = fmin(minimum_inverse, fabs(inverse));
+  }
+
+  float band = volume->tolerance_pm * minimum_inverse;
+
+  if (GGEMS_NavigationIsFinite(parameter) == 0U || parameter < -band) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  uint faces = 0U;
+  uint exits = 0U;
+
+  float accepted_parameter = fmax(0.0F, parameter);
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    if (cursor->inverse_direction[axis] == 0.0F) {
+      continue;
+    }
+
+    cursor->local_position[axis] +=
+      accepted_parameter * cursor->local_direction[axis];
+
+    if (parameters[axis] - parameter > band) {
+      continue;
+    }
+
+    uint positive = cursor->inverse_direction[axis] > 0.0F;
+    faces |= 1U << (2U * axis + positive);
+
+    if (positive != 0U) {
+      ++cursor->cell[axis];
+      exits |= cursor->cell[axis] == dimensions[axis];
+    } else if (cursor->cell[axis] == 0U) {
+      exits = 1U;
+    } else {
+      --cursor->cell[axis];
+    }
+  }
+
+  if (exits == 0U) {
+    ulong strides[3] = {1UL, (ulong)dimensions[0],
+                        (ulong)dimensions[0] * (ulong)dimensions[1]};
+
+    for (uint axis = 0U; axis < 3U; ++axis) {
+      if ((faces & (1U << (2U * axis))) != 0U) {
+        cursor->label_index -= strides[axis];
+      } else if ((faces & (2U << (2U * axis))) != 0U) {
+        cursor->label_index += strides[axis];
+      }
+    }
+  }
+
+  result->parameter = accepted_parameter;
+  result->faces = faces;
+  result->event = exits != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                              : GGEMS_NAVIGATION_EVENT_VOXEL_BOUNDARY;
+  result->arrival_volume_id =
+    exits != 0U ? GGEMS_VOLUME_ID_WORLD : volume->volume_id;
+
+  result->arrival_material_id =
+    exits != 0U ? GGEMS_MATERIAL_ID_WORLD
+                : GGEMS_VoxelizedMaterial(volume, material_labels,
+                                          material_palette, cursor);
+  result->status = GGEMS_NAVIGATION_RESOLVED;
+
+  if (exits != 0U) {
+    cursor->record_index = GGEMS_VOXEL_CURSOR_INVALID;
+  }
 
   return GGEMS_NAVIGATION_RESOLVED;
 }

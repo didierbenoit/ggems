@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Packs analytic descriptors once for procedural visualization.
+ * \brief Packs compact shape and voxel-slice descriptors for visualization.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -33,12 +33,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <limits>
 #include <span>
 #include <string>
 #include <string_view>
 #include <numbers>
 #include <type_traits>
 #include <variant>
+#include <utility>
 #include <vector>
 
 #include "GGEMS/GGEMSException.hh"
@@ -54,6 +56,7 @@
 #include "GGEMS/geometry/GGEMSTrd.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSQuantity.hh"
@@ -69,6 +72,7 @@ using ggems::render::GGEMSGeometryMesh;
 using ggems::render::GGEMSGeometryOccurrence;
 using ggems::render::GGEMSGeometryProfile;
 using ggems::render::GGEMSGeometryProperty;
+using ggems::render::GGEMSGeometryVoxelSlices;
 
 /*! \brief Converts canonical picometers to render meters. */
 constexpr double k_pm_to_m{1.0e-12};
@@ -780,7 +784,27 @@ auto DescribeShape(GGEMSGeometryOccurrence &occurrence,
 }
 
 /*!
- * \brief Copies physical metadata and bounds the occurrence analytically.
+ * \brief Copies the composed physical pose before render rounding.
+ * \param[in,out] occurrence Presentation record with its existing render pose.
+ * \param[in] pose Composed host pose before float rendering conversion.
+ */
+auto DescribePose(GGEMSGeometryOccurrence &occurrence,
+                  GGEMSWorld::Pose const &pose) -> void {
+  auto const &rotation = pose.rotation;
+
+  occurrence.orientation = {
+    rotation.axis_x.x, rotation.axis_y.x, rotation.axis_z.x,
+    rotation.axis_x.y, rotation.axis_y.y, rotation.axis_z.y,
+    rotation.axis_x.z, rotation.axis_y.z, rotation.axis_z.z,
+  };
+
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    occurrence.position_m[axis] = pose.position_pm[axis] * k_pm_to_m;
+  }
+}
+
+/*!
+ * \brief Copies homogeneous metadata and bounds an analytic occurrence.
  * \param[in,out] occurrence Presentation record with its existing render pose.
  * \param[in] pose Composed host pose before float rendering conversion.
  * \param[in] material Actual Material borrowed only for copying metadata.
@@ -790,20 +814,12 @@ auto DescribePlacement(GGEMSGeometryOccurrence &occurrence,
                        GGEMSWorld::Pose const &pose,
                        ggems::core::materials::GGEMSMaterial const &material,
                        AnalyticEnvelope const &envelope) -> void {
-  auto const &rotation = pose.rotation;
-
-  occurrence.orientation = {
-    rotation.axis_x.x, rotation.axis_y.x, rotation.axis_z.x,
-    rotation.axis_x.y, rotation.axis_y.y, rotation.axis_z.y,
-    rotation.axis_x.z, rotation.axis_y.z, rotation.axis_z.z,
-  };
+  DescribePose(occurrence, pose);
 
   occurrence.material_name = material.GetName();
   occurrence.material_density = material.GetDensity();
 
   for (std::size_t axis = 0; axis < 3; ++axis) {
-    occurrence.position_m[axis] = pose.position_pm[axis] * k_pm_to_m;
-
     auto const *row = occurrence.local_to_world.data() + (4U * axis);
 
     auto const center = row[3] + (row[2] * envelope.center_z);
@@ -813,6 +829,88 @@ auto DescribePlacement(GGEMSGeometryOccurrence &occurrence,
     occurrence.minimum_m[axis] = center - half;
     occurrence.maximum_m[axis] = center + half;
   }
+}
+
+/*!
+ * \brief Captures full grid metadata and bounds without copying cell labels.
+ * \param[in,out] occurrence The single physical voxelized occurrence.
+ * \param[in] volume Immutable imported grid and local Material palette.
+ * \param[in] pose Actual composed host placement.
+ * \return One procedural Box descriptor, shared by all displayed cell
+ * instances.
+ * \throws ggems::core::GGEMSRecoverable If a slice exceeds Vulkan's 32-bit
+ * instance-count domain.
+ */
+auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
+                       GGEMSVoxelizedVolume const &volume,
+                       GGEMSWorld::Pose const &pose) -> GGEMSGeometryMesh {
+  auto const &dimensions = volume.GetDimensions();
+  auto const &spacing = volume.GetSpacing();
+  auto const &size = volume.GetSize();
+
+  GGEMSGeometryVoxelSlices slices{};
+
+  slices.palette_size = volume.GetMaterials().size();
+
+  // These pair products are bounded by the already allocated full cell field.
+  std::array const counts{
+    dimensions[0] * dimensions[1],
+    dimensions[0] * dimensions[2],
+    dimensions[1] * dimensions[2],
+  };
+
+  GGEMSGeometryMesh mesh{};
+  mesh.shape.header[0] =
+    static_cast<std::uint32_t>(GGEMSGeometryKind::Voxelized);
+  mesh.vertex_count = 36U;
+
+  occurrence.shape_name = "VoxelizedVolume";
+
+  DescribePose(occurrence, pose);
+
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    if (counts[axis] > std::numeric_limits<std::uint32_t>::max()) {
+      throw ggems::core::GGEMSRecoverable(
+        "Voxel slice exceeds the 32-bit Vulkan instance-count domain.");
+    }
+
+    slices.dimensions[axis] = static_cast<std::uint32_t>(dimensions[axis]);
+    slices.instance_counts[axis] = static_cast<std::uint32_t>(counts[axis]);
+    slices.spacing_m[axis] =
+      static_cast<double>(spacing[axis].value) * k_pm_to_m;
+    slices.size_m[axis] = static_cast<double>(size[axis].value) * k_pm_to_m;
+
+    mesh.shape.header[axis + 1U] = slices.dimensions[axis];
+    mesh.shape.parameters[0][axis] = static_cast<float>(slices.spacing_m[axis]);
+
+    auto const axis_name = "XYZ"[axis];
+
+    occurrence.dimensions.push_back({
+      .name = std::format("Cells {}", axis_name),
+      .value = std::to_string(dimensions[axis]),
+    });
+
+    occurrence.dimensions.push_back(
+      Property(std::format("Spacing {}", axis_name), spacing[axis]));
+
+    occurrence.dimensions.push_back(
+      Property(std::format("Size {}", axis_name), size[axis]));
+  }
+
+  for (std::size_t row = 0; row < 3; ++row) {
+    double half = 0.0;
+
+    for (std::size_t column = 0; column < 3; ++column) {
+      half += std::abs(occurrence.orientation[(3U * row) + column]) *
+              slices.size_m[column] * 0.5;
+    }
+
+    occurrence.minimum_m[row] = occurrence.position_m[row] - half;
+    occurrence.maximum_m[row] = occurrence.position_m[row] + half;
+  }
+
+  occurrence.voxel_slices = slices;
+  return mesh;
 }
 
 } // namespace
@@ -847,37 +945,43 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
 
   auto const links = world.BuildOccurrenceRecords();
 
-  std::vector<std::size_t> mesh_sources;
+  std::vector<std::pair<std::size_t, std::uint32_t>> mesh_sources;
   for (std::size_t index = 0; index < world.GetVolumeCount(); ++index) {
-    auto const &shape = world.GetVolume(index);
-    auto const found =
-      std::ranges::find_if(mesh_sources, [&](std::size_t source) -> bool {
-        return SameShape(shape, world.GetVolume(source));
-      });
-
-    auto const mesh_index =
-      static_cast<std::uint32_t>(found - mesh_sources.begin()) + 1U;
-
-    if (found == mesh_sources.end()) {
-      scene.meshes.push_back(ShapeDescriptor(shape, scene.profiles));
-      mesh_sources.push_back(index);
-    }
-
     auto const pose = world.BuildVolumePose(index);
     scene.occurrences.push_back({
       .volume_id = static_cast<std::uint32_t>(index) + 1U,
       .parent_volume_id = links[index].parent_volume_id,
-      .mesh_index = mesh_index,
+      .mesh_index = 0U,
       .local_to_world = Transform(pose),
       .shape_name = {},
       .dimensions = {},
     });
 
     auto &occurrence = scene.occurrences.back();
-    DescribeShape(occurrence, shape);
 
-    DescribePlacement(occurrence, pose, *world.GetVolumeMaterial(index),
-                      ShapeEnvelope(shape));
+    if (auto const *voxelized = world.GetVoxelizedVolume(index)) {
+      occurrence.mesh_index = static_cast<std::uint32_t>(scene.meshes.size());
+      scene.meshes.push_back(DescribeVoxelized(occurrence, *voxelized, pose));
+    } else {
+      auto const &shape = world.GetVolume(index);
+
+      auto const found =
+        std::ranges::find_if(mesh_sources, [&](auto source) -> bool {
+          return SameShape(shape, world.GetVolume(source.first));
+        });
+
+      if (found == mesh_sources.end()) {
+        occurrence.mesh_index = static_cast<std::uint32_t>(scene.meshes.size());
+        scene.meshes.push_back(ShapeDescriptor(shape, scene.profiles));
+        mesh_sources.emplace_back(index, occurrence.mesh_index);
+      } else {
+        occurrence.mesh_index = found->second;
+      }
+
+      DescribeShape(occurrence, shape);
+      DescribePlacement(occurrence, pose, *world.GetVolumeMaterial(index),
+                        ShapeEnvelope(shape));
+    }
 
     scene.occurrences[occurrence.parent_volume_id].children.push_back(
       occurrence.volume_id);

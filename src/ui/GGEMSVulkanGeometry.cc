@@ -39,6 +39,8 @@
 #include <optional>
 #include <span>
 
+#include <vulkan/vulkan_raii.hpp>
+
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/render/GGEMSGeometryAppearance.hh"
@@ -459,16 +461,12 @@ auto GGEMSVulkanGeometry::Record(
       }
     }
 
-    auto const &mesh = scene_->meshes[occurrence.mesh_index];
-
     if (selected_only) {
       // Preserve scene color while marking the nearest selected surface.
       // Consume its stencil bit once, including coincident Wireframe edges.
       constants.color[3U] = 0.0F;
-      command_buffer.pushConstants(
-        *pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
-        vk::ArrayProxy<GeometryPushConstants const>{1U, &constants});
-      command_buffer.draw(mesh.vertex_count, 1U, 0U, 0U);
+
+      DrawOccurrence(command_buffer, occurrence, constants);
 
       command_buffer.setStencilOp(vk::StencilFaceFlagBits::eFrontAndBack,
                                   vk::StencilOp::eKeep, vk::StencilOp::eZero,
@@ -476,11 +474,30 @@ auto GGEMSVulkanGeometry::Record(
       constants.color[3U] = 0.5F;
     }
 
+    DrawOccurrence(command_buffer, occurrence, constants);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSVulkanGeometry::DrawOccurrence(
+  vk::raii::CommandBuffer const &command_buffer,
+  render::GGEMSGeometryOccurrence const &occurrence,
+  GeometryPushConstants &constants) const -> void {
+  auto const &mesh = scene_->meshes[occurrence.mesh_index];
+
+  auto const slice_count = occurrence.voxel_slices ? 3U : 1U;
+
+  for (std::uint32_t plane = 0U; plane < slice_count; ++plane) {
+    constants.slice_plane = plane;
     command_buffer.pushConstants(
       *pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
       vk::ArrayProxy<GeometryPushConstants const>{1U, &constants});
 
-    command_buffer.draw(mesh.vertex_count, 1U, 0U, 0U);
+    auto const instances = occurrence.voxel_slices
+                             ? occurrence.voxel_slices->instance_counts[plane]
+                             : 1U;
+    command_buffer.draw(mesh.vertex_count, instances, 0U, 0U);
   }
 }
 

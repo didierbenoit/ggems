@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -53,6 +54,7 @@
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCLCacheFingerprint.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
@@ -99,7 +101,7 @@ inline auto ReplaceUnique(std::string &source, std::string const &before,
  * The geometry loop receives a trace pointer; after every accepted
  * transaction it records departure owner, arrival owner, crossed planes,
  * committed position, event and arrival Material. The selected parameter is
- * captured from the actual transaction witness, without repeating its query.
+ * captured from the actual transaction witness, without repeating the query.
  * Initial owner, Material and location status follow the 33 event slots.
  * Every instrumentation anchor must be unique. No production hook is added.
  */
@@ -109,9 +111,8 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
   std::ifstream transaction_input{root / "transport/GGEMSTransport.clh"};
   std::string transaction{std::istreambuf_iterator<char>{transaction_input},
                           {}};
-  ReplaceUnique(
-    transaction, "  uint *faces, uint *previous_volume) {",
-    "  uint *faces, uint *previous_volume, __global long *capture) {");
+  ReplaceUnique(transaction, "  GGEMSVoxelCursor *cursor) {",
+                "  GGEMSVoxelCursor *cursor, __global long *capture) {");
   ReplaceUnique(transaction, "  if (status != GGEMS_NAVIGATION_RESOLVED) {",
                 "  capture[8] = (long)as_uint(witness.parameter);\n"
                 "  if (status != GGEMS_NAVIGATION_RESOLVED) {");
@@ -141,8 +142,9 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
     source, "    uint const status = GGEMS_TransportToNextBoundary(",
     "    uint const departure_owner = particle->current_volume_id;\n"
     "    uint const status = GGEMS_TransportToNextBoundary(");
-  ReplaceUnique(source, "&previous_volume);",
-                "&previous_volume, trace + 1U + 9U * event_index);");
+  ReplaceUnique(
+    source, "&previous_volume,\n      &voxel_cursor);",
+    "&previous_volume, &voxel_cursor, trace + 1U + 9U * event_index);");
   ReplaceUnique(
     source, "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {",
     "    if (status == GGEMS_NAVIGATION_RESOLVED) {\n"
@@ -261,7 +263,8 @@ RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
           std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes,
           sources::GGEMSSourceRecord const &source,
           geometry::GGEMSBoxPoseRecord const *pose = nullptr,
-          bool capture_trace = true, std::span<std::byte const> auxiliary = {})
+          bool capture_trace = true, std::span<std::byte const> auxiliary = {},
+          geometry::GGEMSVoxelizedSceneData const &voxelized = {})
   -> StreamResult {
   auto buffer = [&context](auto const &value) -> ocl::GGEMSOpenCLSVMBuffer {
     auto result = context.CreateSVMBuffer(units::Bytes{sizeof(value)});
@@ -300,9 +303,14 @@ RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   auto observations = context.CreateSVMBuffer(
     units::Bytes{2 * sizeof(observer::GGEMSObserverRecord)});
   ocl::FillSVMFromHost(observations, 2U, observer::GGEMSObserverRecord{});
-  auto volume_buffer =
-    context.CreateSVMBuffer(units::Bytes{volumes.size_bytes()});
-  ocl::WriteSVMFromHost(volume_buffer, volumes);
+  auto volume_buffer = context.CreateSVMBuffer(units::Bytes{
+    std::max(volumes.size_bytes(), sizeof(geometry::GGEMSAnalyticVolumeRecord)),
+  });
+  if (volumes.empty()) {
+    ocl::WriteSVMFromHost(volume_buffer, geometry::GGEMSAnalyticVolumeRecord{});
+  } else {
+    ocl::WriteSVMFromHost(volume_buffer, volumes);
+  }
   std::array<std::int64_t, k_trace_values> trace{};
   auto trace_buffer =
     context.CreateSVMBuffer(units::Bytes{sizeof(std::int64_t) * trace.size()});
@@ -344,10 +352,24 @@ RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
   // Match production: every oriented analytic family shares the pose argument.
   kernel.SetArgSVMPointer(22U, pose_buffer ? pose_buffer->GetData()
                                            : volume_buffer.GetData());
-  // Zero voxelized_count leaves these valid SVM placeholders unread.
-  kernel.SetArgSVMPointer(23U, volume_buffer.GetData());
-  kernel.SetArgSVMPointer(24U, volume_buffer.GetData());
-  kernel.SetArgSVMPointer(25U, volume_buffer.GetData());
+  auto upload =
+    [&context]<typename Value>(
+      std::vector<Value> const &values) -> ocl::GGEMSOpenCLSVMBuffer {
+    auto storage = context.CreateSVMBuffer(
+      units::Bytes{std::max(values.size() * sizeof(Value), sizeof(Value))});
+    if (values.empty()) {
+      ocl::WriteSVMFromHost(storage, Value{});
+    } else {
+      ocl::WriteSVMFromHost(storage, std::span<Value const>{values});
+    }
+    return storage;
+  };
+  auto voxel_buffer = upload(voxelized.records);
+  auto label_buffer = upload(voxelized.material_labels);
+  auto palette_buffer = upload(voxelized.material_ids);
+  kernel.SetArgSVMPointer(23U, voxel_buffer.GetData());
+  kernel.SetArgSVMPointer(24U, label_buffer.GetData());
+  kernel.SetArgSVMPointer(25U, palette_buffer.GetData());
   if (capture_trace) {
     kernel.SetArgSVMPointer(26U, trace_buffer.GetData());
   }
@@ -373,10 +395,11 @@ RunStream(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
           geometry::GGEMSAnalyticVolumeRecord const &volume,
           sources::GGEMSSourceRecord const &source,
           geometry::GGEMSBoxPoseRecord const *pose = nullptr,
-          bool capture_trace = true, std::span<std::byte const> auxiliary = {})
+          bool capture_trace = true, std::span<std::byte const> auxiliary = {},
+          geometry::GGEMSVoxelizedSceneData const &voxelized = {})
   -> StreamResult {
   return RunStream(context, program, random, world, std::span{&volume, 1U},
-                   source, pose, capture_trace, auxiliary);
+                   source, pose, capture_trace, auxiliary, voxelized);
 }
 
 } // namespace ggems::test
