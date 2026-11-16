@@ -36,6 +36,7 @@
 #include <array>
 #include <span>
 #include <format>
+#include <vector>
 
 #include <imgui.h>
 
@@ -64,72 +65,6 @@ constexpr std::array<char const *, 3U> k_mode_names{
 
 /*! \brief Compact row labels in the same display-mode order. */
 constexpr std::array<char const *, 3U> k_mode_letters{"N", "W", "S"};
-
-/*! \brief Physical hierarchy scope of a presentation-only menu action. */
-enum class ModeScope : std::uint8_t { Occurrence, Siblings, Subtree };
-
-/*!
- * \brief Writes independent overrides on a physical branch, including its root.
- * \param[in] scene Immutable physical child links.
- * \param[in] volume_id Root of the requested branch.
- * \param[in] mode Requested presentation mode; World remains wireframe in
- * Solid.
- * \param[in,out] appearance Snapshot-local independent overrides.
- */
-auto SetSubtreeMode(
-  ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
-  Mode mode, std::span<ggems::render::GGEMSGeometryAppearance> appearance)
-  -> void {
-  appearance[volume_id].mode_override =
-    volume_id == 0U && mode == Mode::Solid ? Mode::Wireframe : mode;
-
-  for (auto const child : scene.occurrences[volume_id].children) {
-    SetSubtreeMode(scene, child, mode, appearance);
-  }
-}
-
-/*!
- * \brief Presents explicit mode actions for one physical hierarchy scope.
- * \param[in] label Visible scope name.
- * \param[in] scope A single row, its direct siblings, or its full branch.
- * \param[in] scene Immutable physical occurrence links.
- * \param[in] volume_id Invoked row, independent of the current selection.
- * \param[in,out] appearance Snapshot-local independent overrides.
- */
-auto BuildScopeMenu(
-  char const *label, ModeScope scope,
-  ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
-  std::span<ggems::render::GGEMSGeometryAppearance> appearance) -> void {
-  if (!ImGui::BeginMenu(label)) {
-    return;
-  }
-
-  auto const &occurrence = scene.occurrences[volume_id];
-
-  std::size_t const count =
-    volume_id == 0U && scope != ModeScope::Subtree ? 2U : 3U;
-
-  for (std::size_t choice = 0U; choice < count; ++choice) {
-    if (!ImGui::MenuItem(k_mode_names[choice])) {
-      continue;
-    }
-
-    auto const mode = static_cast<Mode>(choice);
-
-    if (scope == ModeScope::Subtree) {
-      SetSubtreeMode(scene, volume_id, mode, appearance);
-    } else if (scope == ModeScope::Siblings && volume_id != 0U) {
-      for (auto const sibling :
-           scene.occurrences[occurrence.parent_volume_id].children) {
-        appearance[sibling].mode_override = mode;
-      }
-    } else {
-      appearance[volume_id].mode_override = mode;
-    }
-  }
-
-  ImGui::EndMenu();
-}
 
 /*!
  * \brief Edits one occurrence's display override independently of its row.
@@ -179,6 +114,84 @@ auto BuildVolumeNode(
   ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
   std::optional<std::uint32_t> &selected_volume_id,
   std::span<ggems::render::GGEMSGeometryAppearance> appearance,
+  std::optional<std::uint32_t> &focus) -> void;
+
+/*!
+ * \brief Groups local copies with display actions for their authored recipe.
+ * \param[in] scene Immutable physical links and repeater membership.
+ * \param[in] occurrence Physical member supplying the group identity and label.
+ * \param[in,out] selected_volume_id Shared physical selection.
+ * \param[in,out] appearance Snapshot-local independent display overrides.
+ * \param[out] focus Double-click framing request from a physical member, if
+ * any.
+ */
+auto BuildRepeaterGroup(
+  ggems::render::GGEMSGeometryScene const &scene,
+  ggems::render::GGEMSGeometryOccurrence const &occurrence,
+  std::optional<std::uint32_t> &selected_volume_id,
+  std::span<ggems::render::GGEMSGeometryAppearance> appearance,
+  std::optional<std::uint32_t> &focus) -> void {
+  auto const &siblings =
+    scene.occurrences[occurrence.parent_volume_id].children;
+  auto const is_member = [&](std::uint32_t volume_id) -> bool {
+    return scene.occurrences[volume_id].repeater_group_id ==
+           occurrence.repeater_group_id;
+  };
+  auto const count = std::ranges::count_if(siblings, is_member);
+  auto const is_recipe_member = [&](auto const &member) -> bool {
+    return member.repeater_recipe_id == occurrence.repeater_recipe_id;
+  };
+  auto const total =
+    std::ranges::count_if(scene.occurrences, is_recipe_member);
+  auto label =
+    std::format("{} repeated ×{}", occurrence.shape_name, count);
+  if (total != count) {
+    label = std::format("{} ×{} · {} total", occurrence.shape_name, count,
+                        total);
+  }
+
+  ImGui::PushID("##repeater_groups");
+  ImGui::PushID(static_cast<int>(occurrence.repeater_group_id));
+  bool const opened = ImGui::TreeNodeEx(
+    "##repeater_group",
+    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+      ImGuiTreeNodeFlags_SpanLabelWidth | ImGuiTreeNodeFlags_FramePadding,
+    "%s", label.c_str());
+
+  for (std::size_t choice = 0U; choice < k_mode_letters.size(); ++choice) {
+    ImGui::SameLine();
+    if (ImGui::SmallButton(k_mode_letters[choice])) {
+      for (auto const &member : scene.occurrences) {
+        if (is_recipe_member(member)) {
+          appearance[member.volume_id].mode_override =
+            static_cast<Mode>(choice);
+        }
+      }
+    }
+    ImGui::SetItemTooltip("Set all copies of this authored repeater to %s.",
+                          k_mode_names[choice]);
+  }
+
+  if (opened) {
+    ImGui::TreePush("##members");
+    for (auto const member : siblings) {
+      if (is_member(member)) {
+        BuildVolumeNode(scene, member, selected_volume_id, appearance, focus);
+      }
+    }
+    ImGui::TreePop();
+  }
+  ImGui::PopID();
+  ImGui::PopID();
+}
+
+// =============================================================================
+// =============================================================================
+
+auto BuildVolumeNode(
+  ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
+  std::optional<std::uint32_t> &selected_volume_id,
+  std::span<ggems::render::GGEMSGeometryAppearance> appearance,
   std::optional<std::uint32_t> &focus) -> void {
   auto const &occurrence = scene.occurrences[volume_id];
   ImGui::PushID(static_cast<int>(volume_id));
@@ -215,27 +228,27 @@ auto BuildVolumeNode(
     }
   }
 
-  if (ImGui::BeginPopupContextItem("##appearance_scope",
-                                   ImGuiPopupFlags_MouseButtonRight)) {
-    BuildScopeMenu("This occurrence", ModeScope::Occurrence, scene, volume_id,
-                   appearance);
-
-    BuildScopeMenu("All siblings", ModeScope::Siblings, scene, volume_id,
-                   appearance);
-
-    BuildScopeMenu("This subtree", ModeScope::Subtree, scene, volume_id,
-                   appearance);
-
-    ImGui::EndPopup();
-  }
-
   if (opened && !occurrence.children.empty()) {
     ImGui::TreePush("##children");
+    std::vector<std::uint32_t> displayed_groups;
+
     for (auto const child : occurrence.children) {
-      BuildVolumeNode(scene, child, selected_volume_id, appearance, focus);
+      auto const &member = scene.occurrences[child];
+      auto const group = member.repeater_group_id;
+
+      if (group == 0U) {
+        BuildVolumeNode(scene, child, selected_volume_id, appearance, focus);
+      } else if (std::ranges::find(displayed_groups, group) ==
+                 displayed_groups.end()) {
+        displayed_groups.push_back(group);
+        BuildRepeaterGroup(scene, member, selected_volume_id, appearance,
+                           focus);
+      }
     }
+
     ImGui::TreePop();
   }
+
   ImGui::PopID();
 }
 
@@ -342,7 +355,8 @@ auto BuildVolumesPanel(bool &show_window,
     if (ImGui::BeginChild("##volume_metadata", ImVec2{0.0F, 0.0F},
                           ImGuiChildFlags_Borders)) {
       if (scene != nullptr && selected_volume_id) {
-        BuildVolumeMetadata(scene->occurrences[*selected_volume_id]);
+        auto const &occurrence = scene->occurrences[*selected_volume_id];
+        BuildVolumeMetadata(occurrence);
       } else {
         ImGui::TextDisabled("Select a physical volume to inspect it.");
         ImGui::TextWrapped(

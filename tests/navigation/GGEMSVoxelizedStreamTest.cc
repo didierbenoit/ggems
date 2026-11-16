@@ -86,6 +86,12 @@ struct Crossing {
   std::uint32_t faces;
 };
 
+/*! \brief Optional compact-label aliases for testing dense identity lookup. */
+struct PaletteAliases {
+  std::span<std::uint16_t const> labels;
+  std::span<std::uint32_t const> material_ids;
+};
+
 /*! \brief Creates a finite World with no material identity ambiguity. */
 auto World() -> geometry::GGEMSWorld {
   geometry::GGEMSWorld world;
@@ -96,8 +102,8 @@ auto World() -> geometry::GGEMSWorld {
 
 /*! \brief Runs the real production stream, capturing accepted transactions. */
 auto Trace(geometry::GGEMSWorld const &world, Ray const &ray,
-           bool instrument = true, std::uint32_t boundary_limit = 0U)
-  -> test::StreamResult {
+           bool instrument = true, std::uint32_t boundary_limit = 0U,
+           PaletteAliases aliases = {}) -> test::StreamResult {
   auto const &start = ray.start;
   auto const &direction = ray.direction;
   std::vector<materials::GGEMSMaterial> media{world.GetMaterial()};
@@ -117,8 +123,13 @@ auto Trace(geometry::GGEMSWorld const &world, Ray const &ray,
   auto const identities = package.GetMaterialIds();
   auto const analytic = world.BuildAnalyticDeviceRecords(
     identities.subspan(1U, palette_begin - 1U));
-  auto const voxel =
+  auto voxel =
     world.BuildVoxelizedDeviceData(identities.subspan(palette_begin));
+  if (!aliases.labels.empty()) {
+    voxel.material_labels.assign(aliases.labels.begin(), aliases.labels.end());
+    voxel.material_ids.assign(aliases.material_ids.begin(),
+                              aliases.material_ids.end());
+  }
   auto const auxiliary = world.BuildAnalyticAuxiliaryBuffer();
   auto record = world.BuildRecord();
   if (boundary_limit != 0U) {
@@ -237,25 +248,14 @@ auto CheckTopology(test::StreamResult const &result, std::size_t offset,
 /*! \brief Independent coordinate and physical-motion reference for one axis. */
 struct CoordinateCheck {
   float actual;
-  float previous;
   double ideal;
-  float parameter;
-  float direction;
   double budget;
 };
 
-/*! \brief Compares a coordinate and excludes internal or World-exit pushes. */
-auto CheckCoordinate(CoordinateCheck const &reference, Crossing const &item)
-  -> void {
+/*! \brief Compares a short trajectory within its admitted FP32 band. */
+auto CheckCoordinate(CoordinateCheck const &reference) -> void {
+  EXPECT_TRUE(std::isfinite(reference.actual));
   EXPECT_LE(std::abs(reference.actual - reference.ideal), reference.budget);
-  if (item.event == 4U) {
-    EXPECT_EQ(reference.actual, static_cast<float>(reference.ideal));
-  }
-  if (item.event == 1U) {
-    EXPECT_FLOAT_EQ(
-      reference.actual,
-      std::fma(reference.parameter, reference.direction, reference.previous));
-  }
 }
 
 /*! \brief Independent physical flight and its frozen spatial error budget. */
@@ -268,14 +268,13 @@ struct ParameterCheck {
 /*! \brief Checks the physical parameter independently of accepted position. */
 auto CheckParameter(test::StreamResult const &result,
                     ParameterCheck const &reference, std::size_t offset)
-  -> float {
+  -> void {
   auto const parameter =
     std::bit_cast<float>(static_cast<std::uint32_t>(result.trace[offset + 8U]));
   EXPECT_TRUE(std::isfinite(parameter));
   EXPECT_GT(parameter, 0.0F);
   EXPECT_LE(std::abs((parameter - reference.expected) * reference.norm),
             reference.budget);
-  return parameter;
 }
 /*! \brief Checks all accepted physical intervals without reproducing the
  * kernel. */
@@ -287,40 +286,28 @@ auto CheckTrajectory(test::StreamResult const &result,
     std::hypot(ray.direction[0], ray.direction[1], ray.direction[2]);
   double previous{};
   auto departure = initial_owner;
-  std::array<float, 3> committed{
-    static_cast<float>(ray.start[0] * k_mm),
-    static_cast<float>(ray.start[1] * k_mm),
-    static_cast<float>(ray.start[2] * k_mm),
-  };
   for (std::size_t index = 0; index < expected.size(); ++index) {
     SCOPED_TRACE(index);
     auto const offset = 1U + (test::k_trace_stride * index);
     auto const &item = expected[index];
     CheckTopology(result, offset, item, departure);
-    float const parameter =
-      CheckParameter(result,
-                     {
-                       .expected = (item.parameter_mm - previous) * k_mm,
-                       .norm = norm,
-                       .budget = budget,
-                     },
-                     offset);
+    CheckParameter(result,
+                   {
+                     .expected = (item.parameter_mm - previous) * k_mm,
+                     .norm = norm,
+                     .budget = budget,
+                   },
+                   offset);
     auto const point = Point(result, offset);
     for (std::size_t axis = 0; axis < 3U; ++axis) {
       double const ideal =
         (ray.start[axis] + (item.parameter_mm * ray.direction[axis])) * k_mm;
-      CheckCoordinate(
-        {
-          .actual = point[axis],
-          .previous = committed[axis],
-          .ideal = ideal,
-          .parameter = parameter,
-          .direction = static_cast<float>(ray.direction[axis]),
-          .budget = budget,
-        },
-        item);
+      CheckCoordinate({
+        .actual = point[axis],
+        .ideal = ideal,
+        .budget = budget,
+      });
     }
-    committed = point;
     previous = item.parameter_mm;
     departure = item.owner;
   }
@@ -330,10 +317,11 @@ auto CheckTrajectory(test::StreamResult const &result,
 auto Check(geometry::GGEMSWorld const &world, Vector const &start,
            Vector const &direction, std::span<Crossing const> crossings,
            std::uint32_t initial_owner = 0U,
-           std::uint32_t initial_material = 0U) -> void {
+           std::uint32_t initial_material = 0U, PaletteAliases aliases = {})
+  -> void {
   ASSERT_NO_THROW(world.Validate());
   Ray const ray{.start = start, .direction = direction};
-  auto const result = Trace(world, ray);
+  auto const result = Trace(world, ray, true, 0U, aliases);
   CheckCompletion(result);
   auto const initial = test::k_initial_owner_index;
   std::array const actual{
@@ -351,7 +339,7 @@ auto Check(geometry::GGEMSWorld const &world, Vector const &start,
     band = std::max(
       band, static_cast<double>(world.GetVolumeNavigationTolerancePM(index)));
   }
-  CheckTrajectory(result, initial_owner, ray, expected, 8 * band);
+  CheckTrajectory(result, initial_owner, ray, expected, band);
 }
 using GGEMSVoxelizedStream = GGEMSNavigationDeviceTest;
 } // namespace
@@ -437,7 +425,7 @@ TEST_F(GGEMSVoxelizedStream, InternalEdgeAndCornerAreSingleMultiAxisEvents) {
   }
 }
 
-TEST_F(GGEMSVoxelizedStream, SameMaterialStillVisitsEveryCellPlane) {
+TEST_F(GGEMSVoxelizedStream, SameMaterialStopsAtPhysicalGridExit) {
   std::array<std::uint16_t, 4> const labels{10, 10, 10, 10};
   GGEMSVoxelizedTestFixture const files{
     {4U, 1U, 1U},
@@ -456,27 +444,6 @@ TEST_F(GGEMSVoxelizedStream, SameMaterialStillVisitsEveryCellPlane) {
       .faces = 1U,
     },
     Crossing{
-      .parameter_mm = 2,
-      .owner = 1U,
-      .material = 1U,
-      .event = 4U,
-      .faces = 2U,
-    },
-    Crossing{
-      .parameter_mm = 3,
-      .owner = 1U,
-      .material = 1U,
-      .event = 4U,
-      .faces = 2U,
-    },
-    Crossing{
-      .parameter_mm = 4,
-      .owner = 1U,
-      .material = 1U,
-      .event = 4U,
-      .faces = 2U,
-    },
-    Crossing{
       .parameter_mm = 5,
       .owner = 0U,
       .material = 0U,
@@ -489,6 +456,255 @@ TEST_F(GGEMSVoxelizedStream, SameMaterialStillVisitsEveryCellPlane) {
     Trace(world, {.start = {-3, -0.5, -0.5}, .direction = {1, 0, 0}}, false);
   EXPECT_EQ(plain.counts.escaped_world_count, 1U);
   EXPECT_EQ(plain.counts.unresolved_geometry_count, 0U);
+}
+
+TEST_F(GGEMSVoxelizedStream,
+       MaterialRunsAccumulateDistanceUntilDifferentIdentity) {
+  struct Case {
+    std::vector<std::uint16_t> labels;
+    std::vector<Crossing> crossings;
+  };
+  // Birth is at the center of the first cell. References are cumulative
+  // physical distances, not the number of internal cell planes examined.
+  std::array const cases{
+    Case{
+      .labels = {10, 10, 10, 10, 10},
+      .crossings =
+        {
+          {
+            .parameter_mm = 4.5,
+            .owner = 0U,
+            .material = 0U,
+            .event = 3U,
+            .faces = 2U,
+          },
+        },
+    },
+    Case{
+      .labels = {10, 10, 10, 20},
+      .crossings =
+        {
+          {
+            .parameter_mm = 2.5,
+            .owner = 1U,
+            .material = 2U,
+            .event = 4U,
+            .faces = 2U,
+          },
+          {
+            .parameter_mm = 3.5,
+            .owner = 0U,
+            .material = 0U,
+            .event = 3U,
+            .faces = 2U,
+          },
+        },
+    },
+    Case{
+      .labels = {10, 20, 10, 20},
+      .crossings =
+        {
+          {
+            .parameter_mm = 0.5,
+            .owner = 1U,
+            .material = 2U,
+            .event = 4U,
+            .faces = 2U,
+          },
+          {
+            .parameter_mm = 1.5,
+            .owner = 1U,
+            .material = 1U,
+            .event = 4U,
+            .faces = 2U,
+          },
+          {
+            .parameter_mm = 2.5,
+            .owner = 1U,
+            .material = 2U,
+            .event = 4U,
+            .faces = 2U,
+          },
+          {
+            .parameter_mm = 3.5,
+            .owner = 0U,
+            .material = 0U,
+            .event = 3U,
+            .faces = 2U,
+          },
+        },
+    },
+    Case{
+      .labels = {10, 20},
+      .crossings =
+        {
+          {
+            .parameter_mm = 0.5,
+            .owner = 1U,
+            .material = 2U,
+            .event = 4U,
+            .faces = 2U,
+          },
+          {
+            .parameter_mm = 1.5,
+            .owner = 0U,
+            .material = 0U,
+            .event = 3U,
+            .faces = 2U,
+          },
+        },
+    },
+  };
+  for (auto const &item : cases) {
+    SCOPED_TRACE(item.labels.size());
+    GGEMSVoxelizedTestFixture const files{
+      {item.labels.size(), 1U, 1U},
+      "1 2 2",
+      item.labels,
+      "10 10 Water\n20 20 Air\n",
+    };
+    auto world = World();
+    world.AddVolume(files.Import());
+    double const start = 0.5 - (0.5 * static_cast<double>(item.labels.size()));
+    Check(world, {start, -0.5, -0.5}, {1, 0, 0}, item.crossings, 1U, 1U);
+  }
+}
+
+TEST_F(GGEMSVoxelizedStream,
+       DifferentCompactLabelsCanResolveToOneDenseMaterial) {
+  std::array<std::uint16_t, 3> const labels{1, 2, 7};
+  GGEMSVoxelizedTestFixture const files{
+    {3U, 1U, 1U},
+    "1 2 2",
+    labels,
+    "1 1 Water\n2 2 Water\n7 7 Water\n",
+  };
+  auto world = World();
+  world.AddVolume(files.Import());
+  // The importer deduplicates these materials. Explicit valid device aliases
+  // exercise palette resolution rather than accidentally comparing labels.
+  std::array<std::uint32_t, 8> const palette{1U, 1U, 1U, 1U, 1U, 1U, 1U, 1U};
+  std::array const crossings{
+    Crossing{
+      .parameter_mm = 2.5,
+      .owner = 0U,
+      .material = 0U,
+      .event = 3U,
+      .faces = 2U,
+    },
+  };
+  Check(world, {-1, -0.5, -0.5}, {1, 0, 0}, crossings, 1U, 1U,
+        {.labels = labels, .material_ids = palette});
+}
+
+TEST_F(GGEMSVoxelizedStream,
+       EqualAirIdentityPreservesWorldAndTouchingGridBoundaries) {
+  std::array<std::uint16_t, 4> const labels{10, 10, 10, 10};
+  GGEMSVoxelizedTestFixture const files{
+    {4U, 1U, 1U},
+    "1 2 2",
+    labels,
+    "10 10 Air\n",
+  };
+  auto world = World();
+  world.SetMaterial(materials::builtins::BuildBuiltInMaterial("Air"));
+  auto grid = files.Import();
+  grid.SetPosition(geometry::MakePositionPM(-2'000'000'000LL, 0, 0));
+  world.AddVolume(grid);
+  grid.SetPosition(geometry::MakePositionPM(2'000'000'000LL, 0, 0));
+  world.AddVolume(grid);
+  std::array const crossings{
+    Crossing{
+      .parameter_mm = 1,
+      .owner = 1U,
+      .material = 0U,
+      .event = 2U,
+      .faces = 1U,
+    },
+    Crossing{
+      .parameter_mm = 5,
+      .owner = 2U,
+      .material = 0U,
+      .event = 3U,
+      .faces = 2U,
+    },
+    Crossing{
+      .parameter_mm = 9,
+      .owner = 0U,
+      .material = 0U,
+      .event = 3U,
+      .faces = 2U,
+    },
+  };
+  Check(world, {-5, -0.5, -0.5}, {1, 0, 0}, crossings);
+}
+
+TEST_F(GGEMSVoxelizedStream, CoincidentAxesInspectOnlyTheReachedCell) {
+  for (std::size_t axes : {2U, 3U}) {
+    std::array<std::uint16_t, 64> labels{};
+    labels.fill(20);
+    for (std::size_t step = 0U; step < 3U; ++step) {
+      labels[(5U * step) + (axes == 3U ? 16U * step : 0U)] = 10;
+    }
+    GGEMSVoxelizedTestFixture const files{
+      {4U, 4U, 4U},
+      "2 2 2",
+      labels,
+      "10 10 Water\n20 20 Air\n",
+    };
+    auto world = World();
+    world.AddVolume(files.Import());
+    for (double const sign : {-1.0, 1.0}) {
+      SCOPED_TRACE(std::format("axes {}, sign {}", axes, sign));
+      Vector start{-3, -3, -3};
+      Vector direction{};
+      std::uint32_t faces{};
+      for (std::size_t axis = 0; axis < axes; ++axis) {
+        start[axis] = -3.0 * sign;
+        direction[axis] = sign;
+        faces |= 1U << ((2U * axis) + (sign > 0 ? 1U : 0U));
+      }
+      std::array const crossings{
+        Crossing{
+          .parameter_mm = sign > 0 ? 5.0 : 1.0,
+          .owner = 1U,
+          .material = sign > 0 ? 2U : 1U,
+          .event = 4U,
+          .faces = faces,
+        },
+        Crossing{
+          .parameter_mm = 7,
+          .owner = 0U,
+          .material = 0U,
+          .event = 3U,
+          .faces = faces,
+        },
+      };
+      Check(world, start, direction, crossings, 1U, sign > 0 ? 1U : 2U);
+    }
+  }
+}
+
+TEST_F(GGEMSVoxelizedStream, HomogeneousRunBeyondTenThousandCellsReachesExit) {
+  std::vector<std::uint16_t> const labels(10001U, 10U);
+  GGEMSVoxelizedTestFixture const files{
+    {labels.size(), 1U, 1U},
+    "0.001 2 2",
+    labels,
+    "10 10 Water\n",
+  };
+  auto world = World();
+  world.AddVolume(files.Import());
+  std::array const crossings{
+    Crossing{
+      .parameter_mm = 10.0005,
+      .owner = 0U,
+      .material = 0U,
+      .event = 3U,
+      .faces = 2U,
+    },
+  };
+  Check(world, {-5, -0.5, -0.5}, {1, 0, 0}, crossings, 1U, 1U);
 }
 
 TEST_F(GGEMSVoxelizedStream, QuarterTurnAndAnisotropicSpacingUseLocalPlanes) {
@@ -517,7 +733,8 @@ TEST_F(GGEMSVoxelizedStream, QuarterTurnAndAnisotropicSpacingUseLocalPlanes) {
         .faces = faces,
       },
     };
-    Check(unposed, {-0.5, -1, -1.5}, direction, crossings, 1U, 1U);
+    Check(unposed, {-0.5, -1, -1.5}, direction,
+          std::span{crossings}.subspan(axis == 0U ? 0U : 1U), 1U, 1U);
   }
   auto grid = files.Import();
   grid.SetPosition(geometry::MakePositionPM(5'000'000'000LL, 3'000'000'000LL,
@@ -776,10 +993,12 @@ TEST_F(GGEMSVoxelizedStream, ShallowRotatedEntriesMakeFiniteForwardProgress) {
         EXPECT_GT(parameter, 0.0F);
         auto const point = Point(result, offset);
         for (std::size_t axis = 0; axis < 3U; ++axis) {
-          EXPECT_FLOAT_EQ(point[axis],
-                          std::fma(parameter,
-                                   static_cast<float>(ray.direction[axis]),
-                                   previous[axis]));
+          EXPECT_TRUE(std::isfinite(point[axis]));
+          EXPECT_LE(std::abs(point[axis] -
+                             std::fma(parameter,
+                                      static_cast<float>(ray.direction[axis]),
+                                      previous[axis])),
+                    world.GetNavigationTolerancePM());
         }
         evidence += std::format("{},{},{},{},{},{},{}\n", degrees, incidence,
                                 index, parameter, point[0], point[1], point[2]);

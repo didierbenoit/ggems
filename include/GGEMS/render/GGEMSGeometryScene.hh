@@ -208,6 +208,22 @@ struct GGEMSGeometryOccurrence {
    * palette instead of one homogeneous Material or density.
    */
   std::optional<GGEMSGeometryVoxelSlices> voxel_slices{std::nullopt};
+
+  /*!
+   * \brief Exact host-authored repeater instance, or zero for an ordinary root.
+   *
+   * Membership covers repeated roots only, independently of descendants and
+   * other instances of a nested repeater. It has no scientific visibility role.
+   */
+  std::uint32_t repeater_group_id{0U};
+
+  /*!
+   * \brief World-local authored repeater identity, or zero for an ordinary root.
+   *
+   * Shared by roots from the same immutable recipe across physical parents.
+   * This host-only provenance controls independent viewer assignments.
+   */
+  std::uint32_t repeater_recipe_id{0U};
 };
 
 /*! \brief Owns procedural display data and occurrences, including World. */

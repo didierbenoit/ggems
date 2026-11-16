@@ -49,9 +49,8 @@
  *
  * Position and parameter are in pm; direction is dimensionless. All three
  * coordinates succeed before publication. Energy, time, direction and RNG are
- * untouched. Geometry stepping retains the outer compiler boundaries documented
- * in GGEMS_TransportToNextBoundary; this small helper may inline into its
- * callers.
+ * untouched. Navigation supplies a nonnegative finite parameter and the
+ * particle has a valid stored direction.
  *
  * \param[in] parameter Nonnegative finite ray parameter in pm.
  * \param[in,out] particle Private state; unchanged on failure.
@@ -59,7 +58,7 @@
  * visit.
  * \param[in] compensated Nonzero selects increment; zero retains the analytical
  * movement arithmetic.
- * \return Nonzero on success; zero for nonfinite input or endpoint.
+ * \return Nonzero on success; zero for a nonfinite endpoint.
  */
 static inline uint GGEMS_TransportMoveToBoundary(float parameter,
                                                  GGEMSParticleState *particle,
@@ -71,18 +70,6 @@ static inline uint GGEMS_TransportMoveToBoundary(float parameter,
   float3 direction = (float3)(particle->direction_x, particle->direction_y,
                               particle->direction_z);
 
-  // Reject nonfinite raw inputs before forming the physical endpoint.
-  if (GGEMS_NavigationIsFinite(parameter) == 0U || parameter < 0.0F ||
-      GGEMS_NavigationIsFinite(position.x) == 0U ||
-      GGEMS_NavigationIsFinite(position.y) == 0U ||
-      GGEMS_NavigationIsFinite(position.z) == 0U ||
-      GGEMS_NavigationIsFinite(direction.x) == 0U ||
-      GGEMS_NavigationIsFinite(direction.y) == 0U ||
-      GGEMS_NavigationIsFinite(direction.z) == 0U ||
-      (direction.x == 0.0F && direction.y == 0.0F && direction.z == 0.0F)) {
-    return 0U;
-  }
-
   float3 endpoint;
 
   if (compensated != 0U) {
@@ -91,9 +78,7 @@ static inline uint GGEMS_TransportMoveToBoundary(float parameter,
     endpoint = position + parameter * direction;
   }
 
-  if (GGEMS_NavigationIsFinite(endpoint.x) == 0U ||
-      GGEMS_NavigationIsFinite(endpoint.y) == 0U ||
-      GGEMS_NavigationIsFinite(endpoint.z) == 0U) {
+  if (!all(isfinite(endpoint))) {
     return 0U;
   }
 
@@ -113,18 +98,8 @@ static inline uint GGEMS_TransportMoveToBoundary(float parameter,
  * Process competes here; a future Process proposal is compared with the witness
  * before this commit, strictly earlier Process first and geometry first on
  * exact ties.
- * Internal voxel crossings advance the private cell cursor without displacing
- * the accepted endpoint beyond its selected physical witness parameter.
- *
- * This transaction and GGEMS_TransportGeometry are deliberately kept out of
- * line. In the former -cl-fast-relaxed-math profile, inlining the
- * query and move into a kernel loop let the Intel CPU OpenCL compiler mix
- * private states of neighboring work-items (multi-source histories receive each
- * other's positions or end unresolved). The attributes are a documented
- * device-compiler boundary. Current production kernels do not enable
- * -cl-fast-relaxed-math. The movement helper may inline inside this boundary
- * and into the diagnostic caller; multi-source and nonfinite transaction tests
- * cover both call paths.
+ * Navigation skips same-material voxel cells in its private proposal. The
+ * first material change or physical grid exit produces one accepted move.
  *
  * \param[in] world Immutable World record.
  * \param[in] volume Immutable analytical array, or one None record.
@@ -148,8 +123,7 @@ static inline uint GGEMS_TransportMoveToBoundary(float parameter,
  * \return GGEMS_NAVIGATION_RESOLVED after an accepted move; otherwise the
  * failed status and the particle is unchanged.
  */
-static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
-GGEMS_TransportToNextBoundary(
+static inline uint GGEMS_TransportToNextBoundary(
   __global GGEMSWorldRecord const *world,
   __global GGEMSAnalyticVolumeRecord const *volume,
   __global void const *box_pose,

@@ -59,7 +59,7 @@
 /*! \brief The ray leaves the closed support of its current physical volume. */
 #define GGEMS_NAVIGATION_EVENT_VOLUME_EXIT 3U
 
-/*! \brief One internal cell crossing within the same physical voxel volume. */
+/*! \brief Internal material change within the same physical voxel volume. */
 #define GGEMS_NAVIGATION_EVENT_VOXEL_BOUNDARY 4U
 
 /*! \brief No active private voxel cursor. */
@@ -69,9 +69,9 @@
  * \brief Private continuation for one straight-flight voxelized visit.
  *
  * This is not part of the particle ABI. Fresh location initializes the local
- * ray and cell once; internal crossings advance both without another frame
- * transform. Callers invalidate record_index before reconciling any direction
- * change.
+ * ray and cell once; a query advances cell indices across equal-material cells
+ * and updates the local anchor only at its returned boundary. Callers
+ * invalidate record_index before reconciling any direction change.
  */
 typedef struct GGEMSVoxelCursor {
   /*! \brief Dense voxel record index, or GGEMS_VOXEL_CURSOR_INVALID. */
@@ -151,9 +151,9 @@ static inline uint GGEMS_NavigationIsFinite(float value) {
 /*!
  * \brief Forms a compensated increment of the same physical ray parameter.
  *
- * The residual accounts for preceding FP32 additions. It is arithmetic working
- * state, not a geometric displacement or an adjustment to the selected
- * distance.
+ * The residual accounts for preceding accepted FP32 additions. It is arithmetic
+ * working state, not a geometric displacement or an adjustment to the selected
+ * distance. Skipped same-material cells do not update this residual.
  * \param[in] parameter Accepted physical ray parameter in pm.
  * \param[in] direction Stored global direction.
  * \param[in] residual Rounding residual of the preceding global addition.

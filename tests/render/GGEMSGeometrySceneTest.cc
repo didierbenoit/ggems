@@ -383,13 +383,27 @@ TEST(GGEMSGeometryScene,
   ASSERT_EQ(scene.occurrences.size(), 13U);
   EXPECT_EQ(scene.occurrences[0].children,
             (std::vector<std::uint32_t>{1U, 4U, 7U, 10U}));
+  EXPECT_EQ(scene.occurrences[0].repeater_group_id, 0U);
+  auto const outer_group = scene.occurrences[1].repeater_group_id;
+  EXPECT_NE(outer_group, 0U);
   for (std::uint32_t parent : scene.occurrences[0].children) {
     auto const &mother = scene.occurrences[parent];
+    EXPECT_EQ(mother.repeater_group_id, outer_group);
+    auto const inner_group = scene.occurrences[parent + 1U].repeater_group_id;
+    EXPECT_NE(inner_group, 0U);
+    EXPECT_NE(inner_group, outer_group);
+    for (auto const other_parent : scene.occurrences[0].children) {
+      if (other_parent != parent) {
+        EXPECT_NE(inner_group,
+                  scene.occurrences[other_parent + 1U].repeater_group_id);
+      }
+    }
     EXPECT_EQ(mother.color, GRAY_Silver);
     EXPECT_EQ(mother.children,
               (std::vector<std::uint32_t>{parent + 1U, parent + 2U}));
     for (auto child : mother.children) {
       auto const &occurrence = scene.occurrences[child];
+      EXPECT_EQ(occurrence.repeater_group_id, inner_group);
       EXPECT_EQ(occurrence.volume_id, child);
       EXPECT_EQ(occurrence.parent_volume_id, parent);
       EXPECT_EQ(occurrence.mesh_index, scene.occurrences[2].mesh_index);
@@ -407,6 +421,100 @@ TEST(GGEMSGeometryScene,
   EXPECT_NEAR(rotated.maximum_m[0], 0.002, 1.0e-8);
   EXPECT_NEAR(rotated.minimum_m[1], 0.095, 1.0e-8);
   EXPECT_NEAR(rotated.maximum_m[1], 0.097, 1.0e-8);
+
+  auto const captured = world;
+  module.SetPosition(MakePositionPM(0, 0, 200'000'000'000LL));
+  world.AttachVolume(module);
+  auto const retained = BuildGeometryScene(captured);
+  auto const extended = BuildGeometryScene(world);
+  for (std::size_t index = 0U; index < scene.occurrences.size(); ++index) {
+    EXPECT_EQ(retained.occurrences[index].repeater_group_id,
+              scene.occurrences[index].repeater_group_id);
+    EXPECT_EQ(extended.occurrences[index].repeater_group_id,
+              scene.occurrences[index].repeater_group_id);
+  }
+  EXPECT_EQ(extended.occurrences[13].repeater_group_id, 0U);
+  EXPECT_NE(extended.occurrences[14].repeater_group_id,
+            scene.occurrences[2].repeater_group_id);
+}
+
+TEST(GGEMSGeometryScene,
+     AuthoredRepeaterIdentitySurvivesSnapshotWithDistinctPhysicalGroups) {
+  GGEMSBox crystal;
+  crystal.SetSize(2_mm, 2_mm, 2_mm)
+    .SetMaterial(BuildBuiltInMaterial("Aluminum"));
+  GGEMSBox module;
+  module.SetSize(20_mm, 20_mm, 20_mm)
+    .SetMaterial(BuildBuiltInMaterial("Water"))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  module.LinearRepeater(crystal, 3U, 6_mm, GGEMSRepeatAxis::X);
+
+  auto world = World();
+  world.LinearRepeater(module, 4U, 100_mm, GGEMSRepeatAxis::X);
+  crystal.SetPosition(MakePositionPM(300'000'000'000LL, 0, 0));
+  world.AddVolume(crystal);
+  ggems::test::GGEMSVoxelizedTestFixture const fixture;
+  auto voxelized = fixture.Import();
+  voxelized.SetPosition(MakePositionPM(-300'000'000'000LL, 0, 0));
+  world.AddVolume(voxelized);
+  ASSERT_NO_THROW(world.Validate());
+
+  auto const scene = BuildGeometryScene(world);
+  world = World();
+  ASSERT_EQ(scene.occurrences.size(), 19U);
+  EXPECT_EQ(scene.occurrences[0].children,
+            (std::vector<std::uint32_t>{1U, 5U, 9U, 13U, 17U, 18U}));
+  auto const outer_recipe = scene.occurrences[1].repeater_recipe_id;
+  auto const inner_recipe = scene.occurrences[2].repeater_recipe_id;
+  auto const outer_group = scene.occurrences[1].repeater_group_id;
+  EXPECT_NE(outer_recipe, 0U);
+  EXPECT_NE(inner_recipe, 0U);
+  EXPECT_NE(inner_recipe, outer_recipe);
+  EXPECT_NE(outer_group, 0U);
+
+  std::array const parents{1U, 5U, 9U, 13U};
+  std::array const positions_x{-0.15, -0.05, 0.05, 0.15};
+  std::array const positions_y{-0.006, 0.0, 0.006};
+  std::vector<std::uint32_t> inner_groups;
+  for (std::size_t copy = 0U; copy < parents.size(); ++copy) {
+    auto const parent = parents[copy];
+    auto const &mother = scene.occurrences[parent];
+    EXPECT_EQ(mother.repeater_recipe_id, outer_recipe);
+    EXPECT_EQ(mother.repeater_group_id, outer_group);
+    EXPECT_EQ(mother.parent_volume_id, 0U);
+    EXPECT_EQ(mother.children, (std::vector<std::uint32_t>{
+                                 parent + 1U, parent + 2U, parent + 3U}));
+    EXPECT_NEAR(mother.position_m[0], positions_x[copy], 1.0e-15);
+    auto const local_group = scene.occurrences[parent + 1U].repeater_group_id;
+    EXPECT_NE(local_group, 0U);
+    EXPECT_NE(local_group, outer_group);
+    EXPECT_EQ(std::ranges::find(inner_groups, local_group), inner_groups.end());
+    inner_groups.push_back(local_group);
+
+    for (std::size_t child = 0U; child < positions_y.size(); ++child) {
+      auto const &occurrence = scene.occurrences[parent + 1U + child];
+      EXPECT_EQ(occurrence.repeater_recipe_id, inner_recipe);
+      EXPECT_EQ(occurrence.repeater_group_id, local_group);
+      EXPECT_EQ(occurrence.parent_volume_id, parent);
+      EXPECT_TRUE(occurrence.children.empty());
+      EXPECT_NEAR(occurrence.position_m[0], positions_x[copy], 1.0e-15);
+      EXPECT_NEAR(occurrence.position_m[1], positions_y[child], 1.0e-15);
+      EXPECT_DOUBLE_EQ(occurrence.orientation[1], -1.0);
+      EXPECT_DOUBLE_EQ(occurrence.orientation[3], 1.0);
+      EXPECT_FLOAT_EQ(occurrence.local_to_world[3],
+                      static_cast<float>(positions_x[copy]));
+      EXPECT_FLOAT_EQ(occurrence.local_to_world[7],
+                      static_cast<float>(positions_y[child]));
+    }
+  }
+  for (std::uint32_t id = 0U; id < scene.occurrences.size(); ++id) {
+    EXPECT_EQ(scene.occurrences[id].volume_id, id);
+  }
+  for (auto const ordinary : {0U, 17U, 18U}) {
+    EXPECT_EQ(scene.occurrences[ordinary].repeater_group_id, 0U);
+    EXPECT_EQ(scene.occurrences[ordinary].repeater_recipe_id, 0U);
+  }
+  ASSERT_TRUE(scene.occurrences[18].voxel_slices);
 }
 
 TEST(GGEMSGeometryScene, DescriptorAndProfileMatchScalarShaderABI) {

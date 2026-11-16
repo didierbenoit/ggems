@@ -468,11 +468,16 @@ TEST(GGEMSGeometryAttachments, LinearRepeatersPreserveGapsContactAndCountOne) {
     auto world = *MakeWorld();
     world.AddVolume(mother);
     ExpectSameCompilation(world, expected);
+    EXPECT_EQ(world.GetRepeaterGroupId(0U), 0U);
+    auto const group = world.GetRepeaterGroupId(1U);
+    EXPECT_NE(group, 0U);
     std::vector<std::uint32_t> const material_ids(world.GetVolumeCount(), 7U);
     auto const records = world.BuildAnalyticDeviceRecords(material_ids);
     for (std::size_t index = 0U; index < records.size(); ++index) {
       EXPECT_EQ(records[index].parameters.box.volume_id, index + 1U);
       EXPECT_EQ(records[index].parameters.box.material_id, 7U);
+      EXPECT_EQ(world.GetRepeaterGroupId(index), index == 0U ? 0U : group);
+      EXPECT_EQ(expected.GetRepeaterGroupId(index), 0U);
     }
   }
   auto mother = *MakeShape<GGEMSBox>(20_mm);
@@ -480,6 +485,143 @@ TEST(GGEMSGeometryAttachments, LinearRepeatersPreserveGapsContactAndCountOne) {
   auto world = *MakeWorld();
   world.AddVolume(mother);
   EXPECT_EQ(world.GetVolumeCount(), 2U);
+  EXPECT_EQ(world.GetRepeaterGroupId(0U), 0U);
+  EXPECT_NE(world.GetRepeaterGroupId(1U), 0U);
+
+  auto direct = *MakeWorld();
+  auto child = *MakeShape<GGEMSBox>(1_mm);
+  direct.AttachVolume(child);
+  child.SetPosition(MakePositionPM(10'000'000'000LL, 0, 0));
+  direct.LinearRepeater(child, 1U, 0_mm, GGEMSRepeatAxis::X);
+  child.SetPosition(MakePositionPM(20'000'000'000LL, 0, 0));
+  direct.CircularRepeater(child, 1U, GGEMSRepeatAxis::Z);
+  EXPECT_EQ(direct.GetRepeaterGroupId(0U), 0U);
+  EXPECT_NE(direct.GetRepeaterGroupId(1U), 0U);
+  EXPECT_NE(direct.GetRepeaterGroupId(2U), 0U);
+  EXPECT_NE(direct.GetRepeaterGroupId(1U), direct.GetRepeaterGroupId(2U));
+  EXPECT_EQ(direct.GetRepeaterRecipeId(0U), 0U);
+  EXPECT_NE(direct.GetRepeaterRecipeId(1U), 0U);
+  EXPECT_NE(direct.GetRepeaterRecipeId(2U), 0U);
+  EXPECT_NE(direct.GetRepeaterRecipeId(1U), direct.GetRepeaterRecipeId(2U));
+}
+
+// One authored inner recipe spans all repeated mothers while local groups and
+// ordinary descendants retain their independent physical provenance.
+TEST(GGEMSGeometryAttachments,
+     AuthoredRepeaterIdsSpanRepeatedMothersWithoutChangingCompilation) {
+  auto leaf = *MakeShape<GGEMSBox>(250_um);
+  auto crystal = *MakeShape<GGEMSBox>(1_mm);
+  crystal.AddVolume(leaf);
+  auto module = *MakeShape<GGEMSBox>(10_mm);
+  module.LinearRepeater(crystal, 3U, 4_mm, GGEMSRepeatAxis::X);
+  auto world = *MakeWorld();
+  world.LinearRepeater(module, 4U, 30_mm, GGEMSRepeatAxis::X);
+  ASSERT_EQ(world.GetVolumeCount(), 28U);
+  auto const outer_recipe = world.GetRepeaterRecipeId(0U);
+  auto const inner_recipe = world.GetRepeaterRecipeId(1U);
+  EXPECT_EQ(outer_recipe, 1U);
+  EXPECT_EQ(inner_recipe, 2U);
+
+  auto expected = *MakeWorld();
+  for (std::uint32_t copy = 0U; copy < 4U; ++copy) {
+    auto const root = copy * 7U;
+    EXPECT_EQ(world.GetRepeaterRecipeId(root), outer_recipe);
+    EXPECT_EQ(world.GetRepeaterGroupId(root), world.GetRepeaterGroupId(0U));
+    auto const local_group = world.GetRepeaterGroupId(root + 1U);
+    EXPECT_NE(local_group, 0U);
+    EXPECT_NE(local_group, world.GetRepeaterGroupId(root));
+    for (std::uint32_t previous = 0U; previous < copy; ++previous) {
+      EXPECT_NE(local_group, world.GetRepeaterGroupId((previous * 7U) + 1U));
+    }
+
+    auto placed_module = *MakeShape<GGEMSBox>(10_mm);
+    placed_module.SetPosition(MakePositionPM(
+      -45'000'000'000LL + (static_cast<std::int64_t>(copy) * 30'000'000'000LL),
+      0, 0));
+    expected.AddVolume(placed_module);
+    for (std::uint32_t child = 0U; child < 3U; ++child) {
+      auto const index = root + 1U + (child * 2U);
+      EXPECT_EQ(world.GetRepeaterRecipeId(index), inner_recipe);
+      EXPECT_EQ(world.GetRepeaterGroupId(index), local_group);
+      EXPECT_EQ(world.GetRepeaterRecipeId(index + 1U), 0U);
+      EXPECT_EQ(world.GetRepeaterGroupId(index + 1U), 0U);
+      auto placed_crystal = crystal;
+      placed_crystal.SetPosition(MakePositionPM(
+        -4'000'000'000LL + (static_cast<std::int64_t>(child) * 4'000'000'000LL),
+        0, 0));
+      expected.AddVolume(placed_crystal, root + 1U);
+    }
+  }
+  ExpectSameCompilation(world, expected);
+}
+
+// Existing recipes keep their identity through captured copies and COW child
+// additions; fresh authoring calls and separate Worlds get their own
+// identities.
+TEST(GGEMSGeometryAttachments,
+     AuthoredRepeaterIdsPreserveSnapshotsAndAtomicAttachment) {
+  auto child = *MakeShape<GGEMSBox>(1_mm);
+  auto mother = *MakeShape<GGEMSBox>(10_mm);
+  mother.LinearRepeater(child, 2U, 4_mm, GGEMSRepeatAxis::X);
+  mother.SetPosition(MakePositionPM(-60'000'000'000LL, 0, 0));
+  auto captured = mother;
+  auto world = *MakeWorld();
+  world.AddVolume(mother);
+  ASSERT_EQ(world.GetVolumeCount(), 3U);
+  EXPECT_EQ(world.GetRepeaterRecipeId(0U), 0U);
+  auto const original_recipe = world.GetRepeaterRecipeId(1U);
+  EXPECT_EQ(original_recipe, 1U);
+  EXPECT_EQ(world.GetRepeaterRecipeId(2U), original_recipe);
+  auto copied_world = world;
+
+  child.SetPosition(MakePositionPM(0, 5'000'000'000LL, 0));
+  mother.LinearRepeater(child, 2U, 4_mm, GGEMSRepeatAxis::X);
+  mother.SetPosition(MakePositionPM(-20'000'000'000LL, 0, 0));
+  world.AddVolume(mother);
+  ASSERT_EQ(world.GetVolumeCount(), 8U);
+  EXPECT_EQ(world.GetRepeaterRecipeId(3U), 0U);
+  EXPECT_EQ(world.GetRepeaterRecipeId(4U), original_recipe);
+  EXPECT_EQ(world.GetRepeaterRecipeId(5U), original_recipe);
+  EXPECT_NE(world.GetRepeaterGroupId(4U), world.GetRepeaterGroupId(1U));
+  auto const added_recipe = world.GetRepeaterRecipeId(6U);
+  EXPECT_EQ(added_recipe, 2U);
+  EXPECT_EQ(world.GetRepeaterRecipeId(7U), added_recipe);
+
+  EXPECT_EQ(captured.GetDescendantCount(), 2U);
+  EXPECT_EQ(copied_world.GetVolumeCount(), 3U);
+  captured.SetPosition(MakePositionPM(20'000'000'000LL, 0, 0));
+  copied_world.AddVolume(captured);
+  ASSERT_EQ(copied_world.GetVolumeCount(), 6U);
+  EXPECT_EQ(copied_world.GetRepeaterRecipeId(1U), original_recipe);
+  EXPECT_EQ(copied_world.GetRepeaterRecipeId(4U), original_recipe);
+  EXPECT_EQ(copied_world.GetRepeaterRecipeId(5U), original_recipe);
+  EXPECT_NE(copied_world.GetRepeaterGroupId(4U),
+            copied_world.GetRepeaterGroupId(1U));
+
+  auto independent = *MakeShape<GGEMSBox>(10_mm);
+  child.SetPosition(MakePositionPM(0, 0, 0));
+  independent.LinearRepeater(child, 2U, 4_mm, GGEMSRepeatAxis::X);
+  independent.SetPosition(MakePositionPM(-60'000'000'000LL, 0, 0));
+  auto const before_rejection = world;
+  EXPECT_THROW(world.AddVolume(independent), GGEMSRecoverable);
+  ExpectSameCompilation(world, before_rejection);
+  for (std::size_t index = 0U; index < world.GetVolumeCount(); ++index) {
+    EXPECT_EQ(world.GetRepeaterRecipeId(index),
+              before_rejection.GetRepeaterRecipeId(index));
+    EXPECT_EQ(world.GetRepeaterGroupId(index),
+              before_rejection.GetRepeaterGroupId(index));
+  }
+  independent.SetPosition(MakePositionPM(60'000'000'000LL, 0, 0));
+  world.AddVolume(independent);
+  ASSERT_EQ(world.GetVolumeCount(), 11U);
+  EXPECT_EQ(world.GetRepeaterRecipeId(8U), 0U);
+  EXPECT_EQ(world.GetRepeaterRecipeId(9U), 3U);
+  EXPECT_EQ(world.GetRepeaterRecipeId(10U), 3U);
+
+  auto fresh_world = *MakeWorld();
+  fresh_world.AddVolume(independent);
+  EXPECT_EQ(fresh_world.GetRepeaterRecipeId(1U), 1U);
+  EXPECT_EQ(fresh_world.GetRepeaterRecipeId(2U), 1U);
 }
 
 // Cartesian roots are direct siblings in X-fast order, with the same captured

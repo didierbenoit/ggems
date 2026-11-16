@@ -85,9 +85,9 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest,
   constexpr float nan = std::numeric_limits<float>::quiet_NaN();
   constexpr float infinity = std::numeric_limits<float>::infinity();
   constexpr float maximum = std::numeric_limits<float>::max();
-  std::array<float, 15U> parameters{
-    distance, 1.5F,    1.0F,      -0.5F, nan,  infinity, 1.0F, 1.0F,
-    1.0F,     maximum, -infinity, 0.0F,  1.0F, 1.0F,     1.0F,
+  std::array<float, 13U> parameters{
+    distance, 1.5F,    1.0F,      nan,  infinity, 1.0F, 1.0F,
+    1.0F,     maximum, -infinity, 0.0F, 1.0F,     1.0F,
   };
   std::array<ParticleState, parameters.size()> states{};
   for (auto &state : states) {
@@ -116,15 +116,12 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest,
   states[2].position_x_pm = 0x1p60F;
   states[2].position_y_pm = -0x1p60F;
   states[2].position_z_pm = 0x1p60F;
-  states[6].direction_z = nan;
-  states[7].direction_y = infinity;
-  states[8].position_z_pm = nan;
-  states[9].direction_z = 2.0F;
-  states[12].direction_x = 0.0F;
-  states[12].direction_y = -0.0F;
-  states[12].direction_z = 0.0F;
-  states[13].position_x_pm = infinity;
-  states[14].direction_x = -infinity;
+  states[5].direction_z = nan;
+  states[6].direction_y = infinity;
+  states[7].position_z_pm = nan;
+  states[8].direction_z = 2.0F;
+  states[11].position_x_pm = infinity;
+  states[12].direction_x = -infinity;
   auto const initial = states;
   std::array<std::uint32_t, parameters.size() + 1U> success{};
 
@@ -159,19 +156,25 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest,
   EXPECT_EQ(success.back(), std::bit_cast<std::uint32_t>(distance));
   for (std::size_t index = 0U; index < states.size(); ++index) {
     SCOPED_TRACE(index);
-    bool const accepted = index < 3U || index == 11U;
+    bool const accepted = index < 3U || index == 10U;
     EXPECT_EQ(success[index], accepted ? 1U : 0U);
     auto const &state = states[index];
     auto const &before = initial[index];
-    std::array<float, 3U> expected{before.position_x_pm, before.position_y_pm,
-                                   before.position_z_pm};
+    std::array<float, 3U> expected{
+      before.position_x_pm,
+      before.position_y_pm,
+      before.position_z_pm,
+    };
     if (index == 0U) {
       expected = {distance, -distance, 0.5F * distance};
     } else if (index == 1U) {
       expected = {11.5F, -21.5F, 30.75F};
     }
-    std::array<float, 3U> const actual{state.position_x_pm, state.position_y_pm,
-                                       state.position_z_pm};
+    std::array<float, 3U> const actual{
+      state.position_x_pm,
+      state.position_y_pm,
+      state.position_z_pm,
+    };
     for (std::size_t axis = 0U; axis < actual.size(); ++axis) {
       EXPECT_EQ(std::bit_cast<std::uint32_t>(actual[axis]),
                 std::bit_cast<std::uint32_t>(expected[axis]));

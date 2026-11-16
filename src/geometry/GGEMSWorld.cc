@@ -1228,7 +1228,8 @@ auto GGEMSWorld::AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
                    -> bool { return shape.GetDescendantCount() != 0U; },
                  volume)) {
     return AttachBatch(std::move(volume), 1U, units::Length{0},
-                       GGEMSRepeatAxis::X, false, parent_volume_id);
+                       GGEMSRepeatAxis::X, detail::GGEMSRepeatKind::Single,
+                       parent_volume_id);
   }
 
   if (parent_volume_id > volumes_.size()) {
@@ -1336,12 +1337,12 @@ auto GGEMSWorld::ValidateBatchCapacity(detail::GGEMSVolumeRecipe const &recipe,
 
 auto GGEMSWorld::AttachBatch(Volume volume, std::uint32_t count,
                              units::Length pitch, GGEMSRepeatAxis axis,
-                             bool circular, std::uint32_t parent_volume_id)
-  -> GGEMSWorld & {
+                             detail::GGEMSRepeatKind kind,
+                             std::uint32_t parent_volume_id) -> GGEMSWorld & {
   auto child = std::make_shared<detail::GGEMSAuthoredVolume const>(
     detail::GGEMSAuthoredVolume{.volume = std::move(volume)});
 
-  if (!circular) {
+  if (kind == detail::GGEMSRepeatKind::Linear) {
     return AttachRecipe(
       detail::MakeLinearRecipe(std::move(child), count, pitch, axis),
       parent_volume_id);
@@ -1349,7 +1350,7 @@ auto GGEMSWorld::AttachBatch(Volume volume, std::uint32_t count,
 
   detail::GGEMSVolumeRecipe const recipe{
     .child = std::move(child),
-    .kind = detail::GGEMSRepeatKind::Circular,
+    .kind = kind,
     .count = count,
     .axis = axis,
   };
@@ -1432,14 +1433,40 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
       },
       item.child->volume);
 
+    // The first root provides a unique stored token for this expansion only.
+    // Descendants are expanded separately and never inherit this membership.
+    auto const repeater_group_id =
+      item.kind == detail::GGEMSRepeatKind::Single
+        ? 0U
+        : static_cast<std::uint32_t>(candidate.volumes_.size() + 1U);
+
+    std::uint32_t repeater_recipe_id{0U};
+    if (item.kind != detail::GGEMSRepeatKind::Single) {
+      auto &recipes = candidate.repeater_recipes_;
+      auto const found = std::ranges::find(recipes, item.child);
+      repeater_recipe_id =
+        static_cast<std::uint32_t>(found - recipes.begin()) + 1U;
+      if (found == recipes.end()) {
+        recipes.push_back(item.child);
+      }
+    }
+
     for (std::uint32_t index = 0U; index < item.count; ++index) {
       auto placed = PlaceRecipeVolume(item, index);
+
       std::visit([](auto &shape) -> void { shape.ClearChildRecipes(); },
                  placed);
-      candidate.volumes_.push_back(
-        {.volume = std::move(placed), .parent_volume_id = parent});
+
+      candidate.volumes_.push_back({
+        .volume = std::move(placed),
+        .parent_volume_id = parent,
+        .repeater_group_id = repeater_group_id,
+        .repeater_recipe_id = repeater_recipe_id,
+      });
+
       auto const root_id =
         static_cast<std::uint32_t>(candidate.volumes_.size());
+
       for (auto const &child : children) {
         self(self, child, root_id);
       }
@@ -1449,6 +1476,7 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
   expand(expand, recipe, parent_volume_id);
   candidate.Validate();
   volumes_.swap(candidate.volumes_);
+  repeater_recipes_.swap(candidate.repeater_recipes_);
 
   return *this;
 }
@@ -1994,6 +2022,20 @@ auto GGEMSWorld::BuildAnalyticAuxiliaryData(std::size_t index) const
 
 auto GGEMSWorld::GetVolumeCount() const noexcept -> std::size_t {
   return volumes_.size();
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::GetRepeaterGroupId(std::size_t index) const noexcept
+  -> std::uint32_t {
+  return volumes_[index].repeater_group_id;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::GetRepeaterRecipeId(std::size_t index) const noexcept
+  -> std::uint32_t {
+  return volumes_[index].repeater_recipe_id;
 }
 
 // -----------------------------------------------------------------------------

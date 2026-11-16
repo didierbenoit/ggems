@@ -32,6 +32,7 @@
 #include <array>
 #include <cstdint>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <span>
 #include <vector>
@@ -350,7 +351,7 @@ public:
   auto AttachVolume(Child const &volume, std::uint32_t parent_volume_id = 0U)
     -> GGEMSWorld & {
     return AttachBatch(Volume{volume}, 1U, units::Length{0}, GGEMSRepeatAxis::X,
-                       false, parent_volume_id);
+                       detail::GGEMSRepeatKind::Single, parent_volume_id);
   }
 
   /*!
@@ -373,8 +374,8 @@ public:
   auto LinearRepeater(Child const &volume, std::uint32_t count,
                       units::Length pitch, GGEMSRepeatAxis axis,
                       std::uint32_t parent_volume_id = 0U) -> GGEMSWorld & {
-    return AttachBatch(Volume{volume}, count, pitch, axis, false,
-                       parent_volume_id);
+    return AttachBatch(Volume{volume}, count, pitch, axis,
+                       detail::GGEMSRepeatKind::Linear, parent_volume_id);
   }
 
   /*!
@@ -420,8 +421,8 @@ public:
   auto CircularRepeater(Child const &volume, std::uint32_t count,
                         GGEMSRepeatAxis axis,
                         std::uint32_t parent_volume_id = 0U) -> GGEMSWorld & {
-    return AttachBatch(Volume{volume}, count, units::Length{0}, axis, true,
-                       parent_volume_id);
+    return AttachBatch(Volume{volume}, count, units::Length{0}, axis,
+                       detail::GGEMSRepeatKind::Circular, parent_volume_id);
   }
 
   /*!
@@ -464,6 +465,34 @@ public:
    * count, and their physical VolumeIDs are index + 1.
    */
   [[nodiscard]] auto GetVolumeCount() const noexcept -> std::size_t;
+
+  /*!
+   * \brief Returns the host-only authored repeater instance of an occurrence.
+   *
+   * Only roots from one physical expansion of an authored repeater share an ID.
+   * Nested repeaters have distinct IDs under each physical mother; ordinary
+   * descendants do not inherit their mother's group. This provenance is not
+   * packed into OpenCL records and does not change physical identity.
+   * \param[in] index Physical occurrence index, smaller than GetVolumeCount().
+   * \return Snapshot-local group ID, or zero for an ordinary attachment.
+   */
+  [[nodiscard]] auto GetRepeaterGroupId(std::size_t index) const noexcept
+    -> std::uint32_t;
+
+  /*!
+   * \brief Returns the World-local authored repeater identity of an occurrence.
+   *
+   * Roots from the same captured recipe share an ID across repeated mothers
+   * and subsequent attachments of that snapshot. Distinct authoring operations
+   * remain distinct, including otherwise identical recipes. Copies of World
+   * retain these IDs; new IDs follow deterministic first-encounter order.
+   * Descendants do not inherit this host-only provenance, which is never packed
+   * into OpenCL records.
+   * \param[in] index Physical occurrence index, smaller than GetVolumeCount().
+   * \return Authored recipe ID, or zero for an ordinary attachment.
+   */
+  [[nodiscard]] auto GetRepeaterRecipeId(std::size_t index) const noexcept
+    -> std::uint32_t;
 
   /*!
    * \brief Borrows the canonical authored shape and parent-local pose.
@@ -674,10 +703,26 @@ private:
 
     /*! \brief Existing physical parent VolumeID, or zero for World. */
     std::uint32_t parent_volume_id;
+
+    /*! \brief Host-only repeater instance ID, or zero for an ordinary root. */
+    std::uint32_t repeater_group_id{0U};
+
+    /*! \brief Host-only authored recipe ID, or zero for an ordinary root. */
+    std::uint32_t repeater_recipe_id{0U};
   };
 
   /*! \brief Owned occurrences in stable insertion/identity order. */
   std::vector<Occurrence> volumes_;
+
+  /*!
+   * \brief Owns immutable recipe tokens in World-local ID order, starting at one.
+   *
+   * Each authoring operation captures a fresh child snapshot; copies of an
+   * existing recipe retain that same shared snapshot through copy-on-write
+   * child lists. Ownership prevents address reuse across later attachments.
+   */
+  std::vector<std::shared_ptr<detail::GGEMSAuthoredVolume const>>
+    repeater_recipes_;
 
   /*!
    * \brief Validates and appends one occurrence without modifying existing
@@ -699,14 +744,14 @@ private:
    * \param[in] pitch Linear center spacing in canonical pm; ignored for
    * circular.
    * \param[in] axis Positive parent-local repeat axis.
-   * \param[in] circular Selects rigid full-turn rotation instead of
-   * translation.
+   * \param[in] kind Ordinary attachment, linear repetition, or circular
+   * repetition.
    * \param[in] parent_volume_id Existing physical parent identity.
    * \return This World after successful atomic attachment.
    * \throws core::GGEMSRecoverable If preparation or complete admission fails.
    */
   auto AttachBatch(Volume volume, std::uint32_t count, units::Length pitch,
-                   GGEMSRepeatAxis axis, bool circular,
+                   GGEMSRepeatAxis axis, detail::GGEMSRepeatKind kind,
                    std::uint32_t parent_volume_id) -> GGEMSWorld &;
 
   /*!

@@ -65,7 +65,7 @@
 // =============================================================================
 
 /*!
- * \brief Out-of-line geometry-only history: generic Navigation through the
+ * \brief Geometry-only history: generic Navigation through the
  * World and its analytical/voxelized occurrences until the World exit.
  *
  * The birth owner is located first. Each iteration performs one accepted
@@ -76,16 +76,6 @@
  * bound, not a silent traversal cap. Exhaustion is reported as unresolved,
  * never as a silent completion. The loop carries no shape
  * intersection code.
- *
- * This function and the Transport transaction it calls are deliberately kept
- * out of line. When the geometry loop is inlined into the claim/initialize/
- * complete loop below, the former -cl-fast-relaxed-math profile exposed
- * Intel CPU OpenCL compiler mixing of private particle states of neighboring
- * work-items: multi-source histories receive each other's positions or end
- * unresolved, including Gamma histories that never enter this branch. This
- * is a documented device-compiler boundary, not a performance choice; the
- * multi-source tests in tests/navigation guard it. Current production
- * kernels use standard optimized math without -cl-fast-relaxed-math.
  *
  * \param[in] world Immutable device World parameters.
  * \param[in] volume Immutable analytical array or one None record.
@@ -100,8 +90,7 @@
  * \return Zero when the history completed at the World boundary; nonzero when
  * the birth was outside the World or a transaction was unresolved.
  */
-static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
-GGEMS_TransportGeometry(
+static inline uint GGEMS_TransportGeometry(
   __global GGEMSWorldRecord const *world,
   __global GGEMSAnalyticVolumeRecord const *volume,
   __global void const *box_pose,

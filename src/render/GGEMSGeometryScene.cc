@@ -955,6 +955,8 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
       .local_to_world = Transform(pose),
       .shape_name = {},
       .dimensions = {},
+      .repeater_group_id = world.GetRepeaterGroupId(index),
+      .repeater_recipe_id = world.GetRepeaterRecipeId(index),
     });
 
     auto &occurrence = scene.occurrences.back();

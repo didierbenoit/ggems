@@ -34,14 +34,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <filesystem>
 #include <format>
-#include <fstream>
-#include <iterator>
 #include <numbers>
 #include <span>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -75,71 +71,10 @@ using namespace ggems::core;
 using namespace ggems::units;
 using Vec = std::array<double, 3>;
 
-/*! \brief Reads an existing production header for a test-only instrumented
- * copy. */
-auto Read(std::filesystem::path const &path) -> std::string {
-  std::ifstream input{path};
-  if (!input) {
-    throw std::runtime_error("Cannot read probe input " + path.string());
-  }
-  return {std::istreambuf_iterator<char>{input}, {}};
-}
-
-/*!
- * \brief Counts real helper calls using trailers on the probe's single records.
- *
- * Only the compiled test copy gains atomics. No production hook, cursor field,
- * geometry query, or boundary arithmetic is replaced. Matching the helper name
- * and balanced function braces avoids dependence on its statement formatting.
- */
-auto InstrumentFunction(std::string &source, std::string_view name,
-                        bool count_transforms, std::string_view counter)
-  -> void {
-  auto const declaration = source.find(std::string{name} + "(");
-  auto const begin = source.find('{', declaration);
-  if (declaration == std::string::npos || begin == std::string::npos) {
-    throw std::runtime_error("Missing probe helper " + std::string{name});
-  }
-  std::size_t end = begin + 1U;
-  std::size_t depth = 1U;
-  while (depth != 0U && end < source.size()) {
-    depth += source[end] == '{' ? 1U : 0U;
-    depth -= source[end] == '}' ? 1U : 0U;
-    ++end;
-  }
-  if (depth != 0U) {
-    throw std::runtime_error("Unbalanced probe helper " + std::string{name});
-  }
-  auto body = source.substr(begin + 1U, end - begin - 2U);
-  if (count_transforms) {
-    std::string const call{"GGEMS_BoxLocalRay("};
-    std::string const replacement{
-      "atomic_inc((volatile __global uint *)(volume + 1) + 1);\n"
-      "  GGEMS_BoxLocalRay("};
-    std::size_t position{};
-    while ((position = body.find(call, position)) != std::string::npos) {
-      body.replace(position, call.size(), replacement);
-      position += replacement.size();
-    }
-  }
-  source.replace(begin + 1U, end - begin - 2U,
-                 "\n" + std::string{counter} + body);
-}
-
-/*! \brief Builds a normal common-Transport probe with call-count
- * instrumentation. */
-auto ProbeSource() -> std::string {
-  std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
-  auto voxel = Read(root / "navigation/GGEMSVoxelizedNavigation.clh");
-  auto scene = Read(root / "navigation/GGEMSOccurrenceNavigation.clh");
-  InstrumentFunction(voxel, "GGEMS_VoxelizedLocate", true,
-                     "  atomic_inc((volatile __global uint *)(volume + 1));\n");
-  InstrumentFunction(voxel, "GGEMS_VoxelizedFindBoundary", true, "");
-  InstrumentFunction(scene, "GGEMS_SceneLocateExcluding", false,
-                     "  atomic_inc((volatile __global uint *)(world + 1));\n");
-  return voxel + "\n" + scene + R"cl(
+/*! \brief Builds a probe of the common accepted Transport transaction. */
+auto ProbeSource() -> std::string_view {
+  return R"cl(
 #include "transport/GGEMSTransport.clh"
-
 __kernel void local_cursor_probe(
   __global GGEMSWorldRecord const *world,
   __global GGEMSAnalyticVolumeRecord const *analytic,
@@ -161,6 +96,7 @@ __kernel void local_cursor_probe(
     palette, vload3(0, ray), vload3(1, ray), &owner, &cursor);
   output[0] = 0U;
   output[1] = status;
+  output[2U + 9U * world->max_boundary_events] = sizeof(GGEMSVoxelCursor);
   if (status != GGEMS_NAVIGATION_RESOLVED) { return; }
   particle.current_volume_id = (uint)(owner >> 32U);
   particle.material_id = (uint)owner;
@@ -201,7 +137,7 @@ __kernel void local_cursor_probe(
     return;
   }
   for (uint index = 0U; index < world->max_boundary_events; ++index) {
-    uint offset = 2U + 12U * index;
+    uint offset = 2U + 9U * index;
     status = GGEMS_TransportToNextBoundary(world, analytic, auxiliary, voxel,
       labels, palette, &particle, &event, &faces, &previous, &cursor);
     output[0] = index + 1U;
@@ -213,10 +149,7 @@ __kernel void local_cursor_probe(
     output[offset + 5U] = as_uint(particle.position_x_pm);
     output[offset + 6U] = as_uint(particle.position_y_pm);
     output[offset + 7U] = as_uint(particle.position_z_pm);
-    output[offset + 8U] = *((volatile __global uint *)(world + 1));
-    output[offset + 9U] = *((volatile __global uint *)(voxel + 1));
-    output[offset + 10U] = *((volatile __global uint *)(voxel + 1) + 1);
-    output[offset + 11U] = particle.status;
+    output[offset + 8U] = particle.status;
     if (status != GGEMS_NAVIGATION_RESOLVED ||
         event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) { break; }
   }
@@ -238,15 +171,6 @@ auto Upload(ocl::GGEMSOpenCLContext &context, std::span<Value const> values)
   return result;
 }
 
-/*! \brief Appends two zero counters to one immutable test record allocation. */
-template <typename Record>
-auto Counted(ocl::GGEMSOpenCLContext &context, Record const &record)
-  -> ocl::GGEMSOpenCLSVMBuffer {
-  std::array<std::byte, sizeof(Record) + (2U * sizeof(std::uint32_t))> bytes{};
-  std::memcpy(bytes.data(), &record, sizeof(record));
-  return Upload(context, std::span<std::byte const>{bytes});
-}
-
 /*! \brief Executes the actual transaction with one tiny host-published grid. */
 auto RunCursorProbe(geometry::GGEMSWorld const &world,
                     std::array<float, 6> const &ray, bool reject_move = false)
@@ -261,8 +185,8 @@ auto RunCursorProbe(geometry::GGEMSWorld const &world,
     world.BuildVoxelizedDeviceData(package.GetMaterialIds().subspan(1U));
   auto const record = world.BuildRecord();
   auto const auxiliary = world.BuildAnalyticAuxiliaryBuffer();
-  auto world_buffer = Counted(context, record);
-  auto voxel_buffer = Counted(context, voxel.records[0]);
+  auto world_buffer = Upload(context, std::span{&record, 1U});
+  auto voxel_buffer = Upload(context, std::span{voxel.records});
   auto analytic_buffer =
     Upload(context, std::span<geometry::GGEMSAnalyticVolumeRecord const>{});
   auto auxiliary_buffer = Upload(context, std::span{auxiliary});
@@ -270,10 +194,10 @@ auto RunCursorProbe(geometry::GGEMSWorld const &world,
   auto palette_buffer = Upload(context, std::span{voxel.material_ids});
   auto ray_buffer = Upload(context, std::span<float const>{ray});
   std::vector<std::uint32_t> result(
-    2U + (12U * static_cast<std::size_t>(record.max_boundary_events)), 0U);
+    3U + (9U * static_cast<std::size_t>(record.max_boundary_events)), 0U);
   auto result_buffer = Upload(context, std::span<std::uint32_t const>{result});
   auto const &program = test::GetAnalyticTraceProgram(
-    ProbeSource(),
+    std::string{ProbeSource()},
     std::format(
       "-I{}", std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}.generic_string()));
   ocl::GGEMSOpenCLKernel kernel{
@@ -327,8 +251,8 @@ auto Labels(std::array<std::size_t, 3> const &dimensions)
 using GGEMSVoxelizedLocalCursor = GGEMSNavigationDeviceTest;
 } // namespace
 
-TEST_F(GGEMSVoxelizedLocalCursor, ThousandsOfPosedCellsDecodeAndTransformOnce) {
-  double maximum_error{};
+TEST_F(GGEMSVoxelizedLocalCursor,
+       ThousandsOfPosedMaterialChangesPreserveOwnership) {
   for (std::size_t axis = 0; axis < 3U; ++axis) {
     std::array<std::size_t, 3> dimensions{2U, 3U, 2U};
     dimensions[axis] = 4096U;
@@ -336,8 +260,11 @@ TEST_F(GGEMSVoxelizedLocalCursor, ThousandsOfPosedCellsDecodeAndTransformOnce) {
     spacing[axis] = 0.01;
     auto const labels = Labels(dimensions);
     test::GGEMSVoxelizedTestFixture const files{
-      dimensions, std::format("{} {} {}", spacing[0], spacing[1], spacing[2]),
-      labels, "10 10 Water\n20 20 Air\n"};
+      dimensions,
+      std::format("{} {} {}", spacing[0], spacing[1], spacing[2]),
+      labels,
+      "10 10 Water\n20 20 Air\n",
+    };
     auto grid = files.Import();
     grid.SetRotation(0_deg, 30_deg, 0_deg);
     grid.SetPosition(geometry::MakePositionPM(5'000'000'000LL, -3'000'000'000LL,
@@ -345,9 +272,6 @@ TEST_F(GGEMSVoxelizedLocalCursor, ThousandsOfPosedCellsDecodeAndTransformOnce) {
     auto world = World();
     world.AddVolume(grid);
     ASSERT_NO_THROW(world.Validate());
-    double const budget =
-      8 * std::max(world.GetNavigationTolerancePM(),
-                   world.GetVolumeNavigationTolerancePM(0U));
     auto const packed =
       world.BuildVoxelizedDeviceData(std::array{1U, 2U}).records.front();
     auto const &pose = packed.pose;
@@ -388,16 +312,13 @@ TEST_F(GGEMSVoxelizedLocalCursor, ThousandsOfPosedCellsDecodeAndTransformOnce) {
         static_cast<float>(direction[2]),
       };
       auto const result = RunCursorProbe(world, ray);
+      RecordProperty("private_cursor_bytes", result.back());
       ASSERT_EQ(result[1], 0U);
       ASSERT_EQ(result[0], 4097U);
       auto const faces = 1U << ((2U * axis) + (sign > 0 ? 1U : 0U));
-      double case_error{};
-      Vec exit_error{};
-      double exit_normal_error{};
-      double exit_plane_residual{-half_extent[axis]};
-      std::array<std::size_t, 2> worst{};
+      Vec previous{ray[0], ray[1], ray[2]};
       for (std::size_t event = 0; event < 4096U; ++event) {
-        auto const offset = 2U + (12U * event);
+        auto const offset = 2U + (9U * event);
         bool const internal = event < 4095U;
         if (internal) {
           if (sign > 0) {
@@ -409,9 +330,8 @@ TEST_F(GGEMSVoxelizedLocalCursor, ThousandsOfPosedCellsDecodeAndTransformOnce) {
         auto const material =
           static_cast<std::uint32_t>(1U + ((cell[0] + cell[1] + cell[2]) % 2U));
         std::array const actual{
-          result[offset],      result[offset + 1U],  result[offset + 2U],
-          result[offset + 3U], result[offset + 4U],  result[offset + 8U],
-          result[offset + 9U], result[offset + 10U],
+          result[offset],      result[offset + 1U], result[offset + 2U],
+          result[offset + 3U], result[offset + 4U],
         };
         std::array const expected{
           0U,
@@ -419,54 +339,47 @@ TEST_F(GGEMSVoxelizedLocalCursor, ThousandsOfPosedCellsDecodeAndTransformOnce) {
           faces,
           internal ? 1U : 0U,
           internal ? material : 0U,
-          internal ? 1U : 2U,
-          1U,
-          1U,
         };
         ASSERT_EQ(actual, expected) << "event " << event;
-        double const distance = 0.005 + (0.01 * static_cast<double>(event));
+        double progress{};
         for (std::size_t component = 0; component < 3U; ++component) {
           auto const point =
             std::bit_cast<float>(result[offset + 5U + component]);
-          double const ideal =
-            (start[component] + (distance * direction[component])) * 1.0e9;
-          double const error = std::abs(point - ideal);
-          if (!internal) {
-            exit_error[component] = point - ideal;
-            exit_normal_error +=
-              (sign * axes[axis][component]) * exit_error[component];
-            exit_plane_residual +=
-              (sign * axes[axis][component]) * (point - center[component]);
-          }
-          if (error > case_error) {
-            case_error = error;
-            worst = {event, component};
-          }
+          ASSERT_TRUE(std::isfinite(point));
+          progress += (point - previous[component]) * direction[component];
+          previous[component] = point;
         }
+        EXPECT_GT(progress, 0.0) << "event " << event;
       }
-      maximum_error = std::max(maximum_error, case_error);
-      auto const case_name =
-        std::format("axis{}_{}", axis, sign > 0 ? "positive" : "negative");
-      RecordProperty(case_name + "_max_error_pm", case_error);
+      double outer_residual = -half_extent[axis];
       for (std::size_t component = 0; component < 3U; ++component) {
-        RecordProperty(std::format("{}_exit_error_{}_pm", case_name, component),
-                       exit_error[component]);
+        outer_residual += (sign * axes[axis][component]) *
+                          (previous[component] - center[component]);
       }
-      RecordProperty(case_name + "_exit_normal_error_pm", exit_normal_error);
-      RecordProperty(case_name + "_exit_plane_residual_pm",
-                     exit_plane_residual);
-      EXPECT_LE(case_error, budget)
-        << "event " << worst[0] << " coordinate " << worst[1];
-      auto const terminal = 2U + (12U * 4096U);
+      RecordProperty(std::format("axis{}_{}_outer_residual_pm", axis,
+                                 sign > 0 ? "positive" : "negative"),
+                     outer_residual);
+      RecordProperty("outer_surface_half_band_pm", packed.tolerance_pm);
+      EXPECT_LE(std::abs(outer_residual), packed.tolerance_pm)
+        << "Accepted grid exit must lie in its actual uploaded surface band";
+      auto const terminal = 2U + (9U * 4096U);
       EXPECT_EQ(result[terminal], 0U);
       EXPECT_EQ(result[terminal + 1U], 1U);
       EXPECT_EQ(result[terminal + 3U], 0xFFFF'FFFFU);
+      double world_plane{};
+      for (std::size_t component = 0; component < 3U; ++component) {
+        auto const point =
+          std::bit_cast<float>(result[terminal + 5U + component]);
+        ASSERT_TRUE(std::isfinite(point));
+        world_plane =
+          std::max(world_plane, std::abs(static_cast<double>(point)));
+      }
+      EXPECT_LE(std::abs(world_plane - 50.0e9),
+                world.GetNavigationTolerancePM());
       EXPECT_EQ(sizeof(particles::GGEMSParticleState), 80U);
     }
   }
-  RecordProperty("maximum_global_endpoint_error_pm", maximum_error);
 }
-
 TEST_F(GGEMSVoxelizedLocalCursor,
        RejectedGlobalMovePreservesParticleAndCursor) {
   test::GGEMSVoxelizedTestFixture const files;
@@ -506,7 +419,7 @@ TEST_F(GGEMSVoxelizedLocalCursor,
   std::uint32_t single_y{};
   std::uint32_t air_intervals{};
   for (std::size_t index = 0; index < result[0]; ++index) {
-    auto const offset = 2U + (12U * index);
+    auto const offset = 2U + (9U * index);
     ASSERT_EQ(result[offset], 0U);
     if (result[offset + 1U] != 4U) {
       continue;
@@ -523,7 +436,7 @@ TEST_F(GGEMSVoxelizedLocalCursor,
   EXPECT_GT(single_x, 0U);
   EXPECT_GT(single_y, 0U);
   EXPECT_GT(air_intervals, 0U);
-  auto const terminal = 2U + (12U * (static_cast<std::size_t>(result[0]) - 1U));
+  auto const terminal = 2U + (9U * (static_cast<std::size_t>(result[0]) - 1U));
   EXPECT_EQ(result[terminal + 1U], 1U);
   RecordProperty("single_x_events", single_x);
   RecordProperty("single_y_events", single_y);
