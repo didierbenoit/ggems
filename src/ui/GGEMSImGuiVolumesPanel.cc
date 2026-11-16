@@ -36,12 +36,13 @@
 #include <array>
 #include <span>
 #include <format>
-#include <vector>
+#include <limits>
 
 #include <imgui.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiVolumesPanel.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -63,192 +64,378 @@ constexpr std::array<char const *, 3U> k_mode_names{
   "Solid",
 };
 
-/*! \brief Compact row labels in the same display-mode order. */
-constexpr std::array<char const *, 3U> k_mode_letters{"N", "W", "S"};
-
 /*!
- * \brief Edits one occurrence's display override independently of its row.
- *
- * \param[in] occurrence Physical identity and default-mode hierarchy.
- * \param[in,out] appearance Presentation overrides for this occurrence only.
+ * \brief Draws aligned full-label mode buttons without selecting a volume.
+ * \param[in] mode Current effective choice, or no choice for a mixed group.
+ * \param[in] world Whether to omit Solid for the World envelope.
+ * \return Clicked choice, if any.
  */
-auto BuildDisplayMode(ggems::render::GGEMSGeometryOccurrence const &occurrence,
-                      ggems::render::GGEMSGeometryAppearance &appearance)
-  -> void {
-  auto const mode =
-    ggems::render::ResolveGeometryDisplayMode(occurrence, appearance);
+auto BuildModeButtons(std::optional<Mode> mode, bool world = false)
+  -> std::optional<Mode> {
+  ImGui::TableSetColumnIndex(1);
+  std::optional<Mode> changed;
+  std::size_t const count = world ? 2U : k_mode_names.size();
 
-  auto const index = static_cast<std::size_t>(mode);
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() +
-                          (2.0F * ImGui::GetStyle().FramePadding.x));
-
-  bool const opened = ImGui::BeginCombo("##display_mode", k_mode_letters[index],
-                                        ImGuiComboFlags_NoArrowButton);
-
-  ImGui::SetItemTooltip("Display: %s. Changes only this occurrence; "
-                        "daughters stay independent.",
-                        k_mode_names[index]);
-  if (opened) {
-    std::size_t const count = occurrence.volume_id == 0U ? 2U : 3U;
-    for (std::size_t choice = 0U; choice < count; ++choice) {
-      auto const choice_mode = static_cast<Mode>(choice);
-      if (ImGui::Selectable(k_mode_names[choice], mode == choice_mode)) {
-        appearance.mode_override = choice_mode;
-      }
+  for (std::size_t index = 0U; index < count; ++index) {
+    if (index != 0U) {
+      ImGui::SameLine();
     }
 
-    ImGui::EndCombo();
+    auto const choice = static_cast<Mode>(index);
+    bool const selected = mode == choice;
+
+    if (selected) {
+      ImGui::PushStyleColor(
+        ImGuiCol_Button,
+        ggems::ui::GetThemeColor(ggems::ui::GGEMSThemeRole::Accent));
+      ImGui::PushStyleColor(
+        ImGuiCol_ButtonHovered,
+        ggems::ui::GetThemeColor(ggems::ui::GGEMSThemeRole::AccentStrong));
+      ImGui::PushStyleColor(
+        ImGuiCol_ButtonActive,
+        ggems::ui::GetThemeColor(ggems::ui::GGEMSThemeRole::Attention));
+      ImGui::PushStyleColor(ImGuiCol_Text,
+                            ggems::ui::GetThemeColor(
+                              ggems::ui::GGEMSThemeRole::RecessedBackground));
+    }
+
+    if (ImGui::Button(k_mode_names[index])) {
+      changed = choice;
+    }
+
+    if (selected) {
+      ImGui::PopStyleColor(4);
+    }
   }
+  return changed;
 }
 
 /*!
- * \brief Visits visible branches with separate arrow, mode, and label inputs.
- *
- * \param[in] scene Immutable physical occurrences in VolumeID order.
- * \param[in] volume_id Current physical row.
- * \param[in,out] selected_volume_id Shared physical selection.
- * \param[in,out] appearance Per-occurrence presentation overrides.
- * \param[out] focus Double-click framing request, if any.
+ * \brief Reserves the full labels actually offered by the current scene.
+ * \param[in] world_only Whether no physical child needs a Solid button.
+ * \return Control-column width including button padding and spacing
  */
-auto BuildVolumeNode(
-  ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
-  std::optional<std::uint32_t> &selected_volume_id,
-  std::span<ggems::render::GGEMSGeometryAppearance> appearance,
-  std::optional<std::uint32_t> &focus) -> void;
+auto ModeControlsWidth(bool world_only) -> float {
+  auto const count = world_only ? 2U : k_mode_names.size();
 
-/*!
- * \brief Groups local copies with display actions for their authored recipe.
- * \param[in] scene Immutable physical links and repeater membership.
- * \param[in] occurrence Physical member supplying the group identity and label.
- * \param[in,out] selected_volume_id Shared physical selection.
- * \param[in,out] appearance Snapshot-local independent display overrides.
- * \param[out] focus Double-click framing request from a physical member, if
- * any.
- */
-auto BuildRepeaterGroup(
-  ggems::render::GGEMSGeometryScene const &scene,
-  ggems::render::GGEMSGeometryOccurrence const &occurrence,
-  std::optional<std::uint32_t> &selected_volume_id,
-  std::span<ggems::render::GGEMSGeometryAppearance> appearance,
-  std::optional<std::uint32_t> &focus) -> void {
-  auto const &siblings =
-    scene.occurrences[occurrence.parent_volume_id].children;
-  auto const is_member = [&](std::uint32_t volume_id) -> bool {
-    return scene.occurrences[volume_id].repeater_group_id ==
-           occurrence.repeater_group_id;
-  };
-  auto const count = std::ranges::count_if(siblings, is_member);
-  auto const is_recipe_member = [&](auto const &member) -> bool {
-    return member.repeater_recipe_id == occurrence.repeater_recipe_id;
-  };
-  auto const total = std::ranges::count_if(scene.occurrences, is_recipe_member);
-  auto label = std::format("{} repeated ×{}", occurrence.shape_name, count);
-  if (total != count) {
-    label =
-      std::format("{} ×{} · {} total", occurrence.shape_name, count, total);
+  float width =
+    static_cast<float>(count - 1U) * ImGui::GetStyle().ItemSpacing.x;
+
+  for (auto const *label : std::span{k_mode_names}.first(count)) {
+    width +=
+      ImGui::CalcTextSize(label).x + (2.0F * ImGui::GetStyle().FramePadding.x);
   }
 
-  ImGui::PushID("##repeater_groups");
-  ImGui::PushID(static_cast<int>(occurrence.repeater_group_id));
-  bool const opened = ImGui::TreeNodeEx(
-    "##repeater_group",
-    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-      ImGuiTreeNodeFlags_SpanLabelWidth | ImGuiTreeNodeFlags_FramePadding,
-    "%s", label.c_str());
-
-  for (std::size_t choice = 0U; choice < k_mode_letters.size(); ++choice) {
-    ImGui::SameLine();
-    if (ImGui::SmallButton(k_mode_letters[choice])) {
-      for (auto const &member : scene.occurrences) {
-        if (is_recipe_member(member)) {
-          appearance[member.volume_id].mode_override =
-            static_cast<Mode>(choice);
-        }
-      }
-    }
-    ImGui::SetItemTooltip("Set all copies of this authored repeater to %s.",
-                          k_mode_names[choice]);
-  }
-
-  if (opened) {
-    ImGui::TreePush("##members");
-    for (auto const member : siblings) {
-      if (is_member(member)) {
-        BuildVolumeNode(scene, member, selected_volume_id, appearance, focus);
-      }
-    }
-    ImGui::TreePop();
-  }
-  ImGui::PopID();
-  ImGui::PopID();
+  return width;
 }
 
-// =============================================================================
-// =============================================================================
-
-auto BuildVolumeNode(
-  ggems::render::GGEMSGeometryScene const &scene, std::uint32_t volume_id,
-  std::optional<std::uint32_t> &selected_volume_id,
-  std::span<ggems::render::GGEMSGeometryAppearance> appearance,
-  std::optional<std::uint32_t> &focus) -> void {
-  auto const &occurrence = scene.occurrences[volume_id];
-  ImGui::PushID(static_cast<int>(volume_id));
-
-  ImGuiTreeNodeFlags flags =
-    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-    ImGuiTreeNodeFlags_SpanLabelWidth | ImGuiTreeNodeFlags_FramePadding;
-
-  if (volume_id == 0U) {
-    flags |= ImGuiTreeNodeFlags_DefaultOpen;
-  }
-
-  if (occurrence.children.empty()) {
+/*!
+ * \brief Starts a table row with a stable disclosure ID independent of text.
+ * \param[in] leaf Whether there is no expandable content.
+ * \param[in] default_open Whether to open this row in a new snapshot.
+ * \return Whether its children should be submitted.
+ */
+auto BeginTreeRow(bool leaf, bool default_open = false) -> bool {
+  ImGui::TableNextRow();
+  ImGui::TableSetColumnIndex(0);
+  ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
+                             ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                             ImGuiTreeNodeFlags_FramePadding;
+  if (leaf) {
     flags |= ImGuiTreeNodeFlags_Leaf;
   }
 
-  bool const opened = ImGui::TreeNodeEx("##physical_branch", flags);
-
+  if (default_open) {
+    flags |= ImGuiTreeNodeFlags_DefaultOpen;
+  }
+  bool const opened = ImGui::TreeNodeEx("##branch", flags);
   ImGui::SameLine();
-  BuildDisplayMode(occurrence, appearance[volume_id]);
-  ImGui::SameLine();
+  return opened;
+}
 
-  auto const label =
-    volume_id == 0U ? occurrence.shape_name
-                    : std::format("{} #{}", occurrence.shape_name, volume_id);
+/*!
+ * \brief Borrows one snapshot and its presentation state for the current tree.
+ *
+ * Membership and mixed-state counts are prepared outside the frame path.
+ * Only opened physical branches submit their descendants.
+ */
+struct VolumeTree {
+  /*! \brief Immutable presentation metadata and prepared memberships. */
+  ggems::render::GGEMSGeometryScene const &scene;
 
-  ImGui::Selectable(label.c_str(), selected_volume_id == volume_id,
-                    ImGuiSelectableFlags_AllowDoubleClick);
+  /*! \brief Viewer-owned modes and cached effective group counts. */
+  ggems::render::GGEMSGeometryAppearanceState &appearance;
 
-  if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-    selected_volume_id = volume_id;
-    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-      focus = volume_id;
+  /*! \brief Physical selection shared with the existing inspector. */
+  std::optional<std::uint32_t> &selected_volume_id;
+
+  /*! \brief Viewer-only named group selection, independent of VolumeID. */
+  std::optional<std::uint32_t> &selected_geometry_group;
+
+  /*! \brief Double-click request for the caller's camera. */
+  std::optional<std::uint32_t> &focus;
+
+  /*!
+   * \brief Displays independent original mapping entries under a voxel row.
+   * \param[in] volume_id Physical voxel occurrence whose mappings are edited.
+   */
+  auto Mappings(std::uint32_t volume_id) -> void {
+    auto const &mappings = scene.occurrences[volume_id].voxel_slices->mappings;
+    ImGui::PushID("##mappings");
+
+    for (std::uint32_t index = 0U; index < mappings.size(); ++index) {
+      auto const &mapping = mappings[index];
+
+      ImGui::PushID(static_cast<int>(index));
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+
+      auto const label =
+        mapping.end_label == mapping.first_label + 1U
+          ? std::format("{} [{}]", mapping.material_name, mapping.first_label)
+          : std::format("{} [{}, {})", mapping.material_name,
+                        mapping.first_label, mapping.end_label);
+
+      ImGui::TextUnformatted(label.c_str());
+      ImGui::SetItemTooltip("Only this original label mapping; colors and "
+                            "scientific Materials stay unchanged.");
+
+      if (auto const mode = BuildModeButtons(
+            appearance.GetVoxelMappingMode(volume_id, index))) {
+        appearance.SetVoxelMappingMode(volume_id, index, *mode);
+      }
+
+      ImGui::PopID();
     }
+
+    ImGui::PopID();
   }
 
-  if (opened && !occurrence.children.empty()) {
-    ImGui::TreePush("##children");
-    std::vector<std::uint32_t> displayed_groups;
+  /*!
+   * \brief Displays one occurrence without inheriting its parent's mode.
+   * \param[in] volume_id Physical occurrence to select, frame, or edit.
+   * \param[in] controls Whether this row owns the occurrence mode buttons.
+   * \param[in] children Whether to expose its physical children or mappings.
+   */
+  auto Physical(std::uint32_t volume_id, bool controls = true,
+                bool children = true) -> void {
+    auto const &occurrence = scene.occurrences[volume_id];
 
-    for (auto const child : occurrence.children) {
-      auto const &member = scene.occurrences[child];
-      auto const group = member.repeater_group_id;
+    ImGui::PushID("##physical");
+    ImGui::PushID(static_cast<int>(volume_id));
 
-      if (group == 0U) {
-        BuildVolumeNode(scene, child, selected_volume_id, appearance, focus);
-      } else if (std::ranges::find(displayed_groups, group) ==
-                 displayed_groups.end()) {
-        displayed_groups.push_back(group);
-        BuildRepeaterGroup(scene, member, selected_volume_id, appearance,
-                           focus);
+    bool const leaf =
+      !children || (occurrence.children.empty() && !occurrence.voxel_slices);
+    bool const opened = BeginTreeRow(leaf, volume_id == 0U && children);
+    auto const label =
+      volume_id == 0U ? occurrence.shape_name
+                      : std::format("{} #{}", occurrence.shape_name, volume_id);
+
+    ImGui::Selectable(label.c_str(), selected_volume_id == volume_id,
+                      ImGuiSelectableFlags_AllowDoubleClick);
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+      selected_volume_id = volume_id;
+      selected_geometry_group.reset();
+      if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        focus = volume_id;
       }
     }
 
-    ImGui::TreePop();
+    if (controls && !occurrence.voxel_slices) {
+      if (auto const mode = BuildModeButtons(
+            appearance.GetOccurrenceMode(scene, volume_id), volume_id == 0U)) {
+        appearance.SetOccurrenceMode(scene, volume_id, *mode);
+      }
+    }
+
+    if (opened && !leaf) {
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TreePush("##children");
+
+      if (volume_id == 0U) {
+        Roots();
+      } else if (occurrence.voxel_slices) {
+        Mappings(volume_id);
+      } else {
+        for (auto const &branch : occurrence.child_branches) {
+          Branch(branch);
+        }
+      }
+
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TreePop();
+    }
+
+    ImGui::PopID();
+    ImGui::PopID();
   }
 
-  ImGui::PopID();
-}
+  /*!
+   * \brief Offers a collapsed browsing row for exact local repeated roots.
+   * \param[in] members Prepared physical roots in original occurrence order.
+   */
+  auto Branch(std::span<std::uint32_t const> members) -> void {
+    if (members.size() == 1U) {
+      Physical(members.front());
+      return;
+    }
+
+    ImGui::PushID("##copies");
+    ImGui::PushID(static_cast<int>(members.front()));
+
+    bool const opened = BeginTreeRow(false);
+    auto const label = std::format(
+      "{} copies ({})", scene.occurrences[members.front()].shape_name,
+      members.size());
+
+    ImGui::TextUnformatted(label.c_str());
+    ImGui::SetItemTooltip("Browse physical occurrences; each row controls "
+                          "only that occurrence.");
+
+    if (opened) {
+      ImGui::TreePush("##members");
+
+      for (auto const member : members) {
+        Physical(member);
+      }
+
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TreePop();
+    }
+
+    ImGui::PopID();
+    ImGui::PopID();
+  }
+
+  /*!
+   * \brief Displays a prepared authored group and its independent controls.
+   * \param[in] group_index Snapshot-local named group index.
+   */
+  auto Group(std::uint32_t group_index) -> void {
+    auto const &group = scene.groups[group_index];
+
+    ImGui::PushID("##named");
+    ImGui::PushID(static_cast<int>(group_index));
+
+    bool const expandable =
+      group.subtree ||
+      scene.occurrences[group.physical_roots.front()].voxel_slices.has_value();
+    bool opened = false;
+    if (expandable) {
+      opened = BeginTreeRow(false, true);
+    } else {
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                           ImGui::GetTreeNodeToLabelSpacing() +
+                           ImGui::GetStyle().ItemSpacing.x);
+    }
+    auto const mode = appearance.GetGroupMode(group_index);
+    auto const label = std::format("{} ({}){}", group.name,
+                                   group.members.size(), mode ? "" : " Mixed");
+    auto const position = ImGui::GetCursorScreenPos();
+    if (ImGui::Selectable(
+          "##group_selection", selected_geometry_group == group_index,
+          ImGuiSelectableFlags_None, ImVec2{0.0F, ImGui::GetFrameHeight()})) {
+      selected_geometry_group = group_index;
+      selected_volume_id.reset();
+    }
+    ImGui::SetItemTooltip(group.subtree
+                            ? "Entire analytic subtree: %zu occurrences."
+                            : "Only this authored group: %zu occurrences.",
+                          group.members.size());
+    ImGui::SetCursorScreenPos(
+      ImVec2{position.x, position.y + ImGui::GetStyle().FramePadding.y});
+    ImGui::TextUnformatted(label.c_str());
+
+    if (auto const changed = BuildModeButtons(mode)) {
+      appearance.SetGroupMode(scene, group_index, *changed);
+    }
+
+    if (opened) {
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TreePush("##contents");
+
+      for (auto const child : group.child_groups) {
+        Group(child);
+      }
+
+      if (group.physical_leaves &&
+          group.physical_roots.size() <=
+            static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+        ImGuiListClipper clipper;
+
+        clipper.Begin(static_cast<int>(group.physical_roots.size()),
+                      ImGui::GetFrameHeight() +
+                        (2.0F * ImGui::GetStyle().CellPadding.y));
+
+        while (clipper.Step()) {
+          for (int index = clipper.DisplayStart; index < clipper.DisplayEnd;
+               ++index) {
+            Physical(group.physical_roots[static_cast<std::size_t>(index)]);
+          }
+        }
+      } else {
+        for (auto const root : group.physical_roots) {
+          Physical(root);
+        }
+      }
+
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TreePop();
+    }
+
+    ImGui::PopID();
+    ImGui::PopID();
+  }
+
+  /*! \brief Visits prepared World children without rediscovering groups. */
+  auto Roots() -> void {
+    for (auto const &entry : scene.root_entries) {
+      if (entry.group_index) {
+        Group(*entry.group_index);
+      } else {
+        Branch(entry.volumes);
+      }
+    }
+  }
+
+  /*! \brief Displays the actual World name without adding a project node. */
+  auto Build() -> void {
+    auto const &world = scene.occurrences.front();
+
+    if (world.name.empty()) {
+      Physical(0U);
+      return;
+    }
+
+    ImGui::PushID("##world_name");
+
+    bool const opened = BeginTreeRow(false, true);
+
+    ImGui::TextUnformatted(world.name.c_str());
+
+    if (auto const mode =
+          BuildModeButtons(appearance.GetOccurrenceMode(scene, 0U), true)) {
+      appearance.SetOccurrenceMode(scene, 0U, *mode);
+    }
+
+    if (opened) {
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TreePush("##contents");
+
+      Physical(0U, false, false);
+      Roots();
+
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TreePop();
+    }
+
+    ImGui::PopID();
+  }
+};
 
 // =============================================================================
 // =============================================================================
@@ -272,6 +459,11 @@ auto BuildVolumeMetadata(
   }
 
   ImGui::Text("Type: %s", occurrence.shape_name.c_str());
+
+  if (!occurrence.name.empty()) {
+    ImGui::Text("Authored name: %s", occurrence.name.c_str());
+  }
+
   ImGui::SeparatorText("Dimensions");
 
   for (auto const &property : occurrence.dimensions) {
@@ -325,8 +517,10 @@ namespace ggems::ui::detail {
 // =============================================================================
 auto BuildVolumesPanel(bool &show_window,
                        std::optional<std::uint32_t> &selected_volume_id,
+                       std::optional<std::uint32_t> &selected_geometry_group,
                        render::GGEMSGeometryScene const *scene,
-                       std::span<render::GGEMSGeometryAppearance> appearance)
+                       render::GGEMSGeometryAppearanceState &appearance,
+                       std::uint32_t presentation_revision)
   -> std::optional<std::uint32_t> {
   std::optional<std::uint32_t> focus;
 
@@ -342,7 +536,34 @@ auto BuildVolumesPanel(bool &show_window,
     if (ImGui::BeginChild("##volume_tree", ImVec2{0.0F, 0.5F * available},
                           ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY)) {
       if (scene != nullptr && !scene->occurrences.empty()) {
-        BuildVolumeNode(*scene, 0U, selected_volume_id, appearance, focus);
+        ImGui::PushID(static_cast<int>(presentation_revision));
+
+        auto const controls_width =
+          ModeControlsWidth(scene->occurrences.size() == 1U);
+
+        if (ImGui::BeginTable("##volume_rows", 2,
+                              ImGuiTableFlags_RowBg |
+                                ImGuiTableFlags_SizingStretchProp |
+                                ImGuiTableFlags_NoSavedSettings)) {
+          ImGui::TableSetupColumn("Volume",
+                                  ImGuiTableColumnFlags_WidthStretch |
+                                    ImGuiTableColumnFlags_IndentEnable);
+          ImGui::TableSetupColumn("Display", ImGuiTableColumnFlags_WidthFixed,
+                                  controls_width);
+
+          VolumeTree tree{
+            .scene = *scene,
+            .appearance = appearance,
+            .selected_volume_id = selected_volume_id,
+            .selected_geometry_group = selected_geometry_group,
+            .focus = focus,
+          };
+
+          tree.Build();
+          ImGui::EndTable();
+        }
+
+        ImGui::PopID();
       } else {
         ImGui::TextDisabled("No World loaded yet");
       }
@@ -352,11 +573,23 @@ auto BuildVolumesPanel(bool &show_window,
 
     if (ImGui::BeginChild("##volume_metadata", ImVec2{0.0F, 0.0F},
                           ImGuiChildFlags_Borders)) {
-      if (scene != nullptr && selected_volume_id) {
+      if (scene != nullptr && selected_geometry_group) {
+        auto const &group = scene->groups[*selected_geometry_group];
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() +
+                               ImGui::GetContentRegionAvail().x);
+        ImGui::TextUnformatted(group.name.c_str());
+        ImGui::SeparatorText("Group properties");
+        for (auto const &property : group.inspection) {
+          ImGui::Text("%s: %s", property.name.c_str(), property.value.c_str());
+        }
+        ImGui::TextWrapped(
+          "Production Cuts: not available in this scene snapshot");
+        ImGui::PopTextWrapPos();
+      } else if (scene != nullptr && selected_volume_id) {
         auto const &occurrence = scene->occurrences[*selected_volume_id];
         BuildVolumeMetadata(occurrence);
       } else {
-        ImGui::TextDisabled("Select a physical volume to inspect it.");
+        ImGui::TextDisabled("Select a group or physical volume to inspect it.");
         ImGui::TextWrapped(
           "Double-click a row to center and frame that occurrence.");
       }

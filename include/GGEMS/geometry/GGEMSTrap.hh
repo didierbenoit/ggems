@@ -61,6 +61,12 @@ public:
   GGEMSTrap() = default;
 
   /*!
+   * \brief Inherits optional display-name construction without configuring
+   * geometry.
+   */
+  using GGEMSVolumeAuthoring::GGEMSVolumeAuthoring;
+
+  /*!
    * \brief Sets the full dimensions of the local negative-Z end.
    * \param[in] height_y Full height along local Y.
    * \param[in] width_at_negative_y Full X width at the negative-Y edge.

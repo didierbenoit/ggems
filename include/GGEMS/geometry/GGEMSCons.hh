@@ -67,6 +67,12 @@ public:
   GGEMSCons() = default;
 
   /*!
+   * \brief Inherits optional display-name construction without configuring
+   * geometry.
+   */
+  using GGEMSVolumeAuthoring::GGEMSVolumeAuthoring;
+
+  /*!
    * \brief Sets the inner and outer radii at the negative Z cap.
    * \param[in] inner_radius Nonnegative bore radius.
    * \param[in] outer_radius Outer radius, or zero with zero inner radius.

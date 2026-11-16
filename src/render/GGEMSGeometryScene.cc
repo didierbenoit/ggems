@@ -43,6 +43,8 @@
 #include <variant>
 #include <utility>
 #include <vector>
+#include <set>
+#include <optional>
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
@@ -58,13 +60,15 @@
 #include "GGEMS/geometry/GGEMSTubs.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
+#include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
+#include "GGEMS/geometry/detail/GGEMSVolumeRecipe.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
+#include "GGEMS/units/GGEMSDensityUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSQuantity.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/render/GGEMSGeometryAppearance.hh"
-#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 
 namespace {
@@ -75,6 +79,7 @@ using ggems::render::GGEMSGeometryMesh;
 using ggems::render::GGEMSGeometryOccurrence;
 using ggems::render::GGEMSGeometryProfile;
 using ggems::render::GGEMSGeometryProperty;
+using ggems::render::GGEMSGeometryScene;
 using ggems::render::GGEMSGeometryVoxelSlices;
 
 /*! \brief Converts canonical picometers to render meters. */
@@ -836,11 +841,11 @@ auto DescribePlacement(GGEMSGeometryOccurrence &occurrence,
 }
 
 /*!
- * \brief Captures grid metadata, bounds, and only visible central-plane cells.
+ * \brief Captures grid metadata, bounds, and all mapped central-plane cells.
  * \param[in,out] occurrence The single physical voxelized occurrence.
  * \param[in] volume Immutable imported grid and local Material palette.
  * \param[in] pose Actual composed host placement.
- * \param[in,out] visible_cells Scene-wide plane-local cell index stream.
+ * \param[in,out] visible_cells Immutable scene-wide central-cell index stream.
  * \return One procedural Box descriptor, shared by all displayed cell
  * instances.
  * \throws ggems::core::GGEMSRecoverable If a slice exceeds Vulkan's 32-bit
@@ -858,6 +863,15 @@ auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
   GGEMSGeometryVoxelSlices slices{};
 
   slices.palette_size = volume.GetMaterials().size();
+  for (auto const &mapping : volume.GetDisplayMappings()) {
+    slices.mappings.push_back({
+      .first_label = mapping.first_label,
+      .end_label = mapping.end_label,
+      .material_name = mapping.material_name,
+      .mode = mapping.style.mode,
+      .color = mapping.style.color,
+    });
+  }
 
   // These pair products are bounded by the already allocated full cell field.
   std::array const counts{
@@ -872,6 +886,7 @@ auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
   mesh.vertex_count = 36U;
 
   occurrence.shape_name = "VoxelizedVolume";
+  occurrence.name = volume.GetName();
 
   DescribePose(occurrence, pose);
 
@@ -916,12 +931,8 @@ auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
     occurrence.maximum_m[row] = occurrence.position_m[row] + half;
   }
 
-  using Mode = ggems::render::GGEMSGeometryDisplayMode;
-
   for (std::uint32_t plane = 0U; plane < 3U; ++plane) {
-    std::map<std::pair<Mode, ggems::render::ColorKey>,
-             std::vector<std::uint32_t>>
-      groups;
+    std::vector<std::vector<std::uint32_t>> groups(slices.mappings.size());
 
     for (std::size_t index = 0U; index < counts[plane]; ++index) {
       auto x = dimensions[0] / 2U;
@@ -942,18 +953,19 @@ auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
       auto const label =
         volume.GetLabels()[x + (dimensions[0] * (y + (dimensions[1] * z)))];
 
-      auto const &style = volume.GetDisplayStyle(label);
-      if (style.mode != Mode::None) {
-        groups[{style.mode, style.color}].push_back(
-          static_cast<std::uint32_t>(index));
-      }
+      groups[volume.GetDisplayMappingIndex(label)].push_back(
+        static_cast<std::uint32_t>(index));
     }
 
-    for (auto const &[style, cells] : groups) {
+    for (std::size_t mapping = 0U; mapping < groups.size(); ++mapping) {
+      auto const &cells = groups[mapping];
+      if (cells.empty()) {
+        continue;
+      }
       if (cells.size() >
           std::numeric_limits<std::uint32_t>::max() - visible_cells.size()) {
         throw ggems::core::GGEMSRecoverable(
-          "Visible voxel cells exceed the 32-bit Vulkan instance-index "
+          "Central voxel cells exceed the 32-bit Vulkan instance-index "
           "domain.");
       }
 
@@ -961,8 +973,9 @@ auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
         .plane = plane,
         .first_instance = static_cast<std::uint32_t>(visible_cells.size()),
         .instance_count = static_cast<std::uint32_t>(cells.size()),
-        .mode = style.first,
-        .color = style.second,
+        .mode = slices.mappings[mapping].mode,
+        .color = slices.mappings[mapping].color,
+        .mapping_index = static_cast<std::uint32_t>(mapping),
       });
 
       visible_cells.insert(visible_cells.end(), cells.begin(), cells.end());
@@ -971,6 +984,313 @@ auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
 
   occurrence.voxel_slices = std::move(slices);
   return mesh;
+}
+
+/*!
+ * \brief Collects one analytic subtree once while preparing presentation.
+ * \param[in] scene Immutable physical links already captured from World.
+ * \param[in] volume_id Current analytic physical identity.
+ * \param[out] members Ordered physical IDs controlled by the named root.
+ */
+auto AppendAnalyticSubtree(GGEMSGeometryScene const &scene,
+                           std::uint32_t volume_id,
+                           std::vector<std::uint32_t> &members) -> void {
+  auto const &occurrence = scene.occurrences[volume_id];
+
+  if (occurrence.voxel_slices) {
+    return;
+  }
+
+  members.push_back(volume_id);
+
+  for (auto const child : occurrence.children) {
+    AppendAnalyticSubtree(scene, child, members);
+  }
+}
+
+/*!
+ * \brief Prepares named membership, reverse counts, and physical disclosures.
+ * \param[in,out] scene Complete owned physical snapshot; presentation caches
+ * are built once without changing physical IDs or links.
+ */
+auto BuildNamedDefinitions(GGEMSGeometryScene &scene) -> void {
+  std::map<std::uint32_t, std::uint32_t> named_definitions;
+  for (auto &occurrence : scene.occurrences) {
+    std::map<std::uint32_t, std::size_t> branches;
+    for (auto const child : occurrence.children) {
+      auto const repeater = scene.occurrences[child].repeater_group_id;
+
+      if (repeater == 0U) {
+        occurrence.child_branches.push_back({child});
+      } else {
+        auto const [entry, inserted] =
+          branches.try_emplace(repeater, occurrence.child_branches.size());
+
+        if (inserted) {
+          occurrence.child_branches.emplace_back();
+        }
+
+        occurrence.child_branches[entry->second].push_back(child);
+      }
+    }
+
+    if (occurrence.volume_id == 0U ||
+        (occurrence.name.empty() && !occurrence.voxel_slices)) {
+      continue;
+    }
+
+    auto const [entry, inserted] = named_definitions.try_emplace(
+      occurrence.authored_group_id,
+      static_cast<std::uint32_t>(scene.groups.size()));
+
+    if (inserted) {
+      scene.groups.push_back({
+        .name =
+          occurrence.name.empty() ? occurrence.shape_name : occurrence.name,
+        .subtree =
+          occurrence.parent_volume_id == 0U && !occurrence.voxel_slices,
+        .physical_leaves = true,
+        .members = {},
+        .physical_roots = {},
+        .child_groups = {},
+        .inspection = {},
+      });
+    }
+
+    occurrence.named_group = entry->second;
+    scene.groups[entry->second].physical_roots.push_back(occurrence.volume_id);
+  }
+}
+
+/*!
+ * \brief Prepares group commands and their incremental summary dependencies.
+ * \param[in,out] scene Named definitions with complete physical root lists.
+ */
+auto BuildGroupMemberships(GGEMSGeometryScene &scene) -> void {
+  for (std::uint32_t index = 0U; index < scene.groups.size(); ++index) {
+    auto &group = scene.groups[index];
+    for (auto const root : group.physical_roots) {
+      auto const &physical = scene.occurrences[root];
+      group.physical_leaves = group.physical_leaves &&
+                              physical.children.empty() &&
+                              !physical.voxel_slices;
+
+      if (group.subtree) {
+        AppendAnalyticSubtree(scene, root, group.members);
+      } else {
+        group.members.push_back(root);
+      }
+    }
+
+    std::set<std::uint32_t> children;
+    for (auto const member : group.members) {
+      auto &occurrence = scene.occurrences[member];
+      occurrence.controlling_groups.push_back(index);
+      if (group.subtree && occurrence.named_group &&
+          *occurrence.named_group != index) {
+        children.insert(*occurrence.named_group);
+      }
+    }
+
+    group.child_groups.assign(children.begin(), children.end());
+  }
+}
+
+/*!
+ * \brief Summarizes actual members without treating a heterogeneous root as
+ * one representative shape or Material.
+ * \param[in] scene Owned physical metadata prepared for every occurrence.
+ * \param[in,out] group Group receiving compact counted inspection variants.
+ */
+auto DescribeGroupMembers(GGEMSGeometryScene const &scene,
+                          ggems::render::GGEMSGeometryGroup &group) -> void {
+  std::map<std::string, std::size_t> types;
+  std::map<std::pair<std::string, ggems::units::Density>, std::size_t>
+    materials;
+  std::map<std::pair<std::string, std::string>, std::size_t> dimensions;
+  std::map<std::string, std::size_t> mappings;
+  for (auto const member : group.members) {
+    auto const &occurrence = scene.occurrences[member];
+    ++types[occurrence.shape_name];
+    std::string parameters;
+    for (auto const &property : occurrence.dimensions) {
+      if (!parameters.empty()) {
+        parameters += "; ";
+      }
+      parameters += property.name + ": " + property.value;
+    }
+    ++dimensions[{occurrence.shape_name, std::move(parameters)}];
+    if (occurrence.voxel_slices) {
+      for (auto const &mapping : occurrence.voxel_slices->mappings) {
+        ++mappings[mapping.material_name];
+      }
+    } else {
+      ++materials[{occurrence.material_name, occurrence.material_density}];
+    }
+  }
+  for (auto const &[type, count] : types) {
+    group.inspection.push_back({
+      .name = "Type",
+      .value = std::format("{} ({} occurrences)", type, count),
+    });
+  }
+  for (auto const &[material, count] : materials) {
+    group.inspection.push_back({
+      .name = "Material",
+      .value =
+        std::format("{}; density {}; {} occurrences", material.first,
+                    ggems::units::HumanReadable(material.second, 3), count),
+    });
+  }
+  for (auto const &[material, count] : mappings) {
+    group.inspection.push_back({
+      .name = "Material mapping",
+      .value =
+        std::format("{} ({} rows); density not available", material, count),
+    });
+  }
+  for (auto const &[shape, count] : dimensions) {
+    group.inspection.push_back({
+      .name = std::format("Dimensions ({})", shape.first),
+      .value = std::format("{}; {} occurrences", shape.second, count),
+    });
+  }
+}
+
+/*!
+ * \brief Copies true root-placement facts from the shared captured recipe.
+ * \param[in] world Authoritative immutable host recipe owner.
+ * \param[in,out] group Named definition whose roots share one authored token.
+ */
+auto DescribeGroupRecipe(GGEMSWorld const &world,
+                         ggems::render::GGEMSGeometryGroup &group) -> void {
+  auto const *recipe =
+    world.GetAuthoredRecipe(group.physical_roots.front() - 1U);
+  if (recipe == nullptr) {
+    group.inspection.push_back(
+      {.name = "Root placement", .value = "Not available"});
+    return;
+  }
+  using Kind = detail::GGEMSRepeatKind;
+  std::string kind{"Single attachment"};
+  if (recipe->kind == Kind::Linear) {
+    kind = "Linear";
+  } else if (recipe->kind == Kind::Circular) {
+    kind = "Circular";
+  }
+  group.inspection.push_back(
+    {.name = "Root placement", .value = std::move(kind)});
+  group.inspection.push_back(
+    {.name = "Roots per parent", .value = std::format("{}", recipe->count)});
+  if (recipe->kind == Kind::Linear) {
+    group.inspection.push_back({
+      .name = "Linear counts (X, Y, Z)",
+      .value = std::format("({}, {}, {})", recipe->linear_count[0],
+                           recipe->linear_count[1], recipe->linear_count[2]),
+    });
+    group.inspection.push_back({
+      .name = "Linear pitch (X, Y, Z)",
+      .value = std::format(
+        "({}, {}, {})", ggems::units::HumanReadable(recipe->linear_pitch[0], 3),
+        ggems::units::HumanReadable(recipe->linear_pitch[1], 3),
+        ggems::units::HumanReadable(recipe->linear_pitch[2], 3)),
+    });
+  } else if (recipe->kind == Kind::Circular) {
+    std::array constexpr names{"X", "Y", "Z"};
+    group.inspection.push_back({
+      .name = "Circular axis",
+      .value = names[static_cast<std::size_t>(recipe->axis)],
+    });
+  }
+}
+
+/*!
+ * \brief Prepares compact group facts once, independently of frame rendering.
+ * \param[in] world Source of true captured placement recipes.
+ * \param[in,out] scene Complete member lists and owned occurrence descriptors.
+ */
+auto BuildGroupInspection(GGEMSWorld const &world, GGEMSGeometryScene &scene)
+  -> void {
+  for (auto &group : scene.groups) {
+    std::set<std::uint32_t> parents;
+    for (auto const root : group.physical_roots) {
+      parents.insert(scene.occurrences[root].parent_volume_id);
+    }
+    group.inspection = {
+      {
+        .name = "Controlled occurrences",
+        .value = std::format("{}", group.members.size()),
+      },
+      {
+        .name = "Authored roots (global)",
+        .value = std::format("{}", group.physical_roots.size()),
+      },
+      {
+        .name = "Physical parents",
+        .value = std::format("{}", parents.size()),
+      },
+    };
+    DescribeGroupMembers(scene, group);
+    DescribeGroupRecipe(world, group);
+  }
+}
+
+/*!
+ * \brief Finds named controls that lack a named analytic root header.
+ * \param[in] scene Prepared named definitions and physical parent links.
+ * \return Supplemental group indices indexed by their top physical root.
+ */
+auto SupplementalGroups(GGEMSGeometryScene const &scene)
+  -> std::vector<std::vector<std::uint32_t>> {
+  // A named definition below an unnamed root still needs a discoverable row.
+  std::vector<std::vector<std::uint32_t>> supplemental(
+    scene.occurrences.size());
+
+  for (std::uint32_t index = 0U; index < scene.groups.size(); ++index) {
+    auto root = scene.groups[index].physical_roots.front();
+    bool nested = false;
+
+    while (scene.occurrences[root].parent_volume_id != 0U) {
+      root = scene.occurrences[root].parent_volume_id;
+      auto const parent_group = scene.occurrences[root].named_group;
+      nested = nested || (parent_group && scene.groups[*parent_group].subtree);
+    }
+
+    if (!nested && root != scene.groups[index].physical_roots.front()) {
+      supplemental[root].push_back(index);
+    }
+  }
+
+  return supplemental;
+}
+
+/*!
+ * \brief Builds stable ordered root rows without per-frame deduplication.
+ * \param[in,out] scene Prepared named memberships and child disclosures.
+ */
+auto BuildRootEntries(GGEMSGeometryScene &scene) -> void {
+  auto const supplemental = SupplementalGroups(scene);
+  std::set<std::uint32_t> displayed;
+  for (auto const &branch : scene.occurrences.front().child_branches) {
+    auto const group = scene.occurrences[branch.front()].named_group;
+
+    if (group) {
+      if (displayed.insert(*group).second) {
+        scene.root_entries.push_back({.group_index = group, .volumes = {}});
+      }
+    } else {
+      scene.root_entries.push_back(
+        {.group_index = std::nullopt, .volumes = branch});
+    }
+
+    for (auto const root : branch) {
+      for (auto const extra : supplemental[root]) {
+        if (displayed.insert(extra).second) {
+          scene.root_entries.push_back({.group_index = extra, .volumes = {}});
+        }
+      }
+    }
+  }
 }
 
 } // namespace
@@ -997,6 +1317,7 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
     .local_to_world = Transform({.position_pm = {}, .rotation = {}}),
     .shape_name = "GGEMSWorld",
     .dimensions = BoxDimensions(half),
+    .name = world.GetName(),
   });
 
   DescribePlacement(scene.occurrences.front(),
@@ -1017,6 +1338,7 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
       .dimensions = {},
       .repeater_group_id = world.GetRepeaterGroupId(index),
       .repeater_recipe_id = world.GetRepeaterRecipeId(index),
+      .authored_group_id = world.GetAuthoredGroupId(index),
     });
 
     auto &occurrence = scene.occurrences.back();
@@ -1042,6 +1364,13 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
       }
 
       DescribeShape(occurrence, shape);
+
+      occurrence.name = std::visit(
+        [](auto const &value) -> std::string const & {
+          return value.GetName();
+        },
+        shape);
+
       DescribePlacement(occurrence, pose, *world.GetVolumeMaterial(index),
                         ShapeEnvelope(shape));
     }
@@ -1049,6 +1378,12 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
     scene.occurrences[occurrence.parent_volume_id].children.push_back(
       occurrence.volume_id);
   }
+
+  BuildNamedDefinitions(scene);
+  BuildGroupMemberships(scene);
+  BuildGroupInspection(world, scene);
+  BuildRootEntries(scene);
+
   return scene;
 }
 

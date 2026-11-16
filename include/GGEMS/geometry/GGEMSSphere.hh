@@ -57,6 +57,12 @@ public:
   GGEMSSphere() = default;
 
   /*!
+   * \brief Inherits optional display-name construction without configuring
+   * geometry.
+   */
+  using GGEMSVolumeAuthoring::GGEMSVolumeAuthoring;
+
+  /*!
    * \brief Sets the radius after central Units conversion.
    * \param[in] radius Strictly positive canonical length.
    * \return This Sphere for chained configuration.

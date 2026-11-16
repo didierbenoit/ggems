@@ -503,9 +503,8 @@ Example:
     box.set_position(0.0, 0.0, 0.0, "m")
     box.set_material("Water")
 )doc")
-      .def(
-        py::init<>(),
-        R"doc(Create a Box centered on the origin with no size and no material.)doc")
+      .def(py::init<std::string>(), py::arg("name") = "",
+           R"doc(Create an unconfigured Box with an optional display name.)doc")
 
       .def(
         "set_size",
@@ -600,7 +599,8 @@ Odd picometer radii are allowed. The default center is the parent-frame origin.
 Rotation changes the frame inherited by daughters, not the spherical surface.
 Configuration methods return this Sphere for chaining.
 )doc")
-      .def(py::init<>(), "Create a Sphere without radius or material.")
+      .def(py::init<std::string>(), py::arg("name") = "",
+           "Create an unconfigured Sphere with an optional display name.")
 
       .def(
         "set_radius",
@@ -658,7 +658,8 @@ Returns:
 The default pose is centered at the parent-frame origin with identity rotation.
 Configuration methods return the same object for chaining. World owns a copy.
 )doc")
-      .def(py::init<>(), "Create a tube without dimensions or material.")
+      .def(py::init<std::string>(), py::arg("name") = "",
+           "Create an unconfigured tube with an optional display name.")
 
       .def(
         "set_radii",
@@ -723,7 +724,8 @@ The material becomes registered as used by the scene. Return this tube.
 The default pose is centered at the parent-frame origin with identity rotation.
 Configuration methods return the same object for chaining. World owns a copy.
 )doc")
-      .def(py::init<>(), "Create an ellipsoid without dimensions or material.")
+      .def(py::init<std::string>(), py::arg("name") = "",
+           "Create an unconfigured ellipsoid with an optional display name.")
 
       .def(
         "set_semi_axes",
@@ -776,7 +778,8 @@ All dimensions are full sizes, positive and even in pm after Units conversion.
 Sides connect corresponding end edges; Trd has no end skew or inclination.
 Rigid XYZ rotation is separate. World owns a copy; setters return this object.
 )doc")
-      .def(py::init<>(), "Create a Trd without dimensions or material.")
+      .def(py::init<std::string>(), py::arg("name") = "",
+           "Create an unconfigured Trd with an optional display name.")
 
       .def(
         "set_negative_z_face",
@@ -850,7 +853,8 @@ The side faces must be planar within the automatic local FP32 surface band:
 incompatible end skews or width gradients fail when added to World.
 Rigid XYZ rotation is separate. World owns a copy; setters return this object.
 )doc")
-      .def(py::init<>(), "Create a Trap without dimensions or material.")
+      .def(py::init<std::string>(), py::arg("name") = "",
+           "Create an unconfigured Trap with an optional display name.")
 
       .def(
         "set_negative_z_face",
@@ -963,7 +967,8 @@ is admitted; hollow outer tips are rejected. The default pose is centered at the
 parent-frame origin with identity rotation. Configuration methods return the
 same object for chaining. World owns a copy.
 )doc")
-      .def(py::init<>(), "Create a frustum without dimensions or material.")
+      .def(py::init<std::string>(), py::arg("name") = "",
+           "Create an unconfigured frustum with an optional display name.")
 
       .def(
         "set_negative_z_radii",
@@ -1042,8 +1047,8 @@ places that frame's origin, and rotation acts about it. Convex and concave
 profiles, solid sections, and tapered bores share one material and VolumeID.
 Repeated Z steps and zero outer radii are rejected. Setters return this object.
 )doc")
-      .def(py::init<>(),
-           "Create a Polyhedra without side count, profiles or material.")
+      .def(py::init<std::string>(), py::arg("name") = "",
+           "Create an unconfigured Polyhedra with an optional display name.")
 
       .def("set_side_count", &GGEMSPolyhedra::SetSideCount,
            "Set the regular polygon side count (at least three). Return this "
@@ -1134,13 +1139,21 @@ to existing GGEMS materials. The grid is centered on its local origin; its
 full size is DimSize * ElementSpacing, with spacing interpreted in millimeters.
 
 Only direct World attachment is supported. This volume has no analytical
-children, repeaters, or single global material. Its display color defaults to
-ggems.colors.white_white. OpenCL Navigation and voxel rendering are not yet
-implemented.
+children, repeaters, or single global material. OpenCL handles physical voxel
+Navigation. The viewer displays the three central planes using each material
+mapping's independent mode and color. The optional name labels this volume
+without changing its physical identity or imported data.
+
+Construct with (mhd, materials) when unnamed, or (name, mhd, materials) when
+named. Keyword arguments use those same names; argument order is never guessed
+from file contents or existence.
 )doc")
     .def(
       py::init<std::filesystem::path const &, std::filesystem::path const &>(),
       py::arg("mhd"), py::arg("materials"))
+    .def(py::init<std::string, std::filesystem::path const &,
+                  std::filesystem::path const &>(),
+         py::arg("name"), py::arg("mhd"), py::arg("materials"))
 
     .def("set_position", &SetPosition<GGEMSVoxelizedVolume>,
          R"doc(Set the World-frame position of the grid center.
@@ -1224,8 +1237,9 @@ Example:
     world.add_volume(mother)
     run.set_world(world)
 )doc")
-      .def(py::init<>(),
-           R"doc(Create a World with no size, no material, and no volume.)doc")
+      .def(
+        py::init<std::string>(), py::arg("name") = "",
+        R"doc(Create an unconfigured World with an optional display name.)doc")
 
       .def(
         "set_size",

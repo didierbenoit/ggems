@@ -35,7 +35,11 @@
 #include <limits>
 #include <memory>
 #include <numbers>
+#include <string>
+#include <string_view>
 #include <type_traits>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -58,6 +62,7 @@
 #include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/detail/GGEMSVolumeRecipe.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
@@ -72,16 +77,16 @@ using ggems::core::GGEMSRecoverable;
 using ggems::core::materials::builtins::BuildBuiltInMaterial;
 using ggems::python::detail::GGEMSGeometryAttachments;
 
-auto MakeWorld() -> std::shared_ptr<GGEMSWorld> {
-  auto world = std::make_shared<GGEMSWorld>();
+auto MakeWorld(std::string name = {}) -> std::shared_ptr<GGEMSWorld> {
+  auto world = std::make_shared<GGEMSWorld>(std::move(name));
   world->SetSize(200_mm, 200_mm, 200_mm)
     .SetMaterial(BuildBuiltInMaterial("Vacuum"));
   return world;
 }
 
 template <typename Shape>
-auto MakeShape(Length half) -> std::shared_ptr<Shape> {
-  auto shape = std::make_shared<Shape>();
+auto MakeShape(Length half, std::string name = {}) -> std::shared_ptr<Shape> {
+  auto shape = std::make_shared<Shape>(std::move(name));
   Length const full{2U * half.value};
   if constexpr (std::is_same_v<Shape, GGEMSBox>) {
     shape->SetSize(full, full, full);
@@ -196,6 +201,87 @@ TEST(GGEMSGeometryAttachments, AllFamiliesPreserveIndexedCompilation) {
   CheckFamilyPair<GGEMSTrap, GGEMSCons>();
   CheckFamilyPair<GGEMSCons, GGEMSPolyhedra>();
   CheckFamilyPair<GGEMSPolyhedra, GGEMSBox>();
+}
+
+TEST(GGEMSGeometryAttachments,
+     NamedConstructionPreservesAllAnalyticalCompilations) {
+  auto const check = []<class Shape> -> void {
+    Shape unnamed = {};
+    EXPECT_TRUE(unnamed.GetName().empty());
+    std::string name{"Same display label"};
+    auto source = MakeShape<Shape>(1_mm, name);
+    // Keep an independent value before replacing the authoring source.
+    auto const copy = *source;
+    name = "Caller changed its string";
+    *source = Shape{"Replacement authoring value"};
+    EXPECT_EQ(copy.GetName(), "Same display label");
+
+    auto named_world = MakeWorld("PET / XCAT");
+    auto plain_world = MakeWorld();
+    named_world->AddVolume(copy);
+    plain_world->AddVolume(*MakeShape<Shape>(1_mm));
+    ExpectSameCompilation(*named_world, *plain_world);
+    EXPECT_EQ(named_world->GetName(), "PET / XCAT");
+    EXPECT_TRUE(plain_world->GetName().empty());
+    EXPECT_EQ(std::get<Shape>(named_world->GetVolume(0U)).GetName(),
+              "Same display label");
+    EXPECT_EQ(named_world->GetAuthoredGroupId(0U), 1U);
+  };
+  check.operator()<GGEMSBox>();
+  check.operator()<GGEMSSphere>();
+  check.operator()<GGEMSTubs>();
+  check.operator()<GGEMSCons>();
+  check.operator()<GGEMSPolyhedra>();
+  check.operator()<GGEMSEllipsoid>();
+  check.operator()<GGEMSTrd>();
+  check.operator()<GGEMSTrap>();
+  GGEMSWorld unnamed = {};
+  EXPECT_TRUE(unnamed.GetName().empty());
+}
+
+// Single captured children retain exact authored membership through repeated
+// mothers; matching labels never join independently captured definitions.
+TEST(GGEMSGeometryAttachments,
+     NamedRecipesKeepIndependentGroupsAcrossRepeatedMothers) {
+  auto first = MakeShape<GGEMSBox>(500_um, "Crystal");
+  first->SetPosition(MakePositionPM(-2'000'000'000LL, 0, 0));
+  auto second = MakeShape<GGEMSBox>(500_um, "Crystal");
+  second->SetPosition(MakePositionPM(2'000'000'000LL, 0, 0));
+  auto block = MakeShape<GGEMSBox>(4_mm, "Block");
+  block->AddVolume(*first).AddVolume(*second);
+  auto module = MakeShape<GGEMSBox>(12_mm, "Module");
+  module->LinearRepeater(*block, 2U, 12_mm, GGEMSRepeatAxis::X);
+  auto gantry = MakeShape<GGEMSBox>(40_mm, "PET");
+  gantry->LinearRepeater(*module, 2U, 30_mm, GGEMSRepeatAxis::X);
+  auto world = MakeWorld("PET / XCAT");
+  world->AddVolume(*gantry);
+  auto unrelated = MakeShape<GGEMSBox>(1_mm, "Block");
+  unrelated->SetPosition(MakePositionPM(80'000'000'000LL, 0, 0));
+  world->AddVolume(*unrelated);
+
+  *first = GGEMSBox{"Edited Crystal"};
+  *block = GGEMSBox{"Edited Block"};
+  *gantry = GGEMSBox{"Edited PET"};
+  auto const snapshot = *world;
+  world.reset();
+  EXPECT_EQ(snapshot.GetName(), "PET / XCAT");
+  std::array<std::uint32_t, 16> const groups{
+    1U, 2U, 3U, 4U, 5U, 3U, 4U, 5U, 2U, 3U, 4U, 5U, 3U, 4U, 5U, 16U,
+  };
+  std::array<std::string_view, 16> const names{
+    "PET",     "Module",  "Block",   "Crystal", "Crystal", "Block",
+    "Crystal", "Crystal", "Module",  "Block",   "Crystal", "Crystal",
+    "Block",   "Crystal", "Crystal", "Block",
+  };
+  ASSERT_EQ(snapshot.GetVolumeCount(), groups.size());
+  for (std::size_t index = 0U; index < groups.size(); ++index) {
+    EXPECT_EQ(snapshot.GetAuthoredGroupId(index), groups[index]);
+    EXPECT_EQ(snapshot.GetBoxes(index).front().GetName(), names[index]);
+  }
+  EXPECT_EQ(snapshot.GetRepeaterRecipeId(3U), 0U);
+  EXPECT_EQ(snapshot.GetRepeaterRecipeId(4U), 0U);
+  EXPECT_NE(snapshot.GetAuthoredGroupId(3U), snapshot.GetAuthoredGroupId(4U));
+  EXPECT_NE(snapshot.GetAuthoredGroupId(2U), snapshot.GetAuthoredGroupId(15U));
 }
 
 // Preserves nested snapshots when the caller later mutates an attached solid.
@@ -455,6 +541,7 @@ TEST(GGEMSGeometryAttachments, LinearRepeatersPreserveGapsContactAndCountOne) {
       .SetRotation(0_deg, 0_deg, 90_deg);
     auto expected = *MakeWorld();
     expected.AddVolume(mother);
+    EXPECT_EQ(expected.GetAuthoredRecipe(0U), nullptr);
     for (std::uint32_t index = 0U; index < count; ++index) {
       auto copy = child;
       auto const offset = (2 * static_cast<std::int64_t>(index)) - count + 1;
@@ -500,6 +587,10 @@ TEST(GGEMSGeometryAttachments, LinearRepeatersPreserveGapsContactAndCountOne) {
   EXPECT_NE(direct.GetRepeaterGroupId(2U), 0U);
   EXPECT_NE(direct.GetRepeaterGroupId(1U), direct.GetRepeaterGroupId(2U));
   EXPECT_EQ(direct.GetRepeaterRecipeId(0U), 0U);
+  auto const *single = direct.GetAuthoredRecipe(0U);
+  ASSERT_NE(single, nullptr);
+  EXPECT_EQ(single->kind, ggems::geometry::detail::GGEMSRepeatKind::Single);
+  EXPECT_EQ(single->count, 1U);
   EXPECT_NE(direct.GetRepeaterRecipeId(1U), 0U);
   EXPECT_NE(direct.GetRepeaterRecipeId(2U), 0U);
   EXPECT_NE(direct.GetRepeaterRecipeId(1U), direct.GetRepeaterRecipeId(2U));
@@ -572,6 +663,15 @@ TEST(GGEMSGeometryAttachments,
   auto const original_recipe = world.GetRepeaterRecipeId(1U);
   EXPECT_EQ(original_recipe, 1U);
   EXPECT_EQ(world.GetRepeaterRecipeId(2U), original_recipe);
+  auto const *placement = world.GetAuthoredRecipe(1U);
+  ASSERT_NE(placement, nullptr);
+  EXPECT_EQ(placement->kind, ggems::geometry::detail::GGEMSRepeatKind::Linear);
+  EXPECT_EQ(placement->count, 2U);
+  EXPECT_EQ(placement->linear_count, (std::array{2U, 1U, 1U}));
+  EXPECT_EQ(placement->linear_pitch, (std::array{4_mm, 0_mm, 0_mm}));
+  ASSERT_NE(world.GetAuthoredRecipe(0U), nullptr);
+  EXPECT_EQ(world.GetAuthoredRecipe(0U)->kind,
+            ggems::geometry::detail::GGEMSRepeatKind::Single);
   auto copied_world = world;
 
   child.SetPosition(MakePositionPM(0, 5'000'000'000LL, 0));
@@ -586,6 +686,11 @@ TEST(GGEMSGeometryAttachments,
   auto const added_recipe = world.GetRepeaterRecipeId(6U);
   EXPECT_EQ(added_recipe, 2U);
   EXPECT_EQ(world.GetRepeaterRecipeId(7U), added_recipe);
+  EXPECT_EQ(world.GetAuthoredGroupId(1U), 2U);
+  EXPECT_EQ(world.GetAuthoredGroupId(4U), 2U);
+  EXPECT_EQ(world.GetAuthoredGroupId(5U), 2U);
+  EXPECT_EQ(world.GetAuthoredGroupId(6U), 7U);
+  EXPECT_NE(world.GetAuthoredGroupId(0U), world.GetAuthoredGroupId(3U));
 
   EXPECT_EQ(captured.GetDescendantCount(), 2U);
   EXPECT_EQ(copied_world.GetVolumeCount(), 3U);
@@ -595,6 +700,8 @@ TEST(GGEMSGeometryAttachments,
   EXPECT_EQ(copied_world.GetRepeaterRecipeId(1U), original_recipe);
   EXPECT_EQ(copied_world.GetRepeaterRecipeId(4U), original_recipe);
   EXPECT_EQ(copied_world.GetRepeaterRecipeId(5U), original_recipe);
+  EXPECT_EQ(copied_world.GetAuthoredGroupId(4U), 2U);
+  EXPECT_EQ(copied_world.GetAuthoredGroupId(5U), 2U);
   EXPECT_NE(copied_world.GetRepeaterGroupId(4U),
             copied_world.GetRepeaterGroupId(1U));
 
@@ -610,6 +717,8 @@ TEST(GGEMSGeometryAttachments,
               before_rejection.GetRepeaterRecipeId(index));
     EXPECT_EQ(world.GetRepeaterGroupId(index),
               before_rejection.GetRepeaterGroupId(index));
+    EXPECT_EQ(world.GetAuthoredGroupId(index),
+              before_rejection.GetAuthoredGroupId(index));
   }
   independent.SetPosition(MakePositionPM(60'000'000'000LL, 0, 0));
   world.AddVolume(independent);
@@ -617,11 +726,21 @@ TEST(GGEMSGeometryAttachments,
   EXPECT_EQ(world.GetRepeaterRecipeId(8U), 0U);
   EXPECT_EQ(world.GetRepeaterRecipeId(9U), 3U);
   EXPECT_EQ(world.GetRepeaterRecipeId(10U), 3U);
+  EXPECT_EQ(world.GetAuthoredGroupId(8U), 9U);
+  EXPECT_EQ(world.GetAuthoredGroupId(9U), 10U);
+  EXPECT_EQ(world.GetAuthoredGroupId(10U), 10U);
 
   auto fresh_world = *MakeWorld();
   fresh_world.AddVolume(independent);
   EXPECT_EQ(fresh_world.GetRepeaterRecipeId(1U), 1U);
   EXPECT_EQ(fresh_world.GetRepeaterRecipeId(2U), 1U);
+  auto const retained_world = copied_world;
+  copied_world = GGEMSWorld{};
+  auto const *retained = retained_world.GetAuthoredRecipe(4U);
+  ASSERT_NE(retained, nullptr);
+  EXPECT_EQ(retained->kind, ggems::geometry::detail::GGEMSRepeatKind::Linear);
+  EXPECT_EQ(retained->count, 2U);
+  EXPECT_EQ(retained->linear_pitch, (std::array{4_mm, 0_mm, 0_mm}));
 }
 
 // Cartesian roots are direct siblings in X-fast order, with the same captured
@@ -681,6 +800,13 @@ TEST(GGEMSGeometryAttachments, CartesianRepeatersPreserveCenteredPosesAndIds) {
     ExpectSameCompilation(world_before, expected);
     ExpectSameCompilation(world_after, expected);
     auto const total = counts[0] * counts[1] * counts[2];
+    auto const *placement = world_after.GetAuthoredRecipe(1U);
+    ASSERT_NE(placement, nullptr);
+    EXPECT_EQ(placement->kind,
+              ggems::geometry::detail::GGEMSRepeatKind::Linear);
+    EXPECT_EQ(placement->count, total);
+    EXPECT_EQ(placement->linear_count, counts);
+    EXPECT_EQ(placement->linear_pitch, (std::array{8_mm, 10_mm, 12_mm}));
     ASSERT_EQ(world_after.GetVolumeCount(), total + 1U);
     EXPECT_EQ(world_after.BuildRecord().hierarchy_depth, 2U);
     auto const links = world_after.BuildOccurrenceRecords();
@@ -701,6 +827,12 @@ TEST(GGEMSGeometryAttachments, ThousandCenteredBoxesHaveTwelveMillimeterPitch) {
   auto child = *MakeShape<GGEMSBox>(5_mm);
   world.LinearRepeater(child, {10U, 10U, 10U}, {12_mm, 12_mm, 12_mm});
   ASSERT_EQ(world.GetVolumeCount(), 1000U);
+  auto const *placement = world.GetAuthoredRecipe(0U);
+  ASSERT_NE(placement, nullptr);
+  EXPECT_EQ(placement->kind, ggems::geometry::detail::GGEMSRepeatKind::Linear);
+  EXPECT_EQ(placement->count, 1000U);
+  EXPECT_EQ(placement->linear_count, (std::array{10U, 10U, 10U}));
+  EXPECT_EQ(placement->linear_pitch, (std::array{12_mm, 12_mm, 12_mm}));
   EXPECT_EQ(world.BuildRecord().hierarchy_depth, 1U);
   auto const links = world.BuildOccurrenceRecords();
   for (std::uint32_t index = 0U; index < 1000U; ++index) {
@@ -833,6 +965,12 @@ TEST(GGEMSGeometryAttachments,
       auto world = *MakeWorld();
       ASSERT_NO_THROW(world.AddVolume(mother));
       ASSERT_EQ(world.GetVolumeCount(), count + 1U);
+      auto const *placement = world.GetAuthoredRecipe(1U);
+      ASSERT_NE(placement, nullptr);
+      EXPECT_EQ(placement->kind,
+                ggems::geometry::detail::GGEMSRepeatKind::Circular);
+      EXPECT_EQ(placement->count, count);
+      EXPECT_EQ(placement->axis, static_cast<GGEMSRepeatAxis>(axis));
       for (std::uint32_t index = 0U; index < count; ++index) {
         SCOPED_TRACE(index);
         auto const angle = 2.0 * std::numbers::pi * index / count;

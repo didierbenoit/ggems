@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <span>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -75,6 +76,7 @@ auto MakeWorld() -> GGEMSWorld {
 TEST(GGEMSVoxelizedVolume, ImportsAnisotropicXFastLabelsAndCompactPalette) {
   GGEMSVoxelizedTestFixture const files;
   auto const volume = files.Import();
+  EXPECT_TRUE(volume.GetName().empty());
   EXPECT_EQ(volume.GetDimensions(), (std::array<std::size_t, 3>{2U, 2U, 2U}));
   EXPECT_EQ(volume.GetSpacing(), (std::array<Length, 3>{1_mm, 2_mm, 3_mm}));
   EXPECT_EQ(volume.GetSize(), (std::array<Length, 3>{2_mm, 4_mm, 6_mm}));
@@ -94,6 +96,43 @@ TEST(GGEMSVoxelizedVolume, ImportsAnisotropicXFastLabelsAndCompactPalette) {
     EXPECT_EQ(style.color,
               BuildBuiltInMaterial(label == 20U ? "Air" : "Water").GetColor());
   }
+}
+
+TEST(GGEMSVoxelizedVolume,
+     NameFirstAndTwoPathConstructorsPreserveImportedPayload) {
+  GGEMSVoxelizedTestFixture const files;
+  auto const directory = files.GetRawPath().parent_path();
+  auto const image = directory / "grid.mhd";
+  auto const mapping = directory / "materials.txt";
+  GGEMSVoxelizedVolume const unnamed{image, mapping};
+  std::string name{"XCAT"};
+  GGEMSVoxelizedVolume const named{name, image, mapping};
+  name = "Edited source string";
+  EXPECT_TRUE(unnamed.GetName().empty());
+  EXPECT_EQ(named.GetName(), "XCAT");
+  EXPECT_EQ(named.GetDimensions(), unnamed.GetDimensions());
+  EXPECT_EQ(named.GetSpacing(), unnamed.GetSpacing());
+  EXPECT_EQ(named.GetSize(), unnamed.GetSize());
+  EXPECT_TRUE(std::ranges::equal(named.GetLabels(), unnamed.GetLabels()));
+  EXPECT_TRUE(
+    std::ranges::equal(named.GetMaterialLabels(), unnamed.GetMaterialLabels()));
+  ASSERT_EQ(named.GetMaterials().size(), unnamed.GetMaterials().size());
+  for (std::size_t index = 0U; index < named.GetMaterials().size(); ++index) {
+    EXPECT_TRUE(ggems::core::materials::HasSameScientificIdentity(
+      named.GetMaterials()[index], unnamed.GetMaterials()[index]));
+  }
+  for (auto const label : named.GetLabels()) {
+    EXPECT_EQ(named.GetDisplayStyle(label).mode,
+              unnamed.GetDisplayStyle(label).mode);
+    EXPECT_EQ(named.GetDisplayStyle(label).color,
+              unnamed.GetDisplayStyle(label).color);
+  }
+  // A name that looks like a real path remains a label, never an import hint.
+  GGEMSVoxelizedVolume const path_named{image.string(), image, mapping};
+  EXPECT_EQ(path_named.GetName(), image.string());
+  EXPECT_THROW(
+    (GGEMSVoxelizedVolume{"XCAT", directory / "missing.mhd", mapping}),
+    GGEMSRecoverable);
 }
 
 TEST(GGEMSVoxelizedVolume, DistinguishesSingletonAndHalfOpenMappingEndpoints) {
@@ -135,6 +174,21 @@ TEST(GGEMSVoxelizedVolume, MappingStylesPreserveRangesAndPhysicalPalette) {
   EXPECT_EQ(volume.GetDisplayStyle(9U).color, ggems::render::WHITE_White);
   EXPECT_EQ(volume.GetDisplayStyle(65535U).mode, Mode::Wireframe);
   EXPECT_EQ(volume.GetDisplayStyle(65535U).color, ggems::render::BLUE_Pure);
+  auto const mappings = volume.GetDisplayMappings();
+  ASSERT_EQ(mappings.size(), 3U);
+  EXPECT_EQ(mappings[0].first_label, 7U);
+  EXPECT_EQ(mappings[0].end_label, 9U);
+  EXPECT_EQ(mappings[0].material_name, "Water");
+  EXPECT_EQ(mappings[1].first_label, 9U);
+  EXPECT_EQ(mappings[1].end_label, 10U);
+  EXPECT_EQ(mappings[1].material_name, "Air");
+  EXPECT_EQ(mappings[2].first_label, 65535U);
+  EXPECT_EQ(mappings[2].end_label, 65536U);
+  EXPECT_EQ(mappings[2].material_name, "Water");
+  EXPECT_EQ(volume.GetDisplayMappingIndex(7U), 0U);
+  EXPECT_EQ(volume.GetDisplayMappingIndex(8U), 0U);
+  EXPECT_EQ(volume.GetDisplayMappingIndex(9U), 1U);
+  EXPECT_EQ(volume.GetDisplayMappingIndex(65535U), 2U);
   EXPECT_TRUE(std::ranges::equal(volume.GetLabels(), labels));
   ASSERT_EQ(volume.GetMaterials().size(), 2U);
   EXPECT_EQ(volume.GetMaterials()[0].GetColor(), water_color);
@@ -187,6 +241,12 @@ TEST(GGEMSVoxelizedVolume,
   };
   auto const volume = files.Import();
   ASSERT_EQ(volume.GetMaterials().size(), 1U);
+  auto const mappings = volume.GetDisplayMappings();
+  ASSERT_EQ(mappings.size(), 2U);
+  EXPECT_EQ(mappings[0].material_name, "GGEMSVoxelRedCarbon");
+  EXPECT_EQ(mappings[1].material_name, "GGEMSVoxelBlueCarbon");
+  EXPECT_NE(volume.GetDisplayMappingIndex(10U),
+            volume.GetDisplayMappingIndex(20U));
   for (auto const material_label : volume.GetMaterialLabels()) {
     EXPECT_EQ(material_label, 0U);
   }
@@ -244,9 +304,10 @@ TEST(GGEMSVoxelizedVolume, RejectsIncorrectExternalRawByteCount) {
 TEST(GGEMSVoxelizedVolume, CopiesKeepIndependentPoseAndOwnedImportedData) {
   auto volume = [] -> GGEMSVoxelizedVolume {
     GGEMSVoxelizedTestFixture const files;
-    return files.Import();
+    return files.Import("XCAT");
   }();
   auto const original = volume;
+  EXPECT_EQ(original.GetName(), "XCAT");
   volume.SetPosition(MakePositionPM(3'000'000'000LL, -2'000'000'000LL, 0))
     .SetRotation(0_deg, 0_deg, 90_deg);
   EXPECT_EQ(original.GetPositionPM(), Position3PM{});
@@ -257,6 +318,7 @@ TEST(GGEMSVoxelizedVolume, CopiesKeepIndependentPoseAndOwnedImportedData) {
   EXPECT_TRUE(std::ranges::equal(original.GetMaterialLabels(),
                                  volume.GetMaterialLabels()));
   EXPECT_EQ(original.GetMaterials()[0].GetName(), "Water");
+  EXPECT_EQ(volume.GetName(), "XCAT");
   for (auto const label : original.GetLabels()) {
     EXPECT_EQ(original.GetDisplayStyle(label).mode,
               volume.GetDisplayStyle(label).mode);
@@ -267,9 +329,9 @@ TEST(GGEMSVoxelizedVolume, CopiesKeepIndependentPoseAndOwnedImportedData) {
 
 TEST(GGEMSVoxelizedVolume, PublishesOnePhysicalIDPerGridInMixedInsertionOrder) {
   GGEMSVoxelizedTestFixture const files;
-  auto first = files.Import();
+  auto first = files.Import("XCAT");
   first.SetPosition(MakePositionPM(-10'000'000'000LL, 0, 0));
-  auto second = files.Import();
+  auto second = files.Import("XCAT");
   second.SetPosition(MakePositionPM(10'000'000'000LL, 0, 0));
   GGEMSBox box;
   box.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Air"));
@@ -280,6 +342,13 @@ TEST(GGEMSVoxelizedVolume, PublishesOnePhysicalIDPerGridInMixedInsertionOrder) {
   EXPECT_EQ(world.GetVoxelizedVolume(1U), nullptr);
   ASSERT_NE(world.GetVoxelizedVolume(2U), nullptr);
   EXPECT_EQ(world.GetVoxelizedVolume(0U)->GetLabels().size(), 8U);
+  EXPECT_EQ(world.GetVoxelizedVolume(0U)->GetName(), "XCAT");
+  EXPECT_EQ(world.GetVoxelizedVolume(2U)->GetName(), "XCAT");
+  EXPECT_EQ(world.GetAuthoredGroupId(0U), 1U);
+  EXPECT_EQ(world.GetAuthoredGroupId(1U), 2U);
+  EXPECT_EQ(world.GetAuthoredGroupId(2U), 3U);
+  EXPECT_EQ(world.GetAuthoredRecipe(0U), nullptr);
+  EXPECT_EQ(world.GetAuthoredRecipe(2U), nullptr);
   EXPECT_EQ(world.GetVoxelizedVolume(2U)->GetPositionPM(),
             second.GetPositionPM());
   first.SetPosition(MakePositionPM(0, 0, 0));

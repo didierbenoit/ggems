@@ -31,7 +31,6 @@
 
 #include <cstdint>
 #include <optional>
-#include <vector>
 
 #include "GGEMSSceneCamera.hh"
 #include "GGEMSCartesianGrid.hh"
@@ -110,10 +109,16 @@ struct GGEMSWorkbenchState {
   /*! \brief Selected physical VolumeID, cleared when the snapshot changes. */
   std::optional<std::uint32_t> selected_volume_id;
 
+  /*! \brief Viewer-only named group index, mutually exclusive with VolumeID. */
+  std::optional<std::uint32_t> selected_geometry_group;
+
   /*!
-   * \brief Snapshot-local display-mode overrides, indexed by physical VolumeID.
+   * \brief Snapshot-local physical and mapping modes with cached group counts.
    */
-  std::vector<render::GGEMSGeometryAppearance> geometry_appearance;
+  render::GGEMSGeometryAppearanceState geometry_appearance;
+
+  /*! \brief Separates volume widget IDs when the geometry snapshot changes. */
+  std::uint32_t geometry_presentation_revision{0U};
 
   /*! \brief Whether to draw the reference axes. */
   bool show_axes{true};

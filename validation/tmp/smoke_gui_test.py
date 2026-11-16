@@ -33,25 +33,25 @@ try:
     )  # GUI
 
     # --------------------------------------------------------------------------
-    world = ggems.geometry.GGEMSWorld()
+    world = ggems.geometry.GGEMSWorld("PET/XCAT World")
     world.set_size(1200, 1200, 2200, "mm")
     world.set_material("Air")
 
-    gantry = ggems.geometry.GGEMSTubs()
+    gantry = ggems.geometry.GGEMSTubs("PET Gantry")
     gantry.set_radii(350.0, 328.0, "mm")
     gantry.set_length(300.0, "mm")
     gantry.set_material("Air")
 
-    block = ggems.geometry.GGEMSBox()
+    block = ggems.geometry.GGEMSBox("PET Block")
     block.set_size(20, 34, 290, "mm")
     block.set_position(338.5, 0, 0, "mm")
     block.set_material("Air")
 
-    module = ggems.geometry.GGEMSBox()
+    module = ggems.geometry.GGEMSBox("PET Module")
     module.set_size(20, 33.38016, 32.5, "mm")
     module.set_material("Air")
 
-    crystal = ggems.geometry.GGEMSBox()
+    crystal = ggems.geometry.GGEMSBox("PET Crystal")
     crystal.set_size(19.8, 4.0, 3.9, "mm")
     crystal.set_material("LSO")
     crystal.set_color(ggems.colors.red_ruby)
@@ -68,7 +68,7 @@ try:
     # phantom.set_color(ggems.colors.blue_babyblue)
 
     xcat = ggems.geometry.GGEMSVoxelizedVolume(
-        "validation/tmp/xcat.mhd", "validation/tmp/xcat_materials.txt"
+        "XCAT Phantom", "validation/tmp/xcat.mhd", "validation/tmp/xcat_materials.txt"
     )
     xcat.set_position(0.0, 0.0, 0.0, "mm")
     xcat.set_rotation(0.0, 0.0, 0.0, "deg")

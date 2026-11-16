@@ -27,13 +27,14 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <initializer_list>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include <gtest/gtest.h>
 #include <imgui.h>
@@ -46,11 +47,12 @@
 #include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
-#include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/render/GGEMSGeometryAppearance.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
@@ -61,15 +63,17 @@ namespace {
 using namespace ggems::geometry;
 using namespace ggems::units;
 using ggems::core::materials::builtins::BuildBuiltInMaterial;
+using Mode = ggems::render::GGEMSGeometryDisplayMode;
 namespace detail = ggems::ui::detail;
+namespace render = ggems::render;
 
-auto MakeWorld() -> GGEMSWorld {
-  GGEMSWorld world;
-  world.SetSize(1_m, 1_m, 1_m).SetMaterial(BuildBuiltInMaterial("Vacuum"));
+auto MakeWorld(std::string name = {}) -> GGEMSWorld {
+  GGEMSWorld world{std::move(name)};
+  world.SetSize(2_m, 2_m, 2_m).SetMaterial(BuildBuiltInMaterial("Vacuum"));
   return world;
 }
 
-auto MakeNestedScene() -> ggems::render::GGEMSGeometryScene {
+auto MakeNestedScene() -> render::GGEMSGeometryScene {
   auto world = MakeWorld();
   GGEMSBox mother;
   mother.SetSize(200_mm, 200_mm, 200_mm)
@@ -84,25 +88,43 @@ auto MakeNestedScene() -> ggems::render::GGEMSGeometryScene {
   world.AddVolume(child, 1U);
   child.SetPosition(MakePositionPM(-20'000'000'000LL, 0, 0));
   world.AddVolume(child, 1U);
-  world.Validate();
-  return ggems::render::BuildGeometryScene(world);
+  return render::BuildGeometryScene(world);
+}
+
+auto MakeNamedScene(bool large = false) -> render::GGEMSGeometryScene {
+  GGEMSBox crystal{"Crystal"};
+  crystal.SetSize(100_um, 100_um, 100_um)
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  GGEMSBox block{"Block"};
+  block.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Air"));
+  if (large) {
+    block.LinearRepeater(crystal, {4U, 4U, 4U}, {200_um, 200_um, 200_um});
+  } else {
+    block.LinearRepeater(crystal, 2U, 200_um, GGEMSRepeatAxis::Z);
+  }
+  GGEMSBox module{"Module"};
+  module.SetSize(20_mm, 20_mm, 20_mm).SetMaterial(BuildBuiltInMaterial("Air"));
+  module.LinearRepeater(block, large ? 8U : 2U, 2300_um, GGEMSRepeatAxis::Y);
+  GGEMSBox pet{"PET"};
+  pet.SetSize(1800_mm, 100_mm, 100_mm).SetMaterial(BuildBuiltInMaterial("Air"));
+  pet.LinearRepeater(module, large ? 56U : 2U, 30_mm, GGEMSRepeatAxis::X);
+  auto world = MakeWorld();
+  world.AddVolume(pet);
+  return render::BuildGeometryScene(world);
 }
 
 class GGEMSImGuiVolumes : public ::testing::Test {
 protected:
   auto SetUp() -> void override {
     context_ = ImGui::CreateContext();
+    ImGui::GetStyle() = ggems::ui::BuildGGEMSStyle(1.0F, 1.0F);
     auto &io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
     io.ConfigFlags =
       ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
-    io.DisplaySize = {1200.0F, 800.0F};
+    io.DisplaySize = {1400.0F, 900.0F};
     io.DeltaTime = 1.0F / 60.0F;
-    unsigned char *pixels{};
-    int width{};
-    int height{};
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     auto &platform = ImGui::GetPlatformIO();
     platform.Platform_ClipboardUserData = &text_;
     platform.Platform_SetClipboardTextFn = [](ImGuiContext *,
@@ -111,22 +133,25 @@ protected:
         ImGui::GetPlatformIO().Platform_ClipboardUserData) = text;
     };
     ImGui::LoadIniSettingsFromMemory(
-      "[Window][###GGEMS.Viewport]\nPos=0,30\nSize=600,740\nCollapsed=0\n\n"
-      "[Window][###GGEMS.Volumes]\nPos=620,30\nSize=340,740\nCollapsed=0\n\n");
+      "[Window][###GGEMS.Viewport]\nPos=0,30\nSize=600,820\nCollapsed=0\n\n"
+      "[Window][###GGEMS.Volumes]\nPos=620,30\nSize=560,820\nCollapsed=0\n\n");
     workbench_.show_output_panel = false;
     workbench_.show_status_panel = false;
     workbench_.show_camera_panel = false;
     workbench_.show_source_panel = false;
-    scene_ = MakeNestedScene();
-    workbench_.geometry_appearance.resize(scene_.occurrences.size());
     workbench_.camera.SetViewportSize(600U, 650U);
-    workbench_.camera.FrameWorld(scene_.world_half_extent_m);
-    Settle();
+    Load(MakeNestedScene());
   }
 
   auto TearDown() -> void override { ImGui::DestroyContext(context_); }
 
   auto Frame(bool log = false) -> void {
+    // Refresh the legacy headless atlas after newly requested font
+    // sizes/glyphs.
+    unsigned char *pixels{};
+    int width{};
+    int height{};
+    ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     ImGui::NewFrame();
     if (log) {
       text_.clear();
@@ -138,7 +163,8 @@ protected:
       .scene_texture_logical_height = workbench_.viewport.height,
       .geometry_scene = loaded_ ? &scene_ : nullptr,
     };
-    layer_.BuildFrame(inputs, detail::GGEMSDeviceStatusSnapshot{}, workbench_);
+    detail::GGEMSDeviceStatusSnapshot const status{};
+    layer_.BuildFrame(inputs, status, workbench_);
     if (log) {
       ImGui::LogFinish();
     }
@@ -149,6 +175,17 @@ protected:
     for (int frame = 0; frame < 3; ++frame) {
       Frame();
     }
+  }
+
+  auto Load(render::GGEMSGeometryScene scene) -> void {
+    scene_ = std::move(scene);
+    loaded_ = true;
+    workbench_.selected_volume_id.reset();
+    workbench_.selected_geometry_group.reset();
+    workbench_.geometry_appearance.Reset(scene_);
+    ++workbench_.geometry_presentation_revision;
+    workbench_.camera.FrameWorld(scene_.world_half_extent_m);
+    Settle();
   }
 
   auto Click(ImVec2 point, ImGuiMouseButton button = ImGuiMouseButton_Left)
@@ -178,83 +215,83 @@ protected:
     return nullptr;
   }
 
-  [[nodiscard]] static auto Row(int row, int depth, bool arrow = false)
-    -> ImVec2 {
+  [[nodiscard]] auto Table() const -> ImGuiTable * {
     auto const *tree = Child("##volume_tree");
-    return {tree->DC.CursorStartPos.x +
+    auto const revision =
+      static_cast<int>(workbench_.geometry_presentation_revision);
+    auto const seed = ImHashData(&revision, sizeof(revision), tree->IDStack[0]);
+    return ImGui::TableFindByID(ImHashStr("##volume_rows", 0U, seed));
+  }
+
+  [[nodiscard]] auto Row(int row, int depth, bool arrow = false) const
+    -> ImVec2 {
+    auto const *table = Table();
+    float const height =
+      ImGui::GetFrameHeight() + (2.0F * ImGui::GetStyle().CellPadding.y);
+    return {table->Columns[0].WorkMinX +
               (static_cast<float>(depth) * ImGui::GetStyle().IndentSpacing) +
               (arrow ? 0.5F * ImGui::GetFontSize()
-                     : (2.0F * (ImGui::GetFontSize() +
-                                (2.0F * ImGui::GetStyle().FramePadding.x))) +
-                         (2.0F * ImGui::GetStyle().ItemSpacing.x) +
+                     : ImGui::GetTreeNodeToLabelSpacing() +
+                         ImGui::GetStyle().ItemSpacing.x +
                          (0.5F * ImGui::GetFontSize())),
-            tree->DC.CursorStartPos.y +
-              (static_cast<float>(row) * ImGui::GetFrameHeightWithSpacing()) +
+            table->OuterRect.Min.y + ImGui::GetStyle().CellPadding.y +
+              (static_cast<float>(row) * height) +
               (0.5F * ImGui::GetFrameHeight())};
   }
 
-  [[nodiscard]] static auto ModeControl(int row, int depth) -> ImVec2 {
-    auto point = Row(row, depth, true);
-    float const cell =
-      ImGui::GetFontSize() + (2.0F * ImGui::GetStyle().FramePadding.x);
-    point.x += (1.5F * cell) + ImGui::GetStyle().ItemSpacing.x -
-               (0.5F * ImGui::GetFontSize());
-    return point;
-  }
-
-  auto PressKey(ImGuiKey key) -> void {
-    ImGui::GetIO().AddKeyEvent(key, true);
-    Frame();
-    ImGui::GetIO().AddKeyEvent(key, false);
-    Frame();
-  }
-
-  auto SelectPopup(char const *label) -> void {
-    auto &context = *ImGui::GetCurrentContext();
-    ASSERT_FALSE(context.OpenPopupStack.empty());
-    auto *popup = context.OpenPopupStack.back().Window;
-    ASSERT_NE(popup, nullptr);
-    auto const target = popup->GetID(label);
-    PressKey(ImGuiKey_Home);
-    for (int step = 0; step < 16 && context.NavId != target; ++step) {
-      PressKey(ImGuiKey_DownArrow);
+  [[nodiscard]] auto ButtonBounds(int row, Mode mode) const -> ImRect {
+    std::array const names{"None", "Wireframe", "Solid"};
+    auto const index = static_cast<std::size_t>(mode);
+    float left = Table()->Columns[1].WorkMinX;
+    for (std::size_t previous = 0U; previous < index; ++previous) {
+      left += ImGui::CalcTextSize(names[previous]).x +
+              (2.0F * ImGui::GetStyle().FramePadding.x) +
+              ImGui::GetStyle().ItemSpacing.x;
     }
-    ASSERT_EQ(context.NavId, target);
-    PressKey(ImGuiKey_Enter);
-    Settle();
+    float const width = ImGui::CalcTextSize(names[index]).x +
+                        (2.0F * ImGui::GetStyle().FramePadding.x);
+    float const top = Row(row, 0).y - (0.5F * ImGui::GetFrameHeight());
+    return {{left, top}, {left + width, top + ImGui::GetFrameHeight()}};
   }
 
-  auto ChangeMode(int row, int depth, char const *label) -> void {
-    Click(ModeControl(row, depth));
-    SelectPopup(label);
-  }
-
-  [[nodiscard]] static auto GroupLabel(int row, int depth) -> ImVec2 {
-    auto point = Row(row, depth, true);
-    point.x += ImGui::GetFontSize() + (2.0F * ImGui::GetStyle().FramePadding.x);
-    return point;
-  }
-
-  auto ChangeGroupMode(int row, int depth, std::string_view label,
-                       std::size_t mode) -> void {
-    std::array const letters{"N", "W", "S"};
-    auto point = GroupLabel(row, depth);
-    point.x +=
-      ImGui::CalcTextSize(label.data(), label.data() + label.size()).x +
-      ImGui::GetStyle().ItemSpacing.x - (0.5F * ImGui::GetFontSize());
-    for (std::size_t choice = 0U; choice < mode; ++choice) {
-      point.x += ImGui::CalcTextSize(letters[choice]).x +
-                 (2.0F * ImGui::GetStyle().FramePadding.x) +
-                 ImGui::GetStyle().ItemSpacing.x;
-    }
-    point.x += 0.5F * (ImGui::CalcTextSize(letters[mode]).x +
-                       (2.0F * ImGui::GetStyle().FramePadding.x));
-    ASSERT_LE(point.x + (0.5F * (ImGui::CalcTextSize(letters[mode]).x +
-                                 (2.0F * ImGui::GetStyle().FramePadding.x))),
-              Child("##volume_tree")->InnerClipRect.Max.x);
-    Click(point);
+  auto ChangeMode(int row, Mode mode) -> void {
+    Click(ButtonBounds(row, mode).GetCenter());
     Settle();
     ASSERT_TRUE(ImGui::GetCurrentContext()->OpenPopupStack.empty());
+  }
+
+  [[nodiscard]] auto HasButtonColor(int row, Mode mode, ImU32 color) const
+    -> bool {
+    auto const bounds = ButtonBounds(row, mode);
+    auto const *draw = Child("##volume_tree")->DrawList;
+    for (int index = 0; index + 2 < draw->IdxBuffer.Size; index += 3) {
+      auto const &first = draw->VtxBuffer[draw->IdxBuffer[index]];
+      auto const &second = draw->VtxBuffer[draw->IdxBuffer[index + 1]];
+      auto const &third = draw->VtxBuffer[draw->IdxBuffer[index + 2]];
+      ImVec2 const center{(first.pos.x + second.pos.x + third.pos.x) / 3.0F,
+                          (first.pos.y + second.pos.y + third.pos.y) / 3.0F};
+      if (first.col == color && second.col == color && third.col == color &&
+          bounds.Contains(center)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  [[nodiscard]] auto HasSelectedFill(int row, Mode mode) const -> bool {
+    return HasButtonColor(row, mode,
+                          ImGui::GetColorU32(ggems::ui::GetThemeColor(
+                            ggems::ui::GGEMSThemeRole::Accent)));
+  }
+
+  auto LeaveControls() -> void {
+    ImGui::GetIO().AddMousePosEvent(-1000.0F, -1000.0F);
+    Settle();
+  }
+
+  [[nodiscard]] auto Occurrences() const
+    -> std::span<render::GGEMSGeometryAppearance const> {
+    return workbench_.geometry_appearance.GetOccurrences();
   }
 
   auto OpenMother() -> void {
@@ -262,7 +299,7 @@ protected:
     PauseClicks();
   }
 
-  ggems::render::GGEMSGeometryScene scene_;
+  render::GGEMSGeometryScene scene_;
   detail::GGEMSWorkbenchState workbench_;
   bool loaded_{true};
   std::string text_;
@@ -292,7 +329,6 @@ TEST_F(GGEMSImGuiVolumes,
   EXPECT_NE(text_.find("Aluminum"), std::string::npos);
   EXPECT_NE(text_.find("World position"), std::string::npos);
   EXPECT_NE(text_.find("World orientation"), std::string::npos);
-  EXPECT_EQ(text_.find("Repeated copies:"), std::string::npos);
 }
 
 TEST_F(GGEMSImGuiVolumes,
@@ -311,12 +347,12 @@ TEST_F(GGEMSImGuiVolumes,
     Click(Row(2, 2));
     Click(Row(2, 2));
     EXPECT_EQ(workbench_.selected_volume_id, 2U);
-    auto const actual_matrix = workbench_.camera.BuildWorldToClipMatrix();
-    auto const expected_matrix = expected.BuildWorldToClipMatrix();
-    EXPECT_EQ(actual_matrix.row_0, expected_matrix.row_0);
-    EXPECT_EQ(actual_matrix.row_1, expected_matrix.row_1);
-    EXPECT_EQ(actual_matrix.row_2, expected_matrix.row_2);
-    EXPECT_EQ(actual_matrix.row_3, expected_matrix.row_3);
+    auto const actual = workbench_.camera.BuildWorldToClipMatrix();
+    auto const reference = expected.BuildWorldToClipMatrix();
+    EXPECT_EQ(actual.row_0, reference.row_0);
+    EXPECT_EQ(actual.row_1, reference.row_1);
+    EXPECT_EQ(actual.row_2, reference.row_2);
+    EXPECT_EQ(actual.row_3, reference.row_3);
   }
 }
 
@@ -325,10 +361,7 @@ TEST_F(GGEMSImGuiVolumes, EmptyAndWorldOnlyScenesRemainInspectable) {
   Frame(true);
   EXPECT_NE(text_.find("No World loaded yet"), std::string::npos);
   EXPECT_FALSE(workbench_.selected_volume_id);
-  scene_ = ggems::render::BuildGeometryScene(MakeWorld());
-  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
-  loaded_ = true;
-  Settle();
+  Load(render::BuildGeometryScene(MakeWorld()));
   Click(Row(0, 0));
   EXPECT_EQ(workbench_.selected_volume_id, 0U);
   Frame(true);
@@ -346,11 +379,7 @@ TEST_F(GGEMSImGuiVolumes,
     box.SetPosition(MakePositionPM(0, (index - 50) * 5'000'000'000LL, 0));
     world.AddVolume(box);
   }
-  world.Validate();
-  scene_ = ggems::render::BuildGeometryScene(world);
-  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
-  workbench_.selected_volume_id.reset();
-  Settle();
+  Load(render::BuildGeometryScene(world));
   auto *tree = Child("##volume_tree");
   ASSERT_NE(tree, nullptr);
   EXPECT_GT(tree->ScrollMax.y, 0.0F);
@@ -363,12 +392,11 @@ TEST_F(GGEMSImGuiVolumes,
   EXPECT_GT(tree->Scroll.y, 0.0F);
   EXPECT_FLOAT_EQ(Child("##volume_metadata")->Scroll.y, 0.0F);
   float const height = tree->Size.y;
-  float const border = tree->Pos.y + height - 1.0F;
-  io.AddMousePosEvent(tree->Pos.x + 100.0F, border);
+  io.AddMousePosEvent(tree->Pos.x + 100.0F, tree->Pos.y + height - 1.0F);
   Settle();
   io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
   Frame();
-  io.AddMousePosEvent(tree->Pos.x + 100.0F, border + 35.0F);
+  io.AddMousePosEvent(tree->Pos.x + 100.0F, tree->Pos.y + height + 34.0F);
   Frame();
   io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
   Settle();
@@ -382,546 +410,399 @@ TEST_F(GGEMSImGuiVolumes,
 }
 
 TEST_F(GGEMSImGuiVolumes,
-       RowModeControlsNeverSelectExpandOrFocusAndKeepChildrenIndependent) {
-  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+       LocalButtonsStayAlignedAndPreserveIndependentChildren) {
   OpenMother();
   Click(Row(2, 2));
-  ASSERT_EQ(workbench_.selected_volume_id, 2U);
-  for (auto const projection : {
-         detail::GGEMSSceneCamera::Projection::Orthographic,
-         detail::GGEMSSceneCamera::Projection::Perspective,
-       }) {
-    workbench_.camera.SetProjection(projection);
-    auto const before = workbench_.camera.BuildWorldToClipMatrix();
-    float const tree_height = Child("##volume_tree")->ContentSize.y;
-    ChangeMode(1, 1, "None");
-    EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::None);
-    EXPECT_FALSE(workbench_.geometry_appearance[2].mode_override);
-    EXPECT_FALSE(workbench_.geometry_appearance[3].mode_override);
-    EXPECT_EQ(workbench_.selected_volume_id, 2U);
-    EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, tree_height);
-    auto const after = workbench_.camera.BuildWorldToClipMatrix();
-    EXPECT_EQ(after.row_0, before.row_0);
-    EXPECT_EQ(after.row_1, before.row_1);
-    EXPECT_EQ(after.row_2, before.row_2);
-    EXPECT_EQ(after.row_3, before.row_3);
-    ChangeMode(1, 1, "Solid");
-    EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::Solid);
-    ChangeMode(1, 1, "Wireframe");
-    EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::Wireframe);
-  }
-  ChangeMode(2, 2, "None");
-  PauseClicks();
-  Click(Row(3, 2));
-  Click(Row(2, 2));
+  auto const before = workbench_.camera.BuildWorldToClipMatrix();
+  auto const height = Child("##volume_tree")->ContentSize.y;
+  ChangeMode(1, Mode::None);
+  EXPECT_EQ(Occurrences()[1].mode_override, Mode::None);
+  EXPECT_FALSE(Occurrences()[2].mode_override);
+  EXPECT_FALSE(Occurrences()[3].mode_override);
   EXPECT_EQ(workbench_.selected_volume_id, 2U);
-  auto expected = workbench_.camera;
-  expected.FrameBounds(scene_.occurrences[2].minimum_m,
-                       scene_.occurrences[2].maximum_m);
-  Click(Row(2, 2));
-  EXPECT_EQ(workbench_.camera.GetDiagnostics().target_m,
-            expected.GetDiagnostics().target_m);
-  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::None);
-  EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::Wireframe);
+  EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, height);
+  ChangeMode(1, Mode::Solid);
+  ChangeMode(2, Mode::Wireframe);
+  LeaveControls();
+  EXPECT_TRUE(HasSelectedFill(1, Mode::Solid));
+  EXPECT_TRUE(HasSelectedFill(2, Mode::Wireframe));
+  EXPECT_TRUE(HasSelectedFill(3, Mode::Solid));
+  EXPECT_FALSE(HasSelectedFill(1, Mode::None));
+  EXPECT_LE(ButtonBounds(3, Mode::Solid).Max.x,
+            Child("##volume_tree")->InnerClipRect.Max.x);
+  auto const after = workbench_.camera.BuildWorldToClipMatrix();
+  EXPECT_EQ(after.row_0, before.row_0);
+  EXPECT_EQ(after.row_1, before.row_1);
+  EXPECT_EQ(after.row_2, before.row_2);
+  EXPECT_EQ(after.row_3, before.row_3);
 }
 
-TEST_F(GGEMSImGuiVolumes, WorldModePopupHasNoSolidAndWorksAtScaledMetrics) {
-  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+TEST_F(GGEMSImGuiVolumes, ActualThemeSeparatesSelectionHoverPressAndText) {
+  using ggems::ui::GetThemeColor;
+  using ggems::ui::GGEMSThemeRole;
+  auto const accent = GetThemeColor(GGEMSThemeRole::Accent);
+  auto const dark = GetThemeColor(GGEMSThemeRole::RecessedBackground);
+  auto const luminance = [](ImVec4 color) -> float {
+    return (0.2126F * color.x) + (0.7152F * color.y) + (0.0722F * color.z);
+  };
+  EXPECT_GT((luminance(accent) + 0.05F) / (luminance(dark) + 0.05F), 4.5F);
+  EXPECT_NE(ImGui::GetColorU32(accent), ImGui::GetColorU32(ImGuiCol_Button));
+  LeaveControls();
+  EXPECT_TRUE(HasSelectedFill(0, Mode::Wireframe));
+  EXPECT_FALSE(HasSelectedFill(0, Mode::None));
+  EXPECT_TRUE(HasButtonColor(0, Mode::Wireframe, ImGui::GetColorU32(dark)));
+  auto &io = ImGui::GetIO();
+  auto const point = ButtonBounds(0, Mode::Wireframe).GetCenter();
+  io.AddMousePosEvent(point.x, point.y);
+  Settle();
+  EXPECT_TRUE(HasButtonColor(
+    0, Mode::Wireframe,
+    ImGui::GetColorU32(GetThemeColor(GGEMSThemeRole::AccentStrong))));
+  io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+  Frame();
+  EXPECT_TRUE(HasButtonColor(
+    0, Mode::Wireframe,
+    ImGui::GetColorU32(GetThemeColor(GGEMSThemeRole::Attention))));
+  io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+  Frame();
+  auto const inactive = ButtonBounds(0, Mode::None).GetCenter();
+  io.AddMousePosEvent(inactive.x, inactive.y);
+  Settle();
+  EXPECT_FALSE(HasSelectedFill(0, Mode::None));
+  EXPECT_TRUE(
+    HasButtonColor(0, Mode::None, ImGui::GetColorU32(ImGuiCol_ButtonHovered)));
+  EXPECT_FALSE(workbench_.selected_volume_id);
+  EXPECT_FALSE(workbench_.selected_geometry_group);
+}
+
+TEST_F(GGEMSImGuiVolumes,
+       NamedWorldHasOneEnvelopeControlAndNoSolidAtScaledMetrics) {
+  Load(render::BuildGeometryScene(MakeWorld("PET / XCAT")));
+  ImGui::SetWindowSize(detail::k_volumes_window_name, {340.0F, 820.0F});
   ImGui::GetStyle().ScaleAllSizes(1.5F);
   ImGui::GetStyle().FontScaleMain = 1.5F;
   Settle();
-  auto const before = workbench_.camera.BuildWorldToClipMatrix();
-  Click(ModeControl(0, 0));
   Frame(true);
-  EXPECT_NE(text_.find("Wireframe"), std::string::npos);
+  EXPECT_NE(text_.find("PET / XCAT"), std::string::npos);
+  EXPECT_NE(text_.find("GGEMSWorld"), std::string::npos);
   EXPECT_EQ(text_.find("Solid"), std::string::npos);
-  EXPECT_EQ(text_.find("Automatic"), std::string::npos);
+  EXPECT_EQ(text_.find("Project"), std::string::npos);
+  Settle();
+  ChangeMode(0, Mode::None);
+  EXPECT_EQ(Occurrences()[0].mode_override, Mode::None);
   EXPECT_FALSE(workbench_.selected_volume_id);
-  SelectPopup("None");
-  EXPECT_EQ(workbench_.geometry_appearance[0].mode_override, Mode::None);
-  ChangeMode(0, 0, "Wireframe");
-  EXPECT_EQ(workbench_.geometry_appearance[0].mode_override, Mode::Wireframe);
-  auto const after = workbench_.camera.BuildWorldToClipMatrix();
-  EXPECT_EQ(after.row_0, before.row_0);
-  EXPECT_EQ(after.row_1, before.row_1);
-  EXPECT_EQ(after.row_2, before.row_2);
-  EXPECT_EQ(after.row_3, before.row_3);
+  ChangeMode(0, Mode::Wireframe);
+  EXPECT_EQ(Occurrences()[0].mode_override, Mode::Wireframe);
+  EXPECT_LE(ButtonBounds(0, Mode::Wireframe).Max.x,
+            Child("##volume_tree")->InnerClipRect.Max.x);
+  ImGui::SetWindowSize(detail::k_volumes_window_name, {560.0F, 820.0F});
+  Settle();
+  Click(Row(1, 1));
+  EXPECT_EQ(workbench_.selected_volume_id, 0U);
 }
 
-TEST_F(GGEMSImGuiVolumes,
-       LeafModesPersistDuringNavigationSelectionAndFramingWithoutAppearance) {
-  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+TEST_F(GGEMSImGuiVolumes, LocalModesPersistDuringCameraNavigationAndFraming) {
   OpenMother();
-  Click(Row(2, 2));
-  ASSERT_EQ(workbench_.selected_volume_id, 2U);
-  Click(ModeControl(2, 2));
-  Frame(true);
-  EXPECT_NE(text_.find("None"), std::string::npos);
-  EXPECT_NE(text_.find("Wireframe"), std::string::npos);
-  EXPECT_NE(text_.find("Solid"), std::string::npos);
-  EXPECT_EQ(text_.find("Automatic"), std::string::npos);
-  EXPECT_EQ(text_.find("Appearance"), std::string::npos);
-  EXPECT_EQ(text_.find("Color"), std::string::npos);
-  EXPECT_NE(text_.find("Production Cuts: not available in this scene snapshot"),
-            std::string::npos);
-  SelectPopup("None");
-  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::None);
-  ChangeMode(2, 2, "Wireframe");
-  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::Wireframe);
-  ChangeMode(2, 2, "Solid");
-  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::Solid);
-  ChangeMode(1, 1, "None");
-  ChangeMode(3, 2, "None");
-
+  ChangeMode(1, Mode::None);
+  ChangeMode(2, Mode::Wireframe);
+  ChangeMode(3, Mode::None);
   auto const *viewport =
     ImGui::FindWindowByName(detail::k_viewport_window_name);
-  ASSERT_NE(viewport, nullptr);
-  auto &io = ImGui::GetIO();
-  io.AddMousePosEvent(viewport->Pos.x + (0.5F * viewport->Size.x),
-                      viewport->Pos.y + (0.5F * viewport->Size.y));
+  ImGui::GetIO().AddMousePosEvent(viewport->Pos.x + 200.0F,
+                                  viewport->Pos.y + 200.0F);
   Settle();
   auto const zoom = workbench_.camera.GetDiagnostics().zoom;
-  io.AddMouseWheelEvent(0.0F, 1.0F);
+  ImGui::GetIO().AddMouseWheelEvent(0.0F, 1.0F);
   Settle();
   EXPECT_NE(workbench_.camera.GetDiagnostics().zoom, zoom);
-  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::Solid);
-
-  PauseClicks();
-  Click(Row(3, 2));
-  EXPECT_EQ(workbench_.selected_volume_id, 3U);
   PauseClicks();
   Click(Row(2, 2));
   Click(Row(2, 2));
   EXPECT_EQ(workbench_.selected_volume_id, 2U);
-  EXPECT_EQ(workbench_.geometry_appearance[1].mode_override, Mode::None);
-  EXPECT_EQ(workbench_.geometry_appearance[2].mode_override, Mode::Solid);
-  EXPECT_EQ(workbench_.geometry_appearance[3].mode_override, Mode::None);
+  EXPECT_EQ(Occurrences()[1].mode_override, Mode::None);
+  EXPECT_EQ(Occurrences()[2].mode_override, Mode::Wireframe);
+  EXPECT_EQ(Occurrences()[3].mode_override, Mode::None);
+  Frame(true);
+  EXPECT_EQ(text_.find("Automatic"), std::string::npos);
+  EXPECT_EQ(text_.find("Appearance"), std::string::npos);
+  EXPECT_NE(text_.find("Production Cuts: not available in this scene snapshot"),
+            std::string::npos);
 }
 
 TEST_F(GGEMSImGuiVolumes,
-       AuthoredGroupsControl56ModulesAnd448CrystalsWithoutInheritance) {
-  using Mode = ggems::render::GGEMSGeometryDisplayMode;
-  auto world = MakeWorld();
-  GGEMSBox child;
-  child.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Water"));
-  child.SetPosition(MakePositionPM(0, 300'000'000'000LL, 0));
-  world.AddVolume(child);
-  GGEMSBox leaf;
-  leaf.SetSize(250_um, 250_um, 250_um)
-    .SetMaterial(BuildBuiltInMaterial("Water"));
-  GGEMSBox inner;
-  inner.SetSize(500_um, 500_um, 500_um)
-    .SetMaterial(BuildBuiltInMaterial("Air"));
-  inner.AddVolume(leaf);
-  GGEMSBox outer;
-  outer.SetSize(12_mm, 12_mm, 12_mm).SetMaterial(BuildBuiltInMaterial("Air"));
-  outer.LinearRepeater(inner, 8U, 1_mm, GGEMSRepeatAxis::Y);
-  world.LinearRepeater(outer, 56U, 16_mm, GGEMSRepeatAxis::X);
-  scene_ = ggems::render::BuildGeometryScene(world);
-  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
-  for (auto const &occurrence : scene_.occurrences) {
-    if (occurrence.parent_volume_id != 0U) {
-      workbench_.geometry_appearance[occurrence.volume_id].mode_override =
-        static_cast<Mode>(occurrence.volume_id % 3U);
-    }
+       NamedGroupsApplyLastCommandWinsAndShowActualMixedState) {
+  Load(MakeNamedScene());
+  ASSERT_EQ(scene_.groups.size(), 4U);
+  ASSERT_EQ(scene_.occurrences.size(), 16U);
+  ASSERT_EQ(scene_.groups[0].name, "PET");
+  ASSERT_EQ(scene_.groups[1].name, "Module");
+  ASSERT_EQ(scene_.groups[2].name, "Block");
+  ASSERT_EQ(scene_.groups[3].name, "Crystal");
+  EXPECT_FALSE(workbench_.geometry_appearance.GetGroupMode(0U));
+  ChangeMode(1, Mode::None);
+  for (std::size_t id = 1U; id < Occurrences().size(); ++id) {
+    EXPECT_EQ(Occurrences()[id].mode_override, Mode::None);
   }
-  auto const initial_appearance = workbench_.geometry_appearance;
+  // Individual copies are reached only through the physical hierarchy.
+  for (int row = 5; row <= 10; ++row) {
+    Click(Row(row, row - 3, true));
+    PauseClicks();
+  }
+  auto *tree = Child("##volume_tree");
+  ImGui::SetScrollY(tree, tree->ScrollMax.y);
   Settle();
-  ASSERT_EQ(scene_.occurrences.size(), 954U);
-  auto const outer_recipe = scene_.occurrences[2].repeater_recipe_id;
-  auto const inner_recipe = scene_.occurrences[3].repeater_recipe_id;
-  ASSERT_NE(outer_recipe, 0U);
-  ASSERT_NE(inner_recipe, 0U);
-  ASSERT_NE(inner_recipe, outer_recipe);
-  ASSERT_EQ(scene_.occurrences.front().children.size(), 57U);
-  std::array<std::uint32_t, 56U> local_groups{};
-  std::size_t group_count{};
-  for (auto const root : scene_.occurrences.front().children) {
-    if (root == 1U) {
-      continue;
-    }
-    ASSERT_EQ(scene_.occurrences[root].children.size(), 8U);
-    auto const local_group =
-      scene_.occurrences[scene_.occurrences[root].children.front()]
-        .repeater_group_id;
-    EXPECT_NE(local_group, 0U);
-    for (std::size_t previous = 0U; previous < group_count; ++previous) {
-      EXPECT_NE(local_groups[previous], local_group);
-    }
-    local_groups[group_count++] = local_group;
-    for (auto const member : scene_.occurrences[root].children) {
-      ASSERT_EQ(scene_.occurrences[member].children.size(), 1U);
-      EXPECT_EQ(scene_.occurrences[member].repeater_recipe_id, inner_recipe);
+  ChangeMode(11, Mode::Solid);
+  EXPECT_EQ(Occurrences()[4].mode_override, Mode::Solid);
+  for (std::size_t id = 1U; id < Occurrences().size(); ++id) {
+    if (id != 4U) {
+      EXPECT_EQ(Occurrences()[id].mode_override, Mode::None);
     }
   }
-  EXPECT_EQ(group_count, 56U);
-  auto const before = workbench_.camera.BuildWorldToClipMatrix();
-  auto const collapsed_height = Child("##volume_tree")->ContentSize.y;
-  Frame(true);
-  std::string const label{"Box repeated \xC3\x97"
-                          "56"};
-  auto const label_position = text_.find(label);
-  ASSERT_NE(label_position, std::string::npos);
-  EXPECT_EQ(text_.find(label, label_position + label.size()),
-            std::string::npos);
+  EXPECT_FALSE(workbench_.geometry_appearance.GetGroupMode(0U));
+  ImGui::SetScrollY(tree, 0.0F);
+  Settle();
+  LeaveControls();
+  for (auto const mode : {Mode::None, Mode::Wireframe, Mode::Solid}) {
+    EXPECT_FALSE(HasSelectedFill(1, mode));
+  }
+  ChangeMode(3, Mode::Wireframe);
+  for (std::size_t id = 1U; id < Occurrences().size(); ++id) {
+    auto expected = id == 4U ? Mode::Solid : Mode::None;
+    if (scene_.occurrences[id].name == "Block") {
+      expected = Mode::Wireframe;
+    }
+    EXPECT_EQ(Occurrences()[id].mode_override, expected);
+  }
+  ChangeMode(1, Mode::Solid);
+  for (std::size_t id = 1U; id < Occurrences().size(); ++id) {
+    EXPECT_EQ(Occurrences()[id].mode_override, Mode::Solid);
+  }
+  EXPECT_EQ(workbench_.geometry_appearance.GetGroupMode(0U), Mode::Solid);
+  EXPECT_FALSE(Occurrences()[0].mode_override);
   EXPECT_FALSE(workbench_.selected_volume_id);
-  EXPECT_EQ(text_.find("Repeated copies:"), std::string::npos);
+}
+
+TEST_F(GGEMSImGuiVolumes, EqualDisplayNamesAndMarkupStayIndependent) {
+  auto world = MakeWorld();
+  GGEMSBox first{"Detector##%s"};
+  first.SetSize(10_mm, 10_mm, 10_mm)
+    .SetPosition(MakePositionPM(-20'000'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  GGEMSBox second{"Detector##%s"};
+  second.SetSize(10_mm, 10_mm, 10_mm)
+    .SetPosition(MakePositionPM(20'000'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  world.AddVolume(first);
+  world.AddVolume(second);
+  Load(render::BuildGeometryScene(world));
+  ASSERT_EQ(scene_.groups.size(), 2U);
+  ChangeMode(1, Mode::None);
+  EXPECT_EQ(Occurrences()[1].mode_override, Mode::None);
+  Click(Row(1, 1));
+  EXPECT_EQ(workbench_.selected_geometry_group, 0U);
+  Click(Row(3, 1));
+  EXPECT_EQ(workbench_.selected_geometry_group, 1U);
+  EXPECT_FALSE(Occurrences()[2].mode_override);
+  ChangeMode(3, Mode::Wireframe);
+  EXPECT_EQ(Occurrences()[2].mode_override, Mode::Wireframe);
+  EXPECT_EQ(Occurrences()[1].mode_override, Mode::None);
+  Frame(true);
+  auto const first_name = text_.find("Detector##%s");
+  ASSERT_NE(first_name, std::string::npos);
+  EXPECT_NE(text_.find("Detector##%s", first_name + 1U), std::string::npos);
+  EXPECT_FALSE(workbench_.selected_volume_id);
+}
+
+TEST_F(GGEMSImGuiVolumes, SummarySelectionInspectsTrueGroupWithoutPhysicalID) {
+  Load(MakeNamedScene());
+  auto const before = workbench_.camera.BuildWorldToClipMatrix();
+  auto const height = Child("##volume_tree")->ContentSize.y;
+  Click(Row(4, 2));
+  ASSERT_EQ(workbench_.selected_geometry_group, 3U);
+  EXPECT_FALSE(workbench_.selected_volume_id);
+  Frame(true);
+  EXPECT_NE(text_.find("Controlled occurrences: 8"), std::string::npos);
+  EXPECT_NE(text_.find("Authored roots (global): 8"), std::string::npos);
+  EXPECT_NE(text_.find("Physical parents: 4"), std::string::npos);
+  EXPECT_NE(text_.find("Root placement: Linear"), std::string::npos);
+  EXPECT_NE(text_.find("Roots per parent: 2"), std::string::npos);
+  EXPECT_NE(text_.find("Linear counts (X, Y, Z): (1, 1, 2)"),
+            std::string::npos);
+  EXPECT_NE(text_.find("Material: Water; density"), std::string::npos);
+  EXPECT_NE(text_.find("Dimensions (Box)"), std::string::npos);
+  EXPECT_EQ(text_.find("VolumeID:"), std::string::npos);
   Settle();
-  for (auto const mode :
-       {Mode::Solid, Mode::None, Mode::Solid, Mode::Wireframe}) {
-    ChangeGroupMode(2, 1, label, static_cast<std::size_t>(mode));
-    std::size_t members{};
-    for (std::uint32_t index = 0U; index < scene_.occurrences.size(); ++index) {
-      auto const &appearance = workbench_.geometry_appearance[index];
-      if (scene_.occurrences[index].repeater_recipe_id == outer_recipe) {
-        EXPECT_EQ(appearance.mode_override, mode);
-        ++members;
-      } else {
-        EXPECT_EQ(appearance.mode_override,
-                  initial_appearance[index].mode_override);
-      }
-      EXPECT_EQ(scene_.occurrences[index].volume_id, index);
-    }
-    EXPECT_EQ(members, 56U);
-    EXPECT_FALSE(workbench_.selected_volume_id);
-    EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, collapsed_height);
-  }
+  EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, height);
+  ChangeMode(2, Mode::None);
+  EXPECT_EQ(workbench_.selected_geometry_group, 3U);
+  Click(Row(1, 1, true));
+  PauseClicks();
+  EXPECT_EQ(workbench_.selected_geometry_group, 3U);
+  EXPECT_FALSE(workbench_.selected_volume_id);
+  Click(Row(1, 1, true));
+  PauseClicks();
+  Click(Row(1, 1));
+  EXPECT_EQ(workbench_.selected_geometry_group, 0U);
+  Frame(true);
+  EXPECT_NE(text_.find("Controlled occurrences: 15"), std::string::npos);
+  EXPECT_NE(text_.find("Material: Air; density"), std::string::npos);
+  EXPECT_NE(text_.find("Material: Water; density"), std::string::npos);
+  EXPECT_NE(text_.find("Production Cuts: not available in this scene snapshot"),
+            std::string::npos);
+  EXPECT_EQ(text_.find("VolumeID:"), std::string::npos);
+  Settle();
+  Click(Row(5, 2));
+  EXPECT_EQ(workbench_.selected_volume_id, 1U);
+  EXPECT_FALSE(workbench_.selected_geometry_group);
   auto const after = workbench_.camera.BuildWorldToClipMatrix();
   EXPECT_EQ(after.row_0, before.row_0);
   EXPECT_EQ(after.row_1, before.row_1);
   EXPECT_EQ(after.row_2, before.row_2);
   EXPECT_EQ(after.row_3, before.row_3);
-
-  Click(Row(2, 1, true));
-  Settle();
-  EXPECT_GT(Child("##volume_tree")->ContentSize.y, collapsed_height);
-  Click(Row(3, 2, true));
-  PauseClicks();
-  auto const before_inner = workbench_.geometry_appearance;
-  std::string const inner_label{"Box \xC3\x97"
-                                "8 \xC2\xB7 448 total"};
-  Frame(true);
-  EXPECT_NE(text_.find(inner_label), std::string::npos);
-  Settle();
-  ASSERT_NO_FATAL_FAILURE(ChangeGroupMode(4, 3, inner_label, 2U));
-  std::size_t inner_members{};
-  for (std::size_t index = 0U; index < scene_.occurrences.size(); ++index) {
-    if (scene_.occurrences[index].repeater_recipe_id == inner_recipe) {
-      EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                Mode::Solid);
-      ++inner_members;
-    } else {
-      EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                before_inner[index].mode_override);
-    }
-  }
-  EXPECT_EQ(inner_members, 448U);
-  Click(Row(4, 3, true));
-  PauseClicks();
-  auto const before_individual = workbench_.geometry_appearance;
-  ChangeMode(5, 4, "Wireframe");
-  std::size_t solid_roots{};
-  std::size_t wireframe_roots{};
-  for (std::size_t index = 0U; index < scene_.occurrences.size(); ++index) {
-    auto const &actual = workbench_.geometry_appearance[index].mode_override;
-    if (index == 3U) {
-      EXPECT_EQ(actual, Mode::Wireframe);
-    } else {
-      EXPECT_EQ(actual, before_individual[index].mode_override);
-    }
-    if (scene_.occurrences[index].repeater_recipe_id == inner_recipe) {
-      solid_roots += actual == Mode::Solid ? 1U : 0U;
-      wireframe_roots += actual == Mode::Wireframe ? 1U : 0U;
-    }
-  }
-  EXPECT_EQ(solid_roots, 447U);
-  EXPECT_EQ(wireframe_roots, 1U);
-  Click(Row(5, 4, true));
-  PauseClicks();
-  EXPECT_FALSE(workbench_.selected_volume_id);
-  PauseClicks();
-  Click(Row(3, 2));
-  EXPECT_EQ(workbench_.selected_volume_id, 2U);
-  Frame(true);
-  EXPECT_NE(text_.find("VolumeID: 2"), std::string::npos);
-  EXPECT_EQ(text_.find("Repeated copies:"), std::string::npos);
-  PauseClicks();
-  auto expected = workbench_.camera;
-  expected.FrameBounds(scene_.occurrences[4].minimum_m,
-                       scene_.occurrences[4].maximum_m);
-  Click(Row(6, 5));
-  Click(Row(6, 5));
-  EXPECT_EQ(workbench_.selected_volume_id, 4U);
-  auto const framed = workbench_.camera.BuildWorldToClipMatrix();
-  auto const reference = expected.BuildWorldToClipMatrix();
-  EXPECT_EQ(framed.row_0, reference.row_0);
-  EXPECT_EQ(framed.row_1, reference.row_1);
-  EXPECT_EQ(framed.row_2, reference.row_2);
-  EXPECT_EQ(framed.row_3, reference.row_3);
-  EXPECT_EQ(scene_.occurrences.size(), 954U);
 }
 
-TEST_F(GGEMSImGuiVolumes,
-       VisibleGroupsExcludeManualAndIndependentSameShapeRepeaters) {
-  using Mode = ggems::render::GGEMSGeometryDisplayMode;
-  auto world = MakeWorld();
-  GGEMSBox child;
-  child.SetSize(2_mm, 2_mm, 2_mm)
-    .SetMaterial(BuildBuiltInMaterial("Water"))
-    .SetPosition(MakePositionPM(-100'000'000'000LL, 0, 0));
-  world.AddVolume(child);
-  child.SetPosition(MakePositionPM(-60'000'000'000LL, 0, 0));
-  world.LinearRepeater(child, 3U, 8_mm, GGEMSRepeatAxis::X);
-  child.SetPosition(MakePositionPM(40'000'000'000LL, 0, 0));
-  world.CircularRepeater(child, 4U, GGEMSRepeatAxis::Z);
-  child.SetPosition(MakePositionPM(0, 80'000'000'000LL, 0));
-  world.LinearRepeater(child, 2U, 8_mm, GGEMSRepeatAxis::X);
-  scene_ = ggems::render::BuildGeometryScene(world);
-  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
-  ASSERT_EQ(scene_.occurrences.size(), 11U);
-  Settle();
-  std::array const groups{
-    std::array{2U, 3U, 4U, 0U},
-    std::array{5U, 6U, 7U, 8U},
-    std::array{9U, 10U, 0U, 0U},
-  };
-  std::array const labels{
-    "Box repeated \xC3\x97"
-    "3",
-    "Box repeated \xC3\x97"
-    "4",
-    "Box repeated \xC3\x97"
-    "2",
-  };
-  Frame(true);
-  for (auto const *label : labels) {
-    EXPECT_NE(text_.find(label), std::string::npos);
+TEST_F(GGEMSImGuiVolumes, LargeNamedSceneKeepsPhysicalTreeCollapsed) {
+  Load(MakeNamedScene(true));
+  ASSERT_EQ(scene_.occurrences.size(), 29'178U);
+  ASSERT_EQ(scene_.groups.size(), 4U);
+  EXPECT_EQ(scene_.groups[1].members.size(), 56U);
+  EXPECT_EQ(scene_.groups[2].members.size(), 448U);
+  EXPECT_EQ(scene_.groups[3].members.size(), 28'672U);
+  auto const *membership = scene_.groups[3].members.data();
+  auto const height = Child("##volume_tree")->ContentSize.y;
+  EXPECT_LT(height, 8.0F * (ImGui::GetFrameHeight() +
+                            (2.0F * ImGui::GetStyle().CellPadding.y)));
+  for (int frame = 0; frame < 6; ++frame) {
+    Frame();
+    EXPECT_EQ(scene_.groups[3].members.data(), membership);
+    EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, height);
   }
+  ChangeMode(4, Mode::None);
+  EXPECT_EQ(workbench_.geometry_appearance.GetGroupMode(3U), Mode::None);
+  EXPECT_FALSE(workbench_.geometry_appearance.GetGroupMode(0U));
+  EXPECT_FALSE(workbench_.selected_volume_id);
+  EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, height);
+  Click(Row(4, 2, true));
   Settle();
-  for (std::size_t group_index = 0U; group_index < groups.size();
-       ++group_index) {
-    workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
-    auto const &group = groups[group_index];
-    ChangeGroupMode(static_cast<int>(group_index) + 2, 1, labels[group_index],
-                    2U);
-    for (std::uint32_t index = 0U; index < scene_.occurrences.size(); ++index) {
-      auto const &mode = workbench_.geometry_appearance[index].mode_override;
-      if (index != 0U && std::ranges::find(group, index) != group.end()) {
-        EXPECT_EQ(mode, Mode::Solid);
-      } else {
-        EXPECT_FALSE(mode);
-      }
-      EXPECT_EQ(scene_.occurrences[index].volume_id, index);
-      EXPECT_EQ(scene_.occurrences[index].parent_volume_id, 0U);
-    }
-    EXPECT_FALSE(workbench_.selected_volume_id);
-  }
+  EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, height);
+  EXPECT_FALSE(workbench_.selected_geometry_group);
+  Click(Row(4, 2));
+  EXPECT_EQ(workbench_.selected_geometry_group, 3U);
+  EXPECT_FALSE(workbench_.selected_volume_id);
+  EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, height);
 }
 
-TEST_F(GGEMSImGuiVolumes,
-       AuthoredRecipesSpanFourParentsButIdenticalRecipesStayIndependent) {
-  using Mode = ggems::render::GGEMSGeometryDisplayMode;
-  GGEMSBox child;
-  child.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Water"));
-  GGEMSBox leaf;
-  leaf.SetSize(500_um, 500_um, 500_um)
-    .SetMaterial(BuildBuiltInMaterial("Water"));
-  child.AddVolume(leaf);
-  GGEMSBox mother;
-  mother.SetSize(50_mm, 50_mm, 50_mm).SetMaterial(BuildBuiltInMaterial("Air"));
-  child.SetPosition(MakePositionPM(-10'000'000'000LL, 0, 0));
-  mother.LinearRepeater(child, 3U, 5_mm, GGEMSRepeatAxis::Y);
-  child.SetPosition(MakePositionPM(10'000'000'000LL, 0, 0));
-  mother.LinearRepeater(child, 3U, 5_mm, GGEMSRepeatAxis::Y);
-  child.SetPosition(MakePositionPM(0, 15'000'000'000LL, 0));
-  mother.AddVolume(child);
-  auto world = MakeWorld();
-  world.LinearRepeater(mother, 4U, 100_mm, GGEMSRepeatAxis::X);
-  scene_ = ggems::render::BuildGeometryScene(world);
-  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
-  for (auto const &occurrence : scene_.occurrences) {
-    if (occurrence.parent_volume_id != 0U) {
-      workbench_.geometry_appearance[occurrence.volume_id].mode_override =
-        static_cast<Mode>(occurrence.volume_id % 3U);
-    }
-  }
-  auto const initial_appearance = workbench_.geometry_appearance;
-  Settle();
-  ASSERT_EQ(scene_.occurrences.size(), 61U);
-  auto const outer_recipe = scene_.occurrences[1].repeater_recipe_id;
-  auto const first_recipe = scene_.occurrences[2].repeater_recipe_id;
-  auto const second_recipe = scene_.occurrences[8].repeater_recipe_id;
-  ASSERT_NE(outer_recipe, 0U);
-  ASSERT_NE(first_recipe, 0U);
-  ASSERT_NE(second_recipe, 0U);
-  ASSERT_NE(first_recipe, second_recipe);
-  ASSERT_NE(first_recipe, outer_recipe);
-  ASSERT_NE(second_recipe, outer_recipe);
-  EXPECT_EQ(scene_.occurrences[17].repeater_recipe_id, first_recipe);
-  EXPECT_NE(scene_.occurrences[17].repeater_group_id,
-            scene_.occurrences[2].repeater_group_id);
-  std::string const outer_label{"Box repeated \xC3\x97"
-                                "4"};
-  std::string const inner_label{"Box \xC3\x97"
-                                "3 \xC2\xB7 12 total"};
-  Frame(true);
-  EXPECT_NE(text_.find(outer_label), std::string::npos);
-  Settle();
-  for (auto const mode : {Mode::None, Mode::Solid, Mode::Wireframe}) {
-    ChangeGroupMode(1, 1, outer_label, static_cast<std::size_t>(mode));
-    std::size_t outer_members{};
-    for (std::size_t index = 0U; index < scene_.occurrences.size(); ++index) {
-      if (scene_.occurrences[index].repeater_recipe_id == outer_recipe) {
-        EXPECT_EQ(workbench_.geometry_appearance[index].mode_override, mode);
-        ++outer_members;
-      } else {
-        EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                  initial_appearance[index].mode_override);
-      }
-    }
-    EXPECT_EQ(outer_members, 4U);
-  }
-  Click(Row(1, 1, true));
-  PauseClicks();
-  Click(Row(2, 2, true));
-  PauseClicks();
-  Frame(true);
-  EXPECT_NE(text_.find(inner_label), std::string::npos);
-  Settle();
-  auto const before_inner = workbench_.geometry_appearance;
-  ASSERT_NO_FATAL_FAILURE(ChangeGroupMode(3, 3, inner_label, 2U));
-  std::size_t first_members{};
-  for (std::size_t index = 0U; index < scene_.occurrences.size(); ++index) {
-    if (scene_.occurrences[index].repeater_recipe_id == first_recipe) {
-      EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                Mode::Solid);
-      ++first_members;
-    } else {
-      EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                before_inner[index].mode_override);
-    }
-  }
-  EXPECT_EQ(first_members, 12U);
-  auto const before_other_recipe = workbench_.geometry_appearance;
-  ASSERT_NO_FATAL_FAILURE(ChangeGroupMode(4, 3, inner_label, 0U));
-  std::size_t second_members{};
-  for (std::size_t index = 0U; index < scene_.occurrences.size(); ++index) {
-    if (scene_.occurrences[index].repeater_recipe_id == second_recipe) {
-      EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                Mode::None);
-      ++second_members;
-    } else {
-      EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                before_other_recipe[index].mode_override);
-    }
-  }
-  EXPECT_EQ(second_members, 12U);
-  Click(Row(6, 2, true));
-  PauseClicks();
-  auto const before_other_parent = workbench_.geometry_appearance;
-  ASSERT_NO_FATAL_FAILURE(ChangeGroupMode(7, 3, inner_label, 1U));
-  for (std::size_t index = 0U; index < scene_.occurrences.size(); ++index) {
-    if (scene_.occurrences[index].repeater_recipe_id == first_recipe) {
-      EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                Mode::Wireframe);
-    } else {
-      EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-                before_other_parent[index].mode_override);
-    }
-  }
-  EXPECT_FALSE(workbench_.geometry_appearance[0].mode_override);
-  EXPECT_EQ(scene_.occurrences[2].parent_volume_id, 1U);
-  EXPECT_EQ(scene_.occurrences[17].parent_volume_id, 16U);
-  EXPECT_FALSE(workbench_.selected_volume_id);
-  auto const appearances = workbench_.geometry_appearance;
-  auto const camera = workbench_.camera.BuildWorldToClipMatrix();
-  auto const expanded_height = Child("##volume_tree")->ContentSize.y;
-  Click(Row(1, 1, true));
-  Settle();
-  EXPECT_LT(Child("##volume_tree")->ContentSize.y, expanded_height);
-  for (std::size_t index = 0U; index < appearances.size(); ++index) {
-    EXPECT_EQ(workbench_.geometry_appearance[index].mode_override,
-              appearances[index].mode_override);
-    EXPECT_EQ(scene_.occurrences[index].volume_id, index);
-  }
-  auto const after = workbench_.camera.BuildWorldToClipMatrix();
-  EXPECT_EQ(after.row_0, camera.row_0);
-  EXPECT_EQ(after.row_1, camera.row_1);
-  EXPECT_EQ(after.row_2, camera.row_2);
-  EXPECT_EQ(after.row_3, camera.row_3);
-  EXPECT_FALSE(workbench_.selected_volume_id);
-}
-
-TEST_F(GGEMSImGuiVolumes, RightClickNeverOpensPhysicalOrRepeaterContextMenus) {
-  auto world = MakeWorld();
-  GGEMSBox child;
-  child.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Water"));
-  world.LinearRepeater(child, 2U, 10_mm, GGEMSRepeatAxis::X);
-  scene_ = ggems::render::BuildGeometryScene(world);
-  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
-  Settle();
-  auto const camera = workbench_.camera.BuildWorldToClipMatrix();
-  // The World is physical; the next visible row is presentation only.
-  std::array const points{Row(0, 0), GroupLabel(1, 1)};
-  for (auto const point : points) {
+TEST_F(GGEMSImGuiVolumes, RightClickNeverOpensNamedOrPhysicalContextMenus) {
+  Load(MakeNamedScene());
+  auto const before = workbench_.camera.BuildWorldToClipMatrix();
+  for (auto const point : {Row(0, 0), Row(1, 1), Row(5, 2)}) {
     Click(point, ImGuiMouseButton_Right);
-    Settle();
     EXPECT_TRUE(ImGui::GetCurrentContext()->OpenPopupStack.empty());
-    Frame(true);
-    for (auto const *label : {
-           "This occurrence",
-           "All siblings",
-           "This subtree",
-           "This repeater",
-           "Repeated copies:",
-         }) {
-      EXPECT_EQ(text_.find(label), std::string::npos);
-    }
-    Settle();
     EXPECT_FALSE(workbench_.selected_volume_id);
   }
-  Click(Row(1, 1, true));
-  Settle();
-  Click(Row(2, 2), ImGuiMouseButton_Right);
-  Settle();
-  EXPECT_TRUE(ImGui::GetCurrentContext()->OpenPopupStack.empty());
-  Frame(true);
-  for (auto const *label :
-       {"This occurrence", "All siblings", "This subtree", "This repeater"}) {
-    EXPECT_EQ(text_.find(label), std::string::npos);
-  }
-  for (auto const &appearance : workbench_.geometry_appearance) {
+  for (auto const &appearance : Occurrences()) {
     EXPECT_FALSE(appearance.mode_override);
   }
   auto const after = workbench_.camera.BuildWorldToClipMatrix();
-  EXPECT_EQ(after.row_0, camera.row_0);
-  EXPECT_EQ(after.row_1, camera.row_1);
-  EXPECT_EQ(after.row_2, camera.row_2);
-  EXPECT_EQ(after.row_3, camera.row_3);
+  EXPECT_EQ(after.row_0, before.row_0);
+  EXPECT_EQ(after.row_1, before.row_1);
+  EXPECT_EQ(after.row_2, before.row_2);
+  EXPECT_EQ(after.row_3, before.row_3);
 }
 
-TEST_F(GGEMSImGuiVolumes, VoxelMetadataShowsPaletteAndFramesTheWholeGrid) {
-  ggems::test::GGEMSVoxelizedTestFixture const fixture;
+TEST_F(GGEMSImGuiVolumes, VoxelMappingsRemainIndependentUnderGlobalControls) {
+  std::array<std::uint16_t, 8> const labels{0U, 1U, 2U, 3U, 0U, 1U, 2U, 3U};
+  ggems::test::GGEMSVoxelizedTestFixture const fixture{
+    {2U, 2U, 2U},
+    "1 2 3",
+    labels,
+    "0 0 Air\n1 1 Water Solid blue_babyblue\n"
+    "2 2 Water Wireframe red_ruby\n3 3 Air None white_white\n"};
   auto world = MakeWorld();
-  world.AddVolume(fixture.Import());
-  scene_ = ggems::render::BuildGeometryScene(world);
-  workbench_.geometry_appearance.assign(scene_.occurrences.size(), {});
-  Settle();
-  Click(Row(1, 1));
-  Frame(true);
-  EXPECT_EQ(workbench_.selected_volume_id, 1U);
-  EXPECT_NE(text_.find("VoxelizedVolume"), std::string::npos);
-  EXPECT_NE(text_.find("Material palette: 2 entries"), std::string::npos);
-  EXPECT_EQ(text_.find("Density:"), std::string::npos);
-  EXPECT_EQ(text_.find("Name: Water"), std::string::npos);
+  world.AddVolume(fixture.Import("XCAT"));
+  Load(render::BuildGeometryScene(world));
+  ASSERT_EQ(scene_.groups.size(), 1U);
+  // XCAT header, then one control-free selectable physical voxel row.
+  float const collapsed = Child("##volume_tree")->ContentSize.y;
+  EXPECT_LT(collapsed, 4.0F * (ImGui::GetFrameHeight() +
+                               (2.0F * ImGui::GetStyle().CellPadding.y)));
+  Click(Row(2, 2, true));
+  PauseClicks();
+  EXPECT_GT(Child("##volume_tree")->ContentSize.y, collapsed);
+  Click(Row(2, 2));
+  ASSERT_EQ(workbench_.selected_volume_id, 1U);
   auto expected = workbench_.camera;
   expected.FrameBounds(scene_.occurrences[1].minimum_m,
                        scene_.occurrences[1].maximum_m);
-  Click(Row(1, 1));
+  Click(Row(2, 2));
   EXPECT_EQ(workbench_.camera.GetDiagnostics().target_m,
             expected.GetDiagnostics().target_m);
-  EXPECT_EQ(workbench_.camera.BuildWorldToClipMatrix().row_0,
-            expected.BuildWorldToClipMatrix().row_0);
+  Frame(true);
+  EXPECT_NE(text_.find("Air [0]"), std::string::npos);
+  EXPECT_NE(text_.find("Air [3]"), std::string::npos);
+  EXPECT_NE(text_.find("Material palette: 2 entries"), std::string::npos);
+  Settle();
+  LeaveControls();
+  for (auto const mode : {Mode::None, Mode::Wireframe, Mode::Solid}) {
+    EXPECT_FALSE(HasSelectedFill(2, mode));
+  }
+  ChangeMode(3, Mode::None);
+  EXPECT_EQ(workbench_.geometry_appearance.GetVoxelMappingMode(1U, 0U),
+            Mode::None);
+  EXPECT_EQ(workbench_.geometry_appearance.GetVoxelMappingMode(1U, 3U),
+            Mode::None);
+  ChangeMode(6, Mode::Solid);
+  EXPECT_EQ(workbench_.geometry_appearance.GetVoxelMappingMode(1U, 3U),
+            Mode::Solid);
+  EXPECT_EQ(workbench_.geometry_appearance.GetVoxelMappingMode(1U, 0U),
+            Mode::None);
+  for (auto const mode : {Mode::Wireframe, Mode::None, Mode::Solid}) {
+    ChangeMode(1, mode);
+    EXPECT_EQ(workbench_.geometry_appearance.GetOccurrenceMode(scene_, 1U),
+              mode);
+    EXPECT_EQ(workbench_.geometry_appearance.GetVoxelMappingMode(1U, 0U),
+              Mode::None);
+    EXPECT_EQ(workbench_.geometry_appearance.GetVoxelMappingMode(1U, 1U),
+              Mode::Solid);
+    EXPECT_EQ(workbench_.geometry_appearance.GetVoxelMappingMode(1U, 2U),
+              Mode::Wireframe);
+    EXPECT_EQ(workbench_.geometry_appearance.GetVoxelMappingMode(1U, 3U),
+              Mode::Solid);
+  }
+  EXPECT_EQ(workbench_.selected_volume_id, 1U);
+  EXPECT_EQ(scene_.occurrences[1].voxel_slices->palette_size, 2U);
+  EXPECT_EQ(scene_.occurrences[1].voxel_slices->mappings[0].mode, Mode::Solid);
+  Click(Row(2, 2, true));
+  PauseClicks();
+  EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, collapsed);
+  Click(Row(1, 1, true));
+  PauseClicks();
+  EXPECT_LT(Child("##volume_tree")->ContentSize.y, collapsed);
+  Click(Row(1, 1, true));
+  PauseClicks();
+  EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, collapsed);
+  Load(render::BuildGeometryScene(world));
+  EXPECT_FLOAT_EQ(Child("##volume_tree")->ContentSize.y, collapsed);
+}
+
+TEST_F(GGEMSImGuiVolumes, ReplacementResetsModesSelectionAndExpansionScope) {
+  Load(MakeNamedScene());
+  ChangeMode(1, Mode::None);
+  Click(Row(4, 2));
+  ASSERT_EQ(workbench_.selected_geometry_group, 3U);
+  EXPECT_FALSE(workbench_.selected_volume_id);
+  auto const old_revision = workbench_.geometry_presentation_revision;
+  Load(MakeNamedScene());
+  EXPECT_NE(workbench_.geometry_presentation_revision, old_revision);
+  EXPECT_FALSE(workbench_.selected_volume_id);
+  EXPECT_FALSE(workbench_.selected_geometry_group);
+  for (auto const &appearance : Occurrences()) {
+    EXPECT_FALSE(appearance.mode_override);
+  }
+  EXPECT_FALSE(workbench_.geometry_appearance.GetGroupMode(0U));
+  EXPECT_LT(Child("##volume_tree")->ContentSize.y,
+            8.0F * (ImGui::GetFrameHeight() +
+                    (2.0F * ImGui::GetStyle().CellPadding.y)));
 }
 
 } // namespace

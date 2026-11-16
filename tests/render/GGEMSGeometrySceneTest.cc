@@ -81,6 +81,14 @@ auto Mesh(GGEMSGeometryScene const &scene, std::size_t occurrence)
   -> GGEMSGeometryMesh const & {
   return scene.meshes[scene.occurrences[occurrence].mesh_index];
 }
+
+auto HasInspection(GGEMSGeometryGroup const &group, std::string_view name,
+                   std::string_view value) -> bool {
+  return std::ranges::any_of(
+    group.inspection, [&](auto const &property) -> bool {
+      return property.name == name && property.value == value;
+    });
+}
 } // namespace
 
 TEST(GGEMSGeometryScene, AnalyticalModelColorsDefaultToWhiteAndCopyByValue) {
@@ -822,7 +830,7 @@ TEST(GGEMSGeometryScene,
       next_offset += batch.instance_count;
       ASSERT_LE(next_offset, scene.voxel_cells.size());
       ASSERT_GT(batch.instance_count, 0U);
-      EXPECT_NE(batch.mode, Mode::None);
+      ASSERT_LT(batch.mapping_index, slices.mappings.size());
       ++batch_counts[batch.plane];
       for (std::uint32_t index = 0U; index < batch.instance_count; ++index) {
         auto const cell = scene.voxel_cells[batch.first_instance + index];
@@ -830,21 +838,21 @@ TEST(GGEMSGeometryScene,
         EXPECT_FALSE(seen[batch.plane][cell]);
         seen[batch.plane][cell] = true;
         auto const label = labels[offsets[batch.plane][cell]];
+        EXPECT_EQ(batch.mapping_index, label);
         EXPECT_EQ(batch.mode, modes[label]);
         EXPECT_EQ(batch.color, colors[label]);
       }
     }
-    // Equal Water mappings share one red Solid batch, distinct from blue wire.
-    EXPECT_EQ(batch_counts, (std::array<std::size_t, 3>{3U, 3U, 3U}));
+    // Original mapping rows stay independent, even with equal color/material.
+    EXPECT_EQ(batch_counts, (std::array<std::size_t, 3>{5U, 5U, 5U}));
     for (std::size_t plane = 0U; plane < offsets.size(); ++plane) {
       for (std::size_t cell = 0U; cell < offsets[plane].size(); ++cell) {
-        EXPECT_EQ(seen[plane][cell],
-                  modes[labels[offsets[plane][cell]]] != Mode::None);
+        EXPECT_TRUE(seen[plane][cell]);
       }
     }
   }
   EXPECT_EQ(next_offset, scene.voxel_cells.size());
-  EXPECT_EQ(scene.voxel_cells.size(), 44U);
+  EXPECT_EQ(scene.voxel_cells.size(), 54U);
   auto const &rotated = scene.occurrences[2];
   EXPECT_EQ(rotated.position_m, (std::array{0.02, 0.0, 0.0}));
   EXPECT_DOUBLE_EQ(rotated.orientation[1], -1.0);
@@ -872,4 +880,279 @@ TEST(GGEMSGeometryScene, RunOwnedVoxelGeometryNeedsNoSimulationInitialization) {
   EXPECT_EQ(scene.occurrences[1].minimum_m,
             (std::array{-0.001, -0.002, -0.003}));
   EXPECT_EQ(scene.occurrences[1].maximum_m, (std::array{0.001, 0.002, 0.003}));
+}
+
+TEST(GGEMSGeometryScene, NamedGroupsCacheExactMembershipAndMixedLastCommands) {
+  using Mode = GGEMSGeometryDisplayMode;
+  auto air = BuildBuiltInMaterial("Air");
+  GGEMSBox crystal{"Crystal"};
+  crystal.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(air);
+  GGEMSBox block{"Block"};
+  block.SetSize(8_mm, 8_mm, 8_mm).SetMaterial(air);
+  block.LinearRepeater(crystal, 2U, 4_mm, GGEMSRepeatAxis::X);
+  GGEMSBox module{"Module"};
+  module.SetSize(24_mm, 16_mm, 16_mm).SetMaterial(air);
+  module.LinearRepeater(block, 2U, 12_mm, GGEMSRepeatAxis::X);
+  GGEMSBox pet{"PET"};
+  pet.SetSize(80_mm, 30_mm, 30_mm).SetMaterial(air);
+  pet.LinearRepeater(module, 2U, 40_mm, GGEMSRepeatAxis::X);
+  GGEMSWorld world{"PET / XCAT"};
+  world.SetSize(1_m, 1_m, 1_m).SetMaterial(air);
+  world.AddVolume(pet);
+  GGEMSBox independent{"Block"};
+  independent.SetSize(8_mm, 8_mm, 8_mm)
+    .SetPosition(MakePositionPM(100'000'000'000LL, 0, 0))
+    .SetMaterial(air);
+  world.AddVolume(independent);
+  auto const scene = BuildGeometryScene(world);
+  world = World();
+
+  ASSERT_EQ(scene.occurrences.size(), 17U);
+  EXPECT_EQ(scene.occurrences[0].name, "PET / XCAT");
+  ASSERT_EQ(scene.groups.size(), 5U);
+  EXPECT_EQ(scene.groups[0].name, "PET");
+  EXPECT_TRUE(scene.groups[0].subtree);
+  EXPECT_EQ(scene.groups[0].members.size(), 15U);
+  EXPECT_EQ(scene.groups[1].members.size(), 2U);
+  EXPECT_EQ(scene.groups[2].members.size(), 4U);
+  EXPECT_EQ(scene.groups[3].members.size(), 8U);
+  EXPECT_TRUE(scene.groups[3].physical_leaves);
+  EXPECT_FALSE(scene.groups[0].physical_leaves);
+  EXPECT_FALSE(scene.groups[1].physical_leaves);
+  EXPECT_EQ(scene.groups[4].name, "Block");
+  EXPECT_EQ(scene.groups[4].members, (std::vector<std::uint32_t>{16U}));
+  EXPECT_EQ(scene.groups[0].child_groups,
+            (std::vector<std::uint32_t>{1U, 2U, 3U}));
+  EXPECT_EQ(scene.occurrences[1].child_branches,
+            (std::vector<std::vector<std::uint32_t>>{{2U, 9U}}));
+  ASSERT_EQ(scene.root_entries.size(), 2U);
+  EXPECT_EQ(scene.root_entries[0].group_index, 0U);
+  EXPECT_EQ(scene.root_entries[1].group_index, 4U);
+
+  GGEMSGeometryAppearanceState state;
+  state.Reset(scene);
+  EXPECT_FALSE(state.GetGroupMode(0U));
+  EXPECT_EQ(state.GetGroupMode(1U), Mode::Wireframe);
+  EXPECT_EQ(state.GetGroupMode(3U), Mode::Solid);
+  state.SetGroupMode(scene, 0U, Mode::None);
+  EXPECT_EQ(state.GetGroupMode(0U), Mode::None);
+  state.SetOccurrenceMode(scene, 4U, Mode::Solid);
+  EXPECT_FALSE(state.GetGroupMode(0U));
+  EXPECT_FALSE(state.GetGroupMode(3U));
+  for (auto const id : scene.groups[0].members) {
+    EXPECT_EQ(state.GetOccurrenceMode(scene, id),
+              id == 4U ? Mode::Solid : Mode::None);
+  }
+  state.SetGroupMode(scene, 2U, Mode::Wireframe);
+  EXPECT_EQ(state.GetGroupMode(2U), Mode::Wireframe);
+  EXPECT_FALSE(state.GetGroupMode(0U));
+  EXPECT_EQ(state.GetOccurrenceMode(scene, 4U), Mode::Solid);
+  EXPECT_EQ(state.GetOccurrenceMode(scene, 5U), Mode::None);
+  EXPECT_EQ(state.GetOccurrenceMode(scene, 16U), Mode::Solid);
+  state.SetGroupMode(scene, 0U, Mode::Solid);
+  for (std::uint32_t group = 0U; group < 4U; ++group) {
+    EXPECT_EQ(state.GetGroupMode(group), Mode::Solid);
+  }
+  state.SetOccurrenceMode(scene, 0U, Mode::None);
+  EXPECT_EQ(state.GetGroupMode(0U), Mode::Solid);
+  state.Reset(scene);
+  EXPECT_FALSE(state.GetGroupMode(0U));
+  EXPECT_EQ(state.GetOccurrenceMode(scene, 0U), Mode::Wireframe);
+  EXPECT_FALSE(state.GetOccurrences()[4U].mode_override);
+  state.Clear();
+  EXPECT_TRUE(state.GetOccurrences().empty());
+}
+
+TEST(GGEMSGeometryScene, MappingEditsRetainAllThreePlanesAndIndependentModes) {
+  using Mode = GGEMSGeometryDisplayMode;
+  std::array<std::uint16_t, 8> const labels{0U, 1U, 2U, 3U, 0U, 1U, 2U, 3U};
+  ggems::test::GGEMSVoxelizedTestFixture const fixture{
+    {2U, 2U, 2U},
+    "1 2 3",
+    labels,
+    "0 0 Air\n1 1 Water Solid blue_babyblue\n"
+    "2 2 Water Wireframe red_ruby\n3 3 Air None white_white\n",
+  };
+  auto world = World();
+  auto const imported = fixture.Import("XCAT");
+  auto const physical_labels = std::vector(imported.GetMaterialLabels().begin(),
+                                           imported.GetMaterialLabels().end());
+  world.AddVolume(imported);
+  auto const scene = BuildGeometryScene(world);
+  ASSERT_EQ(scene.groups.size(), 1U);
+  EXPECT_EQ(scene.groups[0].name, "XCAT");
+  EXPECT_FALSE(scene.groups[0].physical_leaves);
+  auto const &slices = *scene.occurrences[1U].voxel_slices;
+  ASSERT_EQ(slices.mappings.size(), 4U);
+  EXPECT_EQ(slices.mappings[0].material_name, "Air");
+  EXPECT_EQ(slices.mappings[3].material_name, "Air");
+  EXPECT_EQ(slices.mappings[3].first_label, 3U);
+  EXPECT_EQ(slices.mappings[3].end_label, 4U);
+  EXPECT_EQ(slices.palette_size, 2U);
+  EXPECT_EQ(scene.voxel_cells.size(), 12U);
+  auto const immutable_cells = scene.voxel_cells;
+  GGEMSGeometryAppearanceState state;
+  state.Reset(scene);
+  auto const visible_count = [&] -> std::uint32_t {
+    std::uint32_t result{};
+    for (auto const &batch : slices.batches) {
+      auto const mode = ResolveVoxelDisplayMode(
+        state.GetOccurrenceMode(scene, 1U),
+        state.GetVoxelMappingMode(1U, batch.mapping_index));
+      if (mode != Mode::None) {
+        result += batch.instance_count;
+      }
+    }
+    return result;
+  };
+  EXPECT_EQ(visible_count(), 7U);
+  state.SetVoxelMappingMode(1U, 0U, Mode::None);
+  EXPECT_EQ(visible_count(), 6U);
+  state.SetGroupMode(scene, 0U, Mode::Wireframe);
+  EXPECT_EQ(state.GetVoxelMappingMode(1U, 1U), Mode::Solid);
+  EXPECT_EQ(state.GetVoxelMappingMode(1U, 2U), Mode::Wireframe);
+  EXPECT_EQ(visible_count(), 6U);
+  state.SetGroupMode(scene, 0U, Mode::None);
+  EXPECT_EQ(visible_count(), 0U);
+  state.SetGroupMode(scene, 0U, Mode::Solid);
+  EXPECT_EQ(visible_count(), 6U);
+  state.SetVoxelMappingMode(1U, 3U, Mode::Solid);
+  EXPECT_EQ(visible_count(), 11U);
+  EXPECT_EQ(state.GetVoxelMappingMode(1U, 0U), Mode::None);
+  EXPECT_EQ(slices.mappings[3].mode, Mode::None);
+  EXPECT_EQ(slices.mappings[2].color, RED_Ruby);
+  EXPECT_EQ(scene.voxel_cells, immutable_cells);
+  EXPECT_TRUE(
+    std::ranges::equal(imported.GetMaterialLabels(), physical_labels));
+  state.Reset(scene);
+  EXPECT_EQ(visible_count(), 7U);
+  EXPECT_EQ(state.GetVoxelMappingMode(1U, 3U), Mode::None);
+  state.Reset(BuildGeometryScene(World()));
+  ASSERT_EQ(state.GetOccurrences().size(), 1U);
+  state.Reset(scene);
+  EXPECT_EQ(visible_count(), 7U);
+}
+
+TEST(GGEMSGeometryScene, NamedChildRemainsDiscoverableAcrossUnnamedRoots) {
+  using Mode = GGEMSGeometryDisplayMode;
+  auto const air = BuildBuiltInMaterial("Air");
+  GGEMSBox child{"Shared child"};
+  child.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(air);
+  GGEMSBox unnamed;
+  unnamed.SetSize(8_mm, 8_mm, 8_mm).SetMaterial(air);
+  unnamed.AddVolume(child);
+  auto world = World();
+  unnamed.SetPosition(MakePositionPM(-50'000'000'000LL, 0, 0));
+  world.AddVolume(unnamed);
+  unnamed.SetPosition(MakePositionPM(0, 0, 0));
+  GGEMSBox named{"PET"};
+  named.SetSize(16_mm, 16_mm, 16_mm)
+    .SetPosition(MakePositionPM(50'000'000'000LL, 0, 0))
+    .SetMaterial(air);
+  named.AddVolume(unnamed);
+  world.AddVolume(named);
+  auto const scene = BuildGeometryScene(world);
+  ASSERT_EQ(scene.occurrences.size(), 6U);
+  ASSERT_EQ(scene.groups.size(), 2U);
+  EXPECT_EQ(scene.groups[0].members, (std::vector<std::uint32_t>{2U, 5U}));
+  EXPECT_EQ(scene.groups[1].members, (std::vector<std::uint32_t>{3U, 4U, 5U}));
+  EXPECT_EQ(scene.groups[1].child_groups, (std::vector<std::uint32_t>{0U}));
+  ASSERT_EQ(scene.root_entries.size(), 3U);
+  EXPECT_FALSE(scene.root_entries[0].group_index);
+  EXPECT_EQ(scene.root_entries[0].volumes, (std::vector<std::uint32_t>{1U}));
+  EXPECT_EQ(scene.root_entries[1].group_index, 0U);
+  EXPECT_EQ(scene.root_entries[2].group_index, 1U);
+  GGEMSGeometryAppearanceState state;
+  state.Reset(scene);
+  state.SetGroupMode(scene, 1U, Mode::None);
+  EXPECT_FALSE(state.GetGroupMode(0U));
+  state.SetGroupMode(scene, 0U, Mode::Wireframe);
+  EXPECT_EQ(state.GetOccurrenceMode(scene, 2U), Mode::Wireframe);
+  EXPECT_EQ(state.GetOccurrenceMode(scene, 5U), Mode::Wireframe);
+  EXPECT_EQ(state.GetOccurrenceMode(scene, 3U), Mode::None);
+  EXPECT_EQ(state.GetOccurrenceMode(scene, 4U), Mode::None);
+}
+
+TEST(GGEMSGeometryScene, GroupInspectionUsesCapturedRecipesAndActualMembers) {
+  auto const air = BuildBuiltInMaterial("Air");
+  auto const lso = BuildBuiltInMaterial("LSO");
+  GGEMSBox crystal{"Crystal"};
+  crystal.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(lso);
+  GGEMSBox module{"Module"};
+  module.SetSize(20_mm, 30_mm, 10_mm)
+    .SetPosition(MakePositionPM(100'000'000'000LL, 0, 0))
+    .SetMaterial(air);
+  module.LinearRepeater(crystal, {2U, 3U, 1U}, {4_mm, 4_mm, 0_mm});
+  GGEMSTubs pet{"PET"};
+  pet.SetRadii(200_mm, 70_mm).SetLength(50_mm).SetMaterial(air);
+  pet.CircularRepeater(module, 4U, GGEMSRepeatAxis::Z);
+  auto world = World();
+  world.AddVolume(pet);
+  GGEMSBox independent{"Crystal"};
+  independent.SetSize(6_mm, 6_mm, 6_mm)
+    .SetPosition(MakePositionPM(300'000'000'000LL, 0, 0))
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  world.AddVolume(independent);
+  auto const scene = BuildGeometryScene(world);
+  world = World();
+  ASSERT_EQ(scene.groups.size(), 4U);
+  auto const &root = scene.groups[0];
+  auto const &modules = scene.groups[1];
+  auto const &crystals = scene.groups[2];
+  EXPECT_TRUE(HasInspection(root, "Controlled occurrences", "29"));
+  EXPECT_TRUE(HasInspection(root, "Authored roots (global)", "1"));
+  EXPECT_TRUE(HasInspection(root, "Type", "Tubs (1 occurrences)"));
+  EXPECT_TRUE(HasInspection(root, "Type", "Box (28 occurrences)"));
+  EXPECT_TRUE(HasInspection(
+    root, "Material",
+    "Air; density " + HumanReadable(air.GetDensity(), 3) + "; 5 occurrences"));
+  EXPECT_TRUE(HasInspection(
+    root, "Material",
+    "LSO; density " + HumanReadable(lso.GetDensity(), 3) + "; 24 occurrences"));
+  EXPECT_TRUE(HasInspection(root, "Root placement", "Single attachment"));
+  EXPECT_TRUE(HasInspection(modules, "Root placement", "Circular"));
+  EXPECT_TRUE(HasInspection(modules, "Circular axis", "Z"));
+  EXPECT_TRUE(HasInspection(modules, "Roots per parent", "4"));
+  EXPECT_TRUE(HasInspection(modules, "Authored roots (global)", "4"));
+  EXPECT_TRUE(HasInspection(crystals, "Root placement", "Linear"));
+  EXPECT_TRUE(HasInspection(crystals, "Controlled occurrences", "24"));
+  EXPECT_TRUE(HasInspection(crystals, "Roots per parent", "6"));
+  EXPECT_TRUE(HasInspection(crystals, "Physical parents", "4"));
+  EXPECT_TRUE(HasInspection(crystals, "Linear counts (X, Y, Z)", "(2, 3, 1)"));
+  EXPECT_TRUE(HasInspection(crystals, "Linear pitch (X, Y, Z)",
+                            "(" + HumanReadable(4_mm, 3) + ", " +
+                              HumanReadable(4_mm, 3) + ", " +
+                              HumanReadable(0_mm, 3) + ")"));
+  auto const expected_dimension = HumanReadable(2_mm);
+  EXPECT_TRUE(
+    std::ranges::any_of(crystals.inspection, [&](auto const &property) -> bool {
+      return property.name == "Dimensions (Box)" &&
+             property.value.find(expected_dimension) != std::string::npos;
+    }));
+  EXPECT_EQ(scene.groups[3].name, crystals.name);
+  EXPECT_TRUE(HasInspection(scene.groups[3], "Controlled occurrences", "1"));
+  EXPECT_TRUE(
+    HasInspection(scene.groups[3], "Root placement", "Not available"));
+  EXPECT_FALSE(HasInspection(scene.groups[3], "Root placement", "Linear"));
+}
+
+TEST(GGEMSGeometryScene, ScalarZRepeaterInspectionUsesCanonicalAxisData) {
+  GGEMSBox axial{"Axial"};
+  axial.SetSize(2_mm, 2_mm, 2_mm).SetMaterial(BuildBuiltInMaterial("Water"));
+  auto world = World();
+  world.LinearRepeater(axial, 3U, 6_mm, GGEMSRepeatAxis::Z);
+  auto const scene = BuildGeometryScene(world);
+  ASSERT_EQ(scene.groups.size(), 1U);
+  auto const &group = scene.groups.front();
+  EXPECT_TRUE(group.physical_leaves);
+  EXPECT_TRUE(HasInspection(group, "Root placement", "Linear"));
+  EXPECT_TRUE(HasInspection(group, "Linear counts (X, Y, Z)", "(1, 1, 3)"));
+  EXPECT_TRUE(HasInspection(group, "Linear pitch (X, Y, Z)",
+                            "(" + HumanReadable(0_mm, 3) + ", " +
+                              HumanReadable(0_mm, 3) + ", " +
+                              HumanReadable(6_mm, 3) + ")"));
+  EXPECT_FALSE(
+    std::ranges::any_of(group.inspection, [](auto const &property) -> bool {
+      return property.name == "Circular axis";
+    }));
 }

@@ -80,9 +80,9 @@ public:
     std::optional<std::uint32_t> selected_volume_id;
 
     /*!
-     * \brief Per-VolumeID mode choices, or empty for hierarchical defaults.
+     * \brief Viewer-owned occurrence and voxel mapping choices for this scene.
      */
-    std::span<render::GGEMSGeometryAppearance const> geometry_appearance;
+    render::GGEMSGeometryAppearanceState const &geometry_appearance;
   };
 
   /*! \brief Creates an inactive UI component. */
@@ -181,17 +181,18 @@ public:
    * \brief Records scene rendering and prepares its image for sampling.
    *
    * No commands are recorded before color targets exist. A completed scene pass
-   *   leaves its color image in shader-read-only layout.
+   * leaves its color image in shader-read-only layout.
    *
    * \param[in] command_buffer Recording graphics command buffer outside an
-   *   active rendering pass.
+   * active rendering pass.
    * \param[in] parameters Transform, clear color, and visibility controls.
    */
   auto RecordSceneCommands(vk::raii::CommandBuffer const &command_buffer,
                            RenderParameters const &parameters) -> void;
 
   /*!
-   * \brief Retains an immutable geometry scene and uploads its shared edges.
+   * \brief Retains immutable geometry and uploads procedural parameters and
+   * central-slice indices.
    *
    * The caller must finish GPU use of the previous geometry buffer first.
    *

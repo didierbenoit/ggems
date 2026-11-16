@@ -37,7 +37,6 @@
 #include <memory>
 #include <utility>
 #include <optional>
-#include <span>
 
 #include <vulkan/vulkan_raii.hpp>
 
@@ -425,7 +424,7 @@ auto GGEMSVulkanGeometry::Record(
   vk::raii::CommandBuffer const &command_buffer,
   std::array<std::array<float, 4U>, 4U> const &world_to_clip,
   std::optional<std::uint32_t> selected_volume_id,
-  std::span<render::GGEMSGeometryAppearance const> appearance,
+  render::GGEMSGeometryAppearanceState const &appearance,
   bool selected_only) const -> void {
   if (!scene_ || (selected_only && !selected_volume_id)) {
     return;
@@ -444,17 +443,13 @@ auto GGEMSVulkanGeometry::Record(
 
   GeometryPushConstants constants;
 
-  render::GGEMSGeometryAppearance const automatic;
-
   for (auto const &occurrence : scene_->occurrences) {
     if ((selected_volume_id == occurrence.volume_id) != selected_only) {
       continue;
     }
 
-    auto const &override =
-      appearance.empty() ? automatic : appearance[occurrence.volume_id];
-
-    auto const mode = render::ResolveGeometryDisplayMode(occurrence, override);
+    auto const mode =
+      appearance.GetOccurrenceMode(*scene_, occurrence.volume_id);
     if (mode == render::GGEMSGeometryDisplayMode::None) {
       continue;
     }
@@ -476,6 +471,7 @@ auto GGEMSVulkanGeometry::Record(
           value += world_to_clip[row][inner] *
                    occurrence.local_to_world[(inner * 4U) + column];
         }
+
         constants.local_to_clip[row][column] = value;
       }
     }
@@ -485,7 +481,8 @@ auto GGEMSVulkanGeometry::Record(
       // Consume its stencil bit once, including coincident Wireframe edges.
       constants.color[3U] = 0.0F;
 
-      DrawOccurrence(command_buffer, occurrence, mode, bound_mode, constants);
+      DrawOccurrence(command_buffer, occurrence, mode, appearance, bound_mode,
+                     constants);
 
       command_buffer.setStencilOp(vk::StencilFaceFlagBits::eFrontAndBack,
                                   vk::StencilOp::eKeep, vk::StencilOp::eZero,
@@ -493,7 +490,8 @@ auto GGEMSVulkanGeometry::Record(
       constants.color[3U] = 0.5F;
     }
 
-    DrawOccurrence(command_buffer, occurrence, mode, bound_mode, constants);
+    DrawOccurrence(command_buffer, occurrence, mode, appearance, bound_mode,
+                   constants);
   }
 }
 
@@ -503,6 +501,7 @@ auto GGEMSVulkanGeometry::DrawOccurrence(
   vk::raii::CommandBuffer const &command_buffer,
   render::GGEMSGeometryOccurrence const &occurrence,
   render::GGEMSGeometryDisplayMode mode,
+  render::GGEMSGeometryAppearanceState const &appearance,
   std::optional<render::GGEMSGeometryDisplayMode> &bound_mode,
   GeometryPushConstants &constants) const -> void {
   auto const &mesh = scene_->meshes[occurrence.mesh_index];
@@ -535,13 +534,19 @@ auto GGEMSVulkanGeometry::DrawOccurrence(
   }
 
   for (auto const &batch : occurrence.voxel_slices->batches) {
+    auto const draw_mode = render::ResolveVoxelDisplayMode(
+      mode, appearance.GetVoxelMappingMode(occurrence.volume_id,
+                                           batch.mapping_index));
+
+    if (draw_mode == render::GGEMSGeometryDisplayMode::None) {
+      continue;
+    }
+
     constants.color = ToVulkanClearColor(batch.color);
     constants.color[3U] = alpha;
     constants.slice_plane = batch.plane;
 
-    draw(mode == render::GGEMSGeometryDisplayMode::Wireframe ? mode
-                                                             : batch.mode,
-         batch.instance_count, batch.first_instance);
+    draw(draw_mode, batch.instance_count, batch.first_instance);
   }
 }
 

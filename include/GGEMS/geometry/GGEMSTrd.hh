@@ -56,6 +56,12 @@ public:
   GGEMSTrd() = default;
 
   /*!
+   * \brief Inherits optional display-name construction without configuring
+   * geometry.
+   */
+  using GGEMSVolumeAuthoring::GGEMSVolumeAuthoring;
+
+  /*!
    * \brief Sets the full dimensions of the local negative-Z end.
    * \param[in] size_x Full X size of this rectangular end.
    * \param[in] size_y Full Y size of this rectangular end.

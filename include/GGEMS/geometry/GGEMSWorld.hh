@@ -37,6 +37,7 @@
 #include <span>
 #include <vector>
 #include <variant>
+#include <string>
 
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
@@ -135,6 +136,20 @@ public:
 
   /*! \brief Creates a World with no size, no Material and no volume. */
   GGEMSWorld() = default;
+
+  /*!
+   * \brief Creates an unconfigured World with an owned display name.
+   * \param[in] name World label; empty selects the generic display fallback.
+   */
+  explicit GGEMSWorld(std::string name);
+
+  /*!
+   * \brief Returns the authored World name independently of physical records.
+   * \return Owned name; empty denotes an unnamed World.
+   */
+  [[nodiscard]] auto GetName() const noexcept -> std::string const & {
+    return name_;
+  }
 
   /*!
    * \brief Sets the full sizes along the global axes.
@@ -495,6 +510,34 @@ public:
     -> std::uint32_t;
 
   /*!
+   * \brief Identifies occurrences derived from one captured authoring recipe.
+   *
+   * Single and repeated recipes retain their identity across copied mothers.
+   * Independent captures never merge, even when their names are identical.
+   * The stored ID is the first physical root produced by that recipe in this
+   * World; direct ordinary attachments each have their own ID. This metadata
+   * never enters scientific device records.
+   * \param[in] index Zero-based physical occurrence index.
+   * \return Nonzero World-local authored group identity.
+   */
+  [[nodiscard]] auto GetAuthoredGroupId(std::size_t index) const noexcept
+    -> std::uint32_t;
+
+  /*!
+   * \brief Borrows the exact captured placement recipe for presentation.
+   *
+   * Linear recipes retain canonical XYZ counts and pitches; their axis field
+   * is not a record of scalar authoring syntax. Circular recipes retain their
+   * rotation axis and total root count. No values are inferred from positions.
+   * \param[in] index Zero-based physical occurrence index.
+   * \return Immutable recipe owned by this World, or nullptr for a direct
+   * ordinary leaf or voxel attachment without a captured placement recipe.
+   * The borrowed pointer must not outlive this World's retained snapshot.
+   */
+  [[nodiscard]] auto GetAuthoredRecipe(std::size_t index) const noexcept
+    -> detail::GGEMSVolumeRecipe const *;
+
+  /*!
    * \brief Borrows the canonical authored shape and parent-local pose.
    * \param[in] index Physical occurrence index, smaller than GetVolumeCount().
    * \return Owned analytical value; World mutation or destruction
@@ -688,6 +731,9 @@ public:
     -> std::span<GGEMSBox const>;
 
 private:
+  /*! \brief Owned presentation label; empty selects the generic World name. */
+  std::string name_;
+
   /*! \brief Validated half extents in picometers; zero until SetSize(). */
   HalfExtent3PM half_extent_pm_{};
 
@@ -709,6 +755,9 @@ private:
 
     /*! \brief Host-only authored recipe ID, or zero for an ordinary root. */
     std::uint32_t repeater_recipe_id{0U};
+
+    /*! \brief Host-only identity of the captured single or repeated recipe. */
+    std::uint32_t authored_group_id{0U};
   };
 
   /*! \brief Owned occurrences in stable insertion/identity order. */
@@ -724,6 +773,18 @@ private:
    */
   std::vector<std::shared_ptr<detail::GGEMSAuthoredVolume const>>
     repeater_recipes_;
+
+  /*! \brief Retains a captured recipe and its first physical root identity. */
+  struct AuthoredGroup {
+    /*! \brief Exact placement whose child token preserves authored identity. */
+    std::shared_ptr<detail::GGEMSVolumeRecipe const> recipe;
+
+    /*! \brief First root VolumeID assigned when this recipe was expanded. */
+    std::uint32_t first_root_id;
+  };
+
+  /*! \brief Stable host provenance for single and repeated captured recipes. */
+  std::vector<AuthoredGroup> authored_groups_;
 
   /*!
    * \brief Validates and appends one occurrence without modifying existing

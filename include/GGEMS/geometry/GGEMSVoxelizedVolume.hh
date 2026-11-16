@@ -35,6 +35,7 @@
 #include <filesystem>
 #include <memory>
 #include <span>
+#include <string>
 
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
@@ -58,6 +59,25 @@ struct GGEMSVoxelDisplayStyle {
 
   /*! \brief Explicit mapping color or the named Material's default color. */
   render::ColorKey color;
+};
+
+/*! \brief Immutable presentation identity of one admitted material-file row. */
+struct GGEMSVoxelDisplayMapping {
+  /*! \brief Inclusive original anatomical label. */
+  std::uint32_t first_label;
+
+  /*! \brief Exclusive endpoint; 65536 includes the largest uint16 label. */
+  std::uint32_t end_label;
+
+  /*!
+   * \brief Authored Material name, preserved before scientific deduplication.
+   */
+  std::string material_name;
+
+  /*!
+   * \brief Initial mode and color independent of scientific palette identity.
+   */
+  GGEMSVoxelDisplayStyle style;
 };
 
 /*!
@@ -84,6 +104,28 @@ public:
    */
   GGEMSVoxelizedVolume(std::filesystem::path const &image_file,
                        std::filesystem::path const &material_file);
+
+  /*!
+   * \brief Imports the same admitted voxel data with a name-first display
+   * label.
+   * \param[in] name Owned label; empty selects the viewer's generic fallback.
+   * \param[in] image_file MHD metadata; its directory resolves the RAW
+   * filename.
+   * \param[in] material_file Admitted three- or five-column material mapping.
+   * \throws core::GGEMSRecoverable If files, metadata, ranges, materials, or
+   * label coverage fail admission.
+   */
+  GGEMSVoxelizedVolume(std::string name,
+                       std::filesystem::path const &image_file,
+                       std::filesystem::path const &material_file);
+
+  /*!
+   * \brief Returns the captured authoring name independently of the payload.
+   * \return Owned label; empty denotes an unnamed voxelized volume.
+   */
+  [[nodiscard]] auto GetName() const noexcept -> std::string const & {
+    return name_;
+  }
 
   /*!
    * \brief Sets the World-frame position of the grid center.
@@ -176,7 +218,30 @@ public:
   GetDisplayStyle(std::uint16_t original_label) const noexcept
     -> GGEMSVoxelDisplayStyle const &;
 
+  /*!
+   * \brief Borrows independently addressable original mapping presentations.
+   * \return Immutable rows sorted by exclusive label endpoint, owned by this
+   * volume's shared imported data.
+   */
+  [[nodiscard]] auto GetDisplayMappings() const noexcept
+    -> std::span<GGEMSVoxelDisplayMapping const>;
+
+  /*!
+   * \brief Finds the presentation row for one admitted anatomical label.
+   * \param[in] original_label Anatomical label admitted by this import.
+   * \pre The label has a mapping, as guaranteed for every GetLabels() value.
+   * \return Index in GetDisplayMappings(), independent of compact Material IDs.
+   */
+  [[nodiscard]] auto
+  GetDisplayMappingIndex(std::uint16_t original_label) const noexcept
+    -> std::uint32_t;
+
 private:
+  /*!
+   * \brief Optional display label copied independently of the immutable data.
+   */
+  std::string name_;
+
   /*! \brief Immutable imported grid and local material palette. */
   struct Data;
 

@@ -229,17 +229,8 @@ struct GGEMSVoxelizedVolume::Data {
   /*! \brief One compact local material-palette index per voxel. */
   std::vector<std::uint16_t> material_labels;
 
-  /*! \brief Presentation for one disjoint mapping interval. */
-  struct DisplayRange {
-    /*! \brief Exclusive endpoint; 65536 admits the largest uint16 label. */
-    std::uint32_t end;
-
-    /*! \brief Resolved presentation for this mapping row. */
-    GGEMSVoxelDisplayStyle style;
-  };
-
   /*! \brief One style per mapping row, sorted by exclusive label endpoint. */
-  std::vector<DisplayRange> display_styles;
+  std::vector<GGEMSVoxelDisplayMapping> display_styles;
 };
 
 // =============================================================================
@@ -529,7 +520,12 @@ auto GGEMSVoxelizedVolume::Data::BuildMaterialLabels(
       material_indices[label] = local_index;
     }
 
-    display_styles.push_back({.end = end, .style = style});
+    display_styles.push_back({
+      .first_label = first,
+      .end_label = end,
+      .material_name = std::move(name),
+      .style = style,
+    });
   }
 
   if (mapping.bad()) {
@@ -537,7 +533,7 @@ auto GGEMSVoxelizedVolume::Data::BuildMaterialLabels(
       "Failed reading material file '{}'.", material_file.string()));
   }
 
-  std::ranges::sort(display_styles, {}, &DisplayRange::end);
+  std::ranges::sort(display_styles, {}, &GGEMSVoxelDisplayMapping::end_label);
   material_labels.reserve(labels.size());
 
   for (auto const label : labels) {
@@ -556,7 +552,15 @@ auto GGEMSVoxelizedVolume::Data::BuildMaterialLabels(
 
 GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
   std::filesystem::path const &image_file,
-  std::filesystem::path const &material_file) {
+  std::filesystem::path const &material_file)
+    : GGEMSVoxelizedVolume(std::string{}, image_file, material_file) {}
+
+// -----------------------------------------------------------------------------
+
+GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
+  std::string name, std::filesystem::path const &image_file,
+  std::filesystem::path const &material_file)
+    : name_(std::move(name)) {
   auto data = std::make_shared<Data>();
   auto const raw_path = data->ReadMetadata(image_file);
   data->ReadLabels(raw_path);
@@ -648,10 +652,25 @@ auto GGEMSVoxelizedVolume::GetMaterialLabels() const noexcept
 
 auto GGEMSVoxelizedVolume::GetDisplayStyle(std::uint16_t original_label)
   const noexcept -> GGEMSVoxelDisplayStyle const & {
-  auto const range = std::ranges::upper_bound(
-    data_->display_styles, original_label, {}, &Data::DisplayRange::end);
+  return data_->display_styles[GetDisplayMappingIndex(original_label)].style;
+}
 
-  return range->style;
+// -----------------------------------------------------------------------------
+
+auto GGEMSVoxelizedVolume::GetDisplayMappings() const noexcept
+  -> std::span<GGEMSVoxelDisplayMapping const> {
+  return data_->display_styles;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSVoxelizedVolume::GetDisplayMappingIndex(
+  std::uint16_t original_label) const noexcept -> std::uint32_t {
+  auto const range =
+    std::ranges::upper_bound(data_->display_styles, original_label, {},
+                             &GGEMSVoxelDisplayMapping::end_label);
+
+  return static_cast<std::uint32_t>(range - data_->display_styles.begin());
 }
 
 } // namespace ggems::geometry

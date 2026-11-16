@@ -87,6 +87,12 @@ public:
   GGEMSPolyhedra() = default;
 
   /*!
+   * \brief Inherits optional display-name construction without configuring
+   * geometry.
+   */
+  using GGEMSVolumeAuthoring::GGEMSVolumeAuthoring;
+
+  /*!
    * \brief Sets the number of sides of every regular polygon cross-section.
    * \param[in] side_count At least three; no fixed hexagonal specialization.
    * \return This solid for chained configuration.

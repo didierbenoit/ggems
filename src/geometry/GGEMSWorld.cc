@@ -44,6 +44,7 @@
 #include <variant>
 #include <vector>
 #include <type_traits>
+#include <string>
 
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
@@ -1081,6 +1082,10 @@ auto SampleAdmissionSolid(AdmissionSolid &solid) -> void {
 
 namespace ggems::geometry {
 
+GGEMSWorld::GGEMSWorld(std::string name) : name_(std::move(name)) {}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSWorld::SetSize(units::Length size_x, units::Length size_y,
                          units::Length size_z) -> GGEMSWorld & {
   HalfExtent3PM const half_extent{
@@ -1210,8 +1215,11 @@ auto GGEMSWorld::AttachVolume(GGEMSVoxelizedVolume volume,
 
   auto candidate = *this;
 
-  candidate.volumes_.push_back(
-    {.volume = std::move(volume), .parent_volume_id = 0U});
+  candidate.volumes_.push_back({
+    .volume = std::move(volume),
+    .parent_volume_id = 0U,
+    .authored_group_id = static_cast<std::uint32_t>(volumes_.size() + 1U),
+  });
 
   candidate.Validate();
 
@@ -1254,8 +1262,11 @@ auto GGEMSWorld::AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
 
   std::visit([](auto const &shape) -> void { shape.Validate(); }, volume);
 
-  volumes_.push_back(
-    {.volume = std::move(volume), .parent_volume_id = parent_volume_id});
+  volumes_.push_back({
+    .volume = std::move(volume),
+    .parent_volume_id = parent_volume_id,
+    .authored_group_id = static_cast<std::uint32_t>(volumes_.size() + 1U),
+  });
 
   return *this;
 }
@@ -1451,6 +1462,25 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
       }
     }
 
+    auto &groups = candidate.authored_groups_;
+
+    auto const existing =
+      std::ranges::find_if(groups, [&](auto const &group) -> bool {
+        return group.recipe->child == item.child;
+      });
+
+    auto const authored_group_id =
+      existing != groups.end()
+        ? existing->first_root_id
+        : static_cast<std::uint32_t>(candidate.volumes_.size() + 1U);
+
+    if (existing == groups.end()) {
+      groups.push_back({
+        .recipe = std::make_shared<detail::GGEMSVolumeRecipe const>(item),
+        .first_root_id = authored_group_id,
+      });
+    }
+
     for (std::uint32_t index = 0U; index < item.count; ++index) {
       auto placed = PlaceRecipeVolume(item, index);
 
@@ -1462,6 +1492,7 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
         .parent_volume_id = parent,
         .repeater_group_id = repeater_group_id,
         .repeater_recipe_id = repeater_recipe_id,
+        .authored_group_id = authored_group_id,
       });
 
       auto const root_id =
@@ -1477,6 +1508,7 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
   candidate.Validate();
   volumes_.swap(candidate.volumes_);
   repeater_recipes_.swap(candidate.repeater_recipes_);
+  authored_groups_.swap(candidate.authored_groups_);
 
   return *this;
 }
@@ -2036,6 +2068,22 @@ auto GGEMSWorld::GetRepeaterGroupId(std::size_t index) const noexcept
 auto GGEMSWorld::GetRepeaterRecipeId(std::size_t index) const noexcept
   -> std::uint32_t {
   return volumes_[index].repeater_recipe_id;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::GetAuthoredGroupId(std::size_t index) const noexcept
+  -> std::uint32_t {
+  return volumes_[index].authored_group_id;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::GetAuthoredRecipe(std::size_t index) const noexcept
+  -> detail::GGEMSVolumeRecipe const * {
+  auto const group = std::ranges::find(
+    authored_groups_, GetAuthoredGroupId(index), &AuthoredGroup::first_root_id);
+  return group != authored_groups_.end() ? group->recipe.get() : nullptr;
 }
 
 // -----------------------------------------------------------------------------

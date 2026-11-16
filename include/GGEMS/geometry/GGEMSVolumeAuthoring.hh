@@ -34,6 +34,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <string>
 
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSColorTypes.hh"
@@ -96,6 +97,23 @@ struct GGEMSVolumeRecipes;
  */
 class GGEMSVolumeAuthoring {
 public:
+  /*! \brief Creates unnamed analytical authoring metadata. */
+  GGEMSVolumeAuthoring() = default;
+
+  /*!
+   * \brief Owns an optional display name independently of physical identity.
+   * \param[in] name Authored label; empty selects the viewer's type fallback.
+   */
+  explicit GGEMSVolumeAuthoring(std::string name);
+
+  /*!
+   * \brief Returns the captured authoring label without a display fallback.
+   * \return Owned name; empty denotes an unnamed volume.
+   */
+  [[nodiscard]] auto GetName() const noexcept -> std::string const & {
+    return name_;
+  }
+
   /*!
    * \brief Sets the model color inherited by its captured occurrences.
    * \tparam Self Concrete analytical volume type.
@@ -354,6 +372,9 @@ private:
    */
   [[nodiscard]] static auto Capture(GGEMSTrap const &child)
     -> std::shared_ptr<detail::GGEMSAuthoredVolume const>;
+
+  /*! \brief Optional display label copied with every immutable capture. */
+  std::string name_;
 
   /*! \brief Explicit model color, absent until SetColor() is called. */
   std::optional<render::ColorKey> color_;

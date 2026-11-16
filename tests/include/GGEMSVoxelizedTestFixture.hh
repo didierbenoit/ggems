@@ -39,8 +39,10 @@
 #include <ios>
 #include <random>
 #include <span>
+#include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 
 #include <gtest/gtest.h>
 
@@ -110,9 +112,17 @@ public:
   auto operator=(GGEMSVoxelizedTestFixture const &)
     -> GGEMSVoxelizedTestFixture & = delete;
 
-  /*! \brief Imports the generated files. \return Independently posed grid. */
-  [[nodiscard]] auto Import() const -> geometry::GGEMSVoxelizedVolume {
-    return {root_ / "grid.mhd", root_ / "materials.txt"};
+  /*!
+   * \brief Imports the generated files with an optional display name.
+   * \param[in] name Optional owned authoring label.
+   * \return Independently posed grid.
+   */
+  [[nodiscard]] auto Import(std::string name = {}) const
+    -> geometry::GGEMSVoxelizedVolume {
+    if (name.empty()) {
+      return {root_ / "grid.mhd", root_ / "materials.txt"};
+    }
+    return {std::move(name), root_ / "grid.mhd", root_ / "materials.txt"};
   }
 
   /*! \brief Returns the external RAW path. \return This fixture's RAW file. */

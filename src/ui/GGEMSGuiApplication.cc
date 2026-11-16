@@ -560,15 +560,15 @@ auto GGEMSGuiApplication::ApplyPendingScene() -> void {
     scene_renderer_->SetGeometryScene(*geometry);
     displayed_geometry_scene_ = std::move(*geometry);
     workbench_.selected_volume_id.reset();
-    workbench_.geometry_appearance.assign(
-      displayed_geometry_scene_ ? displayed_geometry_scene_->occurrences.size()
-                                : 0U,
-      render::GGEMSGeometryAppearance{});
+    workbench_.selected_geometry_group.reset();
+    ++workbench_.geometry_presentation_revision;
 
     if (displayed_geometry_scene_) {
+      workbench_.geometry_appearance.Reset(*displayed_geometry_scene_);
       workbench_.camera.FrameWorld(
         displayed_geometry_scene_->world_half_extent_m);
     } else {
+      workbench_.geometry_appearance.Clear();
       workbench_.camera = detail::GGEMSSceneCamera{};
     }
   }

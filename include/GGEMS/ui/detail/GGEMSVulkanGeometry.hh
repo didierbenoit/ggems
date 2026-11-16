@@ -33,7 +33,6 @@
 #include <cstdint>
 #include <optional>
 #include <memory>
-#include <span>
 
 #include <vulkan/vulkan_raii.hpp>
 
@@ -93,7 +92,7 @@ public:
 
   /*!
    * \brief Retains an immutable scene and uploads only procedural shape
-   * and profile descriptors plus visible central-slice cell indices.
+   * and profile descriptors plus central-slice cell indices.
    *
    * Initialize before supplying a nonnull scene. The caller must finish GPU use
    * of the previous buffer first. Occurrences, physical identities, parent
@@ -121,9 +120,9 @@ public:
   /*!
    * \brief Records visible occurrences using the same procedural triangles in
    * both modes. Voxelized occurrences batch their three central planes by
-   * mapped color and mode. Occurrence None hides all cells; Wireframe draws
-   * surviving cells as edges; Solid preserves their mapped Solid/Wireframe
-   * modes.
+   * mapping identity and color, using current viewer modes. Occurrence None
+   * hides all cells; Wireframe draws surviving cells as edges; Solid preserves
+   * their mapped Solid/Wireframe modes.
    *
    * No commands are recorded when no scene is retained. The caller has already
    * set the dynamic viewport and scissor. Record opaque occurrences first,
@@ -137,15 +136,15 @@ public:
    * \param[in] command_buffer Recording buffer inside dynamic rendering.
    * \param[in] world_to_clip Rows mapping World meters to clip coordinates.
    * \param[in] selected_volume_id Occurrence to make translucent, or none.
-   * \param[in] appearance Per-VolumeID mode overrides covering all occurrences,
-   * or explicitly empty for hierarchical defaults.
+   * \param[in] appearance Viewer state reset from the retained scene, including
+   * current occurrence and voxel mapping choices.
    * \param[in] selected_only False for opaque occurrences excluding selection;
    * true for the selected occurrence depth and color draws.
    */
   auto Record(vk::raii::CommandBuffer const &command_buffer,
               std::array<std::array<float, 4U>, 4U> const &world_to_clip,
               std::optional<std::uint32_t> selected_volume_id,
-              std::span<render::GGEMSGeometryAppearance const> appearance,
+              render::GGEMSGeometryAppearanceState const &appearance,
               bool selected_only) const -> void;
 
 private:
@@ -187,6 +186,7 @@ private:
    * \param[in] command_buffer Recording buffer with descriptors set.
    * \param[in] occurrence Physical occurrence and optional slice batches.
    * \param[in] mode Resolved occurrence display mode, excluding None.
+   * \param[in] appearance Current viewer-owned voxel mapping choices.
    * \param[in,out] bound_mode Last pipeline bound in this recording pass.
    * \param[in,out] constants Transform and alpha; color, lighting, and slice
    * selector are updated for each draw.
@@ -195,6 +195,7 @@ private:
   DrawOccurrence(vk::raii::CommandBuffer const &command_buffer,
                  render::GGEMSGeometryOccurrence const &occurrence,
                  render::GGEMSGeometryDisplayMode mode,
+                 render::GGEMSGeometryAppearanceState const &appearance,
                  std::optional<render::GGEMSGeometryDisplayMode> &bound_mode,
                  GeometryPushConstants &constants) const -> void;
 

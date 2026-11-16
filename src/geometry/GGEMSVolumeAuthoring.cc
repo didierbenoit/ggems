@@ -36,6 +36,7 @@
 #include <limits>
 #include <memory>
 #include <span>
+#include <string>
 #include <utility>
 #include <variant>
 
@@ -220,6 +221,11 @@ auto RecipeOccurrenceCount(GGEMSVolumeRecipe const &recipe) -> std::uint32_t {
 // =============================================================================
 
 namespace ggems::geometry {
+
+GGEMSVolumeAuthoring::GGEMSVolumeAuthoring(std::string name)
+    : name_(std::move(name)) {}
+
+// -----------------------------------------------------------------------------
 
 auto GGEMSVolumeAuthoring::GetChildRecipes() const noexcept
   -> std::span<detail::GGEMSVolumeRecipe const> {

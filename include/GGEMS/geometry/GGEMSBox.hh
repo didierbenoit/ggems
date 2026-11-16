@@ -64,6 +64,12 @@ public:
   GGEMSBox() = default;
 
   /*!
+   * \brief Inherits optional display-name construction without configuring
+   * geometry.
+   */
+  using GGEMSVolumeAuthoring::GGEMSVolumeAuthoring;
+
+  /*!
    * \brief Sets the full sizes along the local Box axes.
    *
    * \param[in] size_x Full extent along X.

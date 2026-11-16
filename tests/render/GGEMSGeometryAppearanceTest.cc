@@ -81,3 +81,12 @@ TEST(GGEMSGeometryAppearance,
             Mode::Wireframe);
   EXPECT_EQ(mother_appearance.mode_override, Mode::None);
 }
+
+TEST(GGEMSGeometryAppearance, WholeVoxelModeRetainsHiddenAndWireMappings) {
+  for (auto const mapping : {Mode::None, Mode::Wireframe, Mode::Solid}) {
+    EXPECT_EQ(ResolveVoxelDisplayMode(Mode::None, mapping), Mode::None);
+    EXPECT_EQ(ResolveVoxelDisplayMode(Mode::Wireframe, mapping),
+              mapping == Mode::None ? Mode::None : Mode::Wireframe);
+    EXPECT_EQ(ResolveVoxelDisplayMode(Mode::Solid, mapping), mapping);
+  }
+}

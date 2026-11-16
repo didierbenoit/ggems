@@ -56,6 +56,12 @@ public:
   GGEMSTubs() = default;
 
   /*!
+   * \brief Inherits optional display-name construction without configuring
+   * geometry.
+   */
+  using GGEMSVolumeAuthoring::GGEMSVolumeAuthoring;
+
+  /*!
    * \brief Sets both radii after central Units conversion.
    * \param[in] outer_radius Strictly positive outer radius.
    * \param[in] inner_radius Bore radius; zero selects a filled cylinder.

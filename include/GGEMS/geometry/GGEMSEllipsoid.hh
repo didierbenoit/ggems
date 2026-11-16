@@ -55,6 +55,12 @@ public:
   GGEMSEllipsoid() = default;
 
   /*!
+   * \brief Inherits optional display-name construction without configuring
+   * geometry.
+   */
+  using GGEMSVolumeAuthoring::GGEMSVolumeAuthoring;
+
+  /*!
    * \brief Sets all three positive semi-axes after central Units conversion.
    * \param[in] axis_x Local X semi-axis, including odd integer-pm values.
    * \param[in] axis_y Local Y semi-axis.
