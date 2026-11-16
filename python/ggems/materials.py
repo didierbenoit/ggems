@@ -13,11 +13,13 @@ class _IsotopeDefinition(TypedDict):
     mass_number: int
     fraction: float
     isomer_state: NotRequired[int]
+    color: NotRequired[str]
 
 
 class _ElementDefinition(TypedDict):
     mass_fraction: float
     isotopes: NotRequired[list[_IsotopeDefinition]]
+    color: NotRequired[str]
 
 
 type _ElementValue = float | _ElementDefinition
@@ -29,14 +31,26 @@ class _MaterialDefinition(TypedDict):
     density: float
     elements: _Elements
     density_unit: NotRequired[str]
+    color: NotRequired[str]
 
 
 class _MaterialLibrary(TypedDict):
     materials: list[_MaterialDefinition]
 
 
+class _AddMaterial(Protocol):
+    def __call__(
+        self,
+        name: str,
+        density: float,
+        elements: _Elements,
+        density_unit: str = "g/cm3",
+        color: str | None = None,
+    ) -> None: ...
+
+
 class _NativeMaterials(Protocol):
-    add: Callable[[str, float, _Elements, str], None]
+    add: _AddMaterial
     verbose: Callable[[str], None]
     available: Callable[[], None]
     registered: Callable[[], None]
@@ -65,6 +79,10 @@ def load_json(path: str | PathLike[str]) -> None:
     ``isotopes`` list. Isotope fractions are atom fractions. Isotopes are
     identified numerically by ``mass_number`` and optional ``isomer_state``;
     isotope names are never parsed.
+
+    Optional ``color`` names use the existing GGEMS palette. Custom materials
+    default to white; isotopes inherit their resolved element color. These
+    fields affect presentation only and never composition or physical identity.
 
     Loading materials makes them available but does not register them.
     Registration occurs when a material is actually used by GGEMS.
@@ -118,4 +136,5 @@ def load_json(path: str | PathLike[str]) -> None:
             material["density"],
             material["elements"],
             material.get("density_unit", "g/cm3"),
+            material.get("color"),
         )

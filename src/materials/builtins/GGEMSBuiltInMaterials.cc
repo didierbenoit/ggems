@@ -39,6 +39,10 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
+#include "GGEMS/materials/GGEMSElement.hh"
+#include "GGEMS/materials/GGEMSElementCatalog.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
@@ -81,6 +85,9 @@ struct CompoundMaterialRow {
 
   /*! \brief Static elemental mass shares. */
   std::span<GGEMSMaterialComponent const> composition;
+
+  /*! \brief Curated host presentation, independent of physical properties. */
+  render::ColorKey color;
 };
 
 // =============================================================================
@@ -1474,6 +1481,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .canonical_name = "Air",
       .density = 1.205e-3_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_air_composition},
+      .color = render::WHITE_White,
     },
 
     {
@@ -1481,6 +1489,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.000_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_water_composition},
+      .color = render::BLUE_BabyBlue,
     },
 
     {
@@ -1488,6 +1497,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 0.92_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_adipose_composition},
+      .color = render::YELLOW_Vanilla,
     },
 
     {
@@ -1495,6 +1505,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.06_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_blood_composition},
+      .color = render::RED_Ruby,
     },
 
     {
@@ -1502,6 +1513,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.25_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_blood_iodine5_composition},
+      .color = render::RED_Ruby,
     },
 
     {
@@ -1509,6 +1521,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.44_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_blood_iodine10_composition},
+      .color = render::RED_Ruby,
     },
 
     {
@@ -1516,6 +1529,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.64_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_blood_iodine15_composition},
+      .color = render::RED_Ruby,
     },
 
     {
@@ -1523,6 +1537,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.834_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_blood_iodine20_composition},
+      .color = render::RED_Ruby,
     },
 
     {
@@ -1530,6 +1545,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.03_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_brain_composition},
+      .color = render::WHITE_MistyRose,
     },
 
     {
@@ -1537,6 +1553,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.020_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_breast_composition},
+      .color = render::ORANGE_Peach,
     },
 
     {
@@ -1544,6 +1561,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.05_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_heart_composition},
+      .color = render::RED_Carmine,
     },
 
     {
@@ -1551,6 +1569,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.03_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_intestine_composition},
+      .color = render::RED_LightSalmon,
     },
 
     {
@@ -1558,6 +1577,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.05_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_kidney_composition},
+      .color = render::RED_Brown,
     },
 
     {
@@ -1565,6 +1585,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.06_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_liver_composition},
+      .color = render::RED_Redwood,
     },
 
     {
@@ -1572,6 +1593,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 0.26_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_lung_composition},
+      .color = render::MAGENTA_LightPink,
     },
 
     {
@@ -1579,6 +1601,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.92_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_rib_bone_composition},
+      .color = render::WHITE_Bone,
     },
 
     {
@@ -1586,6 +1609,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.42_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_spine_bone_composition},
+      .color = render::WHITE_Ivory,
     },
 
     {
@@ -1593,6 +1617,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.06_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_spleen_composition},
+      .color = render::RED_Burgundy,
     },
 
     {
@@ -1600,6 +1625,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.10_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_skin_composition},
+      .color = render::ORANGE_PeachPuff,
     },
 
     {
@@ -1607,6 +1633,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.00_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_soft_tissue_composition},
+      .color = render::RED_PaleSalmon,
     },
 
     {
@@ -1614,6 +1641,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.04_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_testis_composition},
+      .color = render::WHITE_OldLace,
     },
 
     {
@@ -1621,6 +1649,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.10_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_eye_lens_composition},
+      .color = render::WHITE_Azure,
     },
 
     {
@@ -1628,6 +1657,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.85_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_cortical_bone_composition},
+      .color = render::WHITE_Bone,
     },
 
     {
@@ -1635,6 +1665,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.04_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_muscle_composition},
+      .color = render::RED_IndianRed,
     },
 
     {
@@ -1642,6 +1673,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.100_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_cartilage_composition},
+      .color = render::WHITE_Eggshell,
     },
 
     {
@@ -1649,6 +1681,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.030_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_red_bone_marrow_composition},
+      .color = render::RED_Cardinal,
     },
 
     {
@@ -1657,6 +1690,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .composition =
         std::span<GGEMSMaterialComponent const>{
           k_yellow_bone_marrow_composition},
+      .color = render::YELLOW_Honey,
     },
 
     {
@@ -1664,6 +1698,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 2.750_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_teeth_composition},
+      .color = render::WHITE_Ivory,
     },
 
     {
@@ -1671,6 +1706,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.031_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_spinal_cord_composition},
+      .color = render::WHITE_Cream,
     },
 
     {
@@ -1678,6 +1714,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.040_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_stomach_composition},
+      .color = render::MAGENTA_Pink,
     },
 
     {
@@ -1685,6 +1722,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.030_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_esophagus_composition},
+      .color = render::RED_DarkSalmon,
     },
 
     {
@@ -1692,6 +1730,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 1.040_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_thyroid_composition},
+      .color = render::RED_RosyBrown,
     },
 
     {
@@ -1699,12 +1738,14 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 6.200_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_cdte_composition},
+      .color = render::GRAY_DimGray,
     },
 
     {
       .canonical_name = "CsI",
       .density = 4.510_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_csi_composition},
+      .color = render::WHITE_White,
     },
 
     {
@@ -1712,18 +1753,21 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 5.310_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_gaas_composition},
+      .color = render::GRAY_DimGray,
     },
 
     {
       .canonical_name = "GOS",
       .density = 7.440_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_gos_composition},
+      .color = render::WHITE_Ivory,
     },
 
     {
       .canonical_name = "BGO",
       .density = 7.13_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_bgo_composition},
+      .color = render::WHITE_White,
     },
 
     {
@@ -1731,12 +1775,14 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 7.10_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_lyso_composition},
+      .color = render::WHITE_White,
     },
 
     {
       .canonical_name = "GSO",
       .density = 6.70_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_gso_composition},
+      .color = render::WHITE_White,
     },
 
     {
@@ -1744,6 +1790,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 5.08_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_labr3_composition},
+      .color = render::WHITE_White,
     },
 
     {
@@ -1751,6 +1798,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 5.23_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_cebr3_composition},
+      .color = render::WHITE_White,
     },
 
     {
@@ -1758,18 +1806,21 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 6.63_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_gagg_composition},
+      .color = render::YELLOW_PaleYellow,
     },
 
     {
       .canonical_name = "CZT",
       .density = 5.78_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_czt_composition},
+      .color = render::GRAY_DimGray,
     },
 
     {
       .canonical_name = "aSe",
       .density = 4.26_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_ase_composition},
+      .color = render::GRAY_DimGray,
     },
 
     {
@@ -1777,6 +1828,7 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 8.28_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_pbwo4_composition},
+      .color = render::WHITE_White,
     },
 
     {
@@ -1784,18 +1836,21 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 7.90_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_cdwo4_composition},
+      .color = render::WHITE_Ivory,
     },
 
     {
       .canonical_name = "YAG",
       .density = 4.55_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_yag_composition},
+      .color = render::WHITE_White,
     },
 
     {
       .canonical_name = "YAP",
       .density = 5.37_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_yap_composition},
+      .color = render::WHITE_White,
     },
 
     {
@@ -1803,18 +1858,21 @@ constexpr std::array<CompoundMaterialRow, 51U> k_compound_materials{
       .density = 8.34_g_cm3,
       .composition =
         std::span<GGEMSMaterialComponent const>{k_luap_composition},
+      .color = render::WHITE_White,
     },
 
     {
       .canonical_name = "LSO",
       .density = 7.4_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_lso_composition},
+      .color = render::WHITE_White,
     },
 
     {
       .canonical_name = "NaI",
       .density = 3.67_g_cm3,
       .composition = std::span<GGEMSMaterialComponent const>{k_nai_composition},
+      .color = render::WHITE_White,
     },
   },
 };
@@ -1875,10 +1933,12 @@ constexpr auto k_available_material_names = BuildAvailableMaterialNames();
  */
 [[nodiscard]] auto BuildElementalMaterial(ElementalMaterialRow const &row)
   -> GGEMSMaterial {
-  return GGEMSMaterial{
+  GGEMSMaterial material{
     std::string{row.canonical_name},
     row.density,
     {{.atomic_number = row.atomic_number, .mass_fraction = 1.0L}}};
+  material.SetColor(RequireElementByAtomicNumber(row.atomic_number).GetColor());
+  return material;
 }
 
 // =============================================================================
@@ -1894,9 +1954,11 @@ constexpr auto k_available_material_names = BuildAvailableMaterialNames();
  */
 [[nodiscard]] auto BuildCompoundMaterial(CompoundMaterialRow const &row)
   -> GGEMSMaterial {
-  return GGEMSMaterial{std::string{row.canonical_name}, row.density,
-                       std::vector<GGEMSMaterialComponent>{
-                         row.composition.begin(), row.composition.end()}};
+  GGEMSMaterial material{std::string{row.canonical_name}, row.density,
+                         std::vector<GGEMSMaterialComponent>{
+                           row.composition.begin(), row.composition.end()}};
+  material.SetColor(row.color);
+  return material;
 }
 
 } // namespace

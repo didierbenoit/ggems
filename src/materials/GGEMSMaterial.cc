@@ -29,15 +29,20 @@
  */
 
 #include <algorithm>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
+#include "GGEMS/materials/GGEMSIsotope.hh"
+#include "GGEMS/materials/GGEMSElementCatalog.hh"
+#include "GGEMS/materials/GGEMSElement.hh"
 #include "GGEMS/materials/GGEMSIsotopeMassAuthority.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialComposition.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
 namespace ggems::core::materials {
@@ -91,6 +96,69 @@ auto GGEMSMaterial::Compile(std::vector<GGEMSElementalShare> elemental_shares)
   -> void {
   composition_.emplace(density_, std::move(elemental_shares),
                        GetIsotopeMassAuthority());
+}
+
+// =============================================================================
+// =============================================================================
+
+auto GGEMSMaterial::SetElementColor(std::uint32_t atomic_number,
+                                    render::ColorKey color) -> GGEMSMaterial & {
+  static_cast<void>(RequireElementByAtomicNumber(atomic_number));
+
+  auto const found = std::ranges::find(element_colors_, atomic_number,
+                                       &ElementColor::atomic_number);
+  if (found == element_colors_.end()) {
+    element_colors_.push_back({.atomic_number = atomic_number, .color = color});
+  } else {
+    found->color = color;
+  }
+
+  return *this;
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto
+GGEMSMaterial::GetElementColor(std::uint32_t atomic_number) const
+  -> render::ColorKey {
+  auto const found = std::ranges::find(element_colors_, atomic_number,
+                                       &ElementColor::atomic_number);
+
+  return found != element_colors_.end()
+           ? found->color
+           : RequireElementByAtomicNumber(atomic_number).GetColor();
+}
+
+// =============================================================================
+// =============================================================================
+
+auto GGEMSMaterial::SetIsotopeColor(GGEMSIsotope const &isotope,
+                                    render::ColorKey color) -> GGEMSMaterial & {
+  auto const found =
+    std::ranges::find(isotope_colors_, isotope, &IsotopeColor::isotope);
+
+  if (found == isotope_colors_.end()) {
+    isotope_colors_.push_back({.isotope = isotope, .color = color});
+  } else {
+    found->color = color;
+  }
+
+  return *this;
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto
+GGEMSMaterial::GetIsotopeColor(GGEMSIsotope const &isotope) const
+  -> render::ColorKey {
+  auto const found =
+    std::ranges::find(isotope_colors_, isotope, &IsotopeColor::isotope);
+
+  return found != isotope_colors_.end()
+           ? found->color
+           : GetElementColor(isotope.GetAtomicNumber());
 }
 
 // =============================================================================

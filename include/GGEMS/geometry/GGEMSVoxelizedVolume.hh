@@ -40,19 +40,34 @@
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/render/GGEMSColorTypes.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
 namespace ggems::geometry {
 
 /*!
+ * \brief Resolved display metadata for one original voxel-label mapping.
+ *
+ * Presentation does not participate in physical Material identity or compact
+ * material labels, including when equal Materials have different styles.
+ */
+struct GGEMSVoxelDisplayStyle {
+  /*! \brief Mapping mode; three-column rows resolve to Solid. */
+  render::GGEMSGeometryDisplayMode mode;
+
+  /*! \brief Explicit mapping color or the named Material's default color. */
+  render::ColorKey color;
+};
+
+/*!
  * \brief Owns a centered voxel grid and an independently authored World pose.
  *
- * Copies share immutable imported labels and materials while retaining their
- * own pose. Original anatomical labels and compact material labels retain
- * the same X-fastest order. The volume has no global Material, child volumes,
- * or repeaters. World compiles its device location assets; cell traversal and
- * visualization remain deferred.
+ * Copies share immutable imported labels, materials, and mapping presentation
+ * while retaining their own pose. Original anatomical labels and compact
+ * material labels retain the same X-fastest order. The volume has no global
+ * Material, child volumes, or repeaters. World compiles physical device assets;
+ * mapping presentation remains host/viewer metadata.
  */
 class GGEMSVoxelizedVolume {
 public:
@@ -60,8 +75,10 @@ public:
    * \brief Imports the admitted external little-endian MET_USHORT profile.
    * \param[in] image_file MHD metadata; its directory resolves the RAW
    * filename.
-   * \param[in] material_file MIN MAX MATERIAL rows; equal endpoints select one
-   * label, otherwise the interval is half-open.
+   * \param[in] material_file MIN MAX MATERIAL rows, optionally followed by MODE
+   * COLOR. Equal endpoints select one label; other intervals are half-open.
+   * Three-column rows use Solid and the Material color. Five-column rows accept
+   * None, Wireframe, or Solid and one canonical GGEMS color name.
    * \throws core::GGEMSRecoverable If files, metadata, ranges, materials, or
    * label coverage fail admission.
    */
@@ -99,8 +116,8 @@ public:
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
 
   /*!
-   * \brief Returns the initial whole-volume display color.
-   * \return Existing WHITE_White palette key.
+   * \brief Returns the compatibility whole-volume metadata color.
+   * \return Existing WHITE_White key; cell rendering uses GetDisplayStyle().
    */
   [[nodiscard]] auto GetColor() const noexcept -> render::ColorKey;
 
@@ -147,6 +164,17 @@ public:
    */
   [[nodiscard]] auto GetMaterialLabels() const noexcept
     -> std::span<std::uint16_t const>;
+
+  /*!
+   * \brief Resolves immutable presentation independently of the Material
+   * palette.
+   * \param[in] original_label Anatomical label admitted by this import.
+   * \pre The label has a mapping, as guaranteed for every GetLabels() value.
+   * \return Resolved mapping style owned by the shared imported data.
+   */
+  [[nodiscard]] auto
+  GetDisplayStyle(std::uint16_t original_label) const noexcept
+    -> GGEMSVoxelDisplayStyle const &;
 
 private:
   /*! \brief Immutable imported grid and local material palette. */

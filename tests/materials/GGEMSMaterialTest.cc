@@ -38,6 +38,9 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSIsotope.hh"
+#include "GGEMS/materials/GGEMSElement.hh"
+#include "GGEMS/materials/GGEMSElementCatalog.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialComposition.hh"
@@ -50,6 +53,7 @@ namespace {
 
 namespace materials = ggems::core::materials;
 namespace units = ggems::units;
+namespace render = ggems::render;
 
 using namespace ggems::units;
 
@@ -530,4 +534,40 @@ TEST(GGEMSMaterialTest, IsotopicAuthoringRejectsInvalidDensityAndEmptyMatter) {
     static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
       "empty matter", 2.34_g_cm3, {})),
     ggems::core::GGEMSRecoverable);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSMaterialTest,
+     PresentationInheritanceDoesNotChangeScientificIdentity) {
+  materials::GGEMSMaterial original{
+    "Water", 1.0_g_cm3, {{.atomic_number = 6U, .mass_fraction = 1.0L}}};
+  materials::GGEMSIsotope const carbon12{6U, 12U, 0U};
+  materials::GGEMSIsotope const carbon13{6U, 13U, 0U};
+  auto const catalog_color =
+    materials::RequireElementByAtomicNumber(6U).GetColor();
+  EXPECT_EQ(original.GetColor(), render::WHITE_White);
+  EXPECT_EQ(original.GetElementColor(6U), catalog_color);
+  EXPECT_EQ(original.GetIsotopeColor(carbon13), catalog_color);
+
+  auto colored = original;
+  colored.SetColor(render::RED_Ruby)
+    .SetElementColor(6U, render::BLUE_BabyBlue)
+    .SetIsotopeColor(carbon12, render::YELLOW_Vanilla);
+  EXPECT_EQ(colored.GetColor(), render::RED_Ruby);
+  EXPECT_EQ(colored.GetIsotopeColor(carbon12), render::YELLOW_Vanilla);
+  EXPECT_EQ(colored.GetIsotopeColor(carbon13), render::BLUE_BabyBlue);
+  EXPECT_TRUE(HasSameScientificIdentity(original, colored));
+  EXPECT_EQ(original.GetElectronDensityPerCubicCentimeter(),
+            colored.GetElectronDensityPerCubicCentimeter());
+
+  auto copied = colored;
+  copied.SetElementColor(6U, render::WHITE_White)
+    .SetIsotopeColor(carbon12, render::RED_Ruby);
+  EXPECT_EQ(copied.GetIsotopeColor(carbon13), render::WHITE_White);
+  EXPECT_EQ(copied.GetIsotopeColor(carbon12), render::RED_Ruby);
+  EXPECT_EQ(colored.GetIsotopeColor(carbon13), render::BLUE_BabyBlue);
+  EXPECT_EQ(colored.GetIsotopeColor(carbon12), render::YELLOW_Vanilla);
+  EXPECT_TRUE(HasSameScientificIdentity(colored, copied));
 }

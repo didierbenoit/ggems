@@ -32,6 +32,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <span>
 
 #include "GGEMS/render/GGEMSColorNames.hh"
@@ -90,8 +91,8 @@ struct GGEMSVolumeRecipes;
  * or World. Immutable sharing preserves deep value semantics without Python
  * references or a mutable physical tree. Final World attachment expands the
  * descriptions and performs complete geometry admission atomically.
- * The display color defaults to white and follows copies and captures without
- * affecting physical geometry or Material identity.
+ * An optional display color follows copies and captures independently of
+ * physical geometry and Material identity; absent overrides use Material color.
  */
 class GGEMSVolumeAuthoring {
 public:
@@ -109,10 +110,20 @@ public:
   }
 
   /*!
-   * \brief Returns the model display color.
+   * \brief Returns the authored color or neutral white before Material
+   * fallback.
    * \return Stored GGEMS palette key; WHITE_White before SetColor().
    */
   [[nodiscard]] auto GetColor() const noexcept -> render::ColorKey {
+    return color_.value_or(render::WHITE_White);
+  }
+
+  /*!
+   * \brief Returns the explicit model color independently of Material fallback.
+   * \return Authored override, including explicit white, or no override.
+   */
+  [[nodiscard]] auto GetColorOverride() const noexcept
+    -> std::optional<render::ColorKey> {
     return color_;
   }
 
@@ -344,8 +355,8 @@ private:
   [[nodiscard]] static auto Capture(GGEMSTrap const &child)
     -> std::shared_ptr<detail::GGEMSAuthoredVolume const>;
 
-  /*! \brief Model display color, independent of physical state. */
-  render::ColorKey color_{render::WHITE_White};
+  /*! \brief Explicit model color, absent until SetColor() is called. */
+  std::optional<render::ColorKey> color_;
 
   /*! \brief Shared immutable descriptions; absent for a leaf. */
   std::shared_ptr<detail::GGEMSVolumeRecipes const> children_;

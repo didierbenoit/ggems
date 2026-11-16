@@ -38,6 +38,9 @@
 #include <vector>
 
 #include "GGEMS/materials/GGEMSMaterialComposition.hh"
+#include "GGEMS/materials/GGEMSIsotope.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
 namespace ggems::core::materials {
@@ -72,7 +75,7 @@ struct GGEMSMaterialConstituent {
  *
  * The elemental constructor represents exact zero density as empty matter.
  * Positive-density matter is prepared through GGEMSMaterialComposition. The
- * name is for lookup and display and is excluded from scientific identity.
+ * Name and colors are host presentation and excluded from scientific identity.
  * Returned spans and the name view borrow this object; they must not outlive it
  * or be retained across assignment or moving from the object.
  */
@@ -128,6 +131,60 @@ public:
   [[nodiscard]] auto GetName() const noexcept -> std::string_view {
     return name_;
   }
+
+  /*!
+   * \brief Sets presentation color without changing scientific identity.
+   * \param[in] color Existing GGEMS named palette key.
+   * \return This material for fluent authoring.
+   */
+  auto SetColor(render::ColorKey color) noexcept -> GGEMSMaterial & {
+    color_ = color;
+    return *this;
+  }
+
+  /*!
+   * \brief Returns the presentation color, white for uncolored custom matter.
+   * \return A host presentation key, never a physical material property.
+   */
+  [[nodiscard]] auto GetColor() const noexcept -> render::ColorKey {
+    return color_;
+  }
+
+  /*!
+   * \brief Sets an authored element presentation override in this material.
+   * \param[in] atomic_number Catalog element identity Z.
+   * \param[in] color Existing GGEMS named palette key.
+   * \return This material for fluent authoring.
+   * \throws GGEMSRecoverable If Z is outside the element catalog.
+   */
+  auto SetElementColor(std::uint32_t atomic_number, render::ColorKey color)
+    -> GGEMSMaterial &;
+
+  /*!
+   * \brief Resolves an authored element color or its catalog default.
+   * \param[in] atomic_number Catalog element identity Z.
+   * \return The presentation color for that element in this material.
+   * \throws GGEMSRecoverable If Z is outside the element catalog.
+   */
+  [[nodiscard]] auto GetElementColor(std::uint32_t atomic_number) const
+    -> render::ColorKey;
+
+  /*!
+   * \brief Sets presentation metadata keyed by an unchanged isotope identity.
+   * \param[in] isotope Exact isotope key (Z, A, M).
+   * \param[in] color Existing GGEMS named palette key.
+   * \return This material for fluent authoring.
+   */
+  auto SetIsotopeColor(GGEMSIsotope const &isotope, render::ColorKey color)
+    -> GGEMSMaterial &;
+
+  /*!
+   * \brief Resolves an isotope override or its resolved element color.
+   * \param[in] isotope Exact isotope key (Z, A, M).
+   * \return The isotope presentation color within this material.
+   */
+  [[nodiscard]] auto GetIsotopeColor(GGEMSIsotope const &isotope) const
+    -> render::ColorKey;
 
   /*!
    * \brief Returns the authored bulk mass density.
@@ -188,6 +245,26 @@ public:
 
 private:
   /*!
+   * \brief Stores sparse authored element presentation, outside composition.
+   */
+  struct ElementColor {
+    /*! \brief Chemical identity used only to find the override. */
+    std::uint32_t atomic_number;
+
+    /*! \brief Host presentation key. */
+    render::ColorKey color;
+  };
+
+  /*! \brief Stores sparse isotope presentation, outside scientific identity. */
+  struct IsotopeColor {
+    /*! \brief Exact scientific key, unchanged by presentation. */
+    GGEMSIsotope isotope;
+
+    /*! \brief Host presentation key. */
+    render::ColorKey color;
+  };
+
+  /*!
    * \brief Stores the name and density before optional composition preparation.
    *
    * \param[in] name Owned material name.
@@ -216,15 +293,28 @@ private:
 
   /*! \brief Currently unpopulated. */
   std::vector<GGEMSMaterialConstituent> constituents_;
+
+  /*! \brief Host material presentation; custom matter defaults to white. */
+  render::ColorKey color_{render::WHITE_White};
+
+  /*!
+   * \brief Sparse authored element overrides, independent of canonical order.
+   */
+  std::vector<ElementColor> element_colors_;
+
+  /*!
+   * \brief Sparse authored isotope overrides, independent of canonical order.
+   */
+  std::vector<IsotopeColor> isotope_colors_;
 };
 
 /*!
  * \brief Compares density and the resolved isotope sequence by exact equality.
  *
  * The isotope sequence includes each (Z, A, M) key, within-element atom
- * fraction, and number density. Names and authoring bases are excluded. No
- * floating-point tolerance is used, so mathematically equivalent routes need
- * not compare equal if their computed fields differ.
+ * fraction, and number density. Names, colors, and authoring bases are
+ * excluded. No floating-point tolerance is used, so mathematically equivalent
+ * routes need not compare equal if their computed fields differ.
  *
  * \param[in] first First material to compare.
  * \param[in] second Second material to compare.

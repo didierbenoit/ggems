@@ -49,7 +49,10 @@
 #include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
+#include "GGEMS/materials/GGEMSMaterialManager.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -85,6 +88,12 @@ TEST(GGEMSVoxelizedVolume, ImportsAnisotropicXFastLabelsAndCompactPalette) {
     volume.GetMaterials()[1], BuildBuiltInMaterial("Air")));
   EXPECT_EQ(volume.GetPositionPM(), Position3PM{});
   EXPECT_TRUE(volume.GetRotation().IsIdentity());
+  for (auto const label : files.k_labels) {
+    auto const &style = volume.GetDisplayStyle(label);
+    EXPECT_EQ(style.mode, ggems::render::GGEMSGeometryDisplayMode::Solid);
+    EXPECT_EQ(style.color,
+              BuildBuiltInMaterial(label == 20U ? "Air" : "Water").GetColor());
+  }
 }
 
 TEST(GGEMSVoxelizedVolume, DistinguishesSingletonAndHalfOpenMappingEndpoints) {
@@ -100,6 +109,110 @@ TEST(GGEMSVoxelizedVolume, DistinguishesSingletonAndHalfOpenMappingEndpoints) {
   EXPECT_TRUE(std::ranges::equal(volume.GetLabels(), labels));
   EXPECT_TRUE(std::ranges::equal(volume.GetMaterialLabels(), expected));
   EXPECT_EQ(volume.GetMaterials().size(), 2U);
+}
+
+TEST(GGEMSVoxelizedVolume, MappingStylesPreserveRangesAndPhysicalPalette) {
+  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+  auto const water_color = BuildBuiltInMaterial("Water").GetColor();
+  std::array<std::uint16_t, 4> const labels{7U, 8U, 9U, 65535U};
+  GGEMSVoxelizedTestFixture const files{
+    {2U, 2U, 1U},
+    "1 1 1",
+    labels,
+    "# Deliberately unsorted mapping intervals.\n\n"
+    "65535 65536 Water Wireframe blue_pure\n"
+    "  9 9 Air None white_white  \n"
+    "7 9 Water Solid red_ruby\n",
+  };
+  auto const volume = files.Import();
+  for (auto const label : {7U, 8U}) {
+    auto const &style =
+      volume.GetDisplayStyle(static_cast<std::uint16_t>(label));
+    EXPECT_EQ(style.mode, Mode::Solid);
+    EXPECT_EQ(style.color, ggems::render::RED_Ruby);
+  }
+  EXPECT_EQ(volume.GetDisplayStyle(9U).mode, Mode::None);
+  EXPECT_EQ(volume.GetDisplayStyle(9U).color, ggems::render::WHITE_White);
+  EXPECT_EQ(volume.GetDisplayStyle(65535U).mode, Mode::Wireframe);
+  EXPECT_EQ(volume.GetDisplayStyle(65535U).color, ggems::render::BLUE_Pure);
+  EXPECT_TRUE(std::ranges::equal(volume.GetLabels(), labels));
+  ASSERT_EQ(volume.GetMaterials().size(), 2U);
+  EXPECT_EQ(volume.GetMaterials()[0].GetColor(), water_color);
+  auto &manager = ggems::core::materials::GGEMSMaterialManager::GetInstance();
+  EXPECT_EQ(manager.Require(manager.GetOrAdd("Water")).GetColor(), water_color);
+
+  GGEMSVoxelizedTestFixture const physical_only{
+    {2U, 2U, 1U},
+    "1 1 1",
+    labels,
+    "65535 65536 Water\n9 9 Air\n7 9 Water\n",
+  };
+  auto const reference = physical_only.Import();
+  EXPECT_TRUE(std::ranges::equal(volume.GetMaterialLabels(),
+                                 reference.GetMaterialLabels()));
+  ASSERT_EQ(reference.GetMaterials().size(), volume.GetMaterials().size());
+  for (std::size_t index = 0U; index < volume.GetMaterials().size(); ++index) {
+    EXPECT_TRUE(ggems::core::materials::HasSameScientificIdentity(
+      volume.GetMaterials()[index], reference.GetMaterials()[index]));
+  }
+}
+
+TEST(GGEMSVoxelizedVolume,
+     NamedMaterialDefaultsSurviveScientificDeduplication) {
+  using ggems::core::materials::GGEMSMaterial;
+  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+  auto const density = BuildBuiltInMaterial("Carbon").GetDensity();
+  GGEMSMaterial red{
+    "GGEMSVoxelRedCarbon",
+    density,
+    {{.atomic_number = 6U, .mass_fraction = 1.0L}},
+  };
+  GGEMSMaterial blue{
+    "GGEMSVoxelBlueCarbon",
+    density,
+    {{.atomic_number = 6U, .mass_fraction = 1.0L}},
+  };
+  red.SetColor(ggems::render::RED_Ruby);
+  blue.SetColor(ggems::render::BLUE_Pure);
+  ASSERT_TRUE(ggems::core::materials::HasSameScientificIdentity(red, blue));
+  auto &manager = ggems::core::materials::GGEMSMaterialManager::GetInstance();
+  manager.AddCustomMaterial(red);
+  manager.AddCustomMaterial(blue);
+  std::array<std::uint16_t, 4> const labels{10U, 20U, 10U, 20U};
+  GGEMSVoxelizedTestFixture const files{
+    {2U, 2U, 1U},
+    "1 1 1",
+    labels,
+    "10 10 GGEMSVoxelRedCarbon\n20 20 GGEMSVoxelBlueCarbon\n",
+  };
+  auto const volume = files.Import();
+  ASSERT_EQ(volume.GetMaterials().size(), 1U);
+  for (auto const material_label : volume.GetMaterialLabels()) {
+    EXPECT_EQ(material_label, 0U);
+  }
+  EXPECT_EQ(volume.GetDisplayStyle(10U).mode, Mode::Solid);
+  EXPECT_EQ(volume.GetDisplayStyle(20U).mode, Mode::Solid);
+  EXPECT_EQ(volume.GetDisplayStyle(10U).color, red.GetColor());
+  EXPECT_EQ(volume.GetDisplayStyle(20U).color, blue.GetColor());
+}
+
+TEST(GGEMSVoxelizedVolume, RejectsInvalidPresentationArityModeAndColor) {
+  std::array<std::uint16_t, 1> const labels{0U};
+  for (auto const *mapping : {
+         "0 Air\n",
+         "0 0 Air None\n",
+         "0 0 Air Solid white_white extra\n",
+         "0 0 Air N white_white\n",
+         "0 0 Air solid white_white\n",
+         "0 0 Air Solid missing_color\n",
+         "0 0 Air None missing_color\n",
+         "0 0 Air Solid WHITE_White\n",
+       }) {
+    SCOPED_TRACE(mapping);
+    GGEMSVoxelizedTestFixture const files{
+      {1U, 1U, 1U}, "1 1 1", labels, mapping};
+    EXPECT_THROW(static_cast<void>(files.Import()), GGEMSRecoverable);
+  }
 }
 
 TEST(GGEMSVoxelizedVolume, RejectsUnmappedAnatomicalLabel) {
@@ -144,6 +257,12 @@ TEST(GGEMSVoxelizedVolume, CopiesKeepIndependentPoseAndOwnedImportedData) {
   EXPECT_TRUE(std::ranges::equal(original.GetMaterialLabels(),
                                  volume.GetMaterialLabels()));
   EXPECT_EQ(original.GetMaterials()[0].GetName(), "Water");
+  for (auto const label : original.GetLabels()) {
+    EXPECT_EQ(original.GetDisplayStyle(label).mode,
+              volume.GetDisplayStyle(label).mode);
+    EXPECT_EQ(original.GetDisplayStyle(label).color,
+              volume.GetDisplayStyle(label).color);
+  }
 }
 
 TEST(GGEMSVoxelizedVolume, PublishesOnePhysicalIDPerGridInMixedInsertionOrder) {

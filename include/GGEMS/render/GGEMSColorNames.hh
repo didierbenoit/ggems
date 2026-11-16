@@ -30,6 +30,10 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
 
 #include "GGEMS/render/GGEMSColorBlue.hh"
 #include "GGEMS/render/GGEMSColorRed.hh"
@@ -44,6 +48,36 @@
 #include "GGEMS/render/GGEMSColorTypes.hh"
 
 namespace ggems::render {
+
+/*! \brief Associates a canonical normal-color name with its existing key. */
+struct NamedColor {
+  /*! \brief Lowercase Python-compatible name, such as red_ruby. */
+  std::string name;
+
+  /*! \brief Normal foreground key from the existing palette. */
+  ColorKey key;
+};
+
+/*!
+ * \brief Borrows the normal-color catalog generated from the palette macros.
+ * \return Immutable entries with process lifetime, in family/shade order.
+ */
+[[nodiscard]] auto GetNamedColors() -> std::span<NamedColor const>;
+
+/*!
+ * \brief Resolves an exact canonical normal-color name.
+ * \param[in] name Lowercase Python-compatible token; no aliases or trimming.
+ * \return Existing palette key, or nullopt when the name is unknown.
+ */
+[[nodiscard]] auto ParseColorName(std::string_view name)
+  -> std::optional<ColorKey>;
+
+/*!
+ * \brief Borrows the canonical name of a normal foreground palette key.
+ * \param[in] key Color to describe.
+ * \return Process-lifetime name, or an empty view for an unsupported key.
+ */
+[[nodiscard]] auto GetColorName(ColorKey key) -> std::string_view;
 
 /*! \brief Default background color used by GGEMS text rendering. */
 inline constexpr ColorKey DEFAULT_BG =

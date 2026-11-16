@@ -163,7 +163,7 @@ auto GGEMSVulkanGeometry::Initialize(
     .size = sizeof(GeometryPushConstants),
   };
 
-  std::array<vk::DescriptorSetLayoutBinding, 2U> const bindings{
+  std::array<vk::DescriptorSetLayoutBinding, 3U> const bindings{
     vk::DescriptorSetLayoutBinding{
       .binding = 0U,
       .descriptorType = vk::DescriptorType::eStorageBuffer,
@@ -172,6 +172,12 @@ auto GGEMSVulkanGeometry::Initialize(
     },
     vk::DescriptorSetLayoutBinding{
       .binding = 1U,
+      .descriptorType = vk::DescriptorType::eStorageBuffer,
+      .descriptorCount = 1U,
+      .stageFlags = vk::ShaderStageFlagBits::eVertex,
+    },
+    vk::DescriptorSetLayoutBinding{
+      .binding = 2U,
       .descriptorType = vk::DescriptorType::eStorageBuffer,
       .descriptorCount = 1U,
       .stageFlags = vk::ShaderStageFlagBits::eVertex,
@@ -195,7 +201,7 @@ auto GGEMSVulkanGeometry::Initialize(
 
   vk::DescriptorPoolSize const pool_size{
     .type = vk::DescriptorType::eStorageBuffer,
-    .descriptorCount = 2U,
+    .descriptorCount = 3U,
   };
 
   descriptor_pool_ = vk::raii::DescriptorPool{
@@ -277,12 +283,22 @@ auto GGEMSVulkanGeometry::SetScene(
     std::max(scene_->profiles.size(), std::size_t{1U}) *
     sizeof(render::GGEMSGeometryProfile));
 
+  auto const cell_offset =
+    ((profile_offset + profile_bytes + alignment - 1U) / alignment) * alignment;
+
+  auto const cell_bytes = static_cast<vk::DeviceSize>(
+    std::max(scene_->voxel_cells.size(), std::size_t{1U}) *
+    sizeof(std::uint32_t));
+
   if (shape_bytes > limits.maxStorageBufferRange ||
-      profile_bytes > limits.maxStorageBufferRange) {
-    throw ggems::core::GGEMSInternal("Geometry analytic descriptors exceed the "
-                                     "device's maxStorageBufferRange.");
+      profile_bytes > limits.maxStorageBufferRange ||
+      cell_bytes > limits.maxStorageBufferRange) {
+    throw ggems::core::GGEMSInternal(
+      "Geometry procedural descriptors exceed the "
+      "device's maxStorageBufferRange.");
   }
-  auto const buffer_size = profile_offset + profile_bytes;
+
+  auto const buffer_size = cell_offset + cell_bytes;
   descriptor_buffer_ = vk::raii::Buffer{
     *device_, vk::BufferCreateInfo{
                 .size = buffer_size,
@@ -345,6 +361,13 @@ auto GGEMSVulkanGeometry::SetScene(
                 scene_->profiles.size() * sizeof(render::GGEMSGeometryProfile));
   }
 
+  std::memset(bytes + cell_offset, 0, static_cast<std::size_t>(cell_bytes));
+
+  if (!scene_->voxel_cells.empty()) {
+    std::memcpy(bytes + cell_offset, scene_->voxel_cells.data(),
+                scene_->voxel_cells.size() * sizeof(std::uint32_t));
+  }
+
   descriptor_memory_.unmapMemory();
 
   auto const layout = *descriptor_layout_;
@@ -356,7 +379,7 @@ auto GGEMSVulkanGeometry::SetScene(
                 .pSetLayouts = &layout,
               }}.front());
 
-  std::array<vk::DescriptorBufferInfo, 2U> const buffers{
+  std::array<vk::DescriptorBufferInfo, 3U> const buffers{
     vk::DescriptorBufferInfo{
       .buffer = *descriptor_buffer_,
       .offset = 0U,
@@ -367,9 +390,14 @@ auto GGEMSVulkanGeometry::SetScene(
       .offset = profile_offset,
       .range = profile_bytes,
     },
+    vk::DescriptorBufferInfo{
+      .buffer = *descriptor_buffer_,
+      .offset = cell_offset,
+      .range = cell_bytes,
+    },
   };
 
-  std::array<vk::WriteDescriptorSet, 2U> writes{};
+  std::array<vk::WriteDescriptorSet, 3U> writes{};
 
   for (std::uint32_t binding = 0U; binding < writes.size(); ++binding) {
     writes[binding] = vk::WriteDescriptorSet{
@@ -431,17 +459,8 @@ auto GGEMSVulkanGeometry::Record(
       continue;
     }
 
-    bool const solid = mode == render::GGEMSGeometryDisplayMode::Solid;
-
-    if (bound_mode != mode) {
-      command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                  solid ? *solid_pipeline_ : *wire_pipeline_);
-      bound_mode = mode;
-    }
-
     constants.color = ToVulkanClearColor(occurrence.color);
     constants.shape_index = occurrence.mesh_index;
-    constants.shaded = solid ? 1U : 0U;
 
     std::copy_n(occurrence.local_to_world.data(), 3U,
                 constants.normal_row_0.begin());
@@ -466,7 +485,7 @@ auto GGEMSVulkanGeometry::Record(
       // Consume its stencil bit once, including coincident Wireframe edges.
       constants.color[3U] = 0.0F;
 
-      DrawOccurrence(command_buffer, occurrence, constants);
+      DrawOccurrence(command_buffer, occurrence, mode, bound_mode, constants);
 
       command_buffer.setStencilOp(vk::StencilFaceFlagBits::eFrontAndBack,
                                   vk::StencilOp::eKeep, vk::StencilOp::eZero,
@@ -474,7 +493,7 @@ auto GGEMSVulkanGeometry::Record(
       constants.color[3U] = 0.5F;
     }
 
-    DrawOccurrence(command_buffer, occurrence, constants);
+    DrawOccurrence(command_buffer, occurrence, mode, bound_mode, constants);
   }
 }
 
@@ -483,21 +502,46 @@ auto GGEMSVulkanGeometry::Record(
 auto GGEMSVulkanGeometry::DrawOccurrence(
   vk::raii::CommandBuffer const &command_buffer,
   render::GGEMSGeometryOccurrence const &occurrence,
+  render::GGEMSGeometryDisplayMode mode,
+  std::optional<render::GGEMSGeometryDisplayMode> &bound_mode,
   GeometryPushConstants &constants) const -> void {
   auto const &mesh = scene_->meshes[occurrence.mesh_index];
+  auto const alpha = constants.color[3U];
 
-  auto const slice_count = occurrence.voxel_slices ? 3U : 1U;
+  auto const draw = [&](render::GGEMSGeometryDisplayMode draw_mode,
+                        std::uint32_t instances,
+                        std::uint32_t first_instance) -> void {
+    bool const solid = draw_mode == render::GGEMSGeometryDisplayMode::Solid;
 
-  for (std::uint32_t plane = 0U; plane < slice_count; ++plane) {
-    constants.slice_plane = plane;
+    if (bound_mode != draw_mode) {
+      command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                  solid ? *solid_pipeline_ : *wire_pipeline_);
+      bound_mode = draw_mode;
+    }
+
+    constants.shaded = solid ? 1U : 0U;
+
     command_buffer.pushConstants(
       *pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
       vk::ArrayProxy<GeometryPushConstants const>{1U, &constants});
 
-    auto const instances = occurrence.voxel_slices
-                             ? occurrence.voxel_slices->instance_counts[plane]
-                             : 1U;
-    command_buffer.draw(mesh.vertex_count, instances, 0U, 0U);
+    command_buffer.draw(mesh.vertex_count, instances, 0U, first_instance);
+  };
+
+  if (!occurrence.voxel_slices) {
+    constants.slice_plane = 0U;
+    draw(mode, 1U, 0U);
+    return;
+  }
+
+  for (auto const &batch : occurrence.voxel_slices->batches) {
+    constants.color = ToVulkanClearColor(batch.color);
+    constants.color[3U] = alpha;
+    constants.slice_plane = batch.plane;
+
+    draw(mode == render::GGEMSGeometryDisplayMode::Wireframe ? mode
+                                                             : batch.mode,
+         batch.instance_count, batch.first_instance);
   }
 }
 

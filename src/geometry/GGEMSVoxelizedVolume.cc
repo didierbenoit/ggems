@@ -57,6 +57,7 @@
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSColorTypes.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
@@ -126,6 +127,61 @@ auto ParseValues(std::string_view text, std::filesystem::path const &file,
   return values;
 }
 
+/*!
+ * \brief Reads the absent or complete two-column presentation suffix.
+ * \param[in,out] row Mapping row positioned after MIN MAX MATERIAL.
+ * \param[in] default_color Exact named Material's presentation color.
+ * \param[in] material_file Mapping path for input diagnostics.
+ * \param[in] line_number One-based mapping line.
+ * \return Solid with the Material color, or the explicit mode and color.
+ * \throws core::GGEMSRecoverable If suffix arity, mode, or color is invalid.
+ */
+auto ReadDisplayStyle(std::istringstream &row, render::ColorKey default_color,
+                      std::filesystem::path const &material_file,
+                      std::size_t line_number) -> GGEMSVoxelDisplayStyle {
+  GGEMSVoxelDisplayStyle style{
+    .mode = render::GGEMSGeometryDisplayMode::Solid,
+    .color = default_color,
+  };
+
+  std::string mode;
+  if (!(row >> mode)) {
+    return style;
+  }
+
+  std::string color;
+  std::string extra;
+
+  if (!(row >> color) || (row >> extra)) {
+    throw core::GGEMSRecoverable(std::format(
+      "{}: line {}: expected MIN MAX MATERIAL or MIN MAX MATERIAL MODE COLOR.",
+      material_file.string(), line_number));
+  }
+
+  if (mode == "None") {
+    style.mode = render::GGEMSGeometryDisplayMode::None;
+  } else if (mode == "Wireframe") {
+    style.mode = render::GGEMSGeometryDisplayMode::Wireframe;
+  } else if (mode != "Solid") {
+    throw core::GGEMSRecoverable(
+      std::format("{}: line {}: unknown display mode '{}'; expected None, "
+                  "Wireframe, or Solid.",
+                  material_file.string(), line_number, mode));
+  }
+
+  auto const resolved_color = render::ParseColorName(color);
+
+  if (!resolved_color) {
+    throw core::GGEMSRecoverable(
+      std::format("{}: line {}: unknown GGEMS color '{}'.",
+                  material_file.string(), line_number, color));
+  }
+
+  style.color = *resolved_color;
+
+  return style;
+}
+
 } // namespace
 
 /*! \brief Shared immutable import data, separate from the authored pose. */
@@ -148,10 +204,10 @@ struct GGEMSVoxelizedVolume::Data {
   auto ReadLabels(std::filesystem::path const &raw_path) -> void;
 
   /*!
-   * \brief Builds the owned exact palette and one compact label per voxel.
-   * \param[in] material_file MIN MAX MATERIAL mapping path.
-   * \throws core::GGEMSRecoverable If ranges, materials, or label coverage
-   * fail.
+   * \brief Builds physical palette labels and separate mapping presentation.
+   * \param[in] material_file Three- or five-column label mapping path.
+   * \throws core::GGEMSRecoverable If ranges, materials, display styles, or
+   * label coverage fail.
    */
   auto BuildMaterialLabels(std::filesystem::path const &material_file) -> void;
 
@@ -172,6 +228,18 @@ struct GGEMSVoxelizedVolume::Data {
 
   /*! \brief One compact local material-palette index per voxel. */
   std::vector<std::uint16_t> material_labels;
+
+  /*! \brief Presentation for one disjoint mapping interval. */
+  struct DisplayRange {
+    /*! \brief Exclusive endpoint; 65536 admits the largest uint16 label. */
+    std::uint32_t end;
+
+    /*! \brief Resolved presentation for this mapping row. */
+    GGEMSVoxelDisplayStyle style;
+  };
+
+  /*! \brief One style per mapping row, sorted by exclusive label endpoint. */
+  std::vector<DisplayRange> display_styles;
 };
 
 // =============================================================================
@@ -412,11 +480,11 @@ auto GGEMSVoxelizedVolume::Data::BuildMaterialLabels(
     std::string minimum;
     std::string maximum;
     std::string name;
-    std::string extra;
 
-    if (!(row >> minimum >> maximum >> name) || (row >> extra)) {
+    if (!(row >> minimum >> maximum >> name)) {
       throw core::GGEMSRecoverable(
-        std::format("{}: line {}: expected MIN MAX MATERIAL.",
+        std::format("{}: line {}: expected MIN MAX MATERIAL or "
+                    "MIN MAX MATERIAL MODE COLOR.",
                     material_file.string(), line_number));
     }
 
@@ -442,6 +510,8 @@ auto GGEMSVoxelizedVolume::Data::BuildMaterialLabels(
     }
 
     auto const &material = manager.Require(manager.GetOrAdd(name));
+    auto const style =
+      ReadDisplayStyle(row, material.GetColor(), material_file, line_number);
 
     auto const existing =
       std::ranges::find_if(materials, [&](auto const &candidate) -> bool {
@@ -458,6 +528,8 @@ auto GGEMSVoxelizedVolume::Data::BuildMaterialLabels(
     for (auto label = first; label < end; ++label) {
       material_indices[label] = local_index;
     }
+
+    display_styles.push_back({.end = end, .style = style});
   }
 
   if (mapping.bad()) {
@@ -465,6 +537,7 @@ auto GGEMSVoxelizedVolume::Data::BuildMaterialLabels(
       "Failed reading material file '{}'.", material_file.string()));
   }
 
+  std::ranges::sort(display_styles, {}, &DisplayRange::end);
   material_labels.reserve(labels.size());
 
   for (auto const label : labels) {
@@ -569,6 +642,16 @@ auto GGEMSVoxelizedVolume::GetMaterials() const noexcept
 auto GGEMSVoxelizedVolume::GetMaterialLabels() const noexcept
   -> std::span<std::uint16_t const> {
   return data_->material_labels;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSVoxelizedVolume::GetDisplayStyle(std::uint16_t original_label)
+  const noexcept -> GGEMSVoxelDisplayStyle const & {
+  auto const range = std::ranges::upper_bound(
+    data_->display_styles, original_label, {}, &Data::DisplayRange::end);
+
+  return range->style;
 }
 
 } // namespace ggems::geometry

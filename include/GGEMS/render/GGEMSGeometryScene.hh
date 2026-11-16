@@ -38,6 +38,7 @@
 
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSColorTypes.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
 namespace ggems::geometry {
@@ -131,6 +132,24 @@ struct GGEMSGeometryProperty {
   std::string value;
 };
 
+/*! \brief Describes one central-plane draw sharing a mapped display style. */
+struct GGEMSGeometryVoxelBatch {
+  /*! \brief Central plane: zero for XY, one for XZ, two for YZ. */
+  std::uint32_t plane;
+
+  /*! \brief First index in the scene's compact visible-cell stream. */
+  std::uint32_t first_instance;
+
+  /*! \brief Number of visible cells in this batch. */
+  std::uint32_t instance_count;
+
+  /*! \brief Wireframe or Solid; None cells are omitted during preparation. */
+  GGEMSGeometryDisplayMode mode;
+
+  /*! \brief Resolved mapping override or Material color. */
+  ColorKey color;
+};
+
 /*! \brief Owns compact regular-grid inspection and central-slice draw data. */
 struct GGEMSGeometryVoxelSlices {
   /*! \brief Local X, Y, Z cell counts; each central index is its count / 2. */
@@ -143,12 +162,20 @@ struct GGEMSGeometryVoxelSlices {
    */
   std::array<double, 3> size_m;
 
-  /*! \brief Box instance counts for XY, XZ, and YZ, respectively. */
+  /*!
+   * \brief Full cell counts for XY, XZ, and YZ before hiding mapped None
+   * cells.
+   */
   std::array<std::uint32_t, 3> instance_counts;
 
   /*! \brief Number of actual local Material identities, not anatomical labels.
    */
   std::size_t palette_size;
+
+  /*!
+   * \brief Direct style batches for visible cells of the three central planes.
+   */
+  std::vector<GGEMSGeometryVoxelBatch> batches;
 };
 
 /*!
@@ -218,7 +245,8 @@ struct GGEMSGeometryOccurrence {
   std::uint32_t repeater_group_id{0U};
 
   /*!
-   * \brief World-local authored repeater identity, or zero for an ordinary root.
+   * \brief World-local authored repeater identity, or zero for an ordinary
+   * root.
    *
    * Shared by roots from the same immutable recipe across physical parents.
    * This host-only provenance controls independent viewer assignments.
@@ -237,6 +265,9 @@ struct GGEMSGeometryScene {
   /*! \brief World followed by every physical occurrence in identity order. */
   std::vector<GGEMSGeometryOccurrence> occurrences;
 
+  /*! \brief Plane-local cell indices for visible voxel batches; no 3D field. */
+  std::vector<std::uint32_t> voxel_cells{};
+
   /*! \brief World half extents in meters for camera framing and clipping. */
   std::array<double, 3> world_half_extent_m;
 };
@@ -252,12 +283,13 @@ struct GGEMSGeometryScene {
  * physics query. World uses a Box descriptor and remains restricted to None or
  * Wireframe by appearance.
  * Voxelized occurrences retain one physical identity and a compact descriptor
- * for the three central cell planes; no labels or per-cell meshes are copied.
+ * for the three central cell planes, with compact visible-cell indices and
+ * mapped display styles. No full 3D labels or per-cell meshes are copied.
  * Their full physical outer bounds, rather than slice bounds, drive framing.
  * \param[in] world Validated Run-owned World, borrowed only during this call.
  * \return Owned presentation data with unchanged physical IDs and parent links.
- * \throws core::GGEMSRecoverable If a voxel slice exceeds the Vulkan instance
- * count domain.
+ * \throws core::GGEMSRecoverable If voxel slices exceed the Vulkan instance
+ * count or visible-cell index domain.
  */
 [[nodiscard]] auto BuildGeometryScene(geometry::GGEMSWorld const &world)
   -> GGEMSGeometryScene;

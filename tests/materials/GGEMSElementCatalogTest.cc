@@ -39,6 +39,7 @@
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSElement.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 
 namespace {
 
@@ -237,4 +238,30 @@ TEST(GGEMSElementCatalogTest, RejectsLegacyOrNonCanonicalElementNames) {
   EXPECT_EQ(materials::FindElementByName("Phosphor"), nullptr);
   EXPECT_EQ(materials::FindElementByName("Aluminium"), nullptr);
   EXPECT_EQ(materials::FindElementByName("Caesium"), nullptr);
+}
+
+// =============================================================================
+// =============================================================================
+
+// Every built-in element resolves through the unchanged named-color palette.
+TEST(GGEMSElementCatalogTest, AllElementColorsBelongToExistingPalette) {
+  for (auto const &element : materials::GetElements()) {
+    SCOPED_TRACE(element.GetSymbol());
+    auto const name = ggems::render::GetColorName(element.GetColor());
+    ASSERT_FALSE(name.empty());
+    EXPECT_EQ(ggems::render::ParseColorName(name), element.GetColor());
+  }
+
+  EXPECT_EQ(materials::RequireElementBySymbol("Au").GetColor(),
+            ggems::render::YELLOW_Gold);
+  EXPECT_EQ(materials::RequireElementBySymbol("Cu").GetColor(),
+            ggems::render::ORANGE_CopperSignal);
+  EXPECT_EQ(materials::RequireElementBySymbol("S").GetColor(),
+            ggems::render::YELLOW_Lemon);
+  EXPECT_EQ(materials::RequireElementBySymbol("C").GetColor(),
+            ggems::render::GRAY_Neutral32);
+  EXPECT_EQ(materials::RequireElementBySymbol("O").GetColor(),
+            ggems::render::WHITE_White);
+  EXPECT_EQ(materials::RequireElementBySymbol("Es").GetColor(),
+            ggems::render::WHITE_White);
 }

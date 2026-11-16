@@ -40,6 +40,9 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
+#include "GGEMS/materials/GGEMSElement.hh"
+#include "GGEMS/materials/GGEMSElementCatalog.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
@@ -844,7 +847,8 @@ TEST(GGEMSBuiltInMaterialsTest, ExposesCanonicalNamesInRegistryOrder) {
 TEST(GGEMSBuiltInMaterialsTest, BuildsEveryAvailableMaterial) {
   for (auto const name : builtins::GetAvailableMaterialNames()) {
     SCOPED_TRACE(name);
-    EXPECT_NO_THROW(static_cast<void>(builtins::BuildBuiltInMaterial(name)));
+    auto const material = builtins::BuildBuiltInMaterial(name);
+    EXPECT_FALSE(ggems::render::GetColorName(material.GetColor()).empty());
   }
 }
 
@@ -870,6 +874,7 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsVacuum) {
 // entries.
 TEST(GGEMSBuiltInMaterialsTest, BuildsCommonMedia) {
   auto const water = builtins::BuildBuiltInMaterial("Water");
+  EXPECT_EQ(water.GetColor(), ggems::render::BLUE_BabyBlue);
   EXPECT_EQ(water.GetDensity(), 1.000_g_cm3);
   ASSERT_EQ(water.GetElementalConstituents().size(), 2U);
   EXPECT_EQ(water.GetElementalConstituents()[0U].atomic_number, 1U);
@@ -882,6 +887,7 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsCommonMedia) {
                        64.0L * std::numeric_limits<long double>::epsilon());
 
   auto const air = builtins::BuildBuiltInMaterial("Air");
+  EXPECT_EQ(air.GetColor(), ggems::render::WHITE_White);
   EXPECT_EQ(air.GetDensity(), 1.205e-3_g_cm3);
   ASSERT_EQ(air.GetElementalConstituents().size(), 4U);
   EXPECT_EQ(air.GetElementalConstituents()[0U].atomic_number, 6U);
@@ -942,6 +948,9 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeElementalMaterials) {
     SCOPED_TRACE(expected_material.name);
 
     EXPECT_EQ(material.GetName(), expected_material.name);
+    EXPECT_EQ(material.GetColor(), materials::RequireElementByAtomicNumber(
+                                     expected_material.atomic_number)
+                                     .GetColor());
     EXPECT_EQ(material.GetDensity(), expected_material.density);
 
     auto const constituents = material.GetElementalConstituents();

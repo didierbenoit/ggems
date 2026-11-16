@@ -83,6 +83,7 @@ TEST(GGEMSMaterialDescriptionTest, InspectsWaterFromTheMaterialAuthorities) {
   auto const inspection = materials::InspectMaterial(material);
 
   EXPECT_EQ(inspection.name, "Water");
+  EXPECT_EQ(inspection.color, material.GetColor());
   EXPECT_EQ(inspection.density.value, material.GetDensity().value);
   EXPECT_EQ(inspection.registration, Registration::Unknown);
   EXPECT_FALSE(inspection.manager_index.has_value());
@@ -96,6 +97,8 @@ TEST(GGEMSMaterialDescriptionTest, InspectsWaterFromTheMaterialAuthorities) {
     auto const &element = inspection.elements[index];
 
     EXPECT_EQ(element.values.atomic_number, elements[index].atomic_number);
+    EXPECT_EQ(element.color,
+              material.GetElementColor(elements[index].atomic_number));
     EXPECT_EQ(element.values.mass_fraction, elements[index].mass_fraction);
     EXPECT_EQ(element.values.number_density_per_cubic_centimeter,
               elements[index].number_density_per_cubic_centimeter);
@@ -110,9 +113,12 @@ TEST(GGEMSMaterialDescriptionTest, InspectsWaterFromTheMaterialAuthorities) {
 
   ASSERT_EQ(inspection.isotopes.size(), 5U);
   ASSERT_EQ(inspection.isotopes.size(), isotopes.size());
+  ASSERT_EQ(inspection.isotope_colors.size(), isotopes.size());
 
   for (std::size_t index = 0U; index < isotopes.size(); ++index) {
     EXPECT_EQ(inspection.isotopes[index], isotopes[index]);
+    EXPECT_EQ(inspection.isotope_colors[index],
+              material.GetIsotopeColor(isotopes[index].isotope));
   }
 
   EXPECT_EQ(inspection.total_atom_density_per_cubic_centimeter,

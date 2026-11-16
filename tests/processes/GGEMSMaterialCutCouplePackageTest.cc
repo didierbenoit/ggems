@@ -230,6 +230,10 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
 // requested presentation.
 TEST_F(GGEMSMaterialCutCouplePackageTest,
        DisplayNameAndProvenanceDoNotDefineIdentity) {
+  EXPECT_NE(materials_[k_water].GetColor(),
+            materials_[k_water_alias].GetColor());
+  EXPECT_EQ(em_package_.GetMaterialIds()[k_water],
+            em_package_.GetMaterialIds()[k_water_alias]);
   auto policy = MakePolicy();
   policy.global.electron = 3_mm;
   policy.materials.push_back({

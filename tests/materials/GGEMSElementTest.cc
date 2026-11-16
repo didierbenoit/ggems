@@ -33,6 +33,7 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSElement.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 
 namespace materials = ggems::core::materials;
 
@@ -75,4 +76,21 @@ TEST(GGEMSElementTest, AcceptsHighestCatalogAtomicNumber) {
                                                 252.082979173L};
 
   EXPECT_EQ(einsteinium.GetAtomicNumber(), 99U);
+}
+
+// =============================================================================
+// =============================================================================
+
+// Presentation overrides must not change the chemical identity or metadata.
+TEST(GGEMSElementTest, ColorDefaultsToWhiteAndDoesNotChangeIdentity) {
+  constexpr materials::GGEMSElement plain{26U, "Fe", "iron", 55.845L};
+  constexpr materials::GGEMSElement colored{26U, "Fe", "iron", 55.845L,
+                                            ggems::render::RED_Ruby};
+
+  EXPECT_EQ(plain.GetColor(), ggems::render::WHITE_White);
+  EXPECT_EQ(colored.GetColor(), ggems::render::RED_Ruby);
+  EXPECT_EQ(plain.GetAtomicNumber(), colored.GetAtomicNumber());
+  EXPECT_EQ(plain.GetSymbol(), colored.GetSymbol());
+  EXPECT_EQ(plain.GetName(), colored.GetName());
+  EXPECT_EQ(plain.GetMolarMass(), colored.GetMolarMass());
 }

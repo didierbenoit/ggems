@@ -30,6 +30,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
+#include <optional>
+#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -41,6 +43,7 @@
 #include "detail/GGEMSPythonQuantityConversion.hh"
 
 #include "GGEMS/logging/GGEMSLogMacros.hh"
+#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
 #include "GGEMS/materials/GGEMSIsotope.hh"
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
@@ -50,6 +53,8 @@
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/processes/GGEMSProductionCutDescription.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -62,6 +67,72 @@ namespace builtins = ggems::core::materials::builtins;
 namespace processes = ggems::core::processes;
 
 using ggems::units::operator""_mm;
+
+/*!
+ * \brief Resolves an exact public palette token used by material authoring.
+ * \param[in] name Lowercase normal GGEMS color name.
+ * \return The existing palette key.
+ * \throws ggems::core::GGEMSRecoverable If the token is unknown.
+ */
+[[nodiscard]] auto RequireColor(std::string const &name)
+  -> ggems::render::ColorKey {
+  auto const color = ggems::render::ParseColorName(name);
+
+  if (!color.has_value()) {
+    throw ggems::core::GGEMSRecoverable{
+      std::format("Unknown GGEMS color '{}'.", name)};
+  }
+
+  return *color;
+}
+
+/*!
+ * \brief Copies optional presentation without altering isotope composition.
+ * \param[in,out] material Material already validated by the scientific builder.
+ * \param[in] elements Existing expanded or numeric element definitions.
+ * \throws ggems::core::GGEMSRecoverable If a supplied color name is unknown.
+ */
+auto ApplyElementColors(materials::GGEMSMaterial &material,
+                        std::map<std::string, py::object> const &elements)
+  -> void {
+  for (auto const &[symbol, definition] : elements) {
+    if (!py::isinstance<py::dict>(definition)) {
+      continue;
+    }
+
+    auto const atomic_number =
+      materials::RequireElementBySymbol(symbol).GetAtomicNumber();
+
+    auto const expanded = py::reinterpret_borrow<py::dict>(definition);
+
+    if (expanded.contains("color")) {
+      material.SetElementColor(
+        atomic_number, RequireColor(expanded["color"].cast<std::string>()));
+    }
+
+    if (!expanded.contains("isotopes")) {
+      continue;
+    }
+
+    for (auto const item : expanded["isotopes"].cast<py::iterable>()) {
+      auto const isotope = py::cast<py::dict>(item);
+
+      if (!isotope.contains("color")) {
+        continue;
+      }
+
+      material.SetIsotopeColor(
+        materials::GGEMSIsotope{
+          atomic_number,
+          isotope["mass_number"].cast<std::uint32_t>(),
+          isotope.contains("isomer_state")
+            ? isotope["isomer_state"].cast<std::uint32_t>()
+            : 0U,
+        },
+        RequireColor(isotope["color"].cast<std::string>()));
+    }
+  }
+}
 
 // =============================================================================
 // =============================================================================
@@ -224,7 +295,8 @@ GGEMS configuration. Materials that are merely available are not listed.
     "add",
     [](std::string name, double density,
        std::map<std::string, py::object> const &elements,
-       std::string const &density_unit) -> void {
+       std::string const &density_unit,
+       std::optional<std::string> const &color) -> void {
       auto const material_density =
         ggems::python::detail::MakeQuantityOrThrow<ggems::units::Density>(
           density, density_unit);
@@ -236,9 +308,17 @@ GGEMS configuration. Materials that are merely available are not listed.
         elemental_shares.push_back(MakeElementalShare(symbol, definition));
       }
 
+      auto material = materials::GGEMSMaterial::FromIsotopicComposition(
+        std::move(name), material_density, std::move(elemental_shares));
+
+      if (color.has_value()) {
+        material.SetColor(RequireColor(*color));
+      }
+
+      ApplyElementColors(material, elements);
+
       materials::GGEMSMaterialManager::GetInstance().AddCustomMaterial(
-        materials::GGEMSMaterial::FromIsotopicComposition(
-          std::move(name), material_density, std::move(elemental_shares)));
+        std::move(material));
     },
     R"doc(
 Add a custom material to the set of available GGEMS materials.
@@ -251,6 +331,10 @@ isotope list. Isotope fractions are atom fractions. Each isotope is identified
 numerically by its mass number and, when needed, its isomer state. No isotope
 name parsing is performed.
 
+Material color defaults to white. Optional color names on the material, an
+expanded element, or an isotope are presentation only. Isotopes inherit their
+element's resolved color unless explicitly overridden.
+
 Adding a material makes it available but does not register it. Registration
 occurs when the material is actually used by GGEMS.
 
@@ -259,6 +343,7 @@ Args:
     density: Material density.
     elements: Elemental composition and optional isotopic compositions.
     density_unit: Unit used for the density value. Defaults to "g/cm3".
+    color: Optional exact GGEMS palette name, such as "red_ruby".
 
 Examples:
     Natural isotopic compositions::
@@ -290,7 +375,7 @@ Examples:
         )
 )doc",
     py::arg("name"), py::arg("density"), py::arg("elements"),
-    py::arg("density_unit") = "g/cm3");
+    py::arg("density_unit") = "g/cm3", py::arg("color") = py::none());
 
   // === === ===
   module.def(

@@ -93,12 +93,13 @@ public:
 
   /*!
    * \brief Retains an immutable scene and uploads only procedural shape
-   * and profile descriptors.
+   * and profile descriptors plus visible central-slice cell indices.
    *
    * Initialize before supplying a nonnull scene. The caller must finish GPU use
    * of the previous buffer first. Occurrences, physical identities, parent
    * links, and local-to-World transforms remain in the shared scene unchanged.
-   * Voxelized grids upload dimensions and spacing, never per-cell labels.
+   * Voxelized grids upload dimensions, spacing, and central-slice indices,
+   * never the full label field or per-cell meshes.
    *
    * \param[in] scene Prepared scene, or null to clear the displayed geometry.
    * \throws core::GGEMSInternal If descriptor ranges exceed the device limit or
@@ -119,9 +120,10 @@ public:
 
   /*!
    * \brief Records visible occurrences using the same procedural triangles in
-   * both modes.
-   * Voxelized occurrences issue three central-plane instanced Box draws per
-   * pass, retaining the same occurrence-level visibility and selection.
+   * both modes. Voxelized occurrences batch their three central planes by
+   * mapped color and mode. Occurrence None hides all cells; Wireframe draws
+   * surviving cells as edges; Solid preserves their mapped Solid/Wireframe
+   * modes.
    *
    * No commands are recorded when no scene is retained. The caller has already
    * set the dynamic viewport and scissor. Record opaque occurrences first,
@@ -181,16 +183,20 @@ private:
   };
 
   /*!
-   * \brief Draws one analytic instance or three instanced central voxel planes.
-   * \param[in] command_buffer Recording buffer with pipeline and descriptors
-   * set.
-   * \param[in] occurrence Physical occurrence and optional slice counts.
-   * \param[in,out] constants Transform and color; the slice selector is
-   * updated.
+   * \brief Draws one analytic instance or batches of visible voxel slice cells.
+   * \param[in] command_buffer Recording buffer with descriptors set.
+   * \param[in] occurrence Physical occurrence and optional slice batches.
+   * \param[in] mode Resolved occurrence display mode, excluding None.
+   * \param[in,out] bound_mode Last pipeline bound in this recording pass.
+   * \param[in,out] constants Transform and alpha; color, lighting, and slice
+   * selector are updated for each draw.
    */
-  auto DrawOccurrence(vk::raii::CommandBuffer const &command_buffer,
-                      render::GGEMSGeometryOccurrence const &occurrence,
-                      GeometryPushConstants &constants) const -> void;
+  auto
+  DrawOccurrence(vk::raii::CommandBuffer const &command_buffer,
+                 render::GGEMSGeometryOccurrence const &occurrence,
+                 render::GGEMSGeometryDisplayMode mode,
+                 std::optional<render::GGEMSGeometryDisplayMode> &bound_mode,
+                 GeometryPushConstants &constants) const -> void;
 
   /*!
    * \brief Borrowed physical device used to select coherent descriptor memory.
@@ -203,7 +209,7 @@ private:
   /*! \brief Immutable meshes, occurrences, and physical hierarchy. */
   std::shared_ptr<ggems::render::GGEMSGeometryScene const> scene_;
 
-  /*! \brief Read-only analytic shape and Polyhedra profile storage bindings. */
+  /*! \brief Read-only shapes, Polyhedra profiles, and slice-index bindings. */
   vk::raii::DescriptorSetLayout descriptor_layout_{nullptr};
 
   /*! \brief Shared descriptor set and 128-byte vertex push layout. */
@@ -215,14 +221,14 @@ private:
   /*! \brief Identical TriangleList rasterized as filled surfaces. */
   vk::raii::Pipeline solid_pipeline_{nullptr};
 
-  /*! \brief Pool for the current scene's two analytic storage bindings. */
+  /*! \brief Pool for the current scene's three procedural storage bindings. */
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
 
   /*! \brief Host-visible coherent allocation that outlives its bound buffer. */
   vk::raii::DeviceMemory descriptor_memory_{nullptr};
 
   /*!
-   * \brief Shared analytic parameters only; contains no positions or normals.
+   * \brief Shared analytic parameters and slice indices; no positions/normals.
    */
   vk::raii::Buffer descriptor_buffer_{nullptr};
 

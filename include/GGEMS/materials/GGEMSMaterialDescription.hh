@@ -39,6 +39,8 @@
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialComposition.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
 namespace ggems::core::materials {
@@ -67,6 +69,9 @@ struct GGEMSElementInspection {
 
   /*! \brief Owned display name. */
   std::string name;
+
+  /*! \brief Resolved host presentation color, independent of EM properties. */
+  render::ColorKey color{render::WHITE_White};
 };
 
 /*!
@@ -76,7 +81,7 @@ struct GGEMSElementInspection {
  * Strings and vectors are copies, so the record survives source destruction or
  * manager growth. Producers preserve Z order and isotope (Z, A, M) order. A
  * Registered record carries manager_index; this is an authoring index, not a
- * package-local material ID.
+ * package-local material ID. isotope_colors matches isotopes in size and order.
  */
 struct GGEMSMaterialInspection {
   /*! \brief Owned display name. */
@@ -102,6 +107,12 @@ struct GGEMSMaterialInspection {
 
   /*! \brief Total electrons in 1/cm3. */
   long double electron_density_per_cubic_centimeter;
+
+  /*! \brief Material presentation color, independent of physical properties. */
+  render::ColorKey color{render::WHITE_White};
+
+  /*! \brief Resolved isotope colors in the same order as isotopes. */
+  std::vector<render::ColorKey> isotope_colors;
 };
 
 /*!

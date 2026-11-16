@@ -715,7 +715,8 @@ private:
   std::vector<Occurrence> volumes_;
 
   /*!
-   * \brief Owns immutable recipe tokens in World-local ID order, starting at one.
+   * \brief Owns immutable recipe tokens in World-local ID order, starting at
+   * one.
    *
    * Each authoring operation captures a fresh child snapshot; copies of an
    * existing recipe retain that same shared snapshot through copy-on-write

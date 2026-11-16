@@ -33,6 +33,8 @@
 #include <string_view>
 
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 
 /*!
  * \namespace ggems::core::materials
@@ -47,6 +49,7 @@ namespace ggems::core::materials {
  * An element identifies Z, not an isotope mixture. Its representative molar
  * mass is catalog metadata; isotope-resolved material preparation uses
  * GetIsotopeMassAuthority() instead. Symbol and name strings are borrowed.
+ * Display color is presentation metadata and does not change identity Z.
  */
 class GGEMSElement {
 public:
@@ -60,12 +63,14 @@ public:
    * \param[in] name Borrowed element name.
    * \param[in] molar_mass Representative molar mass in g/mol; stored without
    * validation.
+   * \param[in] color Presentation color; custom elements default to white.
    * \throws GGEMSRecoverable If atomic_number is outside [1, 99].
    */
   constexpr GGEMSElement(std::uint32_t atomic_number, std::string_view symbol,
-                         std::string_view name, long double molar_mass)
+                         std::string_view name, long double molar_mass,
+                         render::ColorKey color = render::WHITE_White)
       : atomic_number_{atomic_number}, symbol_{symbol}, name_{name},
-        molar_mass_{molar_mass} {
+        molar_mass_{molar_mass}, color_{color} {
     if (atomic_number < 1U || atomic_number > 99U) {
       throw GGEMSRecoverable{"Atomic number must be in [1, 99]."};
     }
@@ -111,6 +116,14 @@ public:
     return molar_mass_;
   }
 
+  /*!
+   * \brief Returns presentation metadata independent of chemical identity.
+   * \return The authored or catalog display color.
+   */
+  [[nodiscard]] constexpr auto GetColor() const noexcept -> render::ColorKey {
+    return color_;
+  }
+
 private:
   /*! \brief Chemical identity Z. */
   std::uint32_t atomic_number_;
@@ -123,6 +136,9 @@ private:
 
   /*! \brief Representative molar mass in g/mol. */
   long double molar_mass_;
+
+  /*! \brief Display color, excluded from chemical identity. */
+  render::ColorKey color_;
 };
 
 } // namespace ggems::core::materials

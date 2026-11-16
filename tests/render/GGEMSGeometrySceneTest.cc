@@ -54,6 +54,7 @@
 #include "GGEMS/geometry/GGEMSTrd.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
@@ -92,7 +93,9 @@ TEST(GGEMSGeometryScene, AnalyticalModelColorsDefaultToWhiteAndCopyByValue) {
     std::visit(
       [](auto &shape) -> void {
         EXPECT_EQ(shape.GetColor(), WHITE_White);
+        EXPECT_FALSE(shape.GetColorOverride());
         EXPECT_EQ(&shape.SetColor(MAGENTA_BlueViolet), &shape);
+        EXPECT_EQ(shape.GetColorOverride(), MAGENTA_BlueViolet);
 
         auto copy = shape;
         EXPECT_EQ(copy.GetColor(), MAGENTA_BlueViolet);
@@ -101,6 +104,40 @@ TEST(GGEMSGeometryScene, AnalyticalModelColorsDefaultToWhiteAndCopyByValue) {
         EXPECT_EQ(shape.GetColor(), MAGENTA_BlueViolet);
       },
       volume);
+  }
+}
+
+TEST(GGEMSGeometryScene,
+     AnalyticColorsResolveMaterialUnlessExplicitlyOverridden) {
+  auto material = BuildBuiltInMaterial("Water");
+  auto const material_color = material.GetColor();
+  ASSERT_NE(material_color, WHITE_White);
+  GGEMSBox box;
+  box.SetSize(2_mm, 2_mm, 2_mm)
+    .SetMaterial(material)
+    .SetPosition(MakePositionPM(-20'000'000'000LL, 0, 0));
+  auto world = World();
+  world.LinearRepeater(box, 2U, 4_mm, GGEMSRepeatAxis::X);
+  box.SetColor(WHITE_White).SetPosition(MakePositionPM(0, 0, 0));
+  ASSERT_TRUE(box.GetColorOverride());
+  world.AddVolume(box);
+  box.SetColor(RED_Ruby).SetPosition(MakePositionPM(20'000'000'000LL, 0, 0));
+  world.LinearRepeater(box, 2U, 4_mm, GGEMSRepeatAxis::X);
+  material.SetColor(GREEN_Pure);
+  box.SetColor(BLUE_Pure).SetMaterial(material);
+  auto const scene = BuildGeometryScene(world);
+  world = World();
+  ASSERT_EQ(scene.occurrences.size(), 6U);
+  EXPECT_EQ(scene.meshes.size(), 2U);
+  EXPECT_EQ(scene.occurrences[0].color, WHITE_White);
+  std::array const expected{
+    material_color, material_color, WHITE_White, RED_Ruby, RED_Ruby,
+  };
+  for (std::size_t index = 0U; index < expected.size(); ++index) {
+    EXPECT_EQ(scene.occurrences[index + 1U].color, expected[index]);
+    EXPECT_EQ(scene.occurrences[index + 1U].material_name, "Water");
+    EXPECT_EQ(scene.occurrences[index + 1U].mesh_index,
+              scene.occurrences[1].mesh_index);
   }
 }
 
@@ -721,6 +758,103 @@ TEST(GGEMSGeometryScene, VoxelSlicesKeepPhysicalIdsMetadataAndAnalyticSharing) {
     appearance.mode_override = mode;
     EXPECT_EQ(ResolveGeometryDisplayMode(occurrence, appearance), mode);
   }
+}
+
+TEST(GGEMSGeometryScene,
+     CentralVoxelPlanesKeepMappingStylesAndPhysicalIdentity) {
+  using Mode = GGEMSGeometryDisplayMode;
+  std::array<std::uint16_t, 27> labels{};
+  for (std::size_t index = 0U; index < labels.size(); ++index) {
+    labels[index] = static_cast<std::uint16_t>(index % 5U);
+  }
+  ggems::test::GGEMSVoxelizedTestFixture const fixture{
+    {3U, 3U, 3U},
+    "1 2 3",
+    labels,
+    "0 0 Air\n1 1 Water Solid red_ruby\n"
+    "2 2 Water Wireframe blue_pure\n3 3 Water None white_white\n"
+    "4 4 Water Solid red_ruby\n",
+  };
+  auto volume = fixture.Import();
+  ASSERT_EQ(volume.GetMaterials().size(), 2U);
+  auto world = World();
+  volume.SetPosition(MakePositionPM(-20'000'000'000LL, 0, 0));
+  world.AddVolume(volume);
+  volume.SetPosition(MakePositionPM(20'000'000'000LL, 0, 0))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  world.AddVolume(volume);
+  auto const scene = BuildGeometryScene(world);
+  world = World();
+  ASSERT_EQ(scene.occurrences.size(), 3U);
+  // Independent X-fast RAW offsets for XY(z=1), XZ(y=1), and YZ(x=1).
+  std::array const offsets{
+    std::array{9U, 10U, 11U, 12U, 13U, 14U, 15U, 16U, 17U},
+    std::array{3U, 4U, 5U, 12U, 13U, 14U, 21U, 22U, 23U},
+    std::array{1U, 4U, 7U, 10U, 13U, 16U, 19U, 22U, 25U},
+  };
+  std::array const modes{
+    Mode::Solid, Mode::Solid, Mode::Wireframe, Mode::None, Mode::Solid,
+  };
+  std::array const colors{
+    BuildBuiltInMaterial("Air").GetColor(),
+    RED_Ruby,
+    BLUE_Pure,
+    WHITE_White,
+    RED_Ruby,
+  };
+  std::size_t next_offset{};
+  for (std::size_t id = 1U; id < scene.occurrences.size(); ++id) {
+    auto const &occurrence = scene.occurrences[id];
+    EXPECT_EQ(occurrence.volume_id, id);
+    EXPECT_EQ(occurrence.parent_volume_id, 0U);
+    ASSERT_TRUE(occurrence.voxel_slices);
+    auto const &slices = *occurrence.voxel_slices;
+    EXPECT_EQ(slices.palette_size, 2U);
+    EXPECT_EQ(slices.dimensions, (std::array{3U, 3U, 3U}));
+    EXPECT_EQ(slices.instance_counts, (std::array{9U, 9U, 9U}));
+    EXPECT_EQ(slices.spacing_m, (std::array{0.001, 0.002, 0.003}));
+    EXPECT_EQ(slices.size_m, (std::array{0.003, 0.006, 0.009}));
+    std::array<std::array<bool, 9>, 3> seen{};
+    std::array<std::size_t, 3> batch_counts{};
+    for (auto const &batch : slices.batches) {
+      ASSERT_LT(batch.plane, offsets.size());
+      EXPECT_EQ(batch.first_instance, next_offset);
+      next_offset += batch.instance_count;
+      ASSERT_LE(next_offset, scene.voxel_cells.size());
+      ASSERT_GT(batch.instance_count, 0U);
+      EXPECT_NE(batch.mode, Mode::None);
+      ++batch_counts[batch.plane];
+      for (std::uint32_t index = 0U; index < batch.instance_count; ++index) {
+        auto const cell = scene.voxel_cells[batch.first_instance + index];
+        ASSERT_LT(cell, 9U);
+        EXPECT_FALSE(seen[batch.plane][cell]);
+        seen[batch.plane][cell] = true;
+        auto const label = labels[offsets[batch.plane][cell]];
+        EXPECT_EQ(batch.mode, modes[label]);
+        EXPECT_EQ(batch.color, colors[label]);
+      }
+    }
+    // Equal Water mappings share one red Solid batch, distinct from blue wire.
+    EXPECT_EQ(batch_counts, (std::array<std::size_t, 3>{3U, 3U, 3U}));
+    for (std::size_t plane = 0U; plane < offsets.size(); ++plane) {
+      for (std::size_t cell = 0U; cell < offsets[plane].size(); ++cell) {
+        EXPECT_EQ(seen[plane][cell],
+                  modes[labels[offsets[plane][cell]]] != Mode::None);
+      }
+    }
+  }
+  EXPECT_EQ(next_offset, scene.voxel_cells.size());
+  EXPECT_EQ(scene.voxel_cells.size(), 44U);
+  auto const &rotated = scene.occurrences[2];
+  EXPECT_EQ(rotated.position_m, (std::array{0.02, 0.0, 0.0}));
+  EXPECT_DOUBLE_EQ(rotated.orientation[1], -1.0);
+  EXPECT_DOUBLE_EQ(rotated.orientation[3], 1.0);
+  EXPECT_NEAR(rotated.minimum_m[0], 0.017, 1.0e-15);
+  EXPECT_NEAR(rotated.maximum_m[0], 0.023, 1.0e-15);
+  EXPECT_NEAR(rotated.minimum_m[1], -0.0015, 1.0e-15);
+  EXPECT_NEAR(rotated.maximum_m[1], 0.0015, 1.0e-15);
+  EXPECT_NEAR(rotated.minimum_m[2], -0.0045, 1.0e-15);
+  EXPECT_NEAR(rotated.maximum_m[2], 0.0045, 1.0e-15);
 }
 
 TEST(GGEMSGeometryScene, RunOwnedVoxelGeometryNeedsNoSimulationInitialization) {

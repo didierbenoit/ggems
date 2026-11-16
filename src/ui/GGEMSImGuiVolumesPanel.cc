@@ -141,13 +141,11 @@ auto BuildRepeaterGroup(
   auto const is_recipe_member = [&](auto const &member) -> bool {
     return member.repeater_recipe_id == occurrence.repeater_recipe_id;
   };
-  auto const total =
-    std::ranges::count_if(scene.occurrences, is_recipe_member);
-  auto label =
-    std::format("{} repeated ×{}", occurrence.shape_name, count);
+  auto const total = std::ranges::count_if(scene.occurrences, is_recipe_member);
+  auto label = std::format("{} repeated ×{}", occurrence.shape_name, count);
   if (total != count) {
-    label = std::format("{} ×{} · {} total", occurrence.shape_name, count,
-                        total);
+    label =
+      std::format("{} ×{} · {} total", occurrence.shape_name, count, total);
   }
 
   ImGui::PushID("##repeater_groups");

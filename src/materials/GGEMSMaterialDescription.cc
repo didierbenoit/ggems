@@ -44,6 +44,7 @@
 #include "GGEMS/materials/GGEMSMaterialDescription.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 
 namespace {
@@ -144,6 +145,8 @@ namespace ggems::core::materials {
       material.GetTotalAtomDensityPerCubicCentimeter(),
     .electron_density_per_cubic_centimeter =
       material.GetElectronDensityPerCubicCentimeter(),
+    .color = material.GetColor(),
+    .isotope_colors = {},
   };
 
   for (auto const &values : material.GetElementalConstituents()) {
@@ -153,11 +156,18 @@ namespace ggems::core::materials {
       .values = values,
       .symbol = std::string{element.GetSymbol()},
       .name = std::string{element.GetName()},
+      .color = material.GetElementColor(values.atomic_number),
     });
   }
 
   auto const isotopes = material.GetIsotopeConstituents();
   inspection.isotopes.assign(isotopes.begin(), isotopes.end());
+  inspection.isotope_colors.reserve(isotopes.size());
+
+  for (auto const &isotope : isotopes) {
+    inspection.isotope_colors.push_back(
+      material.GetIsotopeColor(isotope.isotope));
+  }
 
   return inspection;
 }
@@ -215,7 +225,9 @@ namespace ggems::core::materials {
 
 [[nodiscard]] auto DescribeMaterial(GGEMSMaterialInspection const &inspection)
   -> std::string {
-  std::string description = std::format("Material: {}", inspection.name);
+  std::string description =
+    std::format("Material: {} (color={})", inspection.name,
+                render::GetColorName(inspection.color));
 
   if (auto const registration = RegistrationLabel(inspection);
       !registration.empty()) {
@@ -237,11 +249,12 @@ namespace ggems::core::materials {
     auto const &values = element.values;
 
     description += std::format(
-      "\n    {} {} Z={}"
+      "\n    {} {} Z={} color={}"
       "\n      derived mass fraction : {:.8g}"
       "\n      number density        : {:.8g} {}"
       "\n      electron density      : {:.8g} {}",
-      element.symbol, element.name, values.atomic_number, values.mass_fraction,
+      element.symbol, element.name, values.atomic_number,
+      render::GetColorName(element.color), values.mass_fraction,
       values.number_density_per_cubic_centimeter, NumberDensityUnit(),
       values.electron_density_per_cubic_centimeter, NumberDensityUnit());
 
@@ -253,11 +266,12 @@ namespace ggems::core::materials {
 
       description += std::format(
         "\n      {:<8} Z={} A={} M={} atom fraction in element {:.8g}, "
-        "number density {:.8g} {}",
+        "number density {:.8g} {}, color={}",
         IsotopeLabel(isotope.isotope), isotope.isotope.GetAtomicNumber(),
         isotope.isotope.GetMassNumber(), isotope.isotope.GetIsomerState(),
         isotope.atom_fraction_in_element,
-        isotope.number_density_per_cubic_centimeter, NumberDensityUnit());
+        isotope.number_density_per_cubic_centimeter, NumberDensityUnit(),
+        render::GetColorName(inspection.isotope_colors[isotope_index]));
     }
   }
 

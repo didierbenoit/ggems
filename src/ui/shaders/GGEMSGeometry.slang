@@ -121,6 +121,11 @@ StructuredBuffer<GeometryShape> g_geometry_shapes;
 [[vk::binding(1, 0)]]
 StructuredBuffer<GeometryProfile> g_geometry_profiles;
 
+/*! \brief Visible plane-local cell indices, addressed by absolute instance ID.
+ */
+[[vk::binding(2, 0)]]
+StructuredBuffer<uint> g_voxel_cells;
+
 /*! \brief Borrows transforms, color, and shared shape identity for one draw. */
 [[vk::push_constant]]
 ConstantBuffer<GeometryPushConstants> g_geometry;
@@ -428,13 +433,13 @@ float3 GeometryVoxelCellCenter(GeometryShape shape, uint instance_id) {
 /*!
  * \brief Generates one procedural vertex and applies the occurrence transform.
  * \param[in] vertex_id Vertex index within the shared procedural topology.
- * \param[in] instance_id Cell within the chosen central slice; zero for
+ * \param[in] instance_id Index in the visible central-slice stream; zero for
  * analytics.
  * \return Clip position, authored RGB with optional light, and supplied alpha.
  */
 [shader("vertex")] GeometryVertexOutput
 VertexMain(uint vertex_id /*! \cond */ : SV_VertexID /*! \endcond */,
-           uint instance_id /*! \cond */ : SV_InstanceID
+           uint instance_id /*! \cond */ : SV_VulkanInstanceID
            /*! \endcond */) {
   GeometryShape shape = g_geometry_shapes[g_geometry.shape_index];
   GeometryTriangle triangle = GeometryShapeTriangle(shape, vertex_id / 3);
@@ -442,7 +447,7 @@ VertexMain(uint vertex_id /*! \cond */ : SV_VertexID /*! \endcond */,
   float3 point = corner == 0 ? triangle.first
                              : (corner == 1 ? triangle.second : triangle.third);
   if (shape.header.x == 8) {
-    point += GeometryVoxelCellCenter(shape, instance_id);
+    point += GeometryVoxelCellCenter(shape, g_voxel_cells[instance_id]);
   }
   float4 position = float4(point, 1.0);
   GeometryVertexOutput output;

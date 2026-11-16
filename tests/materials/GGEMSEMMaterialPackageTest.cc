@@ -37,6 +37,8 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
+#include "GGEMS/materials/GGEMSIsotope.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
@@ -145,6 +147,12 @@ TEST(GGEMSEMMaterialPackageTest, InternsIdenticalMaterialsUnderAnyName) {
                    {.atomic_number = 1U, .mass_fraction = 0.111898L},
                  }));
 
+  authored[1]
+    .SetColor(ggems::render::RED_Ruby)
+    .SetElementColor(8U, ggems::render::BLUE_BabyBlue)
+    .SetIsotopeColor(materials::GGEMSIsotope{8U, 16U, 0U},
+                     ggems::render::YELLOW_Vanilla);
+  EXPECT_NE(authored[0].GetColor(), authored[1].GetColor());
   EXPECT_TRUE(HasSameScientificIdentity(authored[0], authored[1]));
   EXPECT_TRUE(HasSameScientificIdentity(authored[0], authored[2]));
   EXPECT_NE(authored[0].GetName(), authored[1].GetName());

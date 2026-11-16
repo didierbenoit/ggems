@@ -28,6 +28,7 @@
 
 #include <array>
 #include <cstdint>
+#include <set>
 #include <string_view>
 
 #include <gtest/gtest.h>
@@ -163,4 +164,55 @@ TEST(GGEMSColorNamesTest, RepresentativeNamedConstantsPreserveTheirKeys) {
     SCOPED_TRACE(test_case.label);
     EXPECT_EQ(test_case.actual, test_case.expected);
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+// Host input and Python must use all existing normal names without aliases.
+TEST(GGEMSColorNamesTest, CanonicalCatalogRoundTripsEveryExistingNormalKey) {
+  auto const colors = render::GetNamedColors();
+  ASSERT_EQ(colors.size(), 576U);
+  std::set<std::string_view> names;
+  std::set<render::ColorKey> keys;
+
+  for (auto const &entry : colors) {
+    SCOPED_TRACE(entry.name);
+    EXPECT_TRUE(names.insert(entry.name).second);
+    EXPECT_TRUE(keys.insert(entry.key).second);
+    EXPECT_EQ(entry.key.variant, render::ColorVariant::Normal);
+    EXPECT_EQ(entry.key.layer, render::ColorLayer::Foreground);
+    EXPECT_LT(entry.key.family, render::ColorFamily::Count);
+    EXPECT_LT(entry.key.shade, render::color_shade_count);
+    EXPECT_EQ(render::ParseColorName(entry.name), entry.key);
+    EXPECT_EQ(render::GetColorName(entry.key), entry.name);
+  }
+
+  EXPECT_EQ(render::ParseColorName("red_ruby"), render::RED_Ruby);
+  EXPECT_EQ(render::ParseColorName("blue_lightsteelblue"),
+            render::BLUE_LightSteelBlue);
+  EXPECT_EQ(render::ParseColorName("white_white"), render::WHITE_White);
+}
+
+// =============================================================================
+// =============================================================================
+
+// Authoring rejects misspellings and unsupported variants rather than guessing.
+TEST(GGEMSColorNamesTest, RejectsNonCanonicalColorNamesAndKeys) {
+  for (std::string_view const name : {
+         "",
+         "RED_Ruby",
+         "red_Ruby",
+         "red-ruby",
+         " red_ruby",
+         "red_ruby ",
+         "red_ruby_b",
+         "white_white_bg",
+         "unknown_color",
+       }) {
+    SCOPED_TRACE(name);
+    EXPECT_FALSE(render::ParseColorName(name));
+  }
+  EXPECT_TRUE(render::GetColorName(render::RED_Ruby_B).empty());
+  EXPECT_TRUE(render::GetColorName(render::WHITE_White_BG).empty());
 }

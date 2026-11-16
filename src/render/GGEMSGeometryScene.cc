@@ -34,6 +34,7 @@
 #include <cstdint>
 #include <format>
 #include <limits>
+#include <map>
 #include <span>
 #include <string>
 #include <string_view>
@@ -62,6 +63,8 @@
 #include "GGEMS/units/GGEMSQuantity.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
+#include "GGEMS/render/GGEMSGeometryAppearance.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 
 namespace {
@@ -719,7 +722,8 @@ auto DescribeShape(GGEMSGeometryOccurrence &occurrence,
       using Shape = std::decay_t<decltype(shape)>;
       auto &dimensions = occurrence.dimensions;
 
-      occurrence.color = shape.GetColor();
+      occurrence.color =
+        shape.GetColorOverride().value_or(shape.GetMaterial().GetColor());
 
       if constexpr (std::is_same_v<Shape, GGEMSBox>) {
         occurrence.shape_name = "Box";
@@ -832,10 +836,11 @@ auto DescribePlacement(GGEMSGeometryOccurrence &occurrence,
 }
 
 /*!
- * \brief Captures full grid metadata and bounds without copying cell labels.
+ * \brief Captures grid metadata, bounds, and only visible central-plane cells.
  * \param[in,out] occurrence The single physical voxelized occurrence.
  * \param[in] volume Immutable imported grid and local Material palette.
  * \param[in] pose Actual composed host placement.
+ * \param[in,out] visible_cells Scene-wide plane-local cell index stream.
  * \return One procedural Box descriptor, shared by all displayed cell
  * instances.
  * \throws ggems::core::GGEMSRecoverable If a slice exceeds Vulkan's 32-bit
@@ -843,7 +848,9 @@ auto DescribePlacement(GGEMSGeometryOccurrence &occurrence,
  */
 auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
                        GGEMSVoxelizedVolume const &volume,
-                       GGEMSWorld::Pose const &pose) -> GGEMSGeometryMesh {
+                       GGEMSWorld::Pose const &pose,
+                       std::vector<std::uint32_t> &visible_cells)
+  -> GGEMSGeometryMesh {
   auto const &dimensions = volume.GetDimensions();
   auto const &spacing = volume.GetSpacing();
   auto const &size = volume.GetSize();
@@ -909,7 +916,60 @@ auto DescribeVoxelized(GGEMSGeometryOccurrence &occurrence,
     occurrence.maximum_m[row] = occurrence.position_m[row] + half;
   }
 
-  occurrence.voxel_slices = slices;
+  using Mode = ggems::render::GGEMSGeometryDisplayMode;
+
+  for (std::uint32_t plane = 0U; plane < 3U; ++plane) {
+    std::map<std::pair<Mode, ggems::render::ColorKey>,
+             std::vector<std::uint32_t>>
+      groups;
+
+    for (std::size_t index = 0U; index < counts[plane]; ++index) {
+      auto x = dimensions[0] / 2U;
+      auto y = dimensions[1] / 2U;
+      auto z = dimensions[2] / 2U;
+
+      if (plane == 0U) {
+        x = index % dimensions[0];
+        y = index / dimensions[0];
+      } else if (plane == 1U) {
+        x = index % dimensions[0];
+        z = index / dimensions[0];
+      } else {
+        y = index % dimensions[1];
+        z = index / dimensions[1];
+      }
+
+      auto const label =
+        volume.GetLabels()[x + (dimensions[0] * (y + (dimensions[1] * z)))];
+
+      auto const &style = volume.GetDisplayStyle(label);
+      if (style.mode != Mode::None) {
+        groups[{style.mode, style.color}].push_back(
+          static_cast<std::uint32_t>(index));
+      }
+    }
+
+    for (auto const &[style, cells] : groups) {
+      if (cells.size() >
+          std::numeric_limits<std::uint32_t>::max() - visible_cells.size()) {
+        throw ggems::core::GGEMSRecoverable(
+          "Visible voxel cells exceed the 32-bit Vulkan instance-index "
+          "domain.");
+      }
+
+      slices.batches.push_back({
+        .plane = plane,
+        .first_instance = static_cast<std::uint32_t>(visible_cells.size()),
+        .instance_count = static_cast<std::uint32_t>(cells.size()),
+        .mode = style.first,
+        .color = style.second,
+      });
+
+      visible_cells.insert(visible_cells.end(), cells.begin(), cells.end());
+    }
+  }
+
+  occurrence.voxel_slices = std::move(slices);
   return mesh;
 }
 
@@ -963,7 +1023,8 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
 
     if (auto const *voxelized = world.GetVoxelizedVolume(index)) {
       occurrence.mesh_index = static_cast<std::uint32_t>(scene.meshes.size());
-      scene.meshes.push_back(DescribeVoxelized(occurrence, *voxelized, pose));
+      scene.meshes.push_back(
+        DescribeVoxelized(occurrence, *voxelized, pose, scene.voxel_cells));
     } else {
       auto const &shape = world.GetVolume(index);
 
