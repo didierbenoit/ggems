@@ -65,10 +65,6 @@ protected:
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.DisplaySize = {800.0F, 600.0F};
     io.DeltaTime = 1.0F / 60.0F;
-    unsigned char *pixels{};
-    int atlas_width{};
-    int atlas_height{};
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &atlas_width, &atlas_height);
     for (int frame = 0; frame < 3; ++frame) {
       Frame();
     }
@@ -79,6 +75,9 @@ protected:
   auto TearDown() -> void override { ImGui::DestroyContext(context_); }
 
   auto Frame(bool stale_texture = false) -> Panel::Result {
+    // Refresh the headless atlas with a handle distinct from scene/icons.
+    ImGui::GetIO().Fonts->GetTexDataAsRGBA32(nullptr, nullptr, nullptr);
+    ImGui::GetIO().Fonts->SetTexID(ImTextureID{17});
     ImGui::NewFrame();
     ImGui::SetNextWindowPos({0.0F, 0.0F});
     ImGui::SetNextWindowSize(window_size_);

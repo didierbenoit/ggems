@@ -8,7 +8,7 @@ try:
     # --------------------------------------------------------------------------
     opencl = ggems.opencl.GGEMSOpenCL()
     opencl.set_worker_count(1048576)
-    opencl.select_devices("2")
+    opencl.select_devices("0")
     opencl.initialize()
 
     # --------------------------------------------------------------------------

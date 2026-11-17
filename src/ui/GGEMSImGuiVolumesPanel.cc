@@ -264,7 +264,6 @@ struct VolumeTree {
         }
       }
 
-      ImGui::TableSetColumnIndex(0);
       ImGui::TreePop();
     }
 
@@ -383,7 +382,7 @@ struct VolumeTree {
         }
       }
 
-      ImGui::TableSetColumnIndex(0);
+      // The clipper may have ended the row; only restore indentation.
       ImGui::TreePop();
     }
 
@@ -429,7 +428,6 @@ struct VolumeTree {
       Physical(0U, false, false);
       Roots();
 
-      ImGui::TableSetColumnIndex(0);
       ImGui::TreePop();
     }
 

@@ -74,10 +74,6 @@ protected:
       ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
     imgui_io.DisplaySize = {1280.0F, 800.0F};
     imgui_io.DeltaTime = 1.0F / 60.0F;
-    unsigned char *pixels{};
-    int atlas_width{};
-    int atlas_height{};
-    imgui_io.Fonts->GetTexDataAsRGBA32(&pixels, &atlas_width, &atlas_height);
 
     auto &platform_io = ImGui::GetPlatformIO();
     platform_io.Platform_ClipboardUserData = &displayed_text_;
@@ -110,6 +106,9 @@ protected:
   auto TearDown() -> void override { ImGui::DestroyContext(context_); }
 
   auto Frame() -> void {
+    // Refresh the headless atlas with a handle distinct from scene/icons.
+    ImGui::GetIO().Fonts->GetTexDataAsRGBA32(nullptr, nullptr, nullptr);
+    ImGui::GetIO().Fonts->SetTexID(ImTextureID{17});
     ImGui::NewFrame();
     displayed_text_.clear();
     ImGui::LogToClipboard();
