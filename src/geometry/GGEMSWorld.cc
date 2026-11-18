@@ -63,7 +63,9 @@
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
 #include "GGEMS/geometry/GGEMSPolyhedraRecord.hh"
-
+#include "GGEMS/geometry/GGEMSMesh.hh"
+#include "GGEMS/geometry/GGEMSMeshBVH.hh"
+#include "GGEMS/geometry/GGEMSMeshOccurrenceRecord.hh"
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
@@ -699,6 +701,72 @@ BuildSurfaceScale(ggems::geometry::GGEMSTrap const &trap,
 }
 
 /*!
+ * \brief Computes local and posed scales of the referenced FP32 triangle
+ * vertices.
+ * \param[in] mesh Captured direct World child.
+ * \param[in] pose Final uploaded placement.
+ * \return Absolute world envelope and overall minimum local half-width.
+ */
+[[nodiscard]] auto
+BuildMeshSurfaceScale(ggems::geometry::GGEMSMesh const &mesh,
+                      ggems::geometry::GGEMSBoxPoseRecord const &pose)
+  -> SurfaceScale {
+  auto const &data = mesh.GetData();
+  auto const &bounds = data.bounds_pm;
+
+  SurfaceScale scale{
+    .minimum_half_extent_pm = std::numeric_limits<double>::max(),
+  };
+
+  for (std::size_t axis = 0; axis < 3; ++axis) {
+    scale.local_scale_pm = std::max({
+      scale.local_scale_pm,
+      std::abs(bounds.minimum[axis]),
+      std::abs(bounds.maximum[axis]),
+    });
+    scale.minimum_half_extent_pm = std::min(
+      scale.minimum_half_extent_pm,
+      (static_cast<double>(bounds.maximum[axis]) - bounds.minimum[axis]) * 0.5);
+  }
+
+  std::array const center{pose.center_x_pm, pose.center_y_pm, pose.center_z_pm};
+
+  if (mesh.GetRotation().IsIdentity()) {
+    for (std::size_t axis = 0; axis < center.size(); ++axis) {
+      auto const origin = static_cast<double>(center[axis]);
+      scale.envelope_pm[axis] =
+        std::max(std::abs(origin + bounds.minimum[axis]),
+                 std::abs(origin + bounds.maximum[axis]));
+    }
+    return scale;
+  }
+
+  std::array const rows{
+    std::array<double, 3>{pose.axis_x_x, pose.axis_y_x, pose.axis_z_x},
+    std::array<double, 3>{pose.axis_x_y, pose.axis_y_y, pose.axis_z_y},
+    std::array<double, 3>{pose.axis_x_z, pose.axis_y_z, pose.axis_z_z},
+  };
+
+  // Convex World containment needs only referenced corners; unused OBJ
+  // positions and empty regions of a rotated local AABB never reject an actual
+  // solid.
+  for (auto const &triangle : data.triangles) {
+    for (auto vertex_index : triangle) {
+      auto const &vertex = data.vertices_pm[vertex_index];
+      for (std::size_t axis = 0; axis < rows.size(); ++axis) {
+        auto const &row = rows[axis];
+        double const coordinate = center[axis] + (row[0] * vertex[0]) +
+                                  (row[1] * vertex[1]) + (row[2] * vertex[2]);
+        scale.envelope_pm[axis] =
+          std::max(scale.envelope_pm[axis], std::abs(coordinate));
+      }
+    }
+  }
+
+  return scale;
+}
+
+/*!
  * \brief Returns the representability scale of the solid's surface operations.
  * \param[in] scale Uploaded geometry's static envelope.
  * \return Largest local or global surface spacing in pm.
@@ -1032,6 +1100,7 @@ auto SampleAdmissionSolid(AdmissionSolid &solid) -> void {
       double inner;
       double outer;
       bool cap = axial != 0.5;
+
       if (kind == GGEMSAnalyticKind::Polyhedra) {
         auto const &section = solid.sections[index];
         z = std::lerp(static_cast<double>(section.z_lower_pm),
@@ -1053,6 +1122,7 @@ auto SampleAdmissionSolid(AdmissionSolid &solid) -> void {
         inner = tube.inner_radius_pm;
         outer = tube.outer_radius_pm;
       }
+
       for (unsigned azimuth = 0U; azimuth < 16U; ++azimuth) {
         auto const angle = 2.0 * std::numbers::pi * azimuth / 16.0;
         auto const x = std::cos(angle);
@@ -1117,6 +1187,12 @@ auto GGEMSWorld::GetVolumeNavigationTolerancePM(std::size_t index) const
   }
 
   auto const pose = BuildOccurrencePose(index);
+
+  if (auto const *mesh = GetMeshVolume(index)) {
+    return RequiredTolerancePM(BuildMeshSurfaceScale(*mesh, pose),
+                               WorldSpacingPM(half_extent_pm_));
+  }
+
   return std::visit(
     [&](auto const &shape) -> float {
       return RequiredTolerancePM(BuildSurfaceScale(shape, pose),
@@ -1191,6 +1267,20 @@ auto GGEMSWorld::AddVolume(GGEMSPolyhedra polyhedra,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSWorld::AddVolume(GGEMSMesh volume) -> GGEMSWorld & {
+  return AttachVolume(std::move(volume));
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AttachVolume(GGEMSMesh volume, std::uint32_t parent_volume_id)
+  -> GGEMSWorld & {
+  return AttachImport(
+    {.volume = std::move(volume), .parent_volume_id = parent_volume_id});
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSWorld::AddVolume(GGEMSVoxelizedVolume volume) -> GGEMSWorld & {
   return AttachVolume(std::move(volume));
 }
@@ -1199,27 +1289,45 @@ auto GGEMSWorld::AddVolume(GGEMSVoxelizedVolume volume) -> GGEMSWorld & {
 
 auto GGEMSWorld::AttachVolume(GGEMSVoxelizedVolume volume,
                               std::uint32_t parent_volume_id) -> GGEMSWorld & {
-  if (parent_volume_id != 0U) {
+  return AttachImport(
+    {.volume = std::move(volume), .parent_volume_id = parent_volume_id});
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AttachImport(Occurrence occurrence) -> GGEMSWorld & {
+  if (occurrence.parent_volume_id != 0U) {
     throw core::GGEMSRecoverable(
-      "Voxelized volumes may attach directly to World only.");
+      "Imported volumes may attach directly to World only.");
   }
 
   if (half_extent_pm_.x == 0ULL || !material_) {
     throw core::GGEMSRecoverable(
-      "Configure World size and material before attaching a voxelized volume.");
+      "Configure World size and material before attaching an imported volume.");
   }
 
   if (volumes_.size() >= std::numeric_limits<std::uint32_t>::max() - 1U) {
     throw core::GGEMSRecoverable("Physical VolumeID domain is exhausted.");
   }
 
+  if (auto const *mesh = std::get_if<GGEMSMesh>(&occurrence.volume)) {
+    auto const &data = mesh->GetData();
+    auto const existing =
+      std::ranges::find_if(volumes_, [&](Occurrence const &entry) -> bool {
+        auto const *other = std::get_if<GGEMSMesh>(&entry.volume);
+        return other != nullptr && &other->GetData() == &data;
+      });
+    occurrence.mesh_bvh =
+      existing != volumes_.end()
+        ? existing->mesh_bvh
+        : std::make_shared<GGEMSMeshBVH const>(BuildMeshBVH(data));
+  }
+
   auto candidate = *this;
 
-  candidate.volumes_.push_back({
-    .volume = std::move(volume),
-    .parent_volume_id = 0U,
-    .authored_group_id = static_cast<std::uint32_t>(volumes_.size() + 1U),
-  });
+  occurrence.authored_group_id =
+    static_cast<std::uint32_t>(volumes_.size() + 1U);
+  candidate.volumes_.push_back(std::move(occurrence));
 
   candidate.Validate();
 
@@ -1245,10 +1353,10 @@ auto GGEMSWorld::AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
       "Physical parent must already exist in this World.");
   }
 
-  if (parent_volume_id != 0U && std::holds_alternative<GGEMSVoxelizedVolume>(
-                                  volumes_[parent_volume_id - 1U].volume)) {
+  if (parent_volume_id != 0U &&
+      !std::holds_alternative<Volume>(volumes_[parent_volume_id - 1U].volume)) {
     throw core::GGEMSRecoverable(
-      "Voxelized volumes cannot contain authored child volumes.");
+      "Imported volumes cannot contain authored child volumes.");
   }
 
   if (GetOccurrenceDepth(parent_volume_id) >= 4U) {
@@ -1397,10 +1505,10 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
       "Physical parent must already exist in this World.");
   }
 
-  if (parent_volume_id != 0U && std::holds_alternative<GGEMSVoxelizedVolume>(
-                                  volumes_[parent_volume_id - 1U].volume)) {
+  if (parent_volume_id != 0U &&
+      !std::holds_alternative<Volume>(volumes_[parent_volume_id - 1U].volume)) {
     throw core::GGEMSRecoverable(
-      "Voxelized volumes cannot contain authored child volumes.");
+      "Imported volumes cannot contain authored child volumes.");
   }
 
   detail::ValidateRecipe(recipe);
@@ -1709,6 +1817,21 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
   auto const world_tolerance = GetNavigationTolerancePM();
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
+    if (auto const *mesh = GetMeshVolume(index)) {
+      static_cast<void>(mesh->GetMaterial());
+      auto const scale =
+        BuildMeshSurfaceScale(*mesh, BuildOccurrencePose(index));
+
+      if (scale.envelope_pm[0] > static_cast<double>(half_extent_pm_.x) ||
+          scale.envelope_pm[1] > static_cast<double>(half_extent_pm_.y) ||
+          scale.envelope_pm[2] > static_cast<double>(half_extent_pm_.z)) {
+        throw core::GGEMSRecoverable("Mesh extends outside World.");
+      }
+
+      RequireFeatureBands(scale, RequiredTolerancePM(scale, world_spacing));
+      continue;
+    }
+
     if (GetVoxelizedVolume(index) != nullptr) {
       ValidateVoxelizedVolume(index);
       continue;
@@ -1980,15 +2103,17 @@ auto GGEMSWorld::BuildOccurrencePose(std::size_t index) const
   -> GGEMSBoxPoseRecord {
   auto const [center, rotation] = BuildVolumePose(index);
 
-  auto const *voxelized = GetVoxelizedVolume(index);
+  Position3PM authored_center{};
 
-  auto const authored_center = voxelized != nullptr
-                                 ? voxelized->GetPositionPM()
-                                 : std::visit(
-                                     [](auto const &shape) -> Position3PM {
-                                       return shape.GetPositionPM();
-                                     },
-                                     GetVolume(index));
+  if (auto const *mesh = GetMeshVolume(index)) {
+    authored_center = mesh->GetPositionPM();
+  } else if (auto const *voxelized = GetVoxelizedVolume(index)) {
+    authored_center = voxelized->GetPositionPM();
+  } else {
+    authored_center = std::visit(
+      [](auto const &shape) -> Position3PM { return shape.GetPositionPM(); },
+      GetVolume(index));
+  }
 
   auto const direct_child = volumes_[index].parent_volume_id == 0U;
 
@@ -2093,7 +2218,7 @@ auto GGEMSWorld::GetVolume(std::size_t index) const -> Volume const & {
 
   if (volume == nullptr) {
     throw core::GGEMSRecoverable(
-      "Voxelized volumes have no analytical shape record.");
+      "Imported volumes have no analytical shape record.");
   }
 
   return *volume;
@@ -2111,6 +2236,10 @@ auto GGEMSWorld::CountBoundaryEvents() const noexcept -> std::uint64_t {
           return ShapeBoundaryEvents(shape);
         },
         *volume);
+    } else if (auto const *mesh = std::get_if<GGEMSMesh>(&occurrence.volume)) {
+      // Each transverse triangle contributes at most one crossing of a straight
+      // ray.
+      count += mesh->GetData().triangles.size();
     } else {
       auto const &dimensions =
         std::get<GGEMSVoxelizedVolume>(occurrence.volume).GetDimensions();
@@ -2141,7 +2270,8 @@ auto GGEMSWorld::CountBoundaryEvents() const noexcept -> std::uint64_t {
 auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
   AuxiliaryLayout layout;
 
-  if (volumes_.size() > 1U || GetVoxelizedVolume(0U) != nullptr) {
+  if (volumes_.size() > 1U || GetVoxelizedVolume(0U) != nullptr ||
+      GetMeshVolume(0U) != nullptr) {
     layout.byte_count = volumes_.size() * sizeof(GGEMSAnalyticOccurrenceRecord);
   }
 
@@ -2149,20 +2279,37 @@ auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
   layout.profile_offsets.resize(volumes_.size());
   std::uint32_t analytic_index = 0U;
   std::uint32_t voxelized_index = 0U;
+  std::uint32_t mesh_index = 0U;
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
-    bool const voxelized = GetVoxelizedVolume(index) != nullptr;
     GGEMSAnalyticOccurrenceRecord occurrence{
-      .record_index = voxelized ? voxelized_index++ : analytic_index++,
       .parent_volume_id = volumes_[index].parent_volume_id,
-      .family = voxelized ? GGEMSOccurrenceFamily::Voxelized
-                          : GGEMSOccurrenceFamily::Analytic,
     };
 
-    if (!voxelized && !std::holds_alternative<GGEMSSphere>(GetVolume(index))) {
+    if (auto const *mesh = GetMeshVolume(index)) {
+      occurrence.family = GGEMSOccurrenceFamily::Mesh;
+      occurrence.record_index = mesh_index++;
       occurrence.auxiliary_offset =
         static_cast<std::uint32_t>(layout.byte_count);
-      layout.byte_count += sizeof(GGEMSBoxPoseRecord);
+      layout.byte_count += sizeof(GGEMSMeshOccurrenceRecord);
+
+      if (layout.mesh_assets
+            .try_emplace(&mesh->GetData(), index, layout.byte_count)
+            .second) {
+        layout.byte_count +=
+          MeshBVHPackedSize(mesh->GetData(), *volumes_[index].mesh_bvh);
+      }
+    } else if (GetVoxelizedVolume(index) != nullptr) {
+      occurrence.family = GGEMSOccurrenceFamily::Voxelized;
+      occurrence.record_index = voxelized_index++;
+    } else {
+      occurrence.record_index = analytic_index++;
+
+      if (!std::holds_alternative<GGEMSSphere>(GetVolume(index))) {
+        occurrence.auxiliary_offset =
+          static_cast<std::uint32_t>(layout.byte_count);
+        layout.byte_count += sizeof(GGEMSBoxPoseRecord);
+      }
     }
 
     layout.occurrences.push_back(occurrence);
@@ -2195,7 +2342,7 @@ auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
 auto GGEMSWorld::AppendPolyhedraProfiles(AuxiliaryLayout &layout) const
   -> void {
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
-    if (GetVoxelizedVolume(index) != nullptr) {
+    if (!std::holds_alternative<Volume>(volumes_[index].volume)) {
       continue;
     }
 
@@ -2226,6 +2373,15 @@ auto GGEMSWorld::AppendPolyhedraProfiles(AuxiliaryLayout &layout) const
                           sizeof(GGEMSPolyhedraSectionRecord));
     layout.profile_sources.push_back(index);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::GetMeshVolume(std::size_t index) const noexcept
+  -> GGEMSMesh const * {
+  return index < volumes_.size()
+           ? std::get_if<GGEMSMesh>(&volumes_[index].volume)
+           : nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -2272,7 +2428,7 @@ auto GGEMSWorld::BuildAnalyticDeviceRecords(
   records.reserve(analytic_count);
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
-    if (GetVoxelizedVolume(index) != nullptr) {
+    if (!std::holds_alternative<Volume>(volumes_[index].volume)) {
       continue;
     }
 
@@ -2424,9 +2580,20 @@ auto GGEMSWorld::BuildVoxelizedDeviceData(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::BuildAnalyticAuxiliaryBuffer() const
+auto GGEMSWorld::BuildAnalyticAuxiliaryBuffer(
+  std::span<std::uint32_t const> mesh_material_ids) const
   -> std::vector<std::byte> {
-  if (volumes_.size() <= 1U && GetVoxelizedVolume(0U) == nullptr) {
+  if (mesh_material_ids.size() !=
+      static_cast<std::size_t>(
+        std::ranges::count_if(volumes_, [](Occurrence const &entry) -> bool {
+          return std::holds_alternative<GGEMSMesh>(entry.volume);
+        }))) {
+    throw core::GGEMSRecoverable(
+      "Mesh Material identity count is inconsistent.");
+  }
+
+  if (volumes_.size() <= 1U && GetVoxelizedVolume(0U) == nullptr &&
+      GetMeshVolume(0U) == nullptr) {
     return BuildAnalyticAuxiliaryData();
   }
 
@@ -2437,6 +2604,28 @@ auto GGEMSWorld::BuildAnalyticAuxiliaryBuffer() const
                 sizeof(GGEMSAnalyticOccurrenceRecord));
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
+    if (auto const *mesh = GetMeshVolume(index)) {
+      auto const &link = layout.occurrences[index];
+      auto const [source, offset] = layout.mesh_assets.at(&mesh->GetData());
+
+      GGEMSMeshOccurrenceRecord const record{
+        .pose = BuildOccurrencePose(index),
+        .tolerance_pm = GetVolumeNavigationTolerancePM(index),
+        .material_id = mesh_material_ids[link.record_index],
+        .asset_offset = static_cast<std::uint32_t>(offset),
+      };
+
+      std::memcpy(data.data() + link.auxiliary_offset, &record, sizeof(record));
+
+      if (index == source) {
+        auto const &bvh = *volumes_[index].mesh_bvh;
+        auto const &mesh_data = mesh->GetData();
+        PackMeshBVH(mesh_data, bvh, std::span{data}.subspan(offset));
+      }
+
+      continue;
+    }
+
     if (GetVoxelizedVolume(index) != nullptr) {
       continue;
     }
@@ -2550,6 +2739,10 @@ auto GGEMSWorld::GetVolumeMaterial(std::size_t index) const
   -> core::materials::GGEMSMaterial const * {
   if (index >= volumes_.size()) {
     return nullptr;
+  }
+
+  if (auto const *mesh = GetMeshVolume(index)) {
+    return &mesh->GetMaterial();
   }
 
   if (std::holds_alternative<GGEMSVoxelizedVolume>(volumes_[index].volume)) {

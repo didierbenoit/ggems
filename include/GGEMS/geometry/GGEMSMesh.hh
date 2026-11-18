@@ -127,18 +127,18 @@ struct GGEMSMeshData {
  * \brief Imports one detached OBJ or STL mesh with independent pose and style.
  *
  * Copies share immutable geometry and own their name, Material, color override,
- * and rigid pose. Setters never modify imported coordinates. This import-only
- * value cannot attach to World and does not certify physical mesh topology.
+ * and rigid pose. World admits physical meshes with closed, oriented shells.
  */
 class GGEMSMesh {
 public:
   /*!
    * \brief Imports geometry with no authored display name.
    * \param[in] mesh_file OBJ or STL path, selected by its extension.
-   * \param[in] unit Explicit registered length unit of source coordinates.
+   * \param[in] unit Registered length unit of source coordinates, default mm.
    * \throws GGEMSRecoverable If input cannot be read or admitted structurally.
    */
-  GGEMSMesh(std::filesystem::path const &mesh_file, std::string_view unit);
+  GGEMSMesh(std::filesystem::path const &mesh_file,
+            std::string_view unit = "mm");
 
   /*!
    * \brief Imports geometry with an independently owned display name.

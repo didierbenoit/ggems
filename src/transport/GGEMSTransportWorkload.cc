@@ -430,7 +430,8 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   std::uint32_t observer_record_capacity,
   std::uint32_t launch_primary_count_limit, geometry::GGEMSWorld const *world,
   std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes,
-  geometry::GGEMSVoxelizedSceneData const &voxelized_data)
+  geometry::GGEMSVoxelizedSceneData const &voxelized_data,
+  std::span<std::byte const> mesh_scene_auxiliary)
     : context_{&context}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       emission_count_{
@@ -526,10 +527,24 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
       } {
   auto const world_record =
     world != nullptr ? world->BuildRecord() : geometry::GGEMSWorldRecord{};
-  if (voxelized_data.records.size() != world_record.voxelized_count ||
+
+  bool const has_mesh = !mesh_scene_auxiliary.empty();
+
+  std::uint32_t mesh_count{};
+
+  if (has_mesh) {
+    for (std::size_t index = 0; index < world_record.occurrence_count;
+         ++index) {
+      mesh_count +=
+        static_cast<std::uint32_t>(world->GetMeshVolume(index) != nullptr);
+    }
+  }
+
+  if (has_mesh != (mesh_count != 0U) ||
+      voxelized_data.records.size() != world_record.voxelized_count ||
       (world_record.occurrence_count != 0U &&
-       volumes.size() !=
-         world_record.occurrence_count - world_record.voxelized_count)) {
+       volumes.size() != world_record.occurrence_count -
+                           world_record.voxelized_count - mesh_count)) {
     throw GGEMSRecoverable("Transport geometry record counts do not match "
                            "the World occurrence families.");
   }
@@ -537,21 +552,25 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   std::filesystem::path const kernel_transport_root = kernel_root / "transport";
 
-  auto const auxiliary = world != nullptr
-                           ? world->BuildAnalyticAuxiliaryBuffer()
-                           : std::vector<std::byte>{};
+  std::vector<std::byte> ordinary_auxiliary;
+  auto auxiliary = mesh_scene_auxiliary;
+
+  if (world != nullptr && !has_mesh) {
+    ordinary_auxiliary = world->BuildAnalyticAuxiliaryBuffer();
+    auxiliary = ordinary_auxiliary;
+  }
 
   if (!auxiliary.empty()) {
     box_pose_buffer_.emplace(
       context.CreateSVMBuffer(ggems::units::Bytes{auxiliary.size()}));
-    ggems::ocl::WriteSVMFromHost(*box_pose_buffer_,
-                                 std::span<std::byte const>{auxiliary});
+    ggems::ocl::WriteSVMFromHost(*box_pose_buffer_, auxiliary);
   }
 
-  std::string const build_options = std::format(
-    "-I{} {} "
-    "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
-    kernel_root.generic_string(), random.GetKernelBuildDefinition());
+  std::string const build_options =
+    std::format("-I{} {} "
+                "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1{}",
+                kernel_root.generic_string(), random.GetKernelBuildDefinition(),
+                has_mesh ? " -DGGEMS_HAS_MESH=1" : "");
 
   auto const &program =
     opencl.GetOrCreateProgram(*context_, kernel_transport_root,

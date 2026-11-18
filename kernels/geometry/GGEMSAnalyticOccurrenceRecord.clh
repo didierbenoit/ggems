@@ -21,8 +21,7 @@
 
 /*!
  * \file
- * \brief Defines flat references for physically placed analytic and voxelized
- * occurrences.
+ * \brief Defines flat references for physical occurrences in the scene.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -38,23 +37,27 @@
 /*! \brief Selects the regular material-grid record array. */
 #define GGEMS_OCCURRENCE_VOXELIZED 1U
 
+/*! \brief Selects a homogeneous mesh with shared triangle and BVH assets. */
+#define GGEMS_OCCURRENCE_MESH 2U
+
 /*!
  * \brief Stores 24-byte family references and physical hierarchy links.
  *
  * Multi-occurrence and voxelized scene auxiliary buffers begin with
  * occurrence_count descriptors. Physical VolumeID is the descriptor index
- * plus one; record_index is dense within the selected geometry family.
- * Analytical pose offsets are bytes from the auxiliary buffer's beginning.
+ * plus one. Analytic and voxelized record indices are dense within each family.
+ * Mesh descriptors use their auxiliary offset to select the placed mesh record.
+ * All auxiliary offsets are bytes from the auxiliary buffer's beginning.
  * Sphere and voxelized entries use offset zero; the voxel record owns its pose.
  * Links use global physical VolumeIDs: zero denotes World for the parent and
  * no occurrence for child/sibling links. The first World child is VolumeID one.
  * Parents precede children in insertion order.
  */
 typedef struct GGEMSAnalyticOccurrenceRecord {
-  /*! \brief Index in the contiguous record array selected by family. */
+  /*! \brief Family-local analytic or grid record index, unused for meshes. */
   uint record_index;
 
-  /*! \brief Byte offset of the occurrence pose within the auxiliary buffer. */
+  /*! \brief Byte offset of the family-specific view in the auxiliary buffer. */
   uint auxiliary_offset;
 
   /*! \brief Parent physical VolumeID; zero selects the World. */
@@ -66,7 +69,7 @@ typedef struct GGEMSAnalyticOccurrenceRecord {
   /*! \brief Next direct sibling VolumeID; zero ends the sibling list. */
   uint next_sibling_id;
 
-  /*! \brief Physical geometry family selected by record_index. */
+  /*! \brief Selects the geometry family used for this physical occurrence. */
   uint family;
 } GGEMSAnalyticOccurrenceRecord;
 

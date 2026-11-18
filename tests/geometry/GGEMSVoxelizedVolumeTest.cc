@@ -283,7 +283,7 @@ TEST(GGEMSVoxelizedVolume, VerboseReportsMappingsAndPoseWithoutChangingData) {
   logger.SetDetailLevel(0);
   logger.AddSink(std::make_unique<ggems::core::FileSink>(report_path.string()));
   logger.AddSink(std::make_unique<ggems::core::StdoutSink>());
-  EXPECT_NO_THROW(EXPECT_EQ(&volume.SetVerbose(), &volume));
+  EXPECT_NO_THROW(EXPECT_EQ(&volume.Verbose(), &volume));
   logger.ClearSinks();
   logger.SetDetailLevel(1);
 

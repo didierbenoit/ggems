@@ -1328,6 +1328,11 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
 
   std::vector<std::pair<std::size_t, std::uint32_t>> mesh_sources;
   for (std::size_t index = 0; index < world.GetVolumeCount(); ++index) {
+    if (world.GetMeshVolume(index) != nullptr) {
+      throw ggems::core::GGEMSRecoverable(
+        "The geometry viewer does not support mesh occurrences yet.");
+    }
+
     auto const pose = world.BuildVolumePose(index);
     scene.occurrences.push_back({
       .volume_id = static_cast<std::uint32_t>(index) + 1U,

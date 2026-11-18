@@ -1,0 +1,70 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines byte-addressed parameters for immutable static mesh trees.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_MESH_BVH_CLH
+/*! \brief Prevents repeated inclusion of the mesh asset layout. */
+#define GGEMS_MESH_BVH_CLH
+
+/*! \brief Marks a leaf count in the high bit of the second node word. */
+#define GGEMS_MESH_LEAF_FLAG (1U << 31U)
+
+/*! \brief Limits deferred siblings across both tree levels. */
+#define GGEMS_MESH_STACK_CAPACITY 32U
+
+/*! \brief Locates the read-only arrays packed after this asset header. */
+typedef struct GGEMSMeshBVHRecord {
+  /*! \brief Byte offset from this header to the first tree node. */
+  uint node_offset;
+
+  /*! \brief Byte offset from this header to packed vertex-index triples. */
+  uint triangle_offset;
+
+  /*! \brief Byte offset to local FP32 vertex triples in pm. */
+  uint vertex_offset;
+
+  /*! \brief Entry index in the node array shared by both tree levels. */
+  uint root_index;
+} GGEMSMeshBVHRecord;
+
+/*! \brief Bounds a subtree or a consecutive range of indexed triangles. */
+typedef struct GGEMSMeshBVHNode {
+  /*! \brief Lower corner of the closed local FP32 bounding box in pm. */
+  float minimum[3];
+
+  /*! \brief Left child node index or first triangle index within the asset. */
+  uint first;
+
+  /*! \brief Upper corner of the closed local FP32 bounding box in pm. */
+  float maximum[3];
+
+  /*! \brief Right child node index or triangle count with its leaf bit set. */
+  uint second;
+} GGEMSMeshBVHNode;
+
+#endif

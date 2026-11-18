@@ -30,7 +30,9 @@
 #include <array>
 #include <bit>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -49,10 +51,15 @@
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSMesh.hh"
+#include "GGEMS/geometry/GGEMSMeshBVH.hh"
+#include "GGEMS/geometry/GGEMSMeshOccurrenceRecord.hh"
+#include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/units/GGEMSUnitFormatting.hh"
 
 namespace {
 
@@ -147,6 +154,34 @@ struct ClearLogSinks {
 
 } // namespace
 
+TEST(GGEMSMeshLayout, RecordsMatchPackedDeviceFields) {
+  using ggems::geometry::GGEMSMeshBVHNode;
+  using ggems::geometry::GGEMSMeshBVHRecord;
+  using ggems::geometry::GGEMSMeshOccurrenceRecord;
+  EXPECT_EQ(sizeof(GGEMSMeshBVHRecord), 16U);
+  EXPECT_EQ(alignof(GGEMSMeshBVHRecord), 4U);
+  EXPECT_EQ(offsetof(GGEMSMeshBVHRecord, node_offset), 0U);
+  EXPECT_EQ(offsetof(GGEMSMeshBVHRecord, triangle_offset), 4U);
+  EXPECT_EQ(offsetof(GGEMSMeshBVHRecord, vertex_offset), 8U);
+  EXPECT_EQ(offsetof(GGEMSMeshBVHRecord, root_index), 12U);
+
+  EXPECT_EQ(sizeof(GGEMSMeshBVHNode), 32U);
+  EXPECT_EQ(alignof(GGEMSMeshBVHNode), 4U);
+  EXPECT_EQ(offsetof(GGEMSMeshBVHNode, minimum), 0U);
+  EXPECT_EQ(offsetof(GGEMSMeshBVHNode, first), 12U);
+  EXPECT_EQ(offsetof(GGEMSMeshBVHNode, maximum), 16U);
+  EXPECT_EQ(offsetof(GGEMSMeshBVHNode, second), 28U);
+  EXPECT_EQ(sizeof(std::array<float, 3>), 12U);
+  EXPECT_EQ(sizeof(std::array<std::uint32_t, 3>), 12U);
+
+  EXPECT_EQ(sizeof(GGEMSMeshOccurrenceRecord), 60U);
+  EXPECT_EQ(alignof(GGEMSMeshOccurrenceRecord), 4U);
+  EXPECT_EQ(offsetof(GGEMSMeshOccurrenceRecord, pose), 0U);
+  EXPECT_EQ(offsetof(GGEMSMeshOccurrenceRecord, tolerance_pm), 48U);
+  EXPECT_EQ(offsetof(GGEMSMeshOccurrenceRecord, material_id), 52U);
+  EXPECT_EQ(offsetof(GGEMSMeshOccurrenceRecord, asset_offset), 56U);
+}
+
 TEST_F(GGEMSMeshTest,
        OBJPreservesLiteralObjectsGlobalIndicesAndReferencedBounds) {
   auto const path =
@@ -184,6 +219,13 @@ TEST_F(GGEMSMeshTest,
 TEST_F(GGEMSMeshTest,
        UnnamedOBJUsesExplicitUnitsWithoutIntegerPositionRounding) {
   auto const path = Write("v 0.25 0 0\nv 1.25 0 0\nv 0.25 1 0\nf +1 +2 +3\n");
+  GGEMSMesh const unnamed{path};
+  EXPECT_EQ(unnamed.GetData().source_unit, "mm");
+  constexpr auto const &literal =
+    GGEMS_TEST_PROBE_ROOT "/../navigation/meshes/three_slabs.obj";
+  EXPECT_EQ((GGEMSMesh{literal}).GetData().source_unit, "mm");
+  EXPECT_EQ((GGEMSMesh{literal, "cm"}).GetData().source_unit, "cm");
+  EXPECT_EQ((GGEMSMesh{"leaf", literal, "mm"}).GetName(), "leaf");
   GGEMSMesh const picometers{path, "pm"};
   GGEMSMesh const centimeters{path, "cm"};
   EXPECT_TRUE(picometers.GetName().empty());
@@ -295,7 +337,7 @@ TEST_F(GGEMSMeshTest, VerboseEmitsOneSummaryWithLiteralNamesAndReturnsMesh) {
   GGEMSMesh mesh{
     "name##%s",
     Write(std::string{"o leaf##%s\n"} + std::string{k_triangle_obj}), "mm"};
-  EXPECT_EQ(&mesh.SetVerbose(), &mesh);
+  EXPECT_EQ(&mesh.Verbose(), &mesh);
   ASSERT_EQ(lines.size(), 1U);
   EXPECT_EQ(lines[0].module, "Mesh");
   EXPECT_NE(lines[0].msg.find("name##%s"), std::string::npos);
@@ -305,7 +347,8 @@ TEST_F(GGEMSMeshTest, VerboseEmitsOneSummaryWithLiteralNamesAndReturnsMesh) {
             std::string::npos);
   EXPECT_NE(lines[0].msg.find("Local bounds:"), std::string::npos);
   EXPECT_NE(lines[0].msg.find("source unit: mm"), std::string::npos);
-  EXPECT_NE(lines[0].msg.find("size="), std::string::npos);
+  EXPECT_NE(lines[0].msg.find("size=(" + HumanReadable(1_mm)),
+            std::string::npos);
 }
 
 TEST_F(GGEMSMeshTest, RejectsMalformedOBJAtImportBoundary) {
@@ -341,6 +384,44 @@ TEST_F(GGEMSMeshTest, PolygonRejectionRequestsSourceTriangulation) {
   }
 }
 
+TEST_F(GGEMSMeshTest, PhysicalTreeRetainsAnonymousFacesAndNamedObjectIndices) {
+  // One oriented tetrahedron distributed across named and anonymous ranges.
+  auto const path = Write("v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\n"
+                          "f 1 3 2\no group\nf 1 2 4\no\nf 1 4 3\n"
+                          "o empty\no group\nf 2 3 4\n");
+  GGEMSMesh const mesh{path, "mm"};
+  auto const tree = BuildMeshBVH(mesh.GetData());
+  ASSERT_EQ(tree.component_roots.size(), 3U);
+  EXPECT_NE(tree.component_roots[0], tree.component_roots[2]);
+  EXPECT_EQ(tree.component_roots[1], std::numeric_limits<std::uint32_t>::max());
+  EXPECT_EQ(tree.triangle_order, (std::vector<std::uint32_t>{0, 1, 2, 3}));
+  ASSERT_LT(tree.root_index, tree.nodes.size());
+  EXPECT_EQ(tree.nodes[tree.root_index].minimum,
+            mesh.GetData().bounds_pm.minimum);
+  EXPECT_EQ(tree.nodes[tree.root_index].maximum,
+            mesh.GetData().bounds_pm.maximum);
+  EXPECT_EQ(tree.depth, 2U);
+  GGEMSMesh const open{Write(k_triangle_obj), "mm"};
+  EXPECT_THROW((void)BuildMeshBVH(open.GetData()), GGEMSRecoverable);
+}
+
+TEST_F(GGEMSMeshTest, AdmitsInwardCavityAndRejectsExposedInwardShell) {
+  std::string const outer = "v 0 0 0\nv 12 0 0\nv 0 12 0\nv 0 0 12\n"
+                            "f 1 3 2\nf 1 2 4\nf 1 4 3\nf 2 3 4\n";
+  std::string const inward_faces = "f 5 6 7\nf 5 8 6\nf 5 7 8\nf 6 8 7\n";
+  auto const cavity =
+    Write(outer + "v 1 1 1\nv 2 1 1\nv 1 2 1\nv 1 1 2\n" + inward_faces);
+  EXPECT_NO_THROW((void)BuildMeshBVH(GGEMSMesh{cavity}.GetData()));
+  auto const exposed =
+    Write(outer + "v 21 1 1\nv 22 1 1\nv 21 2 1\nv 21 1 2\n" + inward_faces);
+  EXPECT_THROW((void)BuildMeshBVH(GGEMSMesh{exposed}.GetData()),
+               GGEMSRecoverable);
+  auto const empty_corner =
+    Write(outer + "v 9 9 9\nv 10 9 9\nv 9 10 9\nv 9 9 10\n" + inward_faces);
+  EXPECT_THROW((void)BuildMeshBVH(GGEMSMesh{empty_corner}.GetData()),
+               GGEMSRecoverable);
+}
+
 TEST_F(GGEMSMeshTest, RejectsMalformedSTLAndInvalidExternalInputs) {
   std::vector<std::array<std::array<float, 3>, 3>> facets{
     {{{0, 0, 0}, {1, 0, 0}, {0, 1, 0}}},
@@ -366,4 +447,42 @@ TEST_F(GGEMSMeshTest, RejectsMalformedSTLAndInvalidExternalInputs) {
     GGEMSRecoverable);
   EXPECT_THROW((GGEMSMesh{Write(k_triangle_obj, "mesh.off"), "mm"}),
                GGEMSRecoverable);
+}
+
+TEST(GGEMSMeshLayout, CopiedWorldSharesOneAssetAcrossTwoMeshPlacements) {
+  using ggems::core::materials::builtins::BuildBuiltInMaterial;
+  using ggems::geometry::GGEMSMeshOccurrenceRecord;
+  auto const fixture =
+    std::filesystem::path{GGEMS_TEST_PROBE_ROOT}.parent_path() / "navigation" /
+    "meshes" / "three_slabs.obj";
+  GGEMSMesh mesh{fixture};
+  mesh.SetMaterial(BuildBuiltInMaterial("Tungsten"));
+  ggems::geometry::GGEMSWorld world;
+  world.SetSize(100_mm, 100_mm, 100_mm)
+    .SetMaterial(BuildBuiltInMaterial("Air"))
+    .AddVolume(mesh);
+
+  auto snapshot = world;
+  mesh.SetPosition({.y = (10_mm).value})
+    .SetMaterial(BuildBuiltInMaterial("Water"));
+  snapshot.AddVolume(mesh);
+  EXPECT_EQ(world.GetVolumeCount(), 1U);
+  EXPECT_EQ(snapshot.GetVolumeMaterial(0)->GetName(), "Tungsten");
+  EXPECT_EQ(snapshot.GetVolumeMaterial(1)->GetName(), "Water");
+
+  auto const descriptors = snapshot.BuildOccurrenceRecords();
+  ASSERT_EQ(descriptors.size(), 2U);
+  std::array const material_ids{1U, 2U};
+  auto const bytes = snapshot.BuildAnalyticAuxiliaryBuffer(material_ids);
+  std::array<GGEMSMeshOccurrenceRecord, 2> records{};
+  for (std::size_t index = 0; index < records.size(); ++index) {
+    auto const offset = descriptors[index].auxiliary_offset;
+    ASSERT_LE(offset + sizeof(GGEMSMeshOccurrenceRecord), bytes.size());
+    std::memcpy(&records[index], bytes.data() + offset,
+                sizeof(GGEMSMeshOccurrenceRecord));
+    EXPECT_EQ(records[index].material_id, material_ids[index]);
+  }
+  EXPECT_EQ(records[0].pose.center_y_pm, 0.0F);
+  EXPECT_EQ(records[1].pose.center_y_pm, static_cast<float>((10_mm).value));
+  EXPECT_EQ(records[0].asset_offset, records[1].asset_offset);
 }

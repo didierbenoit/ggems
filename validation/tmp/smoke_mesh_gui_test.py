@@ -1,39 +1,41 @@
 import ggems
 
 ggems.set_detail_level(4)
-# ggems.start("term")
-ggems.start("gui")  # GUI
+ggems.start("term")
+# ggems.start("gui")  # GUI
 
 try:
     # --------------------------------------------------------------------------
     opencl = ggems.opencl.GGEMSOpenCL()
     opencl.set_worker_count(1048576)
-    opencl.select_devices("0")
+    opencl.select_devices("2")
     opencl.initialize()
 
     # --------------------------------------------------------------------------
     random = ggems.rndm.GGEMSRandom().set_engine("Philox").set_seed(7777777)
 
     # --------------------------------------------------------------------------
-    source = (
+    cb_source = (
         ggems.source.GGEMSSource()
-        .set_particle("Aionino")
-        .set_energy(511.0, "keV")
-        .set_primary_count(1_000)
-        # .set_emission_cylinder(2.0 * 150.0, 500.0, "mm")
-        .set_position(0.0, 0.0, 0.0, "mm")
-        .set_angular_isotropic()
+        .set_emission_point()
+        .set_position(-100.0, 0.0, 0.0, "mm")
+        .set_direction(1.0, 0.0, 0.0)
+        .set_angular_isotropic(0.0, 20.0, 0.0, 360.0, "deg")
+        .set_primary_count(1_000_000_000)
+        .set_particle("aionino")
+        .set_energy(125.0, "keV")
     )
+    cb_source.verbose()
 
     # --------------------------------------------------------------------------
-    observer = (  # GUI
-        ggems.observer.GGEMSTransportObserver()
-        .enable()
-        .capture_first_primaries(512)  # GUI
-    )  # GUI
+    # observer = (  # GUI
+    #    ggems.observer.GGEMSTransportObserver()
+    #    .enable()
+    #     .capture_first_primaries(512)  # GUI
+    # )  # GUI
 
     # --------------------------------------------------------------------------
-    world = ggems.geometry.GGEMSWorld("PET/XCAT World")
+    world = ggems.geometry.GGEMSWorld("Dosimetry World")
     world.set_size(1200, 1200, 2200, "mm")
     world.set_material("Air")
 
@@ -75,39 +77,50 @@ try:
     # xcat.verbose()
 
     # --------------------------------------------------------------------------
-    mlc = ggems.geometry.GGEMSMesh("MLC", "validation/tmp/MyMlc.obj", unit="mm")
-    mlc.set_position(0.0, 0.0, 0.0, "mm")
-    mlc.set_rotation(0.0, 0.0, 0.0, "deg")
-    mlc.set_material("Tungsten")
-    mlc.set_color(ggems.colors.red_ruby)
-    mlc.verbose()
+    # mlc = ggems.geometry.GGEMSMesh("MLC", "validation/tmp/MyMlc.obj", unit="mm")
+    # mlc.set_position(0.0, 0.0, 0.0, "mm")
+    # mlc.set_rotation(0.0, 0.0, 0.0, "deg")
+    # mlc.set_material("Tungsten")
+    # mlc.set_color(ggems.colors.red_ruby)
+    # mlc.verbose()
+
+    collimator = ggems.geometry.GGEMSMesh(
+        "Colli_SPECT", "validation/tmp/collimator_MELP.stl", unit="mm"
+    )
+    collimator.set_position(0.0, 0.0, 0.0, "mm")
+    collimator.set_rotation(0.0, 0.0, 0.0, "deg")
+    collimator.set_material("Tungsten")
+    collimator.set_color(ggems.colors.red_ruby)
+    collimator.verbose()
 
     # --------------------------------------------------------------------------
     # world.add_volume(phantom)
     # world.add_volume(xcat)
     # world.add_volume(gantry)
+    # world.add_volume(mlc)
+    world.add_volume(collimator)
 
     # --------------------------------------------------------------------------
     run = ggems.run.GGEMSRun()
     run.set_world(world)
     run.set_random(random)
-    # run.add_source(source)
-    run.set_observer(observer)  # GUI
+    run.add_source(cb_source)
+    # run.set_observer(observer)  # GUI
     # run.set_time(0.0, 1.0, 1.0, "s")
     run.initialize()
-    # run.run()
+    run.run()
 
     # --------------------------------------------------------------------------
 
-    gui = ggems.gui.GGEMSGuiApplication()  # GUI
-    gui.set_vulkan_device(0)  # GUI
-    gui.initialize()  # GUI
+# gui = ggems.gui.GGEMSGuiApplication()  # GUI
+# gui.set_vulkan_device(0)  # GUI
+# gui.initialize()  # GUI
 
-    # gui.submit_last_run_source_snapshot(run)  # GUI
-    # gui.submit_particle_traces_from_observer(observer)  # GUI
+# gui.submit_last_run_source_snapshot(run)  # GUI
+# gui.submit_particle_traces_from_observer(observer)  # GUI
 
-    gui.submit_run_geometry(run)  # GUI
-    gui.run()  # GUI
+# gui.submit_run_geometry(run)  # GUI
+# gui.run()  # GUI
 
 finally:
     ggems.stop()

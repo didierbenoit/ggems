@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -301,8 +302,11 @@ public:
    * \param[in] voxelized_data Immutable voxel records, compact labels, and
    * dense material palettes. Copied once per context; anatomical labels stay on
    * host.
+   * \param[in] mesh_scene_auxiliary Common auxiliary buffer prepared by World
+   * with dense mesh MaterialIDs, empty for scenes without meshes. The
+   * workload copies these bytes into context-owned SVM during construction.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
-   * are invalid, or analytical record count disagrees with the World.
+   * are invalid, or the geometry buffers disagree with the World's families.
    * \throws GGEMSInternal If energy and cumulative-ticket table lengths
    * disagree.
    * \throws GGEMSFatal If kernel creation, SVM allocation, or an OpenCL
@@ -318,7 +322,8 @@ public:
     std::uint32_t launch_primary_count_limit = 0U,
     geometry::GGEMSWorld const *world = nullptr,
     std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes = {},
-    geometry::GGEMSVoxelizedSceneData const &voxelized_data = {});
+    geometry::GGEMSVoxelizedSceneData const &voxelized_data = {},
+    std::span<std::byte const> mesh_scene_auxiliary = {});
 
   /*! \brief Releases the bound kernel and all workload-owned SVM storage. */
   ~GGEMSTransportWorkload() = default;

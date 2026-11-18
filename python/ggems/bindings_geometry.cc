@@ -1135,7 +1135,7 @@ The material becomes registered as used by the scene. Return this solid.
     module, "GGEMSMesh",
     R"doc(Import triangle OBJ or binary/ASCII STL for host mesh authoring.
 
-Source length units are required explicitly. The imported local origin is
+Source coordinates default to millimeters. The imported local origin is
 preserved; position and absolute rotation place that origin without rewriting
 vertices. Copies share immutable indexed geometry. The mesh has one independent
 GGEMS material and an optional typed display color that overrides material color.
@@ -1145,19 +1145,18 @@ metadata, not proof of connected or watertight components. STL has no component
 names. Import checks file structure and obvious degeneracy; it does not certify
 closed, oriented, manifold, or non-self-intersecting geometry.
 
-This N4.1 object cannot be passed to world.add_volume(). Physical admission,
-World attachment, and OpenCL mesh navigation are deferred to N4.2. Component
-transforms are deferred to N4.3.
+Use world.add_volume(mesh) to attach a homogeneous mesh directly to World.
+Physical input must enclose outward-oriented material and have no self-intersections.
 
 Construct with (path, unit=...) or (name, path, unit=...). The name is optional
 display metadata; argument order is never guessed from file existence.
 )doc")
     .def(py::init<std::filesystem::path const &, std::string_view>(),
-         py::arg("path"), py::kw_only(), py::arg("unit"))
+         py::arg("path"), py::kw_only(), py::arg("unit") = "mm")
 
     .def(
       py::init<std::string, std::filesystem::path const &, std::string_view>(),
-      py::arg("name"), py::arg("path"), py::kw_only(), py::arg("unit"))
+      py::arg("name"), py::arg("path"), py::kw_only(), py::arg("unit") = "mm")
 
     .def("set_material", &SetMaterial<GGEMSMesh>,
          R"doc(Set the mesh medium by exact GGEMS material name.
@@ -1428,6 +1427,27 @@ Returns:
   BindAttachments(cons_binding, attachments);
   BindAttachments(polyhedra_binding, attachments);
   BindAttachments(world_binding, attachments);
+
+  world_binding.def(
+    "add_volume",
+    [attachments](std::shared_ptr<GGEMSWorld> const &world,
+                  std::shared_ptr<GGEMSMesh> const &mesh) -> GGEMSWorld & {
+      attachments->AddVolume(world, mesh);
+      return *world;
+    },
+    R"doc(Capture a closed, outward-oriented homogeneous mesh directly under World.
+
+The configured Material and whole-mesh pose are captured by value. All
+components share one physical VolumeID. The caller is responsible for
+supplying non-self-intersecting geometry.
+
+Args:
+    volume: Configured GGEMSMesh to capture.
+
+Returns:
+    This World for chaining.
+)doc",
+    py::arg("volume"), py::return_value_policy::reference_internal);
 
   world_binding.def(
     "add_volume",

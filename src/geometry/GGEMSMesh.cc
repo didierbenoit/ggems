@@ -62,6 +62,7 @@
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSQuantity.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
+#include "GGEMS/units/GGEMSUnitFormatting.hh"
 
 namespace ggems::geometry {
 namespace {
@@ -623,18 +624,25 @@ auto ReadSTL(std::ifstream &input, GGEMSMeshData &data) -> void {
 }
 
 /*!
- * \brief Formats referenced bounds and size in explicit canonical picometers.
+ * \brief Formats referenced bounds and size in automatically selected length
+ * units.
  * \param[in] bounds Finite local minimum and maximum in pm.
  * \return Plain text with explicit units for one verbose summary.
  */
 auto DescribeBounds(GGEMSMeshBounds const &bounds) -> std::string {
+  using Coordinate = units::Quantity<units::PositionCoordinateTag, double>;
+  auto const size = [&bounds](std::size_t axis) -> Coordinate {
+    double const extent =
+      static_cast<double>(bounds.maximum[axis]) - bounds.minimum[axis];
+    return Coordinate{extent};
+  };
+
   return std::format(
-    "min=({}, {}, {}) pm; max=({}, {}, {}) pm; size=({}, {}, {}) pm",
-    bounds.minimum[0], bounds.minimum[1], bounds.minimum[2], bounds.maximum[0],
-    bounds.maximum[1], bounds.maximum[2],
-    static_cast<double>(bounds.maximum[0]) - bounds.minimum[0],
-    static_cast<double>(bounds.maximum[1]) - bounds.minimum[1],
-    static_cast<double>(bounds.maximum[2]) - bounds.minimum[2]);
+    "min=({}, {}, {}); max=({}, {}, {}); size=({}, {}, {})",
+    Coordinate{bounds.minimum[0]}, Coordinate{bounds.minimum[1]},
+    Coordinate{bounds.minimum[2]}, Coordinate{bounds.maximum[0]},
+    Coordinate{bounds.maximum[1]}, Coordinate{bounds.maximum[2]}, size(0),
+    size(1), size(2));
 }
 
 } // namespace
@@ -764,16 +772,19 @@ auto GGEMSMesh::Verbose() -> GGEMSMesh & {
   auto description = std::format(
     "Mesh: {}\nSource: {}\nFormat: {}; source unit: {}\nMaterial: {}\nColor: "
     "{} ({})\n"
-    "Position: ({}, {}, {}) pm\nLocal bounds: {}\n"
+    "Position: ({}, {}, {})\nLocal bounds: {}\n"
     "Source vertices: {}; indexed vertices: {}; triangles: {}; named objects: "
     "{}",
     name_.empty() ? "<unnamed>" : name_, data_->source_file.string(), format,
     data_->source_unit, material_ ? material_->GetName() : "<not configured>",
     render::GetColorName(GetColor()),
-    color_ ? "explicit override" : "inherited", position_pm_.x, position_pm_.y,
-    position_pm_.z, DescribeBounds(data_->bounds_pm),
-    data_->source_vertex_count, data_->vertices_pm.size(),
-    data_->triangles.size(), data_->components.size());
+    color_ ? "explicit override" : "inherited",
+    units::HumanReadableSignedLength(position_pm_.x),
+    units::HumanReadableSignedLength(position_pm_.y),
+    units::HumanReadableSignedLength(position_pm_.z),
+    DescribeBounds(data_->bounds_pm), data_->source_vertex_count,
+    data_->vertices_pm.size(), data_->triangles.size(),
+    data_->components.size());
 
   for (auto const &component : data_->components) {
     description +=

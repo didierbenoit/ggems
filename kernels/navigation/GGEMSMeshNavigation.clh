@@ -1,0 +1,523 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Traverses immutable triangular meshes on the selected OpenCL device.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_MESH_NAVIGATION_CLH
+/*! \brief Prevents repeated inclusion of the mesh navigation predicates. */
+#define GGEMS_MESH_NAVIGATION_CLH
+
+#include "geometry/GGEMSBoxRecord.clh"
+#include "geometry/GGEMSMeshBVH.clh"
+#include "geometry/GGEMSMeshOccurrenceRecord.clh"
+#include "navigation/GGEMSBoxNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*! \brief Stores the mesh-frame ray and its dominant-axis projection. */
+typedef struct GGEMSMeshRay {
+  /*! \brief Mesh-local FP32 position in pm. */
+  float3 origin;
+
+  /*! \brief Local direction retaining the stored particle ray magnitude. */
+  float3 direction;
+
+  /*! \brief Slab-test reciprocals, with one on zero direction axes. */
+  float3 inverse;
+
+  /*! \brief Signed reciprocal of the dominant direction component. */
+  float inverse_z;
+
+  /*! \brief Surface half-band expressed in the ray parameter. */
+  float parameter_band;
+
+  /*! \brief Reciprocal surface half-band in inverse pm. */
+  float inverse_band;
+
+  /*! \brief Index of the dominant component in the local frame. */
+  uint z;
+
+  /*! \brief Minor direction components divided by the dominant one. */
+  float2 shear;
+
+  /*! \brief Surface half-band in local FP32 pm. */
+  float band;
+
+  /*! \brief Nonzero when locating the directional owner at the query origin. */
+  uint locate;
+} GGEMSMeshRay;
+
+/*! \brief Accumulates a crossing group and coplanar coverage at the anchor. */
+typedef struct GGEMSMeshFeature {
+  /*! \brief Nearest retained forward crossing in the original ray parameter. */
+  float parameter;
+
+  /*! \brief Signed sum of entries and exits at this feature. */
+  int winding;
+
+  /*! \brief Nonzero for an endpoint of a coplanar interval. */
+  uint glide;
+
+  /*! \brief Unit reference normal for coplanar coverage at the lower bound. */
+  float3 glide_normal;
+
+  /*! \brief Oriented count of covered half-planes relative to the reference. */
+  int glide_sides;
+
+  /*! \brief Nonzero when distinct face planes cover the lower bound. */
+  uint crease;
+} GGEMSMeshFeature;
+
+/*!
+ * \brief Intersects a mesh-local ray with the padded bounds of one node.
+ *
+ * \param[in] node Node in the global read-only asset.
+ * \param[in] ray Precomputed local ray and half-band.
+ * \param[in] lower Lower bound in the ray parameter.
+ * \return First retained slab parameter, or infinity for a missed bound.
+ */
+static inline float GGEMS_MeshNear(__global GGEMSMeshBVHNode const *node,
+                                   GGEMSMeshRay const *ray, float lower) {
+  float3 minimum = vload3(0, node->minimum) - ray->origin;
+  float3 maximum = vload3(0, node->maximum) - ray->origin;
+
+  // The closed host band covers rounded slab arithmetic at a shared feature.
+  minimum -= ray->band;
+  maximum += ray->band;
+
+  int3 parallel = ray->direction == 0.0F;
+  if (any(parallel & ((minimum > 0.0F) | (maximum < 0.0F)))) {
+    return INFINITY;
+  }
+
+  float3 a = minimum * ray->inverse;
+  float3 b = maximum * ray->inverse;
+  float3 near = select(fmin(a, b), (float3)(-INFINITY), parallel);
+  float3 far = select(fmax(a, b), (float3)(INFINITY), parallel);
+  float first = fmax(lower, fmax(near.x, fmax(near.y, near.z)));
+
+  return first <= fmin(far.x, fmin(far.y, far.z)) ? first : INFINITY;
+}
+
+/*!
+ * \brief Projects a vertex into the plane transverse to the dominant ray
+ * axis.
+ *
+ * \param[in] vertex Local FP32 vertex in pm.
+ * \param[in] ray Dominant axis, shear and scale of the query ray.
+ * \return Transverse coordinates in half-bands and signed ray parameter along
+ * z.
+ */
+static inline float3 GGEMS_MeshProject(float3 vertex, GGEMSMeshRay const *ray) {
+  float3 offset = vertex - ray->origin;
+  offset = ray->z == 0U ? offset.yzx : ray->z == 1U ? offset.zxy : offset;
+  // Express projected edges in surface-band units. The host band includes
+  // World spacing, so even the largest admitted pm coordinates produce
+  // representable squared edge determinants. The ray parameter stays in pm.
+  return (float3)(fma(-ray->shear, (float2)(offset.z), offset.xy) *
+                    ray->inverse_band,
+                  offset.z * ray->inverse_z);
+}
+
+/*!
+ * \brief Computes the oriented edge determinant relative to the projected
+ * ray.
+ *
+ * \param[in] a First projected vertex in surface half-bands.
+ * \param[in] b Second projected vertex in the same plane.
+ * \return Antisymmetric signed area in squared half-bands.
+ */
+static inline float GGEMS_MeshEdge(float2 a, float2 b) {
+#pragma OPENCL FP_CONTRACT OFF
+  return a.x * b.y - a.y * b.x;
+}
+
+/*!
+ * \brief Resolves half-open coverage on an oriented projected triangle edge.
+ *
+ * \param[in] a First projected endpoint.
+ * \param[in] b Second projected endpoint.
+ * \return Nonzero when the directed edge owns the symbolic transverse side.
+ */
+static inline int GGEMS_MeshOwnsEdge(float2 a, float2 b) {
+  return a.y < b.y || (a.y == b.y && a.x > b.x);
+}
+
+/*!
+ * \brief Groups a triangle event with the nearest forward crossing.
+ *
+ * \param[in] parameter Candidate ray parameter.
+ * \param[in] winding Signed entry (+1), exit (-1) or glide (0) contribution.
+ * \param[in] glide Nonzero for a coplanar interval endpoint.
+ * \param[in] lower Exclusive lower bound in the ray parameter.
+ * \param[in] band Coincidence half-band in the same parameter.
+ * \param[in,out] feature Nearest crossing group retained by this private
+ * traversal.
+ */
+static inline void GGEMS_MeshAddFeature(float parameter, int winding,
+                                        uint glide, float lower, float band,
+                                        GGEMSMeshFeature *feature) {
+  if (parameter <= lower || parameter > feature->parameter + band) {
+    return;
+  }
+
+  if (parameter < feature->parameter - band) {
+    feature->winding = 0;
+    feature->glide = 0U;
+  }
+
+  feature->parameter = fmin(feature->parameter, parameter);
+  feature->winding += winding;
+  feature->glide |= glide;
+}
+
+/*!
+ * \brief Accumulates intersections of a coplanar edge with the ray line.
+ *
+ * \param[in] a First endpoint as transverse coordinate and ray parameter.
+ * \param[in] b Second endpoint in the same projection.
+ * \param[in,out] near Smallest intersection parameter seen for this face.
+ * \param[in,out] far Largest intersection parameter seen for this face.
+ */
+static inline void GGEMS_MeshGlideEdge(float2 a, float2 b, float *near,
+                                       float *far) {
+  if ((a.x > 0.0F && b.x > 0.0F) || (a.x < 0.0F && b.x < 0.0F)) {
+    return;
+  }
+
+  if (a.x == b.x) {
+    *near = fmin(*near, fmin(a.y, b.y));
+    *far = fmax(*far, fmax(a.y, b.y));
+  } else {
+    float t = mix(a.y, b.y, a.x / (a.x - b.x));
+    *near = fmin(*near, t);
+    *far = fmax(*far, t);
+  }
+}
+
+/*!
+ * \brief Accumulates a two-sided triangle crossing or coplanar interval.
+ *
+ * \param[in] va First local FP32 vertex in pm, in source winding order.
+ * \param[in] vb Second local FP32 vertex in pm.
+ * \param[in] vc Third local FP32 vertex in pm.
+ * \param[in] ray Projected ray and local surface half-band.
+ * \param[in] lower Exclusive lower bound for forward events.
+ * \param[in,out] feature Private crossing group and coplanar coverage at
+ * lower.
+ */
+static inline void GGEMS_MeshTriangle(float3 va, float3 vb, float3 vc,
+                                      GGEMSMeshRay const *ray, float lower,
+                                      GGEMSMeshFeature *feature) {
+  float3 a = GGEMS_MeshProject(va, ray);
+  float3 b = GGEMS_MeshProject(vb, ray);
+  float3 c = GGEMS_MeshProject(vc, ray);
+  float u = GGEMS_MeshEdge(b.xy, c.xy);
+  float v = GGEMS_MeshEdge(c.xy, a.xy);
+  float w = GGEMS_MeshEdge(a.xy, b.xy);
+  float determinant = (u + v) + w;
+  float2 span = fmax(fmax(a.xy, b.xy), c.xy) - fmin(fmin(a.xy, b.xy), c.xy);
+  float area_band = fmax(span.x, span.y);
+
+  if (fabs(determinant) <= area_band && fabs(u) <= area_band &&
+      fabs(v) <= area_band && fabs(w) <= area_band) {
+    // An edge-on face can cover a finite ray interval. Collect its endpoints
+    // and account for opposite faces at the anchor before deciding ownership.
+    if (span.x < span.y) {
+      a = a.yxz;
+      b = b.yxz;
+      c = c.yxz;
+    }
+
+    float near = INFINITY;
+    float far = -INFINITY;
+
+    GGEMS_MeshGlideEdge((float2)(a.x, a.z), (float2)(b.x, b.z), &near, &far);
+    GGEMS_MeshGlideEdge((float2)(b.x, b.z), (float2)(c.x, c.z), &near, &far);
+    GGEMS_MeshGlideEdge((float2)(c.x, c.z), (float2)(a.x, a.z), &near, &far);
+
+    if (far - near > ray->parameter_band) {
+      if (near <= lower && lower < far) {
+        // Coincident opposite faces cancel inside a homogeneous seam. An
+        // edge along the ray contributes half of its planar neighborhood.
+        int weight =
+          ((a.x == 0.0F) + (b.x == 0.0F) + (c.x == 0.0F)) >= 2 ? 1 : 2;
+        float3 edge = vb - va;
+        float3 side = vc - va;
+        float3 extent = fmax(fabs(edge), fabs(side));
+        float scale = fmax(extent.x, fmax(extent.y, extent.z));
+        float3 normal = cross(edge / scale, side / scale);
+
+        if (all(feature->glide_normal == 0.0F)) {
+          feature->glide_normal = normalize(normal);
+          feature->glide_sides = weight;
+        } else {
+          float3 reference = feature->glide_normal;
+          if (fabs(dot(reference, edge)) > ray->band ||
+              fabs(dot(reference, side)) > ray->band) {
+            feature->crease = 1U;
+          }
+          feature->glide_sides +=
+            dot(reference, normal) > 0.0F ? weight : -weight;
+        }
+      }
+
+      GGEMS_MeshAddFeature(near, 0, 1U, lower, ray->parameter_band, feature);
+      GGEMS_MeshAddFeature(far, 0, 1U, lower, ray->parameter_band, feature);
+    }
+
+    return;
+  }
+
+  if ((u < 0.0F || v < 0.0F || w < 0.0F) &&
+      (u > 0.0F || v > 0.0F || w > 0.0F)) {
+    return;
+  }
+
+  int positive = determinant > 0.0F;
+
+  if ((u == 0.0F && GGEMS_MeshOwnsEdge(b.xy, c.xy) != positive) ||
+      (v == 0.0F && GGEMS_MeshOwnsEdge(c.xy, a.xy) != positive) ||
+      (w == 0.0F && GGEMS_MeshOwnsEdge(a.xy, b.xy) != positive)) {
+    return;
+  }
+
+  // Normalize before multiplying by pm to avoid a cubic length intermediate.
+  float parameter =
+    fma(u / determinant, a.z - c.z, fma(v / determinant, b.z - c.z, c.z));
+
+  if (parameter <= lower ||
+      parameter > feature->parameter + ray->parameter_band) {
+    return;
+  }
+
+  // An oblique birth on a face takes its forward owner. After a committed
+  // transition, a nearby face can instead belong to the next component.
+  if (ray->locate && lower == ray->parameter_band &&
+      all(ray->origin >= fmin(va, fmin(vb, vc)) - ray->band) &&
+      all(ray->origin <= fmax(va, fmax(vb, vc)) + ray->band)) {
+    float3 edge = vb - va;
+    float3 side = vc - va;
+    float3 extent = fmax(fabs(edge), fabs(side));
+    float scale = fmax(extent.x, fmax(extent.y, extent.z));
+    float3 normal = cross(edge / scale, side / scale);
+
+    if (fabs(dot(normal, ray->origin - va)) <= ray->band * length(normal)) {
+      return;
+    }
+  }
+
+  int entering = positive != (ray->inverse_z > 0.0F);
+
+  GGEMS_MeshAddFeature(parameter, entering ? 1 : -1, 0U, lower,
+                       ray->parameter_band, feature);
+}
+
+/*!
+ * \brief Traverses the shared component and triangle trees near child first.
+ *
+ * \param[in] asset Header at the base of the immutable global BVH asset.
+ * \param[in] ray Mesh-local FP32 ray and projection.
+ * \param[in] lower Exclusive lower bound for forward crossings.
+ * \return Nearest feature group and coverage at lower, or an infinite
+ * parameter.
+ */
+static inline GGEMSMeshFeature
+GGEMS_MeshNext(__global GGEMSMeshBVHRecord const *asset,
+               GGEMSMeshRay const *ray, float lower) {
+  __global uchar const *bytes = (__global uchar const *)asset;
+  __global GGEMSMeshBVHNode const *nodes =
+    (__global GGEMSMeshBVHNode const *)(bytes + asset->node_offset);
+  __global uint const *triangles =
+    (__global uint const *)(bytes + asset->triangle_offset);
+  __global float const *vertices =
+    (__global float const *)(bytes + asset->vertex_offset);
+  GGEMSMeshFeature feature = {.parameter = INFINITY};
+  uint index = asset->root_index;
+  if (GGEMS_MeshNear(&nodes[index], ray, lower) == INFINITY) {
+    return feature;
+  }
+
+  uint pending[GGEMS_MESH_STACK_CAPACITY];
+  uint count = 0U;
+
+  for (;;) {
+    __global GGEMSMeshBVHNode const *node = &nodes[index];
+    if ((node->second & GGEMS_MESH_LEAF_FLAG) != 0U) {
+      uint end = node->first + (node->second & ~GGEMS_MESH_LEAF_FLAG);
+      for (uint i = node->first; i < end; ++i) {
+        uint3 ids = vload3(i, triangles);
+        GGEMS_MeshTriangle(vload3(ids.x, vertices), vload3(ids.y, vertices),
+                           vload3(ids.z, vertices), ray, lower, &feature);
+      }
+    } else {
+      float left = GGEMS_MeshNear(&nodes[node->first], ray, lower);
+      float right = GGEMS_MeshNear(&nodes[node->second], ray, lower);
+      float limit = feature.parameter + ray->parameter_band;
+      if (fmin(left, right) != INFINITY && fmin(left, right) <= limit) {
+        if (fmax(left, right) != INFINITY && fmax(left, right) <= limit) {
+          // The host admits the combined TLAS/BLAS depth before upload.
+          pending[count++] = left <= right ? node->second : node->first;
+        }
+        index = left <= right ? node->first : node->second;
+        continue;
+      }
+    }
+
+    if (count == 0U) {
+      return feature;
+    }
+
+    index = pending[--count];
+  }
+}
+
+/*!
+ * \brief Classifies the material immediately ahead of the query anchor.
+ *
+ * \param[in] asset Header at the base of the immutable global BVH asset.
+ * \param[in] ray Mesh-local FP32 ray with its source winding convention.
+ * \param[in] lower Lower ray parameter after the closed starting band.
+ * \return One for the strict directional interior, zero for background.
+ */
+static inline uint GGEMS_MeshInside(__global GGEMSMeshBVHRecord const *asset,
+                                    GGEMSMeshRay const *ray, float lower) {
+  GGEMSMeshFeature hit = GGEMS_MeshNext(asset, ray, lower);
+
+  if (hit.crease != 0U || hit.glide_sides != 0) {
+    return 0U;
+  }
+
+  while (hit.winding == 0 && hit.parameter != INFINITY) {
+    hit = GGEMS_MeshNext(asset, ray, hit.parameter + ray->parameter_band);
+  }
+
+  return hit.winding < 0;
+}
+
+/*!
+ * \brief Locates a forward owner or selects the first material transition.
+ *
+ * \param[in] mesh Global placed record for this homogeneous mesh.
+ * \param[in] auxiliary Global scene base for the shared BVH byte offset.
+ * \param[in] volume_id Physical identity of this occurrence, starting at one.
+ * \param[in] position Global particle position in FP32 pm.
+ * \param[in] direction Actual stored global direction, including its
+ * magnitude.
+ * \param[in] current_owner Committed physical VolumeID for a boundary query.
+ * \param[out] owner Optional packed VolumeID/MaterialID for a location query.
+ * \param[in,out] result Boundary witness with the current upper parameter
+ * when owner is null. Unused for a location query.
+ * \return Navigation status, unresolved if an owned ray has no forward exit.
+ */
+static /*! \cond */ __attribute__((noinline)) /*! \endcond */ uint
+GGEMS_MeshQuery(__global GGEMSMeshOccurrenceRecord const *mesh,
+                __global void const *auxiliary, uint volume_id, float3 position,
+                float3 direction, uint current_owner, ulong *owner,
+                GGEMSBoundaryWitness *result) {
+  GGEMSMeshRay ray;
+  ray.locate = owner != 0;
+
+  GGEMS_BoxLocalRay(&mesh->pose, position, direction, &ray.origin,
+                    &ray.direction);
+  ray.band = mesh->tolerance_pm;
+
+  __global GGEMSMeshBVHRecord const *asset =
+    (__global GGEMSMeshBVHRecord const *)((__global uchar const *)auxiliary +
+                                          mesh->asset_offset);
+  if (owner != 0) {
+    __global GGEMSMeshBVHNode const *nodes =
+      (__global GGEMSMeshBVHNode const *)((__global uchar const *)asset +
+                                          asset->node_offset);
+    __global GGEMSMeshBVHNode const *root = &nodes[asset->root_index];
+
+    *owner = GGEMS_MATERIAL_ID_WORLD;
+
+    if (any(ray.origin < vload3(0, root->minimum) - ray.band) ||
+        any(ray.origin > vload3(0, root->maximum) + ray.band)) {
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+  }
+
+  float3 magnitudes = fabs(ray.direction);
+  ray.z = magnitudes.z >= fmax(magnitudes.x, magnitudes.y) ? 2U
+          : magnitudes.x >= magnitudes.y                   ? 0U
+                                                           : 1U;
+  ray.inverse =
+    1.0F / select(ray.direction, (float3)(1.0F), ray.direction == 0.0F);
+
+  float3 axes = ray.z == 0U   ? ray.direction.yzx
+                : ray.z == 1U ? ray.direction.zxy
+                              : ray.direction;
+  ray.inverse_z = 1.0F / axes.z;
+  ray.shear = axes.xy * ray.inverse_z;
+  ray.parameter_band = ray.band * fabs(ray.inverse_z);
+  ray.inverse_band = 1.0F / ray.band;
+
+  float lower = ray.parameter_band;
+
+  if (owner != 0) {
+    if (GGEMS_MeshInside(asset, &ray, lower) != 0U) {
+      *owner = ((ulong)volume_id << 32U) | mesh->material_id;
+    }
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  uint inside = current_owner == volume_id;
+
+  for (;;) {
+    GGEMSMeshFeature hit = GGEMS_MeshNext(asset, &ray, lower);
+    if (hit.parameter == INFINITY) {
+      return inside != 0U ? GGEMS_NAVIGATION_UNRESOLVED
+                          : GGEMS_NAVIGATION_RESOLVED;
+    }
+
+    // A lookup at the end of the closed feature band changes the query
+    // interval only. The accepted distance is always the original root.
+    lower = hit.parameter + ray.parameter_band;
+
+    uint forward = hit.glide != 0U    ? GGEMS_MeshInside(asset, &ray, lower)
+                   : hit.winding != 0 ? hit.winding > 0
+                                      : inside;
+
+    if (forward != inside) {
+      if (hit.parameter <= result->parameter) {
+        result->parameter = hit.parameter;
+        result->faces = 0U;
+        result->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                     : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+        result->arrival_volume_id =
+          inside != 0U ? GGEMS_VOLUME_ID_WORLD : volume_id;
+        result->arrival_material_id =
+          inside != 0U ? GGEMS_MATERIAL_ID_WORLD : mesh->material_id;
+      }
+
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+  }
+}
+
+#endif

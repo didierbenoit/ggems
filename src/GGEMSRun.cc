@@ -153,10 +153,13 @@ struct PreparedSceneRecords {
 
   /*! \brief Voxel descriptors and their shared compact material arrays. */
   geometry::GGEMSVoxelizedSceneData voxelized;
+
+  /*! \brief Shared packed auxiliary bytes for a scene containing meshes. */
+  std::vector<std::byte> mesh_scene_auxiliary;
 };
 
 /*!
- * \brief Compiles both geometry families with one exact scene material
+ * \brief Compiles the geometry families with one exact scene material
  * registry.
  * \param[in] world Optional finite World; its medium is interned first.
  * \return Owning arrays copied into each context's immutable SVM storage.
@@ -172,15 +175,25 @@ auto BuildSceneRecords(geometry::GGEMSWorld const *world)
   }
 
   std::vector<materials::GGEMSMaterial> scene_materials;
+  std::vector<materials::GGEMSMaterial const *> mesh_materials;
+
   scene_materials.reserve(world->GetVolumeCount() + 1U);
   scene_materials.push_back(world->GetMaterial());
+
   for (std::size_t index = 0U; index < world->GetVolumeCount(); ++index) {
-    if (world->GetVoxelizedVolume(index) == nullptr) {
+    if (auto const *mesh = world->GetMeshVolume(index)) {
+      mesh_materials.push_back(&mesh->GetMaterial());
+    } else if (world->GetVoxelizedVolume(index) == nullptr) {
       scene_materials.push_back(*world->GetVolumeMaterial(index));
     }
   }
 
-  std::size_t const analytic_count = scene_materials.size() - 1U;
+  auto const mesh_begin = scene_materials.size();
+
+  for (auto const *material : mesh_materials) {
+    scene_materials.push_back(*material);
+  }
+
   for (std::size_t index = 0U; index < world->GetVolumeCount(); ++index) {
     if (auto const *voxelized = world->GetVoxelizedVolume(index)) {
       auto const palette = voxelized->GetMaterials();
@@ -195,11 +208,17 @@ auto BuildSceneRecords(geometry::GGEMSWorld const *world)
 
   std::span<std::uint32_t const> const material_ids = package.GetMaterialIds();
 
+  auto const analytic_count = mesh_begin - 1U;
   records.analytical =
     world->BuildAnalyticDeviceRecords(material_ids.subspan(1U, analytic_count));
 
-  records.voxelized =
-    world->BuildVoxelizedDeviceData(material_ids.subspan(1U + analytic_count));
+  if (!mesh_materials.empty()) {
+    records.mesh_scene_auxiliary = world->BuildAnalyticAuxiliaryBuffer(
+      material_ids.subspan(mesh_begin, mesh_materials.size()));
+  }
+
+  records.voxelized = world->BuildVoxelizedDeviceData(
+    material_ids.subspan(mesh_begin + mesh_materials.size()));
 
   if (analytic_count != 0U) {
     GGEMS_WARN("Geometry",
@@ -463,7 +482,8 @@ auto GGEMSRun::Initialize() -> void {
         opencl.GetWorkerCount(), *new_source_configuration,
         random_stream_offset, static_cast<std::uint32_t>(context_index),
         observer_record_capacity, 0U, world_ ? &*world_ : nullptr,
-        scene_records.analytical, scene_records.voxelized));
+        scene_records.analytical, scene_records.voxelized,
+        scene_records.mesh_scene_auxiliary));
   }
 
   GGEMS_INFO("Core", "{} transport workload(s) prepared.",
