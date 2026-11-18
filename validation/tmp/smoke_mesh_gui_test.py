@@ -67,17 +67,18 @@ try:
     # phantom.set_material("Water")
     # phantom.set_color(ggems.colors.blue_babyblue)
 
-    xcat = ggems.geometry.GGEMSVoxelizedVolume(
-        "XCAT Phantom", "validation/tmp/xcat.mhd", "validation/tmp/xcat_materials.txt"
-    )
-    xcat.set_position(0.0, 0.0, 0.0, "mm")
-    xcat.set_rotation(0.0, 0.0, 0.0, "deg")
-    xcat.verbose()
+    # xcat = ggems.geometry.GGEMSVoxelizedVolume(
+    #    "XCAT Phantom", "validation/tmp/xcat.mhd", "validation/tmp/xcat_materials.txt"
+    # )
+    # xcat.set_position(0.0, 0.0, 0.0, "mm")
+    # xcat.set_rotation(0.0, 0.0, 0.0, "deg")
+    # xcat.verbose()
 
     # --------------------------------------------------------------------------
     mlc = ggems.geometry.GGEMSMesh("MLC", "validation/tmp/MyMlc.obj", unit="mm")
     mlc.set_position(0.0, 0.0, 0.0, "mm")
     mlc.set_rotation(0.0, 0.0, 0.0, "deg")
+    mlc.set_material("Tungsten")
     mlc.set_color(ggems.colors.red_ruby)
     mlc.verbose()
 
