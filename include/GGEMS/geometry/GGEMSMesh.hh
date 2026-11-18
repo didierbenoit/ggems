@@ -1,0 +1,272 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Declares detached indexed mesh imports and their independent authoring
+ * state.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#pragma once
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSRotation3D.hh"
+#include "GGEMS/materials/GGEMSMaterial.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
+
+namespace ggems::geometry {
+
+/*!
+ * brief Identifies the source representation admitted by the mesh importer.
+ */
+enum class GGEMSMeshFormat : std::uint8_t {
+  /*! \brief Triangulated Wavefront OBJ. */
+  Obj,
+
+  /*! \brief Little-endian binary STL. */
+  BinarySTL,
+
+  /*! \brief Text STL. */
+  AsciiSTL,
+};
+
+/*! \brief Bounds referenced triangle geometry in the unchanged local frame. */
+struct GGEMSMeshBounds {
+  /*! \brief Inclusive local minimum in FP32 picometers. */
+  std::array<float, 3> minimum{};
+
+  /*! \brief Inclusive local maximum in FP32 picometers. */
+  std::array<float, 3> maximum{};
+};
+
+/*! \brief Preserves one named OBJ object declaration and its triangle range. */
+struct GGEMSMeshComponent {
+  /*! \brief Literal trimmed object name; repeated names remain separate. */
+  std::string name;
+
+  /*! \brief First triangle in the global triangle array. */
+  std::size_t first_triangle{};
+
+  /*! \brief Number of consecutive triangles belonging to this declaration. */
+  std::size_t triangle_count{};
+
+  /*! \brief Referenced local bounds, absent for an object without triangles. */
+  std::optional<GGEMSMeshBounds> bounds_pm;
+};
+
+/*!
+ * \brief Owns immutable imported geometry shared by copied mesh authoring
+ * values.
+ *
+ * All OBJ position records are retained in source order, including unused
+ * positions; each v record must contain exactly three Cartesian coordinates.
+ * STL positions are indexed by exact source-coordinate equality in
+ * first-encounter order, before FP32 conversion; there is no approximate weld.
+ * Bounds cover referenced triangles only. This is host import data, not a
+ * frozen device ABI or evidence of closed, oriented manifold admission.
+ */
+struct GGEMSMeshData {
+  /*! \brief Local source positions converted once to FP32 picometers. */
+  std::vector<std::array<float, 3>> vertices_pm;
+
+  /*! \brief Source-order triangles indexing the global position array. */
+  std::vector<std::array<std::uint32_t, 3>> triangles;
+
+  /*! \brief Named OBJ objects in declaration order; empty for STL. */
+  std::vector<GGEMSMeshComponent> components;
+
+  /*! \brief Bounds of all referenced local triangles. */
+  GGEMSMeshBounds bounds_pm;
+
+  /*! \brief Owned path supplied by the caller. */
+  std::filesystem::path source_file;
+
+  /*! \brief Explicit registered length unit supplied by the caller. */
+  std::string source_unit;
+
+  /*! \brief Detected source representation. */
+  GGEMSMeshFormat format{GGEMSMeshFormat::Obj};
+
+  /*! \brief OBJ position records, or STL facet corners before deduplication. */
+  std::size_t source_vertex_count{};
+};
+
+/*!
+ * \brief Imports one detached OBJ or STL mesh with independent pose and style.
+ *
+ * Copies share immutable geometry and own their name, Material, color override,
+ * and rigid pose. Setters never modify imported coordinates. This import-only
+ * value cannot attach to World and does not certify physical mesh topology.
+ */
+class GGEMSMesh {
+public:
+  /*!
+   * \brief Imports geometry with no authored display name.
+   * \param[in] mesh_file OBJ or STL path, selected by its extension.
+   * \param[in] unit Explicit registered length unit of source coordinates.
+   * \throws GGEMSRecoverable If input cannot be read or admitted structurally.
+   */
+  GGEMSMesh(std::filesystem::path const &mesh_file, std::string_view unit);
+
+  /*!
+   * \brief Imports geometry with an independently owned display name.
+   * \param[in] name Display name, unrelated to the filename or OBJ objects.
+   * \param[in] mesh_file OBJ or STL path, selected by its extension.
+   * \param[in] unit Explicit registered length unit of source coordinates.
+   * \throws GGEMSRecoverable If input cannot be read or admitted structurally.
+   */
+  GGEMSMesh(std::string name, std::filesystem::path const &mesh_file,
+            std::string_view unit);
+
+  /*!
+   * \brief Reads the optional authored display name.
+   * \return Owned name, empty when not authored; unrelated to source objects.
+   */
+  [[nodiscard]] auto GetName() const noexcept -> std::string const & {
+    return name_;
+  }
+
+  /*!
+   * \brief Reads the shared immutable imported geometry.
+   * \return Payload reference, valid until this mesh is destroyed or
+   * reassigned.
+   */
+  [[nodiscard]] auto GetData() const noexcept -> GGEMSMeshData const & {
+    return *data_;
+  }
+
+  /*!
+   * \brief Reads the authored OBJ component labels.
+   * \return Independent names in declaration order, retaining repeated labels.
+   */
+  [[nodiscard]] auto GetComponentNames() const -> std::vector<std::string>;
+
+  /*!
+   * \brief Assigns an owned homogeneous Material without changing geometry.
+   * \param[in] material Configured GGEMS Material.
+   * \return This mesh for fluent authoring.
+   */
+  auto SetMaterial(core::materials::GGEMSMaterial material) -> GGEMSMesh &;
+
+  /*!
+   * \brief Borrows the independently owned Material.
+   * \return Material reference, valid until reassignment or destruction.
+   * \throws GGEMSRecoverable If no Material has been assigned.
+   */
+  [[nodiscard]] auto GetMaterial() const
+    -> core::materials::GGEMSMaterial const &;
+
+  /*!
+   * \brief Assigns a presentation override, including an explicit white color.
+   * \param[in] color Existing GGEMS named palette key.
+   * \return This mesh for fluent authoring.
+   */
+  auto SetColor(render::ColorKey color) noexcept -> GGEMSMesh &;
+
+  /*!
+   * \brief Resolves the effective presentation color.
+   * \return Explicit override, Material color, or white when unconfigured.
+   */
+  [[nodiscard]] auto GetColor() const noexcept -> render::ColorKey;
+
+  /*!
+   * \brief Reads the independently authored color override.
+   * \return Explicit color, including white, or no value for inheritance.
+   */
+  [[nodiscard]] auto GetColorOverride() const noexcept
+    -> std::optional<render::ColorKey> {
+    return color_;
+  }
+
+  /*!
+   * \brief Replaces the detached mesh translation in canonical picometers.
+   * \param[in] position Translation in the eventual parent frame.
+   * \return This mesh for fluent authoring.
+   */
+  auto SetPosition(Position3PM position) noexcept -> GGEMSMesh &;
+
+  /*!
+   * \brief Replaces the absolute right-handed rotation Rz * Ry * Rx.
+   * \param[in] angle_x Rotation about X.
+   * \param[in] angle_y Rotation about Y.
+   * \param[in] angle_z Rotation about Z.
+   * \return This mesh for fluent authoring.
+   */
+  auto SetRotation(units::Angle angle_x, units::Angle angle_y,
+                   units::Angle angle_z) -> GGEMSMesh &;
+
+  /*!
+   * \brief Reads the translation without modifying imported vertices.
+   * \return Eventual parent-frame translation in canonical picometers.
+   */
+  [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM {
+    return position_pm_;
+  }
+
+  /*!
+   * \brief Reads the absolute rigid orientation.
+   * \return Basis reference, valid until reassignment or destruction.
+   */
+  [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const & {
+    return rotation_;
+  }
+
+  /*!
+   * \brief Emits one import and authoring summary through configured logging.
+   * \return This mesh for fluent authoring.
+   */
+  auto Verbose() -> GGEMSMesh &;
+
+private:
+  /*! \brief Independently owned display label. */
+  std::string name_;
+
+  /*! \brief Immutable import payload shared across ordinary copies. */
+  std::shared_ptr<GGEMSMeshData const> data_;
+
+  /*! \brief Optional independent homogeneous Material. */
+  std::optional<core::materials::GGEMSMaterial> material_;
+
+  /*! \brief Optional explicit presentation override. */
+  std::optional<render::ColorKey> color_;
+
+  /*! \brief Rigid translation, separate from local vertices. */
+  Position3PM position_pm_{};
+
+  /*! \brief Absolute orientation, initially identity. */
+  GGEMSRotation3D rotation_{};
+};
+
+} // namespace ggems::geometry

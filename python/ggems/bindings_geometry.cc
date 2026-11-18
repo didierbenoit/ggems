@@ -47,6 +47,7 @@
 #include "detail/GGEMSGeometryAttachments.hh"
 
 #include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
+#include "GGEMS/geometry/GGEMSMesh.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
@@ -86,8 +87,8 @@ using ggems::python::detail::MakeQuantityOrThrow;
 }
 
 /*!
- * \brief Converts a parent-local position for a physical volume.
- * \tparam Shape Physical volume with a parent-local pose.
+ * \brief Converts a reference-frame position for geometry authoring.
+ * \tparam Shape Geometry authoring value with a pose.
  * \param[in,out] shape Shape receiving the absolute position.
  * \param[in] x Parent-local X coordinate.
  * \param[in] y Parent-local Y coordinate.
@@ -105,8 +106,8 @@ auto SetPosition(Shape &shape, double x, double y, double z,
 }
 
 /*!
- * \brief Converts absolute parent-axis angles for a physical volume.
- * \tparam Shape Physical volume with a parent-local pose.
+ * \brief Converts absolute reference-axis angles for geometry authoring.
+ * \tparam Shape Geometry authoring value with a pose.
  * \param[in,out] shape Shape receiving the absolute rotation.
  * \param[in] x Rotation about the parent X axis.
  * \param[in] y Rotation about the parent Y axis.
@@ -123,8 +124,8 @@ auto SetRotation(Shape &shape, double x, double y, double z,
 }
 
 /*!
- * \brief Resolves and assigns a medium to World or an analytical shape.
- * \tparam Volume World or analytical shape type.
+ * \brief Resolves and assigns a medium to World or a homogeneous volume.
+ * \tparam Volume World, analytical shape, or mesh authoring type.
  * \param[in,out] volume Authoring value receiving the material.
  * \param[in] name Exact registered, built-in, or custom material name.
  * \return The same value for chained configuration.
@@ -476,6 +477,7 @@ auto BindGeometry(py::module_ &module) -> void {
   using ggems::geometry::GGEMSBox;
   using ggems::geometry::GGEMSCons;
   using ggems::geometry::GGEMSEllipsoid;
+  using ggems::geometry::GGEMSMesh;
   using ggems::geometry::GGEMSPolyhedra;
   using ggems::geometry::GGEMSSphere;
   using ggems::geometry::GGEMSTrap;
@@ -1129,6 +1131,92 @@ The material becomes registered as used by the scene. Return this solid.
         py::arg("name"), py::return_value_policy::reference_internal);
 
   // === === ===
+  py::class_<GGEMSMesh, std::shared_ptr<GGEMSMesh>>(
+    module, "GGEMSMesh",
+    R"doc(Import triangle OBJ or binary/ASCII STL for host mesh authoring.
+
+Source length units are required explicitly. The imported local origin is
+preserved; position and absolute rotation place that origin without rewriting
+vertices. Copies share immutable indexed geometry. The mesh has one independent
+GGEMS material and an optional typed display color that overrides material color.
+
+OBJ object names are retained in source order, including duplicates. They are
+metadata, not proof of connected or watertight components. STL has no component
+names. Import checks file structure and obvious degeneracy; it does not certify
+closed, oriented, manifold, or non-self-intersecting geometry.
+
+This N4.1 object cannot be passed to world.add_volume(). Physical admission,
+World attachment, and OpenCL mesh navigation are deferred to N4.2. Component
+transforms are deferred to N4.3.
+
+Construct with (path, unit=...) or (name, path, unit=...). The name is optional
+display metadata; argument order is never guessed from file existence.
+)doc")
+    .def(py::init<std::filesystem::path const &, std::string_view>(),
+         py::arg("path"), py::kw_only(), py::arg("unit"))
+
+    .def(
+      py::init<std::string, std::filesystem::path const &, std::string_view>(),
+      py::arg("name"), py::arg("path"), py::kw_only(), py::arg("unit"))
+
+    .def("set_material", &SetMaterial<GGEMSMesh>,
+         R"doc(Set the mesh medium by exact GGEMS material name.
+
+File material declarations are ignored. Return this mesh for chaining.
+)doc",
+         py::arg("name"), py::return_value_policy::reference_internal)
+
+    .def("set_color", &GGEMSMesh::SetColor,
+         R"doc(Set a typed ggems.colors.ColorKey display override.
+
+An unset override inherits the material color. Explicit white remains an
+override. Return this mesh for chaining.
+)doc",
+         py::arg("color"), py::return_value_policy::reference_internal)
+
+    .def("set_position", &SetPosition<GGEMSMesh>,
+         R"doc(Set the reference-frame position of the imported local origin.
+
+Args:
+    x: Reference X coordinate.
+    y: Reference Y coordinate.
+    z: Reference Z coordinate.
+    unit: GGEMS length unit.
+
+Returns:
+    This mesh for chained configuration.
+)doc",
+         py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+         py::return_value_policy::reference_internal)
+
+    .def("set_rotation", &SetRotation<GGEMSMesh>,
+         R"doc(Assign the absolute right-handed active rotation Rz * Ry * Rx.
+
+The mesh rotates about its imported local origin. Fixed reference-axis X, Y,
+then Z rotations replace the previous rotation without rewriting vertices.
+
+Args:
+    rx: Rotation about reference X.
+    ry: Rotation about reference Y.
+    rz: Rotation about reference Z.
+    unit: Angle unit, "deg" or "rad".
+
+Returns:
+    This mesh for chained configuration.
+)doc",
+         py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+         py::return_value_policy::reference_internal)
+
+    .def("verbose", &GGEMSMesh::Verbose,
+         R"doc(Emit one mesh summary through the configured GGEMS logger.
+
+Report import provenance, configuration, bounds, counts, and named components.
+Use ggems.start() or ggems.start("term") for terminal output. This call has no
+argument and returns this mesh for chaining.
+)doc",
+         py::return_value_policy::reference_internal);
+
+  // === === ===
   py::class_<GGEMSVoxelizedVolume, std::shared_ptr<GGEMSVoxelizedVolume>>(
     module, "GGEMSVoxelizedVolume",
     R"doc(Import one host voxelized volume from MetaImage and material files.
@@ -1186,6 +1274,16 @@ Returns:
     This voxelized volume for chained configuration.
 )doc",
          py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
+         py::return_value_policy::reference_internal)
+
+    .def("verbose", &GGEMSVoxelizedVolume::Verbose,
+         R"doc(Emit one voxelized-volume summary through the GGEMS logger.
+
+Report grid dimensions, spacing, full size, voxel count, pose, original label
+mapping ranges and display styles, and local material identities. No label
+histogram or per-voxel dump is produced. Use ggems.start() or ggems.start("term")
+for terminal output. Return this volume for chaining.
+)doc",
          py::return_value_policy::reference_internal);
 
   // === === ===

@@ -32,6 +32,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <memory>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -40,6 +43,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMSVoxelizedTestFixture.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSAnalyticOccurrenceRecord.hh"
@@ -49,6 +53,7 @@
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
@@ -254,6 +259,71 @@ TEST(GGEMSVoxelizedVolume,
   EXPECT_EQ(volume.GetDisplayStyle(20U).mode, Mode::Solid);
   EXPECT_EQ(volume.GetDisplayStyle(10U).color, red.GetColor());
   EXPECT_EQ(volume.GetDisplayStyle(20U).color, blue.GetColor());
+}
+
+TEST(GGEMSVoxelizedVolume, VerboseReportsMappingsAndPoseWithoutChangingData) {
+  std::array<std::uint16_t, 4> const labels{7U, 8U, 9U, 65535U};
+  GGEMSVoxelizedTestFixture const files{
+    {2U, 2U, 1U},
+    "1 2 3",
+    labels,
+    "65535 65536 Water Wireframe blue_pure\n"
+    "9 9 Air None white_white\n"
+    "7 9 Water Solid red_ruby\n",
+  };
+  auto volume = files.Import("XCAT##%s");
+  volume.SetPosition(MakePositionPM(3'000'000'000LL, -2'000'000'000LL, 0))
+    .SetRotation(0_deg, 0_deg, 90_deg);
+  auto const original = volume;
+  auto const report_path = files.GetRawPath().parent_path() / "verbose.log";
+  ggems::test::ScopedLoggerEncoding const encoding{
+    ggems::core::Encoding::Ascii};
+  auto &logger = ggems::core::GGEMSLogger::GetInstance();
+  logger.ClearSinks();
+  logger.SetDetailLevel(0);
+  logger.AddSink(std::make_unique<ggems::core::FileSink>(report_path.string()));
+  logger.AddSink(std::make_unique<ggems::core::StdoutSink>());
+  EXPECT_NO_THROW(EXPECT_EQ(&volume.SetVerbose(), &volume));
+  logger.ClearSinks();
+  logger.SetDetailLevel(1);
+
+  std::ifstream input{report_path};
+  std::string const report{std::istreambuf_iterator<char>{input},
+                           std::istreambuf_iterator<char>{}};
+  for (auto const *field : {
+         "Voxelized volume: XCAT##%s",
+         "Dimensions (X, Y, Z): 2 x 2 x 1",
+         "Spacing (X, Y, Z): 1.000 mm, 2.000 mm, 3.000 mm",
+         "Full size (X, Y, Z): 2.000 mm, 4.000 mm, 3.000 mm",
+         "Voxel count: 4",
+         "World center (X, Y, Z): 3.000 mm, -2.000 mm, 0.000 pm",
+         "X: (0, 1, -0)",
+         "Y: (-1, 0, 0)",
+         "Z: (0, 0, 1)",
+         "[7, 9): Water; mode=Solid; color=red_ruby",
+         "[9, 10): Air; mode=None; color=white_white",
+         "[65535, 65536): Water; mode=Wireframe; color=blue_pure",
+         "Local Material palette:",
+         "[0] Water; density=1.000000 g/cm3",
+         "[1] Air; density=",
+       }) {
+    EXPECT_TRUE(report.contains(field)) << field;
+  }
+  EXPECT_EQ(
+    report.find("Voxelized volume:", report.find("Voxelized volume:") + 1U),
+    std::string::npos);
+  EXPECT_EQ(volume.GetPositionPM(), original.GetPositionPM());
+  EXPECT_EQ(volume.GetRotation().axis_x.y, 1.0);
+  EXPECT_EQ(volume.GetRotation().axis_y.x, -1.0);
+  EXPECT_EQ(volume.GetLabels().data(), original.GetLabels().data());
+  EXPECT_EQ(volume.GetMaterialLabels().data(),
+            original.GetMaterialLabels().data());
+  EXPECT_EQ(volume.GetMaterials().data(), original.GetMaterials().data());
+  EXPECT_EQ(volume.GetDisplayMappings().data(),
+            original.GetDisplayMappings().data());
+  EXPECT_TRUE(std::ranges::equal(volume.GetLabels(), labels));
+  std::array<std::uint16_t, 4> const expected{0U, 0U, 1U, 0U};
+  EXPECT_TRUE(std::ranges::equal(volume.GetMaterialLabels(), expected));
 }
 
 TEST(GGEMSVoxelizedVolume, RejectsInvalidPresentationArityModeAndColor) {

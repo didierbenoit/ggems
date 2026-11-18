@@ -146,6 +146,15 @@ public:
                    units::Angle angle_z) -> GGEMSVoxelizedVolume &;
 
   /*!
+   * \brief Reports the imported grid and pose once through GGEMS output.
+   *
+   * Reads immutable mappings and the local Material palette without scanning
+   * voxel labels or changing output settings.
+   * \return This volume for chained configuration.
+   */
+  auto Verbose() -> GGEMSVoxelizedVolume &;
+
+  /*!
    * \brief Returns the grid-center placement.
    * \return World-frame center in picometers.
    */

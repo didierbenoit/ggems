@@ -53,6 +53,7 @@
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/geometry/GGEMSVoxelizedVolume.hh"
+#include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
@@ -61,6 +62,7 @@
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
+#include "GGEMS/units/GGEMSUnitFormatting.hh"
 
 namespace ggems::geometry {
 
@@ -584,6 +586,59 @@ auto GGEMSVoxelizedVolume::SetRotation(units::Angle angle_x,
                                        units::Angle angle_z)
   -> GGEMSVoxelizedVolume & {
   rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSVoxelizedVolume::Verbose() -> GGEMSVoxelizedVolume & {
+  auto report =
+    std::format("Voxelized volume: {}\n"
+                "  Dimensions (X, Y, Z): {} x {} x {}\n"
+                "  Spacing (X, Y, Z): {}, {}, {}\n"
+                "  Full size (X, Y, Z): {}, {}, {}\n"
+                "  Voxel count: {}\n"
+                "  World center (X, Y, Z): {}, {}, {}\n"
+                "  Local axes in World coordinates:\n"
+                "    X: ({:.6g}, {:.6g}, {:.6g})\n"
+                "    Y: ({:.6g}, {:.6g}, {:.6g})\n"
+                "    Z: ({:.6g}, {:.6g}, {:.6g})\n"
+                "  Original label mappings (half-open ranges):\n",
+                name_.empty() ? "(unnamed)" : name_, data_->dimensions[0],
+                data_->dimensions[1], data_->dimensions[2],
+                units::HumanReadable(data_->spacing[0], 3),
+                units::HumanReadable(data_->spacing[1], 3),
+                units::HumanReadable(data_->spacing[2], 3),
+                units::HumanReadable(data_->size[0], 3),
+                units::HumanReadable(data_->size[1], 3),
+                units::HumanReadable(data_->size[2], 3), data_->labels.size(),
+                units::HumanReadableSignedLength(center_pm_.x, 3),
+                units::HumanReadableSignedLength(center_pm_.y, 3),
+                units::HumanReadableSignedLength(center_pm_.z, 3),
+                rotation_.axis_x.x, rotation_.axis_x.y, rotation_.axis_x.z,
+                rotation_.axis_y.x, rotation_.axis_y.y, rotation_.axis_y.z,
+                rotation_.axis_z.x, rotation_.axis_z.y, rotation_.axis_z.z);
+
+  constexpr std::array mode_names{"None", "Wireframe", "Solid"};
+  for (auto const &mapping : data_->display_styles) {
+    report +=
+      std::format("    [{}, {}): {}; mode={}; color={}\n", mapping.first_label,
+                  mapping.end_label, mapping.material_name,
+                  mode_names[static_cast<std::size_t>(mapping.style.mode)],
+                  render::GetColorName(mapping.style.color));
+  }
+
+  report += "  Local Material palette:\n";
+
+  for (std::size_t index = 0U; index < data_->materials.size(); ++index) {
+    auto const &material = data_->materials[index];
+    report +=
+      std::format("    [{}] {}; density={}\n", index, material.GetName(),
+                  units::HumanReadable(material.GetDensity(), 6));
+  }
+
+  GGEMS_INFO("Geometry", "{}", report);
+
   return *this;
 }
 
