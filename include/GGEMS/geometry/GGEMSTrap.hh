@@ -239,12 +239,6 @@ private:
    */
   units::Angle inclination_phi_{};
 
-  /*! \brief Global local-frame origin in canonical pm. */
-  Position3PM center_pm_{};
-
-  /*! \brief Absolute proper rotation; identity by default. */
-  GGEMSRotation3D rotation_{};
-
   /*! \brief Explicit owned medium, absent until configuration. */
   std::optional<core::materials::GGEMSMaterial> material_;
 };

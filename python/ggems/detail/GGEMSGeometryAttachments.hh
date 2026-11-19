@@ -49,8 +49,7 @@ namespace ggems::python::detail {
  * scientific objects. Each explicit ordinary attachment registers only its
  * subtree root for subsequent top-down additions to the original live World.
  * Captured descendants and repeater sources never acquire a World alias.
- * Later source setters do not change any captured occurrence.
- * GGEMSRun::SetWorld retains its independent completed-scene copy.
+ * The explicitly attached root shares its native rigid pose with the World.
  *
  * \pre Calls hold the Python GIL. Registered World pointees must not be
  * replaced, moved from, or assigned over; the bound API exposes none of these
@@ -61,9 +60,9 @@ public:
   /*!
    * \brief Captures one child subtree under a detached or attached parent.
    * \tparam Parent Bound World or one of the eight analytical mother types.
-   * \tparam Child One of the eight existing analytical shape types.
+   * \tparam Child Analytical shape, or a direct World mesh or voxelized import.
    * \param[in] parent Detached mother, registered mother, or World.
-   * \param[in] child Complete child whose current value is captured.
+   * \param[in] child Source volume whose pose stays live on direct attachment.
    * \throws core::GGEMSRecoverable If either pointer is null, self-use or live
    * child reuse occurs, the parent's registered World expired, or authoring
    * admission fails. Every World attachment requires configured size and
@@ -84,7 +83,7 @@ public:
   /*!
    * \brief Captures a centered linear subtree repeater in the parent frame.
    * \tparam Parent Bound World or one of the eight analytical mother types.
-   * \tparam Child One of the eight existing analytical shape types.
+   * \tparam Child Analytical shape, or a direct World mesh or voxelized import.
    * \param[in] parent Detached mother, registered mother, or World.
    * \param[in] child Subtree whose captured position centers the arrangement.
    * \param[in] count Total number of physical copies along the selected axis.
@@ -114,7 +113,7 @@ public:
   /*!
    * \brief Captures a centered Cartesian arrangement of child subtrees.
    * \tparam Parent Bound World or one of the eight analytical mother types.
-   * \tparam Child One of the eight existing analytical shape types.
+   * \tparam Child Analytical shape, or a direct World mesh or voxelized import.
    * \param[in] parent Detached mother, registered mother, or World.
    * \param[in] child Subtree whose captured position centers the arrangement.
    * \param[in] counts Positive counts along parent-local X, Y, and Z.
@@ -142,7 +141,7 @@ public:
   /*!
    * \brief Captures rigidly rotated subtree copies around the parent origin.
    * \tparam Parent Bound World or one of the eight analytical mother types.
-   * \tparam Child One of the eight existing analytical shape types.
+   * \tparam Child Analytical shape, or a direct World mesh or voxelized import.
    * \param[in] parent Detached mother, registered mother, or World.
    * \param[in] child Complete reference subtree captured at occurrence zero.
    * \param[in] count Total physical copies over one turn, with no end
@@ -169,7 +168,7 @@ public:
 private:
   /*! \brief Weak World ownership and one explicit subtree-root identity. */
   struct Registration {
-    /*! \brief World owning an independent scientific value copy. */
+    /*! \brief World owning the attached occurrence. */
     std::weak_ptr<geometry::GGEMSWorld> world;
 
     /*! \brief One-based root VolumeID, committed after successful insertion. */
@@ -200,11 +199,14 @@ private:
     if (!parent || !child) {
       throw core::GGEMSRecoverable("Parent and volume must be non-null.");
     }
+
     if (static_cast<void const *>(parent.get()) ==
         static_cast<void const *>(child.get())) {
       throw core::GGEMSRecoverable("A volume cannot capture itself.");
     }
+
     auto const found = registrations_.find(std::weak_ptr<void>{child});
+
     if (found != registrations_.end() && !found->second.world.expired()) {
       throw core::GGEMSRecoverable("Volume is already registered in a World.");
     }
@@ -227,22 +229,26 @@ private:
       return {.world = parent, .volume_id = 0U};
     } else {
       auto const found = registrations_.find(std::weak_ptr<void>{parent});
+
       if (found == registrations_.end()) {
         return {};
       }
+
       auto const world = found->second.world.lock();
+
       if (!world) {
         throw core::GGEMSRecoverable(
           "The mother's registered World has expired.");
       }
+
       return {.world = world, .volume_id = found->second.volume_id};
     }
   }
 
   /*!
    * \brief Reserves a root registration and commits it after World insertion.
-   * \tparam Child Existing analytical shape accepted by World::AttachVolume.
-   * \param[in] world Live World receiving the independent subtree snapshot.
+   * \tparam Child Native volume accepted by World::AttachLiveVolume.
+   * \param[in] world World owning the occurrence and its captured descendants.
    * \param[in] child Non-null shape without a live registration.
    * \param[in] parent_volume_id Existing parent ID, or zero for World.
    * \throws core::GGEMSRecoverable If World admission fails. Registration
@@ -254,18 +260,23 @@ private:
               std::shared_ptr<Child> const &child,
               std::uint32_t parent_volume_id) -> void {
     std::weak_ptr<void> const identity{child};
+
     registrations_.erase(identity);
+
     auto const entry =
       registrations_
         .emplace(identity, Registration{.world = world, .volume_id = 0U})
         .first;
+
     auto const previous_count = world->GetVolumeCount();
+
     try {
-      world->AttachVolume(*child, parent_volume_id);
+      world->AttachLiveVolume(*child, parent_volume_id);
     } catch (...) {
       registrations_.erase(entry);
       throw;
     }
+
     entry->second.volume_id = static_cast<std::uint32_t>(previous_count + 1U);
   }
 

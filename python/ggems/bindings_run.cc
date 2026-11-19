@@ -54,6 +54,9 @@ void BindRun(py::module_ &module) {
 
     .def("initialize", &ggems::core::GGEMSRun::Initialize)
 
+    .def("update_geometry", &ggems::core::GGEMSRun::UpdateGeometry,
+         "Validate and upload the attached poses between runs.")
+
     .def("set_random", &ggems::core::GGEMSRun::SetRandom, py::arg("random"))
 
     .def("add_source", &ggems::core::GGEMSRun::AddSource, py::arg("source"))

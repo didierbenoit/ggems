@@ -51,7 +51,7 @@ auto GGEMSSphere::SetRadius(units::Length radius) -> GGEMSSphere & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSSphere::SetPosition(Position3PM center) noexcept -> GGEMSSphere & {
-  center_pm_ = center;
+  LocalPose().position_pm = center;
   return *this;
 }
 
@@ -59,7 +59,7 @@ auto GGEMSSphere::SetPosition(Position3PM center) noexcept -> GGEMSSphere & {
 
 auto GGEMSSphere::SetRotation(units::Angle angle_x, units::Angle angle_y,
                               units::Angle angle_z) -> GGEMSSphere & {
-  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  LocalPose().rotation = BuildRotationXYZ(angle_x, angle_y, angle_z);
   return *this;
 }
 
@@ -68,14 +68,14 @@ auto GGEMSSphere::SetRotation(units::Angle angle_x, units::Angle angle_y,
 auto GGEMSSphere::SetRotation(GGEMSRotation3D const &rotation)
   -> GGEMSSphere & {
   ValidateRotation3D(rotation);
-  rotation_ = rotation;
+  LocalPose().rotation = rotation;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSSphere::GetRotation() const noexcept -> GGEMSRotation3D const & {
-  return rotation_;
+  return LocalPose().rotation;
 }
 
 // -----------------------------------------------------------------------------
@@ -106,7 +106,7 @@ auto GGEMSSphere::GetRadiusPM() const noexcept -> DistancePM {
 // -----------------------------------------------------------------------------
 
 auto GGEMSSphere::GetPositionPM() const noexcept -> Position3PM {
-  return center_pm_;
+  return LocalPose().position_pm;
 }
 
 // -----------------------------------------------------------------------------

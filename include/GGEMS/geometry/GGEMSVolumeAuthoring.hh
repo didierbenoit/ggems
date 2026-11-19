@@ -36,6 +36,7 @@
 #include <span>
 #include <string>
 
+#include "GGEMS/geometry/GGEMSRigidPose.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -88,14 +89,14 @@ struct GGEMSVolumeRecipes;
  *
  * Each child operation captures the child's current value and descendants.
  * Later source setters or child additions cannot change that snapshot. The
- * mother's own pose remains independent until it is captured by another mother
- * or World. Immutable sharing preserves deep value semantics without Python
+ * mother's explicit live World attachment shares only its rigid pose.
+ * Immutable child recipes preserve deep value semantics without Python
  * references or a mutable physical tree. Final World attachment expands the
  * descriptions and performs complete geometry admission atomically.
  * An optional display color follows copies and captures independently of
  * physical geometry and Material identity; absent overrides use Material color.
  */
-class GGEMSVolumeAuthoring {
+class GGEMSVolumeAuthoring : public GGEMSRigidPose {
 public:
   /*! \brief Creates unnamed analytical authoring metadata. */
   GGEMSVolumeAuthoring() = default;

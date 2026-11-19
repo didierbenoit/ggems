@@ -37,6 +37,7 @@
 #include <span>
 #include <string>
 
+#include "GGEMS/geometry/GGEMSRigidPose.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -89,7 +90,7 @@ struct GGEMSVoxelDisplayMapping {
  * Material, child volumes, or repeaters. World compiles physical device assets;
  * mapping presentation remains host/viewer metadata.
  */
-class GGEMSVoxelizedVolume {
+class GGEMSVoxelizedVolume : public GGEMSRigidPose {
 public:
   /*!
    * \brief Imports the admitted external little-endian MET_USHORT profile.
@@ -256,12 +257,6 @@ private:
 
   /*! \brief Shared payload; construction completes before publication. */
   std::shared_ptr<Data const> data_;
-
-  /*! \brief World-frame center, initially the origin. */
-  Position3PM center_pm_{};
-
-  /*! \brief Local-to-World rotation, initially identity. */
-  GGEMSRotation3D rotation_{};
 };
 
 } // namespace ggems::geometry

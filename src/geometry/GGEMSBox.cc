@@ -81,7 +81,7 @@ auto GGEMSBox::SetSize(units::Length size_x, units::Length size_y,
 // -----------------------------------------------------------------------------
 
 auto GGEMSBox::SetPosition(Position3PM center) noexcept -> GGEMSBox & {
-  center_pm_ = center;
+  LocalPose().position_pm = center;
   return *this;
 }
 
@@ -89,7 +89,7 @@ auto GGEMSBox::SetPosition(Position3PM center) noexcept -> GGEMSBox & {
 
 auto GGEMSBox::SetRotation(units::Angle angle_x, units::Angle angle_y,
                            units::Angle angle_z) -> GGEMSBox & {
-  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  LocalPose().rotation = BuildRotationXYZ(angle_x, angle_y, angle_z);
   return *this;
 }
 
@@ -97,14 +97,14 @@ auto GGEMSBox::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 auto GGEMSBox::SetRotation(GGEMSRotation3D const &rotation) -> GGEMSBox & {
   ValidateRotation3D(rotation);
-  rotation_ = rotation;
+  LocalPose().rotation = rotation;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSBox::GetRotation() const noexcept -> GGEMSRotation3D const & {
-  return rotation_;
+  return LocalPose().rotation;
 }
 
 // -----------------------------------------------------------------------------
@@ -130,7 +130,7 @@ auto GGEMSBox::Validate() const -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSBox::GetPositionPM() const noexcept -> Position3PM {
-  return center_pm_;
+  return LocalPose().position_pm;
 }
 
 // -----------------------------------------------------------------------------

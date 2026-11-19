@@ -39,6 +39,7 @@
 #include <optional>
 
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
+#include "GGEMS/geometry/GGEMSVoxelizedVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
@@ -302,9 +303,8 @@ public:
    * \param[in] voxelized_data Immutable voxel records, compact labels, and
    * dense material palettes. Copied once per context; anatomical labels stay on
    * host.
-   * \param[in] mesh_scene_auxiliary Common auxiliary buffer prepared by World
-   * with dense mesh MaterialIDs, empty for scenes without meshes. The
-   * workload copies these bytes into context-owned SVM during construction.
+   * \param[in] scene_auxiliary Packed occurrence, pose and optional mesh data.
+   * An ordinary scene can omit it for local packing.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
    * are invalid, or the geometry buffers disagree with the World's families.
    * \throws GGEMSInternal If energy and cumulative-ticket table lengths
@@ -323,7 +323,19 @@ public:
     geometry::GGEMSWorld const *world = nullptr,
     std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes = {},
     geometry::GGEMSVoxelizedSceneData const &voxelized_data = {},
-    std::span<std::byte const> mesh_scene_auxiliary = {});
+    std::span<std::byte const> scene_auxiliary = {});
+
+  /*!
+   * \brief Writes validated placements into the bound SVM buffers.
+   * \param[in] volumes Analytical records in analytical occurrence order.
+   * \param[in] voxels Grid descriptors in voxel occurrence order.
+   * \param[in] auxiliary Packed occurrence poses, profiles and mesh assets.
+   * \pre The workload is idle and the scene has its initialized structure.
+   */
+  auto
+  UploadGeometry(std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes,
+                 std::span<geometry::GGEMSVoxelizedVolumeRecord const> voxels,
+                 std::span<std::byte const> auxiliary) -> void;
 
   /*! \brief Releases the bound kernel and all workload-owned SVM storage. */
   ~GGEMSTransportWorkload() = default;

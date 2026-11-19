@@ -87,6 +87,22 @@ using ggems::python::detail::MakeQuantityOrThrow;
 }
 
 /*!
+ * \brief Converts three signed length coordinates to canonical picometers.
+ * \param[in] x X coordinate in the supplied unit.
+ * \param[in] y Y coordinate in the supplied unit.
+ * \param[in] z Z coordinate in the supplied unit.
+ * \param[in] unit Registered length unit of all three coordinates.
+ * \return Canonical signed position.
+ */
+auto MakePosition(double x, double y, double z, std::string const &unit)
+  -> ggems::geometry::Position3PM {
+  return ggems::geometry::MakePositionPM(
+    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit).value);
+}
+
+/*!
  * \brief Converts a reference-frame position for geometry authoring.
  * \tparam Shape Geometry authoring value with a pose.
  * \param[in,out] shape Shape receiving the absolute position.
@@ -99,10 +115,7 @@ using ggems::python::detail::MakeQuantityOrThrow;
 template <class Shape>
 auto SetPosition(Shape &shape, double x, double y, double z,
                  std::string const &unit) -> Shape & {
-  return shape.SetPosition(ggems::geometry::MakePositionPM(
-    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
-    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
-    MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit).value));
+  return shape.SetPosition(MakePosition(x, y, z, unit));
 }
 
 /*!
@@ -283,18 +296,18 @@ or after adding children, until its own value is captured by its parent.
 Position and rotation are parent-local; physical depth is at most four below
 World. Physical IDs are assigned internally.
 
-World attachment copies the complete subtree independently. An explicitly
-attached root remains a handle for top-down additions to its original live
-World; its later setters do not change the stored pose, shape, material, or
-color. Descendant sources captured bottom-up have no such handle. Adding
-children to those sources changes only their own authoring values. Direct
+World attachment captures the complete subtree. An explicitly attached root
+retains its parent-local pose and supports top-down additions to its World.
+Call run.update_geometry() between runs to publish pose edits. Shape dimensions,
+material, and color are captured at attachment. Descendant sources captured
+bottom-up have independent poses. Adding children to those sources changes
+only their own authoring values. Direct
 self-use and reuse of a source already registered in a live World are rejected.
 
 Every World or registered-mother attachment requires configured World size and
 material and validates the complete batch before publication, including a
 single leaf. A rejected attachment leaves the World and registrations unchanged.
-run.set_world(world) copies the completed World; later attachments do not change
-the Run.
+run.set_world(world) retains this World. Configure its topology before initialization.
 
 Args:
     volume: Complete analytical shape and its currently authored descendants.
@@ -335,7 +348,7 @@ pitch triples ordered X, Y, Z and accepts no axis argument.
 The complete child subtree is captured now. Later source edits do not alter the
 recipe. The detached mother's final pose composes with every occurrence when
 attached to World. A uniquely registered mother instead extends its original
-World using the already captured parent pose. Repeated source objects never
+World using the mother's current pose. Repeated source objects never
 become live handles for individual occurrences. Direct self-use and reuse of a
 source registered in a live World are rejected.
 
@@ -429,7 +442,7 @@ phase; a zero-radius placement with multiple copies is rejected.
 The complete child subtree is captured now. Later source edits do not alter the
 recipe. The detached mother's final pose composes with every occurrence when
 attached to World. A uniquely registered mother instead extends its original
-World using the already captured parent pose. Repeated sources are not handles
+World using the mother's current pose. Repeated sources are not handles
 for individual occurrences. Direct self-use and reuse of a source registered in
 a live World are rejected.
 
@@ -658,7 +671,8 @@ Returns:
       R"doc(Configure a finite full-azimuth circular cylinder or hollow tube along local +Z.
 
 The default pose is centered at the parent-frame origin with identity rotation.
-Configuration methods return the same object for chaining. World owns a copy.
+Configuration methods return the same object for chaining. World captures the
+shape and shares its explicitly attached pose.
 )doc")
       .def(py::init<std::string>(), py::arg("name") = "",
            "Create an unconfigured tube with an optional display name.")
@@ -724,7 +738,8 @@ The material becomes registered as used by the scene. Return this tube.
       R"doc(Configure a complete solid ellipsoid with local X/Y/Z semi-axes and a rigid pose.
 
 The default pose is centered at the parent-frame origin with identity rotation.
-Configuration methods return the same object for chaining. World owns a copy.
+Configuration methods return the same object for chaining. World captures the
+shape and shares its explicitly attached pose.
 )doc")
       .def(py::init<std::string>(), py::arg("name") = "",
            "Create an unconfigured ellipsoid with an optional display name.")
@@ -778,7 +793,8 @@ The material becomes registered as used by the scene. Return this ellipsoid.
 
 All dimensions are full sizes, positive and even in pm after Units conversion.
 Sides connect corresponding end edges; Trd has no end skew or inclination.
-Rigid XYZ rotation is separate. World owns a copy; setters return this object.
+Rigid XYZ rotation is separate. World captures the shape and shares its
+explicitly attached pose.
 )doc")
       .def(py::init<std::string>(), py::arg("name") = "",
            "Create an unconfigured Trd with an optional display name.")
@@ -853,7 +869,8 @@ End-face height and two X widths follow the G4Trap geometric convention.
 Inclination shifts the end centers; skew shifts X within each end face.
 The side faces must be planar within the automatic local FP32 surface band:
 incompatible end skews or width gradients fail when added to World.
-Rigid XYZ rotation is separate. World owns a copy; setters return this object.
+Rigid XYZ rotation is separate. World captures the shape and shares its
+explicitly attached pose.
 )doc")
       .def(py::init<std::string>(), py::arg("name") = "",
            "Create an unconfigured Trap with an optional display name.")
@@ -967,7 +984,8 @@ The Material becomes registered as used by the scene. Return this solid.
 Radii interpolate linearly between caps at +/- half length. A solid cone tip
 is admitted; hollow outer tips are rejected. The default pose is centered at the
 parent-frame origin with identity rotation. Configuration methods return the
-same object for chaining. World owns a copy.
+same object for chaining. World captures the shape and shares its explicitly
+attached pose.
 )doc")
       .def(py::init<std::string>(), py::arg("name") = "",
            "Create an unconfigured frustum with an optional display name.")
@@ -1188,6 +1206,16 @@ Returns:
          py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
          py::return_value_policy::reference_internal)
 
+    .def(
+      "set_component_translation",
+      [](GGEMSMesh &mesh, std::string_view name, double x, double y, double z,
+         std::string const &unit) -> GGEMSMesh & {
+        return mesh.SetComponentTranslation(name, MakePosition(x, y, z, unit));
+      },
+      "Replace the local offset of one uniquely named OBJ component.",
+      py::arg("name"), py::arg("x"), py::arg("y"), py::arg("z"),
+      py::arg("unit") = "mm", py::return_value_policy::reference_internal)
+
     .def("set_rotation", &SetRotation<GGEMSMesh>,
          R"doc(Assign the absolute right-handed active rotation Rz * Ry * Rx.
 
@@ -1293,7 +1321,7 @@ for terminal output. Return this volume for chaining.
 
 The World is an axis-aligned box centered on the global origin. It owns the
 physical volumes added with add_volume() and is attached to a run with
-GGEMSRun.set_world(), which copies the World and checks the completed scene.
+GGEMSRun.set_world(), which retains the World and checks the completed scene.
 Sizes are converted once to the integer picometer lattice; each full size
 must be an even number of picometers.
 
@@ -1302,9 +1330,9 @@ A GGEMSVoxelizedVolume can also be captured directly under World as one
 physical occurrence, with cell-by-cell navigation and three central viewer slices.
 Detached analytical mothers capture ordinary children and repeater recipes
 by value. Configure the mother pose before or after its children, then attach
-its complete subtree with world.add_volume(mother). Later source edits never
-change captured copies. Position and rotation remain parent-local. Physical
-depth is limited to four below World, and Sphere rotation defines its daughter
+its complete subtree with world.add_volume(mother). Detached child captures
+and repeater occurrences have independent poses. Position and rotation remain parent-local.
+Physical depth is limited to four below World, and Sphere rotation defines its daughter
 frame without changing the spherical surface. Scalar and Cartesian linear
 repeaters center their copies about the child position and add no hierarchy
 level. Circular repeaters retain their occurrence-zero angular convention.
@@ -1312,7 +1340,7 @@ level. Circular repeaters retain their occurrence-zero angular convention.
 Explicit ordinary attachment also retains top-down assembly: subsequent
 mother.add_volume(child) extends the original live World using the stored mother
 pose. Descendant sources captured bottom-up and repeater sources have no live
-occurrence handle. run.set_world(world) copies the completed scene independently.
+occurrence handle. Call run.update_geometry() between runs to publish live pose edits.
 
 All World attachments and repeater batches require configured size and material;
 every attachment is atomic, including a single leaf. Invalid geometry is
@@ -1437,9 +1465,9 @@ Returns:
     },
     R"doc(Capture a closed, outward-oriented homogeneous mesh directly under World.
 
-The configured Material and whole-mesh pose are captured by value. All
-components share one physical VolumeID. The caller is responsible for
-supplying non-self-intersecting geometry.
+The configured Material is captured at attachment. The whole-mesh pose and named
+OBJ component translations remain editable. All components share one physical
+VolumeID. The caller supplies non-self-intersecting geometry.
 
 Args:
     volume: Configured GGEMSMesh to capture.
@@ -1457,11 +1485,11 @@ Returns:
       attachments->AddVolume(world, volume);
       return *world;
     },
-    R"doc(Capture one voxelized volume directly under World by value.
+    R"doc(Attach one voxelized volume directly under World.
 
-Configure World size and material before attachment. The imported labels,
-material palette, and current pose become an independent World snapshot.
-Later source setters do not change that occurrence. Reusing an object already
+Configure World size and material before attachment. The imported labels and
+material palette are captured. Position and rotation remain editable between
+runs through this source object. Reusing an object already
 registered in a live World is rejected. A failed attachment leaves World and
 registrations unchanged.
 

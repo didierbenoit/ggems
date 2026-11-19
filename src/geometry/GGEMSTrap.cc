@@ -120,7 +120,7 @@ auto GGEMSTrap::SetInclination(units::Angle theta, units::Angle phi)
 // -----------------------------------------------------------------------------
 
 auto GGEMSTrap::SetPosition(Position3PM center) noexcept -> GGEMSTrap & {
-  center_pm_ = center;
+  LocalPose().position_pm = center;
 
   return *this;
 }
@@ -129,7 +129,7 @@ auto GGEMSTrap::SetPosition(Position3PM center) noexcept -> GGEMSTrap & {
 
 auto GGEMSTrap::SetRotation(units::Angle angle_x, units::Angle angle_y,
                             units::Angle angle_z) -> GGEMSTrap & {
-  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  LocalPose().rotation = BuildRotationXYZ(angle_x, angle_y, angle_z);
 
   return *this;
 }
@@ -138,7 +138,7 @@ auto GGEMSTrap::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 auto GGEMSTrap::SetRotation(GGEMSRotation3D const &rotation) -> GGEMSTrap & {
   ValidateRotation3D(rotation);
-  rotation_ = rotation;
+  LocalPose().rotation = rotation;
   return *this;
 }
 
@@ -213,13 +213,13 @@ auto GGEMSTrap::GetHalfLengthPM() const noexcept -> DistancePM {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTrap::GetPositionPM() const noexcept -> Position3PM {
-  return center_pm_;
+  return LocalPose().position_pm;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSTrap::GetRotation() const noexcept -> GGEMSRotation3D const & {
-  return rotation_;
+  return LocalPose().rotation;
 }
 
 // -----------------------------------------------------------------------------

@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSRigidPose.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/render/GGEMSColorTypes.hh"
@@ -129,7 +130,7 @@ struct GGEMSMeshData {
  * Copies share immutable geometry and own their name, Material, color override,
  * and rigid pose. World admits physical meshes with closed, oriented shells.
  */
-class GGEMSMesh {
+class GGEMSMesh : public GGEMSRigidPose {
 public:
   /*!
    * \brief Imports geometry with no authored display name.
@@ -149,6 +150,44 @@ public:
    */
   GGEMSMesh(std::string name, std::filesystem::path const &mesh_file,
             std::string_view unit);
+
+  /*! \brief Copies the current pose and component offsets independently.
+   * \param[in] other Source mesh.
+   */
+  GGEMSMesh(GGEMSMesh const &other);
+
+  /*! \brief Assigns an independent copy of the source mesh.
+   * \param[in] other Source mesh.
+   * \return This mesh.
+   */
+  auto operator=(GGEMSMesh const &other) -> GGEMSMesh &;
+
+  /*! \brief Transfers the source mesh and its live attachment.
+   * \param[in] other Source mesh.
+   */
+  GGEMSMesh(GGEMSMesh &&other) noexcept = default;
+
+  /*! \brief Replaces this mesh with the moved source.
+   * \param[in] other Source mesh.
+   * \return This mesh.
+   */
+  auto operator=(GGEMSMesh &&other) noexcept -> GGEMSMesh & = default;
+
+  /*! \brief Captures this mesh for one live attachment.
+   * \return Mesh sharing only its authoring pose, offsets, and immutable
+   * import.
+   */
+  [[nodiscard]] auto CaptureForAttachment() -> GGEMSMesh;
+
+  /*! \brief Identifies this occurrence's packed asset.
+   * \return Local identity shared only by reusable immutable payloads.
+   */
+  [[nodiscard]] auto GetAssetIdentity() const noexcept -> void const * {
+    if (translations_) {
+      return this;
+    }
+    return data_.get();
+  }
 
   /*!
    * \brief Reads the optional authored display name.
@@ -172,6 +211,23 @@ public:
    * \return Independent names in declaration order, retaining repeated labels.
    */
   [[nodiscard]] auto GetComponentNames() const -> std::vector<std::string>;
+
+  /*!
+   * \brief Replaces one uniquely named OBJ component's local offset.
+   * \param[in] name Exact OBJ object name.
+   * \param[in] translation Absolute mesh-local offset in pm.
+   * \return This mesh.
+   * \throws core::GGEMSRecoverable For an unknown or ambiguous name, or a
+   * moved component sharing vertices with other faces.
+   */
+  auto SetComponentTranslation(std::string_view name, Position3PM translation)
+    -> GGEMSMesh &;
+
+  /*! \brief Builds local vertices for component motion.
+   * \return FP32 coordinates in pm, empty for the imported pose.
+   */
+  [[nodiscard]] auto BuildTranslatedVertices() const
+    -> std::vector<std::array<float, 3>>;
 
   /*!
    * \brief Assigns an owned homogeneous Material without changing geometry.
@@ -232,7 +288,7 @@ public:
    * \return Eventual parent-frame translation in canonical picometers.
    */
   [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM {
-    return position_pm_;
+    return LocalPose().position_pm;
   }
 
   /*!
@@ -240,7 +296,7 @@ public:
    * \return Basis reference, valid until reassignment or destruction.
    */
   [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const & {
-    return rotation_;
+    return LocalPose().rotation;
   }
 
   /*!
@@ -250,6 +306,9 @@ public:
   auto Verbose() -> GGEMSMesh &;
 
 private:
+  /*! \brief Absolute local offsets shared only by a live attachment. */
+  std::shared_ptr<std::vector<Position3PM>> translations_;
+
   /*! \brief Independently owned display label. */
   std::string name_;
 
@@ -261,12 +320,6 @@ private:
 
   /*! \brief Optional explicit presentation override. */
   std::optional<render::ColorKey> color_;
-
-  /*! \brief Rigid translation, separate from local vertices. */
-  Position3PM position_pm_{};
-
-  /*! \brief Absolute orientation, initially identity. */
-  GGEMSRotation3D rotation_{};
 };
 
 } // namespace ggems::geometry

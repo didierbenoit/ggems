@@ -112,7 +112,7 @@ auto GGEMSPolyhedra::SetZProfile(
 
 auto GGEMSPolyhedra::SetPosition(Position3PM position) noexcept
   -> GGEMSPolyhedra & {
-  position_pm_ = position;
+  LocalPose().position_pm = position;
   return *this;
 }
 
@@ -120,7 +120,7 @@ auto GGEMSPolyhedra::SetPosition(Position3PM position) noexcept
 
 auto GGEMSPolyhedra::SetRotation(units::Angle angle_x, units::Angle angle_y,
                                  units::Angle angle_z) -> GGEMSPolyhedra & {
-  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  LocalPose().rotation = BuildRotationXYZ(angle_x, angle_y, angle_z);
   return *this;
 }
 
@@ -129,7 +129,7 @@ auto GGEMSPolyhedra::SetRotation(units::Angle angle_x, units::Angle angle_y,
 auto GGEMSPolyhedra::SetRotation(GGEMSRotation3D const &rotation)
   -> GGEMSPolyhedra & {
   ValidateRotation3D(rotation);
-  rotation_ = rotation;
+  LocalPose().rotation = rotation;
   return *this;
 }
 
@@ -169,11 +169,11 @@ auto GGEMSPolyhedra::GetZProfilePM() const noexcept
 }
 
 auto GGEMSPolyhedra::GetPositionPM() const noexcept -> Position3PM {
-  return position_pm_;
+  return LocalPose().position_pm;
 }
 
 auto GGEMSPolyhedra::GetRotation() const noexcept -> GGEMSRotation3D const & {
-  return rotation_;
+  return LocalPose().rotation;
 }
 
 auto GGEMSPolyhedra::GetMaterial() const

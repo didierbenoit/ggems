@@ -1151,7 +1151,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1TrapDirectionalSurfacesAndTolerance) {
 }
 
 // Checks Run ownership and shape dispatch for each additional analytic family.
-TEST_F(GGEMSNavigationDeviceTest, N1TubsEllipsoidTrdTrapRunOwnsPosedSnapshot) {
+TEST_F(GGEMSNavigationDeviceTest, N1TubsEllipsoidTrdTrapRunRetainsPosedWorld) {
   for (auto const kind :
        {Shape::Tubs, Shape::Ellipsoid, Shape::Trd, Shape::Trap}) {
     SCOPED_TRACE(static_cast<unsigned int>(kind));
@@ -1181,10 +1181,9 @@ TEST_F(GGEMSNavigationDeviceTest, N1TubsEllipsoidTrdTrapRunOwnsPosedSnapshot) {
                          {4, 3, 6},
                          {-7, 5, -3},
                          1};
-      auto world = Scene(fixture, kind);
-      world_band_pm = world.GetNavigationTolerancePM();
+      auto world = std::make_shared<geometry::GGEMSWorld>(Scene(fixture, kind));
+      world_band_pm = world->GetNavigationTolerancePM();
       run.SetWorld(world);
-      world.SetSize(160_mm, 160_mm, 160_mm);
     }
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
@@ -1200,7 +1199,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1TubsEllipsoidTrdTrapRunOwnsPosedSnapshot) {
     EXPECT_EQ(records[1].position_y_pm, 5'000'000'000LL);
     EXPECT_EQ(records[1].position_z_pm, -3'000'000'000LL);
     EXPECT_EQ(records[0].global_primary_id, records[1].global_primary_id);
-    // Public observation proves snapshot lifetime and successful host upload;
+    // Public observation proves World lifetime and successful host upload;
     // direct queries and worker traces above prove intermediate topology.
   }
 }

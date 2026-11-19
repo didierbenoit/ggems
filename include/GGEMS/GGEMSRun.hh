@@ -67,7 +67,7 @@ namespace ggems::core {
  * diagnostic transport. No physical interactions or acquisition are
  * implemented.
  *
- * Concurrent Run() and ResetTime() calls on this object are rejected by a
+ * Concurrent Run(), UpdateGeometry() and ResetTime() calls are rejected by a
  * shared guard. Configuration and source mutation require caller
  * synchronization; the guard does not make the entire configuration API
  * thread-safe.
@@ -108,26 +108,26 @@ public:
   auto Initialize() -> void;
 
   /*!
-   * \brief Attaches a copy of the authored World and its volumes before
-   * initialization.
-   *
-   * The World is validated as a completed scene (size, Material, volume
-   * completeness and strict containment) and then owned by the Run as its
-   * scene snapshot; later edits of the caller's World do not reach the Run.
-   * Initialize compiles the snapshot into the device World and volume records.
-   * \param[in] world Authored World including its explicit Material and
-   * volumes.
-   * \throws GGEMSRecoverable If Initialize has already succeeded, or if the
-   * World is incomplete or inconsistent.
+   * \brief Retains shared ownership of the caller's validated World.
+   * \param[in] world Non-null World whose structure is fixed by Initialize().
+   * \throws GGEMSRecoverable If initialized or the proposed World is invalid.
    */
-  auto SetWorld(geometry::GGEMSWorld world) -> void;
+  auto SetWorld(std::shared_ptr<geometry::GGEMSWorld> world) -> void;
 
   /*!
-   * \brief Borrows the validated World captured by this Run.
+   * \brief Validates current placements and uploads them between Runs.
+   * \throws GGEMSRecoverable If uninitialized, busy, or geometry is invalid.
+   * \throws GGEMSFatal On device failure. A full update must succeed before
+   * the next Run can execute.
+   */
+  auto UpdateGeometry() -> void;
+
+  /*!
+   * \brief Borrows the live World retained by this Run.
    *
    * The view remains valid until SetWorld replaces it or this Run is destroyed.
    * Callers must not read concurrently with SetWorld.
-   * \return Captured World, or null when no World has been attached.
+   * \return The attached World, or null when no World has been attached.
    */
   [[nodiscard]] auto GetWorld() const noexcept -> geometry::GGEMSWorld const *;
 
@@ -237,7 +237,7 @@ public:
     -> void;
 
 private:
-  /*! \brief Guard shared by Run() and ResetTime(). */
+  /*! \brief Guard shared by Run(), ResetTime() and UpdateGeometry(). */
   std::atomic<bool> running_{false};
 
   /*! \brief Shared random engine retained for all run workloads. */
@@ -289,9 +289,17 @@ private:
   std::unique_ptr<sources::GGEMSSourcePopulationPlanner>
     source_population_planner_;
 
-  /*! \brief Owned validated World snapshot with its volumes, fixed before
-   * Initialize. */
-  std::optional<geometry::GGEMSWorld> world_;
+  /*! \brief Shared live World, with structure fixed by Initialize(). */
+  std::shared_ptr<geometry::GGEMSWorld> world_;
+
+  /*! \brief Stable MaterialIDs in analytical occurrence order. */
+  std::vector<std::uint32_t> analytical_material_ids_;
+
+  /*! \brief Stable MaterialIDs in mesh occurrence order. */
+  std::vector<std::uint32_t> mesh_material_ids_;
+
+  /*! \brief Whether all contexts have a completely uploaded scene. */
+  bool geometry_ready_{false};
 
   /*! \brief Owns one persistent transport workload per active context. */
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>

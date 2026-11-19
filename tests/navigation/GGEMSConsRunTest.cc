@@ -52,7 +52,7 @@ using namespace ggems::units;
 
 // Checks owned cone geometry through Run with observer capture enabled and
 // disabled.
-TEST_F(GGEMSNavigationDeviceTest, N1ConsRunOwnsSnapshotWithObserverModes) {
+TEST_F(GGEMSNavigationDeviceTest, N1ConsRunRetainsWorldWithObserverModes) {
   for (bool observed : {false, true}) {
     SCOPED_TRACE(observed);
     auto source = std::make_shared<sources::GGEMSSource>();
@@ -80,12 +80,11 @@ TEST_F(GGEMSNavigationDeviceTest, N1ConsRunOwnsSnapshotWithObserverModes) {
                                             -3'000'000'000LL))
       .SetRotation(0_deg, 30_deg, 0_deg)
       .SetMaterial(materials::builtins::BuildBuiltInMaterial("Water"));
-    geometry::GGEMSWorld world;
-    world.SetSize(80_mm, 80_mm, 80_mm)
+    auto world = std::make_shared<geometry::GGEMSWorld>();
+    world->SetSize(80_mm, 80_mm, 80_mm)
       .SetMaterial(materials::builtins::BuildBuiltInMaterial("Vacuum"));
-    world.AddVolume(shape);
+    world->AddVolume(shape);
     run.SetWorld(world);
-    world.SetSize(160_mm, 160_mm, 160_mm);
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     ASSERT_NO_THROW(run.Run());
@@ -96,7 +95,7 @@ TEST_F(GGEMSNavigationDeviceTest, N1ConsRunOwnsSnapshotWithObserverModes) {
                 particles::ToKernelParticleStatus(
                   particles::GGEMSParticleStatus::EscapedWorld));
       EXPECT_LE(std::abs(static_cast<double>(records[1].position_x_pm) - 40e9),
-                8 * world.GetNavigationTolerancePM());
+                8 * world->GetNavigationTolerancePM());
       EXPECT_EQ(records[0].global_primary_id, records[1].global_primary_id);
     }
   }

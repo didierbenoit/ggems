@@ -49,10 +49,12 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <span>
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSMesh.hh"
+#include "GGEMS/geometry/GGEMSRigidPose.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -226,6 +228,36 @@ auto AppendVertex(GGEMSMeshData &data, std::array<double, 3> const &source,
 }
 
 /*!
+ * \brief Checks triangle area after rounding its vertices to FP32.
+ * \param[in] vertices Local vertices in pm.
+ * \param[in] triangle Source vertex indices.
+ * \param[in] file Source file for diagnostics.
+ * \param[in] location Source record when available.
+ */
+auto RequireNondegenerate(std::span<std::array<float, 3> const> vertices,
+                          std::array<std::uint32_t, 3> const &triangle,
+                          std::filesystem::path const &file,
+                          InputLocation location) -> void {
+  auto const &origin = vertices[triangle[0]];
+  std::array<double, 3> edge_a{};
+  std::array<double, 3> edge_b{};
+
+  for (std::size_t axis = 0; axis < origin.size(); ++axis) {
+    edge_a[axis] = static_cast<double>(vertices[triangle[1]][axis]) -
+                   static_cast<double>(origin[axis]);
+
+    edge_b[axis] = static_cast<double>(vertices[triangle[2]][axis]) -
+                   static_cast<double>(origin[axis]);
+  }
+
+  if (edge_a[1] * edge_b[2] == edge_a[2] * edge_b[1] &&
+      edge_a[2] * edge_b[0] == edge_a[0] * edge_b[2] &&
+      edge_a[0] * edge_b[1] == edge_a[1] * edge_b[0]) {
+    InvalidMesh(file, "degenerate triangle in FP32 local geometry", location);
+  }
+}
+
+/*!
  * \brief Admits a nonzero triangle and accumulates referenced local bounds.
  * \param[in,out] data Accumulated triangles, overall and component bounds.
  * \param[in] triangle Three already-checked global position indices.
@@ -237,23 +269,8 @@ auto AppendTriangle(GGEMSMeshData &data,
                     InputLocation location,
                     std::optional<std::size_t> component = std::nullopt)
   -> void {
+  RequireNondegenerate(data.vertices_pm, triangle, data.source_file, location);
   auto const &origin = data.vertices_pm[triangle[0]];
-  std::array<double, 3> edge_a{};
-  std::array<double, 3> edge_b{};
-
-  for (std::size_t axis = 0; axis < origin.size(); ++axis) {
-    edge_a[axis] = static_cast<double>(data.vertices_pm[triangle[1]][axis]) -
-                   static_cast<double>(origin[axis]);
-    edge_b[axis] = static_cast<double>(data.vertices_pm[triangle[2]][axis]) -
-                   static_cast<double>(origin[axis]);
-  }
-
-  if (edge_a[1] * edge_b[2] == edge_a[2] * edge_b[1] &&
-      edge_a[2] * edge_b[0] == edge_a[0] * edge_b[2] &&
-      edge_a[0] * edge_b[1] == edge_a[1] * edge_b[0]) {
-    InvalidMesh(data.source_file, "degenerate triangle in FP32 local geometry",
-                location);
-  }
 
   if (data.triangles.empty()) {
     data.bounds_pm = {.minimum = origin, .maximum = origin};
@@ -700,6 +717,40 @@ GGEMSMesh::GGEMSMesh(std::string name, std::filesystem::path const &mesh_file,
 
 // -----------------------------------------------------------------------------
 
+GGEMSMesh::GGEMSMesh(GGEMSMesh const &other)
+    : GGEMSRigidPose(other),
+      translations_(
+        other.translations_
+          ? std::make_shared<std::vector<Position3PM>>(*other.translations_)
+          : nullptr),
+      name_(other.name_), data_(other.data_), material_(other.material_),
+      color_(other.color_) {}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSMesh::operator=(GGEMSMesh const &other) -> GGEMSMesh & {
+  if (this != &other) {
+    *this = GGEMSMesh(other);
+  }
+
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSMesh::CaptureForAttachment() -> GGEMSMesh {
+  if (!translations_) {
+    translations_ = std::make_shared<std::vector<Position3PM>>();
+  }
+
+  auto captured = GGEMSRigidPose::CaptureForAttachment();
+  captured.translations_ = translations_;
+
+  return captured;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSMesh::GetComponentNames() const -> std::vector<std::string> {
   std::vector<std::string> names;
   names.reserve(data_->components.size());
@@ -709,6 +760,112 @@ auto GGEMSMesh::GetComponentNames() const -> std::vector<std::string> {
   }
 
   return names;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSMesh::SetComponentTranslation(std::string_view name,
+                                        Position3PM translation)
+  -> GGEMSMesh & {
+  auto const &components = data_->components;
+  auto const match =
+    std::ranges::find(components, name, &GGEMSMeshComponent::name);
+
+  if (match == components.end()) {
+    InvalidMesh(data_->source_file,
+                std::format("no OBJ component named '{}'", name));
+  }
+
+  if (std::find_if(match + 1, components.end(),
+                   [name](auto const &other) -> bool {
+                     return other.name == name;
+                   }) != components.end()) {
+    InvalidMesh(data_->source_file,
+                std::format("ambiguous OBJ component '{}'", name));
+  }
+
+  if (translation != Position3PM{}) {
+    std::vector<bool> selected(data_->vertices_pm.size());
+    auto const end = match->first_triangle + match->triangle_count;
+
+    for (auto triangle = match->first_triangle; triangle < end; ++triangle) {
+      for (auto vertex : data_->triangles[triangle]) {
+        selected[vertex] = true;
+      }
+    }
+
+    for (std::size_t index = 0; index < data_->triangles.size(); ++index) {
+      if ((index < match->first_triangle || index >= end) &&
+          std::ranges::any_of(
+            data_->triangles[index],
+            [&](auto vertex) -> bool { return selected[vertex]; })) {
+        InvalidMesh(
+          data_->source_file,
+          std::format("OBJ component '{}' shares vertices with other faces",
+                      name));
+      }
+    }
+  }
+
+  if (translations_ || translation != Position3PM{}) {
+    if (!translations_) {
+      translations_ = std::make_shared<std::vector<Position3PM>>();
+    }
+
+    auto &translations = *translations_;
+    translations.resize(components.size());
+    translations[static_cast<std::size_t>(match - components.begin())] =
+      translation;
+
+    if (std::ranges::all_of(translations, [](auto offset) -> bool {
+          return offset == Position3PM{};
+        })) {
+      translations.clear();
+    }
+  }
+
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSMesh::BuildTranslatedVertices() const
+  -> std::vector<std::array<float, 3>> {
+  if (!translations_ || translations_->empty()) {
+    return {};
+  }
+
+  auto const &translations = *translations_;
+
+  auto vertices = data_->vertices_pm;
+
+  for (std::size_t index = 0; index < translations.size(); ++index) {
+    auto const offset = translations[index];
+
+    if (offset == Position3PM{}) {
+      continue;
+    }
+
+    auto const &component = data_->components[index];
+    auto const end = component.first_triangle + component.triangle_count;
+
+    std::array const delta{offset.x, offset.y, offset.z};
+
+    for (auto face = component.first_triangle; face < end; ++face) {
+      auto const &triangle = data_->triangles[face];
+      for (auto vertex : triangle) {
+        for (std::size_t axis = 0; axis < delta.size(); ++axis) {
+          vertices[vertex][axis] = static_cast<float>(
+            static_cast<double>(data_->vertices_pm[vertex][axis]) +
+            static_cast<double>(delta[axis]));
+        }
+      }
+
+      RequireNondegenerate(vertices, triangle, data_->source_file, {});
+    }
+  }
+
+  return vertices;
 }
 
 // -----------------------------------------------------------------------------
@@ -746,7 +903,7 @@ auto GGEMSMesh::GetColor() const noexcept -> render::ColorKey {
 // -----------------------------------------------------------------------------
 
 auto GGEMSMesh::SetPosition(Position3PM position) noexcept -> GGEMSMesh & {
-  position_pm_ = position;
+  LocalPose().position_pm = position;
   return *this;
 }
 
@@ -754,7 +911,7 @@ auto GGEMSMesh::SetPosition(Position3PM position) noexcept -> GGEMSMesh & {
 
 auto GGEMSMesh::SetRotation(units::Angle angle_x, units::Angle angle_y,
                             units::Angle angle_z) -> GGEMSMesh & {
-  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  LocalPose().rotation = BuildRotationXYZ(angle_x, angle_y, angle_z);
   return *this;
 }
 
@@ -769,6 +926,7 @@ auto GGEMSMesh::Verbose() -> GGEMSMesh & {
     format = "ASCII STL";
   }
 
+  auto const position = GetPositionPM();
   auto description = std::format(
     "Mesh: {}\nSource: {}\nFormat: {}; source unit: {}\nMaterial: {}\nColor: "
     "{} ({})\n"
@@ -779,9 +937,9 @@ auto GGEMSMesh::Verbose() -> GGEMSMesh & {
     data_->source_unit, material_ ? material_->GetName() : "<not configured>",
     render::GetColorName(GetColor()),
     color_ ? "explicit override" : "inherited",
-    units::HumanReadableSignedLength(position_pm_.x),
-    units::HumanReadableSignedLength(position_pm_.y),
-    units::HumanReadableSignedLength(position_pm_.z),
+    units::HumanReadableSignedLength(position.x),
+    units::HumanReadableSignedLength(position.y),
+    units::HumanReadableSignedLength(position.z),
     DescribeBounds(data_->bounds_pm), data_->source_vertex_count,
     data_->vertices_pm.size(), data_->triangles.size(),
     data_->components.size());

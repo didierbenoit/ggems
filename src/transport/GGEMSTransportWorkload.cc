@@ -431,7 +431,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   std::uint32_t launch_primary_count_limit, geometry::GGEMSWorld const *world,
   std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes,
   geometry::GGEMSVoxelizedSceneData const &voxelized_data,
-  std::span<std::byte const> mesh_scene_auxiliary)
+  std::span<std::byte const> scene_auxiliary)
     : context_{&context}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       emission_count_{
@@ -528,19 +528,14 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   auto const world_record =
     world != nullptr ? world->BuildRecord() : geometry::GGEMSWorldRecord{};
 
-  bool const has_mesh = !mesh_scene_auxiliary.empty();
-
   std::uint32_t mesh_count{};
-
-  if (has_mesh) {
-    for (std::size_t index = 0; index < world_record.occurrence_count;
-         ++index) {
-      mesh_count +=
-        static_cast<std::uint32_t>(world->GetMeshVolume(index) != nullptr);
-    }
+  for (std::size_t index = 0; index < world_record.occurrence_count; ++index) {
+    mesh_count +=
+      static_cast<std::uint32_t>(world->GetMeshVolume(index) != nullptr);
   }
+  bool const has_mesh = mesh_count != 0U;
 
-  if (has_mesh != (mesh_count != 0U) ||
+  if ((has_mesh && scene_auxiliary.empty()) ||
       voxelized_data.records.size() != world_record.voxelized_count ||
       (world_record.occurrence_count != 0U &&
        volumes.size() != world_record.occurrence_count -
@@ -553,9 +548,10 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   std::filesystem::path const kernel_transport_root = kernel_root / "transport";
 
   std::vector<std::byte> ordinary_auxiliary;
-  auto auxiliary = mesh_scene_auxiliary;
+  auto auxiliary = scene_auxiliary;
 
-  if (world != nullptr && !has_mesh) {
+  if (world != nullptr && auxiliary.empty() &&
+      world_record.occurrence_count != 0U) {
     ordinary_auxiliary = world->BuildAnalyticAuxiliaryBuffer();
     auxiliary = ordinary_auxiliary;
   }
@@ -563,7 +559,6 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   if (!auxiliary.empty()) {
     box_pose_buffer_.emplace(
       context.CreateSVMBuffer(ggems::units::Bytes{auxiliary.size()}));
-    ggems::ocl::WriteSVMFromHost(*box_pose_buffer_, auxiliary);
   }
 
   std::string const build_options =
@@ -620,28 +615,13 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   kernel_->SetArgSVMPointer(argument_index++, box_pose_buffer_
                                                 ? box_pose_buffer_->GetData()
                                                 : volume_buffer_.GetData());
-  if (volumes.empty()) {
-    ggems::ocl::WriteSVMFromHost(volume_buffer_,
-                                 geometry::GGEMSAnalyticVolumeRecord{});
-  } else {
-    ggems::ocl::WriteSVMFromHost(volume_buffer_, volumes);
-  }
-
   kernel_->SetArgSVMPointer(argument_index++,
                             voxelized_volume_buffer_.GetData());
   kernel_->SetArgSVMPointer(argument_index++,
                             voxel_material_labels_buffer_.GetData());
   kernel_->SetArgSVMPointer(argument_index++,
                             voxel_material_ids_buffer_.GetData());
-  if (voxelized_data.records.empty()) {
-    ggems::ocl::WriteSVMFromHost(voxelized_volume_buffer_,
-                                 geometry::GGEMSVoxelizedVolumeRecord{});
-  } else {
-    ggems::ocl::WriteSVMFromHost(
-      voxelized_volume_buffer_,
-      std::span<geometry::GGEMSVoxelizedVolumeRecord const>{
-        voxelized_data.records});
-  }
+  UploadGeometry(volumes, voxelized_data.records, auxiliary);
   if (voxelized_data.material_labels.empty()) {
     ggems::ocl::WriteSVMFromHost(voxel_material_labels_buffer_,
                                  std::uint16_t{0U});
@@ -703,6 +683,38 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   ResetObserverCountersInSVM();
   ggems::ocl::FillSVMFromHost(observer_records_buffer_,
                               observer_record_capacity_, ObserverRecord{});
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSTransportWorkload::UploadGeometry(
+  std::span<geometry::GGEMSAnalyticVolumeRecord const> volumes,
+  std::span<geometry::GGEMSVoxelizedVolumeRecord const> voxels,
+  std::span<std::byte const> auxiliary) -> void {
+  if (ComputeArrayBufferSize(volumes.size(), sizeof(volumes.front())).value !=
+        volume_buffer_.GetSize().value ||
+      ComputeArrayBufferSize(voxels.size(), sizeof(voxels.front())).value !=
+        voxelized_volume_buffer_.GetSize().value ||
+      auxiliary.size() !=
+        (box_pose_buffer_ ? box_pose_buffer_->GetSize().value : 0U)) {
+    throw GGEMSRecoverable(
+      "Geometry upload must preserve the initialized buffer sizes.");
+  }
+  if (volumes.empty()) {
+    ggems::ocl::WriteSVMFromHost(volume_buffer_,
+                                 geometry::GGEMSAnalyticVolumeRecord{});
+  } else {
+    ggems::ocl::WriteSVMFromHost(volume_buffer_, volumes);
+  }
+  if (voxels.empty()) {
+    ggems::ocl::WriteSVMFromHost(voxelized_volume_buffer_,
+                                 geometry::GGEMSVoxelizedVolumeRecord{});
+  } else {
+    ggems::ocl::WriteSVMFromHost(voxelized_volume_buffer_, voxels);
+  }
+  if (box_pose_buffer_) {
+    ggems::ocl::WriteSVMFromHost(*box_pose_buffer_, auxiliary);
+  }
 }
 
 // -----------------------------------------------------------------------------

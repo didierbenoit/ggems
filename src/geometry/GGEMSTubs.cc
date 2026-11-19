@@ -63,7 +63,7 @@ auto GGEMSTubs::SetLength(units::Length length) -> GGEMSTubs & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTubs::SetPosition(Position3PM center) noexcept -> GGEMSTubs & {
-  center_pm_ = center;
+  LocalPose().position_pm = center;
 
   return *this;
 }
@@ -72,7 +72,7 @@ auto GGEMSTubs::SetPosition(Position3PM center) noexcept -> GGEMSTubs & {
 
 auto GGEMSTubs::SetRotation(units::Angle angle_x, units::Angle angle_y,
                             units::Angle angle_z) -> GGEMSTubs & {
-  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  LocalPose().rotation = BuildRotationXYZ(angle_x, angle_y, angle_z);
 
   return *this;
 }
@@ -81,7 +81,7 @@ auto GGEMSTubs::SetRotation(units::Angle angle_x, units::Angle angle_y,
 
 auto GGEMSTubs::SetRotation(GGEMSRotation3D const &rotation) -> GGEMSTubs & {
   ValidateRotation3D(rotation);
-  rotation_ = rotation;
+  LocalPose().rotation = rotation;
   return *this;
 }
 
@@ -127,13 +127,13 @@ auto GGEMSTubs::GetHalfLengthPM() const noexcept -> DistancePM {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTubs::GetPositionPM() const noexcept -> Position3PM {
-  return center_pm_;
+  return LocalPose().position_pm;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSTubs::GetRotation() const noexcept -> GGEMSRotation3D const & {
-  return rotation_;
+  return LocalPose().rotation;
 }
 
 // -----------------------------------------------------------------------------

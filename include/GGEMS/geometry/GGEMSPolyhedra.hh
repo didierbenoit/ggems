@@ -207,9 +207,6 @@ public:
     -> core::materials::GGEMSMaterial const &;
 
 private:
-  /*! \brief Global local-frame origin. */
-  Position3PM position_pm_{};
-
   /*! \brief Regular polygon side count; zero until configuration. */
   std::uint32_t side_count_{0};
 
@@ -218,9 +215,6 @@ private:
 
   /*! \brief Validated continuous local axial profile. */
   std::vector<GGEMSPolyhedraProfile> profile_;
-
-  /*! \brief Proper local-to-parent rotation. */
-  GGEMSRotation3D rotation_{};
 
   /*! \brief One owned medium for all sections. */
   std::optional<core::materials::GGEMSMaterial> material_;

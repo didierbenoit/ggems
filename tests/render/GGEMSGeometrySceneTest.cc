@@ -867,8 +867,8 @@ TEST(GGEMSGeometryScene,
 
 TEST(GGEMSGeometryScene, RunOwnedVoxelGeometryNeedsNoSimulationInitialization) {
   ggems::test::GGEMSVoxelizedTestFixture const fixture;
-  auto world = World();
-  world.AddVolume(fixture.Import());
+  auto world = std::make_shared<GGEMSWorld>(World());
+  world->AddVolume(fixture.Import());
   ggems::core::GGEMSRun run;
   run.SetWorld(world);
   ASSERT_NE(run.GetWorld(), nullptr);

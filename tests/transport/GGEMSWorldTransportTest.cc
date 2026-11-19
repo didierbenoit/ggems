@@ -630,9 +630,11 @@ TEST_F(GGEMSWorldTransportTest,
   run.SetRandom(rng);
   run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorld(MakeVacuumWorld(200_mm));
+  run.SetWorld(std::make_shared<geometry::GGEMSWorld>(MakeVacuumWorld(200_mm)));
   ASSERT_NO_THROW(run.Initialize());
-  EXPECT_THROW(run.SetWorld(MakeVacuumWorld(2_mm)), GGEMSRecoverable);
+  EXPECT_THROW(
+    run.SetWorld(std::make_shared<geometry::GGEMSWorld>(MakeVacuumWorld(2_mm))),
+    GGEMSRecoverable);
   ASSERT_NO_THROW(run.Run());
   auto const successful = observer->GetRecords();
   ASSERT_EQ(successful.size(), 2U);
@@ -670,7 +672,7 @@ TEST_F(GGEMSWorldTransportTest,
   run.SetRandom(rng);
   run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorld(MakeVacuumWorld(2_mm));
+  run.SetWorld(std::make_shared<geometry::GGEMSWorld>(MakeVacuumWorld(2_mm)));
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
   auto const before = observer->GetRecords();
@@ -923,7 +925,8 @@ TEST_F(GGEMSWorldTransportTest, OtherSpeciesKeepDiagnosticMovementWithWorld) {
     run.SetRandom(std::make_shared<random::GGEMSRandom>());
     run.AddSource(source);
     run.SetObserver(observer);
-    run.SetWorld(MakeVacuumWorld(200_mm));
+    run.SetWorld(
+      std::make_shared<geometry::GGEMSWorld>(MakeVacuumWorld(200_mm)));
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     auto const records = observer->GetRecords();
@@ -962,14 +965,14 @@ TEST_F(GGEMSWorldTransportTest, DisabledAioninoDoesNotRequireWorld) {
 TEST_F(GGEMSWorldTransportTest, MixedVoxelSceneTransportsAndKeepsDiagnostics) {
   using namespace units;
   ggems::test::GGEMSVoxelizedTestFixture const files;
-  auto world = MakeVacuumWorld(100_mm);
+  auto world = std::make_shared<geometry::GGEMSWorld>(MakeVacuumWorld(100_mm));
   auto voxel = files.Import();
   voxel.SetPosition(geometry::MakePositionPM(-10'000'000'000LL, 0, 0));
   geometry::GGEMSBox box;
   box.SetSize(4_mm, 6_mm, 8_mm)
     .SetPosition(geometry::MakePositionPM(10'000'000'000LL, 0, 0))
     .SetMaterial(materials::builtins::BuildBuiltInMaterial("Water"));
-  world.AddVolume(voxel).AddVolume(box);
+  world->AddVolume(voxel).AddVolume(box);
   for (auto type : {
          particles::GGEMSParticleType::Aionino,
          particles::GGEMSParticleType::Gamma,
@@ -1004,7 +1007,7 @@ TEST_F(GGEMSWorldTransportTest, MixedVoxelSceneTransportsAndKeepsDiagnostics) {
     double const expected_x = navigates ? 50.0e9 : 980.0e9;
     EXPECT_LE(
       std::abs(static_cast<double>(terminal.position_x_pm) - expected_x),
-      8 * world.GetNavigationTolerancePM());
+      8 * world->GetNavigationTolerancePM());
     EXPECT_EQ(terminal.particle_type, particles::ToKernelParticleType(type));
   }
 }

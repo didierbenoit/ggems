@@ -450,7 +450,8 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
     second.SetPosition(MakePositionPM(-40'000'000'000LL, 40'000'000'000LL, 0));
     EXPECT_NO_THROW(world.AddVolume(second));
     EXPECT_EQ(world.GetVolumeCount(), 2U);
-    EXPECT_THROW(run.SetWorld(world), ggems::core::GGEMSRecoverable);
+    EXPECT_THROW(run.SetWorld(std::make_shared<World>(world)),
+                 ggems::core::GGEMSRecoverable);
     // The rejected World was not retained: the process-free source still has
     // no World to navigate.
     ASSERT_NO_THROW(run.Initialize());
@@ -476,12 +477,13 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
     run.SetRandom(rng);
     run.AddSource(source);
     run.SetObserver(observer);
-    auto const owned_world = MakeWorld().AddVolume(MakeBox("Vacuum"));
+    auto owned_world = std::make_shared<World>(MakeWorld());
+    owned_world->AddVolume(MakeBox("Vacuum"));
     run.SetWorld(owned_world);
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     ASSERT_EQ(observer->GetRecords().size(), 2U);
-    ExpectWorldExit(observer->GetRecords().back(), owned_world,
+    ExpectWorldExit(observer->GetRecords().back(), *owned_world,
                     source->BuildRecord());
   }
   {
@@ -500,14 +502,16 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
     run.SetRandom(rng);
     run.AddSource(inner_source);
     run.SetObserver(inner_observer);
-    run.SetWorld(MakeWorld().AddVolume(MakeBox()));
-    World small{};
-    small.SetSize(50_mm, 50_mm, 50_mm).SetMaterial(Material("Vacuum"));
+    auto first = std::make_shared<World>(MakeWorld());
+    first->AddVolume(MakeBox());
+    run.SetWorld(first);
+    auto small = std::make_shared<World>();
+    small->SetSize(50_mm, 50_mm, 50_mm).SetMaterial(Material("Vacuum"));
     run.SetWorld(small);
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     ASSERT_EQ(inner_observer->GetRecords().size(), 2U);
-    ExpectWorldExit(inner_observer->GetRecords().back(), small,
+    ExpectWorldExit(inner_observer->GetRecords().back(), *small,
                     inner_source->BuildRecord());
   }
 
@@ -515,21 +519,18 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
   run.SetRandom(rng);
   run.AddSource(source);
   run.SetObserver(observer);
-  World world = MakeWorld();
-  world.AddVolume(MakeBox());
+  auto world = std::make_shared<World>(MakeWorld());
+  world->AddVolume(MakeBox());
   run.SetWorld(world);
-  World const frozen_world = world;
-  // The Run owns its copy: later edits of the authoring object (a 400 mm
-  // World would move the exit to +200 mm) and attachment after Initialize do
-  // not reach the frozen scene.
-  world.SetSize(400_mm, 400_mm, 400_mm).SetMaterial(Material("Water"));
+  EXPECT_EQ(run.GetWorld(), world.get());
+  world->SetSize(400_mm, 400_mm, 400_mm).SetMaterial(Material("Water"));
   ASSERT_NO_THROW(run.Initialize());
   EXPECT_THROW(run.SetWorld(world), ggems::core::GGEMSRecoverable);
   ASSERT_NO_THROW(run.Run());
 
   auto const records = observer->GetRecords();
   ASSERT_EQ(records.size(), 2U);
-  ExpectWorldExit(records[1U], frozen_world, source->BuildRecord());
+  ExpectWorldExit(records[1U], *world, source->BuildRecord());
   EXPECT_EQ(records[1U].status, ggems::core::particles::ToKernelParticleStatus(
                                   ParticleStatus::EscapedWorld));
 }

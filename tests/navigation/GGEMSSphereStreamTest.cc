@@ -700,8 +700,7 @@ TEST_F(GGEMSNavigationDeviceTest,
 }
 
 // Checks sphere snapshot ownership and shape dispatch through Run.
-TEST_F(GGEMSNavigationDeviceTest,
-       RunOwnsSphereSnapshotAndDispatchesItsPredicate) {
+TEST_F(GGEMSNavigationDeviceTest, RunRetainsSphereAndDispatchesItsPredicate) {
   using namespace ggems::units;
   auto source = std::make_shared<sources::GGEMSSource>();
   source->SetAnalytic()
@@ -718,16 +717,15 @@ TEST_F(GGEMSNavigationDeviceTest,
   run.AddSource(source);
   run.SetObserver(observer);
   {
-    geometry::GGEMSWorld world;
-    world.SetSize(80_mm, 80_mm, 80_mm)
+    auto world = std::make_shared<geometry::GGEMSWorld>();
+    world->SetSize(80_mm, 80_mm, 80_mm)
       .SetMaterial(materials::builtins::BuildBuiltInMaterial("Vacuum"));
     geometry::GGEMSSphere sphere;
     sphere.SetRadius(10_mm).SetMaterial(
       materials::builtins::BuildBuiltInMaterial("Water"));
-    world.AddVolume(sphere);
+    world->AddVolume(sphere);
     run.SetWorld(world);
     sphere.SetRadius(2_mm);
-    world.SetSize(160_mm, 160_mm, 160_mm);
   }
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -742,7 +740,7 @@ TEST_F(GGEMSNavigationDeviceTest,
   EXPECT_EQ(records[1].status, particles::ToKernelParticleStatus(
                                  particles::GGEMSParticleStatus::EscapedWorld));
   EXPECT_EQ(records[0].global_primary_id, records[1].global_primary_id);
-  // The retained public Run test proves World snapshot lifetime and ordinary
+  // The retained public Run test proves World lifetime and ordinary
   // transport. Public source/terminal records cannot reveal the intermediate
   // Sphere chord; the companion instrumented production-worker test above
   // explicitly proves its distinct chord and owner/material dispatch.

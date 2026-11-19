@@ -195,9 +195,6 @@ public:
     -> core::materials::GGEMSMaterial const &;
 
 private:
-  /*! \brief Parent-frame position of the local cap-midpoint origin in pm. */
-  Position3PM center_pm_{};
-
   /*!
    * \brief Outer radius at the negative-Z cap in pm; zero admits a solid tip.
    */
@@ -222,9 +219,6 @@ private:
 
   /*! \brief Distinguishes an authored positive-Z apex from an unset end. */
   bool positive_z_set_{false};
-
-  /*! \brief Proper local-to-parent rotation; identity by default. */
-  GGEMSRotation3D rotation_{};
 
   /*! \brief Explicit owned medium, absent until SetMaterial(). */
   std::optional<core::materials::GGEMSMaterial> material_;

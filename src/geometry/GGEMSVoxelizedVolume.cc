@@ -575,7 +575,7 @@ GGEMSVoxelizedVolume::GGEMSVoxelizedVolume(
 
 auto GGEMSVoxelizedVolume::SetPosition(Position3PM center) noexcept
   -> GGEMSVoxelizedVolume & {
-  center_pm_ = center;
+  LocalPose().position_pm = center;
   return *this;
 }
 
@@ -585,39 +585,40 @@ auto GGEMSVoxelizedVolume::SetRotation(units::Angle angle_x,
                                        units::Angle angle_y,
                                        units::Angle angle_z)
   -> GGEMSVoxelizedVolume & {
-  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  LocalPose().rotation = BuildRotationXYZ(angle_x, angle_y, angle_z);
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSVoxelizedVolume::Verbose() -> GGEMSVoxelizedVolume & {
-  auto report =
-    std::format("Voxelized volume: {}\n"
-                "  Dimensions (X, Y, Z): {} x {} x {}\n"
-                "  Spacing (X, Y, Z): {}, {}, {}\n"
-                "  Full size (X, Y, Z): {}, {}, {}\n"
-                "  Voxel count: {}\n"
-                "  World center (X, Y, Z): {}, {}, {}\n"
-                "  Local axes in World coordinates:\n"
-                "    X: ({:.6g}, {:.6g}, {:.6g})\n"
-                "    Y: ({:.6g}, {:.6g}, {:.6g})\n"
-                "    Z: ({:.6g}, {:.6g}, {:.6g})\n"
-                "  Original label mappings (half-open ranges):\n",
-                name_.empty() ? "(unnamed)" : name_, data_->dimensions[0],
-                data_->dimensions[1], data_->dimensions[2],
-                units::HumanReadable(data_->spacing[0], 3),
-                units::HumanReadable(data_->spacing[1], 3),
-                units::HumanReadable(data_->spacing[2], 3),
-                units::HumanReadable(data_->size[0], 3),
-                units::HumanReadable(data_->size[1], 3),
-                units::HumanReadable(data_->size[2], 3), data_->labels.size(),
-                units::HumanReadableSignedLength(center_pm_.x, 3),
-                units::HumanReadableSignedLength(center_pm_.y, 3),
-                units::HumanReadableSignedLength(center_pm_.z, 3),
-                rotation_.axis_x.x, rotation_.axis_x.y, rotation_.axis_x.z,
-                rotation_.axis_y.x, rotation_.axis_y.y, rotation_.axis_y.z,
-                rotation_.axis_z.x, rotation_.axis_z.y, rotation_.axis_z.z);
+  auto const &pose = LocalPose();
+  auto report = std::format(
+    "Voxelized volume: {}\n"
+    "  Dimensions (X, Y, Z): {} x {} x {}\n"
+    "  Spacing (X, Y, Z): {}, {}, {}\n"
+    "  Full size (X, Y, Z): {}, {}, {}\n"
+    "  Voxel count: {}\n"
+    "  World center (X, Y, Z): {}, {}, {}\n"
+    "  Local axes in World coordinates:\n"
+    "    X: ({:.6g}, {:.6g}, {:.6g})\n"
+    "    Y: ({:.6g}, {:.6g}, {:.6g})\n"
+    "    Z: ({:.6g}, {:.6g}, {:.6g})\n"
+    "  Original label mappings (half-open ranges):\n",
+    name_.empty() ? "(unnamed)" : name_, data_->dimensions[0],
+    data_->dimensions[1], data_->dimensions[2],
+    units::HumanReadable(data_->spacing[0], 3),
+    units::HumanReadable(data_->spacing[1], 3),
+    units::HumanReadable(data_->spacing[2], 3),
+    units::HumanReadable(data_->size[0], 3),
+    units::HumanReadable(data_->size[1], 3),
+    units::HumanReadable(data_->size[2], 3), data_->labels.size(),
+    units::HumanReadableSignedLength(pose.position_pm.x, 3),
+    units::HumanReadableSignedLength(pose.position_pm.y, 3),
+    units::HumanReadableSignedLength(pose.position_pm.z, 3),
+    pose.rotation.axis_x.x, pose.rotation.axis_x.y, pose.rotation.axis_x.z,
+    pose.rotation.axis_y.x, pose.rotation.axis_y.y, pose.rotation.axis_y.z,
+    pose.rotation.axis_z.x, pose.rotation.axis_z.y, pose.rotation.axis_z.z);
 
   constexpr std::array mode_names{"None", "Wireframe", "Solid"};
   for (auto const &mapping : data_->display_styles) {
@@ -645,14 +646,14 @@ auto GGEMSVoxelizedVolume::Verbose() -> GGEMSVoxelizedVolume & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVoxelizedVolume::GetPositionPM() const noexcept -> Position3PM {
-  return center_pm_;
+  return LocalPose().position_pm;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSVoxelizedVolume::GetRotation() const noexcept
   -> GGEMSRotation3D const & {
-  return rotation_;
+  return LocalPose().rotation;
 }
 
 // -----------------------------------------------------------------------------

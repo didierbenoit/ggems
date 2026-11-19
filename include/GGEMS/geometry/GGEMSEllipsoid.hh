@@ -142,14 +142,8 @@ public:
     -> core::materials::GGEMSMaterial const &;
 
 private:
-  /*! \brief Global geometric center in pm. */
-  Position3PM center_pm_{};
-
   /*! \brief Local X/Y/Z semi-axes in pm; zeros until configuration. */
   HalfExtent3PM semi_axes_pm_{};
-
-  /*! \brief Proper local-to-parent rotation; identity by default. */
-  GGEMSRotation3D rotation_{};
 
   /*! \brief Explicit owned medium, absent until configuration. */
   std::optional<core::materials::GGEMSMaterial> material_;

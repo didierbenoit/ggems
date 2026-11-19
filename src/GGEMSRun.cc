@@ -154,8 +154,14 @@ struct PreparedSceneRecords {
   /*! \brief Voxel descriptors and their shared compact material arrays. */
   geometry::GGEMSVoxelizedSceneData voxelized;
 
-  /*! \brief Shared packed auxiliary bytes for a scene containing meshes. */
-  std::vector<std::byte> mesh_scene_auxiliary;
+  /*! \brief Shared packed occurrence poses, profiles and optional mesh data. */
+  std::vector<std::byte> auxiliary;
+
+  /*! \brief Stable MaterialIDs in analytical occurrence order. */
+  std::vector<std::uint32_t> analytical_material_ids;
+
+  /*! \brief Stable MaterialIDs in mesh occurrence order. */
+  std::vector<std::uint32_t> mesh_material_ids;
 };
 
 /*!
@@ -174,6 +180,7 @@ auto BuildSceneRecords(geometry::GGEMSWorld const *world)
     return records;
   }
 
+  world->Validate();
   std::vector<materials::GGEMSMaterial> scene_materials;
   std::vector<materials::GGEMSMaterial const *> mesh_materials;
 
@@ -209,13 +216,15 @@ auto BuildSceneRecords(geometry::GGEMSWorld const *world)
   std::span<std::uint32_t const> const material_ids = package.GetMaterialIds();
 
   auto const analytic_count = mesh_begin - 1U;
-  records.analytical =
-    world->BuildAnalyticDeviceRecords(material_ids.subspan(1U, analytic_count));
 
-  if (!mesh_materials.empty()) {
-    records.mesh_scene_auxiliary = world->BuildAnalyticAuxiliaryBuffer(
-      material_ids.subspan(mesh_begin, mesh_materials.size()));
-  }
+  auto const analytic_ids = material_ids.subspan(1U, analytic_count);
+  auto const mesh_ids = material_ids.subspan(mesh_begin, mesh_materials.size());
+
+  records.analytical = world->BuildAnalyticDeviceRecords(analytic_ids);
+  records.analytical_material_ids.assign(analytic_ids.begin(),
+                                         analytic_ids.end());
+  records.mesh_material_ids.assign(mesh_ids.begin(), mesh_ids.end());
+  records.auxiliary = world->BuildAnalyticAuxiliaryBuffer(mesh_ids);
 
   records.voxelized = world->BuildVoxelizedDeviceData(
     material_ids.subspan(mesh_begin + mesh_materials.size()));
@@ -393,19 +402,24 @@ auto GGEMSRun::SetObserver(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRun::SetWorld(geometry::GGEMSWorld world) -> void {
+auto GGEMSRun::SetWorld(std::shared_ptr<geometry::GGEMSWorld> world) -> void {
   if (initialized_) {
     throw GGEMSRecoverable("Cannot change World after Initialize.");
   }
 
-  world.Validate();
+  if (!world) {
+    throw GGEMSRecoverable("GGEMSRun::SetWorld requires a World.");
+  }
+
+  world->Validate();
+
   world_ = std::move(world);
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSRun::GetWorld() const noexcept -> geometry::GGEMSWorld const * {
-  return world_ ? &*world_ : nullptr;
+  return world_.get();
 }
 
 // -----------------------------------------------------------------------------
@@ -464,7 +478,7 @@ auto GGEMSRun::Initialize() -> void {
 
   std::filesystem::path const kernel_root{GGEMS_KERNEL_ROOT};
 
-  auto const scene_records = BuildSceneRecords(world_ ? &*world_ : nullptr);
+  auto scene_records = BuildSceneRecords(world_.get());
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
     new_transport_workloads;
@@ -481,9 +495,8 @@ auto GGEMSRun::Initialize() -> void {
         opencl.GetContext()[context_index], kernel_root, *random_,
         opencl.GetWorkerCount(), *new_source_configuration,
         random_stream_offset, static_cast<std::uint32_t>(context_index),
-        observer_record_capacity, 0U, world_ ? &*world_ : nullptr,
-        scene_records.analytical, scene_records.voxelized,
-        scene_records.mesh_scene_auxiliary));
+        observer_record_capacity, 0U, world_.get(), scene_records.analytical,
+        scene_records.voxelized, scene_records.auxiliary));
   }
 
   GGEMS_INFO("Core", "{} transport workload(s) prepared.",
@@ -502,7 +515,47 @@ auto GGEMSRun::Initialize() -> void {
     source->FinalizeInitialization();
   }
 
+  analytical_material_ids_ = std::move(scene_records.analytical_material_ids);
+  mesh_material_ids_ = std::move(scene_records.mesh_material_ids);
+
+  if (world_) {
+    world_->FreezeStructure();
+  }
+
+  geometry_ready_ = true;
   initialized_ = true;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRun::UpdateGeometry() -> void {
+  if (!initialized_ || !world_) {
+    throw GGEMSRecoverable(
+      "UpdateGeometry requires an initialized Run with a World.");
+  }
+
+  if (running_.exchange(true)) {
+    throw GGEMSRecoverable("Cannot update geometry while GGEMSRun is busy.");
+  }
+
+  RunningGuard running_guard{running_};
+
+  world_->Validate();
+  auto const analytical =
+    world_->BuildAnalyticDeviceRecords(analytical_material_ids_);
+
+  auto const voxels = world_->BuildVoxelizedVolumeRecords();
+
+  auto const auxiliary =
+    world_->BuildAnalyticAuxiliaryBuffer(mesh_material_ids_);
+
+  geometry_ready_ = false;
+
+  for (auto &workload : transport_workloads_) {
+    workload->UploadGeometry(analytical, voxels, auxiliary);
+  }
+
+  geometry_ready_ = true;
 }
 
 // -----------------------------------------------------------------------------
@@ -518,6 +571,11 @@ auto GGEMSRun::Run() -> void {
   }
 
   RunningGuard running_guard{running_};
+
+  if (!geometry_ready_) {
+    throw GGEMSRecoverable(
+      "Geometry upload was incomplete. Retry UpdateGeometry before Run.");
+  }
 
   if (!HasNextTimeStep()) {
     throw ggems::core::GGEMSRecoverable("GGEMSRun time schedule is exhausted.");

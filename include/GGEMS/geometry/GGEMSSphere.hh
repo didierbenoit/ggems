@@ -141,12 +141,6 @@ public:
     -> core::materials::GGEMSMaterial const &;
 
 private:
-  /*! \brief Geometric center in the selected parent frame, in pm. */
-  Position3PM center_pm_{};
-
-  /*! \brief Local-to-parent daughter frame; identity until configured. */
-  GGEMSRotation3D rotation_{};
-
   /*! \brief Positive radius in pm; zero until configuration. */
   DistancePM radius_pm_{0};
 

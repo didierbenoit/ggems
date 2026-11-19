@@ -122,6 +122,10 @@ auto ConnectShells(GGEMSMeshData const &data) -> std::vector<std::uint32_t> {
       "Mesh '{}' has an open indexed edge.", data.source_file.string()));
   }
 
+  for (std::uint32_t index = 0; index < parents.size(); ++index) {
+    parents[index] = ShellRoot(parents, index);
+  }
+
   return parents;
 }
 
@@ -170,16 +174,17 @@ struct ShellGeometry {
 
 /*!
  * \brief Measures the oriented solid angle subtended by one triangle.
- * \param[in] data Imported local mesh geometry in picometers.
- * \param[in] triangle Index of the triangle observed from the witness point.
+ * \param[in] vertices Local geometry in FP32 picometers.
+ * \param[in] triangle Vertex indices of the observed triangle.
  * \param[in] witness Vertex of the proposed cavity in local picometers.
  * \return Signed solid angle in steradians, or NaN at a coincident vertex.
  */
-auto TriangleSolidAngle(GGEMSMeshData const &data, std::uint32_t triangle,
+auto TriangleSolidAngle(std::span<std::array<float, 3> const> vertices,
+                        std::array<std::uint32_t, 3> const &triangle,
                         std::array<float, 3> const &witness) -> double {
   std::array<detail::NormalizedVector3D, 3> directions{};
   for (std::size_t i = 0; i < directions.size(); ++i) {
-    auto const &vertex = data.vertices_pm[data.triangles[triangle][i]];
+    auto const &vertex = vertices[triangle[i]];
     auto const unit =
       detail::TryNormalizeVector3D(static_cast<double>(vertex[0]) - witness[0],
                                    static_cast<double>(vertex[1]) - witness[1],
@@ -202,23 +207,59 @@ auto TriangleSolidAngle(GGEMSMeshData const &data, std::uint32_t triangle,
                                    detail::Dot3D(b, c) + detail::Dot3D(c, a));
 }
 
-/*!
- * \brief Requires an outward enclosing shell for each inward cavity witness.
- *
- * An outward shell subtends 4 pi steradians at an interior point and zero
- * outside. One witness per possible cavity assumes disjoint shell surfaces.
- * \param[in] data Structurally validated mesh in source triangle order.
- * \param[in,out] parents Edge-connected triangle forest with path compression.
- * \throws core::GGEMSRecoverable For zero volume or an exposed inward shell.
+/*! \brief Refits child bounds before their parent in the existing tree.
+ * \param[in] index Subtree root.
+ * \param[in,out] nodes Existing nodes receiving FP32 bounds.
+ * \param[in] order Source triangle indices in leaf order.
+ * \param[in] triangles Original indexed faces.
+ * \param[in] vertices Posed local vertices in pm.
+ * \return Bounds of the refitted subtree in pm.
  */
-auto CheckShellOrientation(GGEMSMeshData const &data,
-                           std::span<std::uint32_t> parents) -> void {
+auto RefitNode(std::uint32_t index, std::span<GGEMSMeshBVHNode> nodes,
+               std::span<std::uint32_t const> order,
+               std::span<std::array<std::uint32_t, 3> const> triangles,
+               std::span<std::array<float, 3> const> vertices)
+  -> GGEMSMeshBounds {
+  auto &node = nodes[index];
+  GGEMSMeshBounds bounds{};
+
+  if ((node.second & k_mesh_leaf_flag) != 0U) {
+    auto const leaves =
+      order.subspan(node.first, node.second & ~k_mesh_leaf_flag);
+    auto const &origin = vertices[triangles[leaves.front()][0]];
+    bounds = {.minimum = origin, .maximum = origin};
+
+    for (auto leaf : leaves) {
+      for (auto corner : triangles[leaf]) {
+        auto const &point = vertices[corner];
+        bounds = UnionBounds(bounds, {.minimum = point, .maximum = point});
+      }
+    }
+  } else {
+    auto const left = RefitNode(node.first, nodes, order, triangles, vertices);
+    auto const right =
+      RefitNode(node.second, nodes, order, triangles, vertices);
+
+    bounds = UnionBounds(left, right);
+  }
+
+  node.minimum = bounds.minimum;
+  node.maximum = bounds.maximum;
+
+  return bounds;
+}
+} // namespace
+
+auto ValidateMeshShells(GGEMSMeshData const &data,
+                        std::span<std::uint32_t const> roots,
+                        std::span<std::array<float, 3> const> vertices)
+  -> void {
   std::unordered_map<std::uint32_t, ShellGeometry> shells;
 
   for (std::uint32_t index = 0; index < data.triangles.size(); ++index) {
-    auto const root = ShellRoot(parents, index);
-    parents[index] = root;
-    auto const &origin = data.vertices_pm[data.triangles[root][0]];
+    auto const root = roots[index];
+    auto const &origin = vertices[data.triangles[root][0]];
+
     ShellGeometry const initial{
       .bounds = {.minimum = origin, .maximum = origin},
       .first = index,
@@ -230,17 +271,20 @@ auto CheckShellOrientation(GGEMSMeshData const &data,
 
     auto const &triangle = data.triangles[index];
     for (auto corner : triangle) {
-      auto const &point = data.vertices_pm[corner];
+      auto const &point = vertices[corner];
       shell.bounds =
         UnionBounds(shell.bounds, {.minimum = point, .maximum = point});
     }
 
-    auto const &a = data.vertices_pm[triangle[0]];
-    auto const &b = data.vertices_pm[triangle[1]];
-    auto const &c = data.vertices_pm[triangle[2]];
+    auto const &a = vertices[triangle[0]];
+    auto const &b = vertices[triangle[1]];
+    auto const &c = vertices[triangle[2]];
+
     double const x0 = origin[0];
+
     // Divergence theorem with F=(x-x0,0,0). The triangle mean of x is exact.
     double const x_sum = (a[0] - x0) + (b[0] - x0) + (c[0] - x0);
+
     double const ab_y = static_cast<double>(b[1]) - a[1];
     double const ab_z = static_cast<double>(b[2]) - a[2];
     double const ac_y = static_cast<double>(c[1]) - a[1];
@@ -253,7 +297,7 @@ auto CheckShellOrientation(GGEMSMeshData const &data,
       continue;
     }
 
-    auto const &witness = data.vertices_pm[data.triangles[root][0]];
+    auto const &witness = vertices[data.triangles[root][0]];
     auto const enclosing = [&](auto const &entry) -> bool {
       auto const &outer = entry.second;
       auto const bounds = UnionBounds(outer.bounds, shell.bounds);
@@ -265,8 +309,8 @@ auto CheckShellOrientation(GGEMSMeshData const &data,
 
       double angle = 0.0;
       for (auto index = outer.first; index <= outer.last; ++index) {
-        if (parents[index] == entry.first) {
-          angle += TriangleSolidAngle(data, index, witness);
+        if (roots[index] == entry.first) {
+          angle += TriangleSolidAngle(vertices, data.triangles[index], witness);
         }
       }
 
@@ -375,8 +419,6 @@ auto BuildPartition(std::span<PartitionItem> items, bool triangles,
   return {.bounds = bounds, .index = node, .depth = depth};
 }
 
-} // namespace
-
 // =============================================================================
 // =============================================================================
 
@@ -384,8 +426,9 @@ auto BuildMeshBVH(GGEMSMeshData const &data) -> GGEMSMeshBVH {
   GGEMSMeshBVH tree;
   // Check the original triples before narrowing any source index to uint32_t.
   (void)MeshBVHPackedSize(data, tree);
-  auto shells = ConnectShells(data);
-  CheckShellOrientation(data, shells);
+
+  tree.shell_roots = ConnectShells(data);
+  ValidateMeshShells(data, tree.shell_roots, data.vertices_pm);
   std::vector<PartitionItem> components;
   std::vector<PartitionItem> triangles;
   tree.triangle_order.reserve(data.triangles.size());
@@ -468,7 +511,8 @@ auto MeshBVHPackedSize(GGEMSMeshData const &data, GGEMSMeshBVH const &tree)
 // =============================================================================
 
 auto PackMeshBVH(GGEMSMeshData const &data, GGEMSMeshBVH const &tree,
-                 std::span<std::byte> destination) -> void {
+                 std::span<std::byte> destination,
+                 std::span<std::array<float, 3> const> translated) -> void {
   if (destination.size() < MeshBVHPackedSize(data, tree)) {
     throw core::GGEMSRecoverable(
       "Insufficient destination space for the packed mesh asset.");
@@ -488,7 +532,23 @@ auto PackMeshBVH(GGEMSMeshData const &data, GGEMSMeshBVH const &tree,
   };
 
   std::memcpy(destination.data(), &record, sizeof(record));
-  std::memcpy(destination.data() + record.node_offset, tree.nodes.data(),
+  std::span<std::array<float, 3> const> vertices = data.vertices_pm;
+  std::span<GGEMSMeshBVHNode const> nodes = tree.nodes;
+  std::vector<GGEMSMeshBVHNode> refitted;
+
+  if (!translated.empty()) {
+    if (translated.size() != vertices.size()) {
+      throw core::GGEMSRecoverable(
+        "Translated mesh vertex count is inconsistent.");
+    }
+    vertices = translated;
+    refitted = tree.nodes;
+    RefitNode(tree.root_index, refitted, tree.triangle_order, data.triangles,
+              vertices);
+    nodes = refitted;
+  }
+
+  std::memcpy(destination.data() + record.node_offset, nodes.data(),
               node_bytes);
 
   auto *next = destination.data() + record.triangle_offset;
@@ -499,9 +559,8 @@ auto PackMeshBVH(GGEMSMeshData const &data, GGEMSMeshBVH const &tree,
     next += sizeof(triangle);
   }
 
-  std::memcpy(destination.data() + record.vertex_offset,
-              data.vertices_pm.data(),
-              data.vertices_pm.size() * sizeof(data.vertices_pm.front()));
+  std::memcpy(destination.data() + record.vertex_offset, vertices.data(),
+              vertices.size_bytes());
 }
 
 } // namespace ggems::geometry

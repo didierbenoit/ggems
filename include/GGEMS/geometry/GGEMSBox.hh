@@ -162,14 +162,8 @@ public:
     -> core::materials::GGEMSMaterial const &;
 
 private:
-  /*! \brief Geometric center in picometers; the origin until SetPosition(). */
-  Position3PM center_pm_{};
-
   /*! \brief Validated half extents in picometers; zero until SetSize(). */
   HalfExtent3PM half_extent_pm_{};
-
-  /*! \brief Proper local-to-parent rotation; identity by default. */
-  GGEMSRotation3D rotation_{};
 
   /*! \brief Owned Box medium, absent until SetMaterial(). */
   std::optional<core::materials::GGEMSMaterial> material_;

@@ -285,7 +285,8 @@ TEST(GGEMSGeometryAttachments,
 }
 
 // Preserves nested snapshots when the caller later mutates an attached solid.
-TEST(GGEMSGeometryAttachments, FourLevelsRetainCopyAtAddAndWorldIndependence) {
+TEST(GGEMSGeometryAttachments,
+     FourLevelsRetainCapturedShapesAndShareExplicitPoses) {
   GGEMSGeometryAttachments attachments;
   auto world = MakeWorld();
   auto mother = MakeShape<GGEMSBox>(20_mm);
@@ -302,19 +303,19 @@ TEST(GGEMSGeometryAttachments, FourLevelsRetainCopyAtAddAndWorldIndependence) {
   attachments.AddVolume(grandchild, leaf);
   GGEMSWorld const copied_world = *world;
   ggems::core::GGEMSRun run;
-  ASSERT_NO_THROW(run.SetWorld(*world));
+  ASSERT_NO_THROW(run.SetWorld(world));
 
   mother->SetSize(2_mm, 2_mm, 2_mm)
-    .SetPosition(MakePositionPM(50'000'000'000LL, 0, 0))
+    .SetPosition(MakePositionPM(10'000'000'000LL, 0, 0))
     .SetRotation(0_deg, 0_deg, 45_deg)
     .SetMaterial(BuildBuiltInMaterial("Aluminum"));
   daughter->SetRadius(1_mm).SetMaterial(BuildBuiltInMaterial("Vacuum"));
   grandchild->SetSize(2_mm, 2_mm, 2_mm);
   leaf->SetSize(4_mm, 4_mm, 4_mm)
-    .SetPosition(MakePositionPM(80'000'000'000LL, 0, 0))
+    .SetPosition(MakePositionPM(250'000'000LL, 0, 0))
     .SetMaterial(BuildBuiltInMaterial("Vacuum"))
     .SetColor(ggems::render::RED_Pure);
-  ExpectSameCompilation(*world, copied_world);
+  EXPECT_EQ(world->GetBoxes(3U).front().GetPositionPM().x, 250'000'000LL);
   EXPECT_EQ(before_daughters.GetVolumeCount(), 1U);
   EXPECT_EQ(copied_world.BuildRecord().hierarchy_depth, 4U);
   auto const links = copied_world.BuildOccurrenceRecords();
@@ -325,7 +326,7 @@ TEST(GGEMSGeometryAttachments, FourLevelsRetainCopyAtAddAndWorldIndependence) {
   EXPECT_EQ(links[3].parent_volume_id, 3U);
   EXPECT_EQ(world->GetVolumeMaterial(3U)->GetName(), "Aluminum");
   EXPECT_EQ(world->GetBoxes(3U).front().GetColor(), ggems::render::BLUE_Pure);
-  EXPECT_FLOAT_EQ(world->BuildBoxPoseRecord(3U)->center_x_pm, 0.5e9F);
+  EXPECT_FLOAT_EQ(copied_world.BuildBoxPoseRecord(3U)->center_x_pm, 0.5e9F);
   EXPECT_EQ(copied_world.GetBoxes().front().GetHalfExtentPM().x,
             20'000'000'000ULL);
   EXPECT_FLOAT_EQ(
@@ -341,7 +342,7 @@ TEST(GGEMSGeometryAttachments, FourLevelsRetainCopyAtAddAndWorldIndependence) {
   EXPECT_EQ(copied_world.GetVolumeCount(), 4U);
   EXPECT_EQ(copied_world.GetHalfExtentPM().x, 100'000'000'000ULL);
   ASSERT_NE(run.GetWorld(), nullptr);
-  ExpectSameCompilation(*run.GetWorld(), copied_world);
+  EXPECT_EQ(run.GetWorld(), world.get());
 }
 
 // Keeps the child reusable after a rejected hierarchy attachment.
@@ -367,6 +368,7 @@ TEST(GGEMSGeometryAttachments, RejectsInvalidAttachmentsWithoutConsumingChild) {
   attachments.AddVolume(mother, child);
   EXPECT_THROW(attachments.AddVolume(mother, child), GGEMSRecoverable);
   EXPECT_THROW(attachments.AddVolume(other_world, child), GGEMSRecoverable);
+  EXPECT_THROW(other_world->AttachLiveVolume(*child), GGEMSRecoverable);
   EXPECT_THROW(attachments.AddVolume(child, mother), GGEMSRecoverable);
   EXPECT_EQ(other_world->GetVolumeCount(), 0U);
   EXPECT_EQ(world->GetVolumeCount(), 2U);
@@ -497,7 +499,7 @@ TEST(GGEMSGeometryAttachments, DetachedBindingKeepsCapturedSourcesIndependent) {
   ASSERT_NO_THROW(world->Validate());
   ASSERT_EQ(world->GetVolumeCount(), 3U);
   EXPECT_EQ(world->BuildOccurrenceRecords()[2].parent_volume_id, 1U);
-  EXPECT_FLOAT_EQ(world->BuildBoxPoseRecord(2U)->center_x_pm, 10.0e9F);
+  EXPECT_FLOAT_EQ(world->BuildBoxPoseRecord(2U)->center_x_pm, 90.0e9F);
 
   auto before_rejection = *world;
   auto rejected_child = MakeShape<GGEMSBox>(1_mm);
@@ -510,9 +512,10 @@ TEST(GGEMSGeometryAttachments, DetachedBindingKeepsCapturedSourcesIndependent) {
 
   before_rejection = *world;
   auto rejected_root = MakeShape<GGEMSBox>(1_mm);
+  rejected_root->SetPosition(MakePositionPM(80'000'000'000LL, 0, 0));
   EXPECT_THROW(attachments.AddVolume(world, rejected_root), GGEMSRecoverable);
   ExpectSameCompilation(*world, before_rejection);
-  rejected_root->SetPosition(MakePositionPM(60'000'000'000LL, 0, 0));
+  rejected_root->SetPosition(MakePositionPM(-60'000'000'000LL, 0, 0));
   attachments.AddVolume(world, rejected_root);
   ASSERT_EQ(world->GetVolumeCount(), 5U);
   EXPECT_EQ(world->BuildOccurrenceRecords()[4].parent_volume_id, 0U);

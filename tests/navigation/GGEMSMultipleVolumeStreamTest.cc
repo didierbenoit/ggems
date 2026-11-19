@@ -41,6 +41,7 @@
 #include <limits>
 #include <memory>
 #include <numbers>
+#include <optional>
 #include <random>
 #include <span>
 #include <sstream>
@@ -145,10 +146,10 @@ auto Boxes(double left, double right, bool reverse = false,
  * \param[in] left_edges Local x coordinates in mm of the left slab faces.
  * \param[in] width_mm Width of every slab in mm along the x axis.
  * \param[in] y_step_mm Translation along y between successive slabs in mm.
- * \return World containing one homogeneous mesh with all of the slabs.
+ * \return One homogeneous mesh containing the independently named slabs.
  */
-auto SlabWorld(std::span<double const> left_edges, double width_mm,
-               double y_step_mm = 0) -> geometry::GGEMSWorld {
+auto SlabMesh(std::span<double const> left_edges, double width_mm,
+              double y_step_mm) -> geometry::GGEMSMesh {
   constexpr std::array<std::array<unsigned, 3>, 12> faces{{
     {1, 3, 2},
     {1, 4, 3},
@@ -172,7 +173,7 @@ auto SlabWorld(std::span<double const> left_edges, double width_mm,
   for (std::size_t index = 0; index < left_edges.size(); ++index) {
     double const left = left_edges[index];
     double const right = left + width_mm;
-    output << "o leaf\n";
+    output << "o leaf_" << index << '\n';
     for (auto const &vertex : std::array<Vec, 8>{{
            {left, -5, -6},
            {right, -5, -6},
@@ -197,8 +198,13 @@ auto SlabWorld(std::span<double const> left_edges, double width_mm,
   geometry::GGEMSMesh mesh{path};
   std::filesystem::remove(path);
   mesh.SetMaterial(materials::builtins::BuildBuiltInMaterial("Water"));
+  return mesh;
+}
+
+auto SlabWorld(std::span<double const> left_edges, double width_mm,
+               double y_step_mm = 0) -> geometry::GGEMSWorld {
   auto world = World();
-  world.AddVolume(mesh);
+  world.AddVolume(SlabMesh(left_edges, width_mm, y_step_mm));
   return world;
 }
 
@@ -884,7 +890,8 @@ TEST_F(GGEMSNavigationDeviceTest,
   run.SetRandom(random);
   run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorld(world);
+  auto run_world = std::make_shared<geometry::GGEMSWorld>(std::move(world));
+  run.SetWorld(run_world);
   run.Initialize();
   run.Run();
   auto const records = observer->GetRecords();
@@ -893,25 +900,25 @@ TEST_F(GGEMSNavigationDeviceTest,
                                  particles::GGEMSParticleStatus::EscapedWorld));
   EXPECT_LE(
     std::abs(static_cast<double>(records[1].position_x_pm) - (200 * k_mm)),
-    8 * world.GetNavigationTolerancePM());
+    8 * run_world->GetNavigationTolerancePM());
 }
 
 // Preserves a multi-volume Run snapshot independently of observer capture.
 TEST_F(GGEMSNavigationDeviceTest,
-       MultipleOccurrenceRunOwnsSnapshotInBothObserverModes) {
+       MultipleOccurrenceRunRetainsWorldInBothObserverModes) {
   for (auto const [observed, with_mesh] :
        {std::pair{false, false}, std::pair{true, false},
         std::pair{true, true}}) {
     SCOPED_TRACE(with_mesh);
     SCOPED_TRACE(observed);
-    auto world = Boxes(-20, 20);
+    auto world = std::make_shared<geometry::GGEMSWorld>(Boxes(-20, 20));
     if (with_mesh) {
       auto const path =
         std::filesystem::path{GGEMS_TEST_PROBE_ROOT}.parent_path() /
         "navigation" / "meshes" / "three_slabs.obj";
       geometry::GGEMSMesh mesh{path};
       mesh.SetMaterial(materials::builtins::BuildBuiltInMaterial("Tungsten"));
-      world.AddVolume(mesh);
+      world->AddVolume(mesh);
     }
     auto source = std::make_shared<sources::GGEMSSource>();
     source->SetAnalytic()
@@ -930,7 +937,6 @@ TEST_F(GGEMSNavigationDeviceTest,
       run.SetObserver(observer);
     }
     run.SetWorld(world);
-    world.SetSize(400_mm, 400_mm, 400_mm);
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     ASSERT_NO_THROW(run.Run());
@@ -942,8 +948,111 @@ TEST_F(GGEMSNavigationDeviceTest,
                   particles::GGEMSParticleStatus::EscapedWorld));
       EXPECT_LE(
         std::abs(static_cast<double>(records[1].position_x_pm) - (100 * k_mm)),
-        8 * world.GetNavigationTolerancePM());
+        8 * world->GetNavigationTolerancePM());
       EXPECT_EQ(records[0].global_primary_id, records[1].global_primary_id);
     }
+  }
+}
+
+// The terminal observer can distinguish an uninterrupted flight from three
+// accepted moves. At these Y coordinates one FP32 spacing is 4096 pm.
+// A 30 mm flight adds 3576 pm, while each 10 mm segment adds only 1192 pm.
+// Each committed endpoint therefore rounds to a different known Y for a miss
+// and a crossing. The second parallel ray always crosses the other slab.
+TEST_F(GGEMSNavigationDeviceTest, ExplicitRefreshPublishesBetweenRuns) {
+  constexpr std::int64_t first_y = 1LL << 35;
+  constexpr std::int64_t spacing_y = 1LL << 34;
+  for (bool with_mesh : {false, true}) {
+    SCOPED_TRACE(with_mesh);
+    auto world = std::make_shared<geometry::GGEMSWorld>(World());
+    world->SetSize(32_mm, 160_mm, 100_mm);
+    auto box = Box({1, 0, 0});
+    box.SetSize(10_mm, 4_mm, 12_mm)
+      .SetPosition(geometry::MakePositionPM(1'000'000'000LL, first_y, 0));
+    std::optional<geometry::GGEMSMesh> mesh;
+    if (with_mesh) {
+      mesh.emplace(SlabMesh(std::array{-4.0, -4.0}, 10, spacing_y / k_mm));
+      mesh->SetPosition(geometry::MakePositionPM(0, first_y, 0));
+      world->AttachLiveVolume(*mesh);
+      world->AddVolume(Box({0, -25, 0}));
+    } else {
+      world->AttachLiveVolume(box);
+      auto fixed = box;
+      fixed.SetPosition(
+        geometry::MakePositionPM(1'000'000'000LL, first_y + spacing_y, 0));
+      world->AddVolume(fixed);
+    }
+
+    GGEMSRun run;
+    auto random = std::make_shared<random::GGEMSRandom>();
+    random->SetEngine("philox").SetSeed(31U);
+    run.SetRandom(random);
+    for (auto y : {first_y, first_y + spacing_y}) {
+      auto source = std::make_shared<sources::GGEMSSource>();
+      source->SetAnalytic()
+        .SetPrimaryCount(1U)
+        .SetEmittedParticleType(particles::GGEMSParticleType::Aionino)
+        .SetPositionPicoMeter(-14'000'000'000LL, y,
+                              with_mesh && y == first_y ? 20'000'000'000LL
+                                                        : 0LL)
+        .SetDirection(1, 0x1p-23, 0);
+      run.AddSource(source);
+    }
+    auto observer = std::make_shared<observer::GGEMSTransportObserver>();
+    observer->Enable().SetRecordCapacity(4U).CaptureFirstPrimaries(1U);
+    run.SetObserver(observer);
+    run.SetWorld(world);
+    run.SetTimePicoSecond(0U, 6U, 1U);
+    ASSERT_EQ(run.GetWorld(), world.get());
+    ASSERT_NO_THROW(run.Initialize());
+    auto const observe = [&](std::uint64_t run_id, bool moved) {
+      ASSERT_NO_THROW(run.Run());
+      EXPECT_EQ(run.GetCurrentTimePicoSecond(), run_id + 1U);
+      auto const records = observer->GetRecords();
+      ASSERT_EQ(records.size(), 4U);
+      unsigned terminal_count{};
+      for (auto const &record : records) {
+        EXPECT_EQ(record.run_id, run_id);
+        if (record.status == particles::ToKernelParticleStatus(
+                               particles::GGEMSParticleStatus::EscapedWorld)) {
+          ASSERT_LT(record.source_index, 2U);
+          auto const y = first_y + record.source_index * spacing_y;
+          bool const misses = record.source_index == 0U && (with_mesh != moved);
+          EXPECT_EQ(record.position_y_pm, y + (misses ? 4096 : 0));
+          ++terminal_count;
+        }
+      }
+      EXPECT_EQ(terminal_count, 2U);
+    };
+    auto const place = [&](std::int64_t z) {
+      if (with_mesh) {
+        mesh->SetComponentTranslation("leaf_0",
+                                      geometry::MakePositionPM(0, 0, z));
+      } else {
+        box.SetPosition(geometry::MakePositionPM(1'000'000'000LL, first_y, z));
+      }
+    };
+    // The moved mesh leaf enters a ray outside the imported BVH bounds.
+    observe(0U, false);
+    place(20'000'000'000LL);
+    observe(1U, false);
+    ASSERT_NO_THROW(run.UpdateGeometry());
+    observe(2U, true);
+    place(100'000'000'000LL);
+    EXPECT_THROW(run.UpdateGeometry(), GGEMSRecoverable);
+    observe(3U, true);
+    place(0);
+    ASSERT_NO_THROW(run.UpdateGeometry());
+    observe(4U, false);
+    if (!with_mesh) {
+      // The off-center ray lies inside the 6 mm Z half-size before rotation.
+      // A quarter turn about X places the 2 mm Y half-size along Z.
+      place(5'000'000'000LL);
+      box.SetRotation(90_deg, 0_deg, 0_deg);
+      ASSERT_NO_THROW(run.UpdateGeometry());
+      observe(5U, true);
+    }
+    EXPECT_THROW(world->SetSize(64_mm, 160_mm, 100_mm), GGEMSRecoverable);
+    EXPECT_EQ(world->GetVolumeCount(), 2U);
   }
 }

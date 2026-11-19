@@ -53,6 +53,9 @@
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSSource.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
+#include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
@@ -381,6 +384,12 @@ TEST_F(GGEMSRunTest, AdvancesConfiguredWindowsAndResetOnlyRewindsTime) {
   run.SetObserver(observer);
   ggems::ocl::GGEMSOpenCL::GetInstance().SetWorkerCount(1U);
   run.SetTimePicoSecond(10ULL, 25ULL, 8ULL);
+  using namespace ggems::units;
+  auto world = std::make_shared<ggems::geometry::GGEMSWorld>();
+  world->SetSize(10_mm, 10_mm, 10_mm)
+    .SetMaterial(
+      ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum"));
+  run.SetWorld(world);
 
   ASSERT_NO_THROW(run.Initialize());
   EXPECT_THROW(run.SetTimePicoSecond(0ULL, 1ULL, 1ULL),
@@ -397,6 +406,8 @@ TEST_F(GGEMSRunTest, AdvancesConfiguredWindowsAndResetOnlyRewindsTime) {
   EXPECT_EQ(first_records[0U].time_ps, 10ULL);
   EXPECT_EQ(run.GetCurrentTimePicoSecond(), 18ULL);
 
+  // The reference sequence below also checks that refresh preserves Philox.
+  ASSERT_NO_THROW(run.UpdateGeometry());
   ASSERT_NO_THROW(run.Run());
   auto second_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
   ASSERT_EQ(second_records.size(), 1U);

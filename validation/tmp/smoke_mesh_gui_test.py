@@ -8,7 +8,7 @@ try:
     # --------------------------------------------------------------------------
     opencl = ggems.opencl.GGEMSOpenCL()
     opencl.set_worker_count(1048576)
-    opencl.select_devices("2")
+    opencl.select_devices("0")
     opencl.initialize()
 
     # --------------------------------------------------------------------------
@@ -18,10 +18,13 @@ try:
     cb_source = (
         ggems.source.GGEMSSource()
         .set_emission_point()
-        .set_position(-100.0, 0.0, 0.0, "mm")
-        .set_direction(1.0, 0.0, 0.0)
-        .set_angular_isotropic(0.0, 20.0, 0.0, 360.0, "deg")
-        .set_primary_count(1_000_000_000)
+        .set_position(0.0, 0.0, -150.0)
+        .set_direction(0.0, 0.0, 1.0)
+        .set_angular_isotropic(0.0, 2.5, 0.0, 360.0, "deg")
+        # .set_position(-100.0, 0.0, 0.0, "mm")
+        # .set_direction(1.0, 0.0, 0.0)
+        # .set_angular_isotropic(0.0, 20.0, 0.0, 360.0, "deg")
+        .set_primary_count(1_000_000)
         .set_particle("aionino")
         .set_energy(125.0, "keV")
     )
@@ -77,28 +80,28 @@ try:
     # xcat.verbose()
 
     # --------------------------------------------------------------------------
-    # mlc = ggems.geometry.GGEMSMesh("MLC", "validation/tmp/MyMlc.obj", unit="mm")
-    # mlc.set_position(0.0, 0.0, 0.0, "mm")
-    # mlc.set_rotation(0.0, 0.0, 0.0, "deg")
-    # mlc.set_material("Tungsten")
-    # mlc.set_color(ggems.colors.red_ruby)
-    # mlc.verbose()
+    mlc = ggems.geometry.GGEMSMesh("MLC", "validation/tmp/MyMlc.obj", unit="mm")
+    mlc.set_position(0.0, 0.0, 0.0, "mm")
+    mlc.set_rotation(0.0, 0.0, 0.0, "deg")
+    mlc.set_material("Tungsten")
+    mlc.set_color(ggems.colors.red_ruby)
+    mlc.verbose()
 
-    collimator = ggems.geometry.GGEMSMesh(
-        "Colli_SPECT", "validation/tmp/collimator_MELP.stl", unit="mm"
-    )
-    collimator.set_position(0.0, 0.0, 0.0, "mm")
-    collimator.set_rotation(0.0, 0.0, 0.0, "deg")
-    collimator.set_material("Tungsten")
-    collimator.set_color(ggems.colors.red_ruby)
-    collimator.verbose()
+    # collimator = ggems.geometry.GGEMSMesh(
+    #    "Colli_SPECT", "validation/tmp/collimator_MELP.stl", unit="mm"
+    # )
+    # collimator.set_position(0.0, 0.0, 0.0, "mm")
+    # collimator.set_rotation(0.0, 0.0, 0.0, "deg")
+    # collimator.set_material("Tungsten")
+    # collimator.set_color(ggems.colors.red_ruby)
+    # collimator.verbose()
 
     # --------------------------------------------------------------------------
     # world.add_volume(phantom)
     # world.add_volume(xcat)
     # world.add_volume(gantry)
-    # world.add_volume(mlc)
-    world.add_volume(collimator)
+    world.add_volume(mlc)
+    # world.add_volume(collimator)
 
     # --------------------------------------------------------------------------
     run = ggems.run.GGEMSRun()
@@ -108,6 +111,16 @@ try:
     # run.set_observer(observer)  # GUI
     # run.set_time(0.0, 1.0, 1.0, "s")
     run.initialize()
+
+    # Run 1
+    run.run()
+
+    # Move the A30 leaf by +5 mm along local X
+    mlc.set_component_translation("A30", 5.0, 0.0, 0.0, "mm")
+    # Upload updated geometry to OpenCL
+    run.update_geometry()
+
+    # Run 2: modified MLC geometry
     run.run()
 
     # --------------------------------------------------------------------------

@@ -387,9 +387,15 @@ TEST_F(GGEMSMeshTest, PolygonRejectionRequestsSourceTriangulation) {
 TEST_F(GGEMSMeshTest, PhysicalTreeRetainsAnonymousFacesAndNamedObjectIndices) {
   // One oriented tetrahedron distributed across named and anonymous ranges.
   auto const path = Write("v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\n"
-                          "f 1 3 2\no group\nf 1 2 4\no\nf 1 4 3\n"
-                          "o empty\no group\nf 2 3 4\n");
-  GGEMSMesh const mesh{path, "mm"};
+                          "f 1 3 2\no part\nf 1 2 4\no\nf 1 4 3\n"
+                          "o group\no group\nf 2 3 4\n");
+  GGEMSMesh mesh{path, "mm"};
+  EXPECT_THROW(mesh.SetComponentTranslation("missing", {.x = 1}),
+               GGEMSRecoverable);
+  EXPECT_THROW(mesh.SetComponentTranslation("group", {.x = 1}),
+               GGEMSRecoverable);
+  EXPECT_THROW(mesh.SetComponentTranslation("part", {.x = 1}),
+               GGEMSRecoverable);
   auto const tree = BuildMeshBVH(mesh.GetData());
   ASSERT_EQ(tree.component_roots.size(), 3U);
   EXPECT_NE(tree.component_roots[0], tree.component_roots[2]);
@@ -409,9 +415,19 @@ TEST_F(GGEMSMeshTest, AdmitsInwardCavityAndRejectsExposedInwardShell) {
   std::string const outer = "v 0 0 0\nv 12 0 0\nv 0 12 0\nv 0 0 12\n"
                             "f 1 3 2\nf 1 2 4\nf 1 4 3\nf 2 3 4\n";
   std::string const inward_faces = "f 5 6 7\nf 5 8 6\nf 5 7 8\nf 6 8 7\n";
-  auto const cavity =
-    Write(outer + "v 1 1 1\nv 2 1 1\nv 1 2 1\nv 1 1 2\n" + inward_faces);
-  EXPECT_NO_THROW((void)BuildMeshBVH(GGEMSMesh{cavity}.GetData()));
+  auto const cavity = Write(
+    outer + "o cavity\nv 1 1 1\nv 2 1 1\nv 1 2 1\nv 1 1 2\n" + inward_faces);
+  GGEMSMesh mesh{cavity};
+  mesh.SetMaterial(
+    ggems::core::materials::builtins::BuildBuiltInMaterial("Water"));
+  ggems::geometry::GGEMSWorld world;
+  constexpr auto world_size = 100_mm;
+  world.SetSize(world_size, world_size, world_size)
+    .SetMaterial(ggems::core::materials::builtins::BuildBuiltInMaterial("Air"));
+  EXPECT_NO_THROW(world.AddVolume(mesh));
+  constexpr auto exposed_offset = 20_mm;
+  mesh.SetComponentTranslation("cavity", {.x = exposed_offset.value});
+  EXPECT_THROW(world.AddVolume(mesh), GGEMSRecoverable);
   auto const exposed =
     Write(outer + "v 21 1 1\nv 22 1 1\nv 21 2 1\nv 21 1 2\n" + inward_faces);
   EXPECT_THROW((void)BuildMeshBVH(GGEMSMesh{exposed}.GetData()),

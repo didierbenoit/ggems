@@ -640,11 +640,11 @@ TEST_F(GGEMSNavigationDeviceTest,
 
 // Preserves nested Run geometry with observer capture enabled and disabled.
 TEST_F(GGEMSNavigationDeviceTest,
-       PhysicalHierarchyRunOwnsSnapshotInBothObserverModes) {
+       PhysicalHierarchyRunRetainsWorldInBothObserverModes) {
   for (bool observed : {false, true}) {
     SCOPED_TRACE(observed);
-    auto world = NestedWorld();
-    auto const band = world.GetNavigationTolerancePM();
+    auto world = std::make_shared<geometry::GGEMSWorld>(NestedWorld());
+    auto const band = world->GetNavigationTolerancePM();
     auto source = std::make_shared<sources::GGEMSSource>();
     source->SetAnalytic()
       .SetPrimaryCount(8U)
@@ -662,7 +662,6 @@ TEST_F(GGEMSNavigationDeviceTest,
       run.SetObserver(observer);
     }
     run.SetWorld(world);
-    world.SetSize(400_mm, 400_mm, 400_mm);
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     ASSERT_NO_THROW(run.Run());

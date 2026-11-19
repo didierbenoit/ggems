@@ -40,6 +40,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <type_traits>
 
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTubs.hh"
@@ -104,8 +105,8 @@ struct GGEMSVoxelizedSceneData {
  * The object is a host authoring value. A default-constructed World has no
  * size, no Material and no volume; SetSize(), SetMaterial() and AddVolume()
  * may be called in any order. Validate() checks the completed scene and is
- * called by GGEMSRun::SetWorld, which copies the World: later edits of the
- * authoring object do not reach the Run. Physical identities follow insertion
+ * called by GGEMSRun::SetWorld. Run initialization fixes the scene structure
+ * and prepares its current placements. Physical identities follow insertion
  * order, starting at one after World identity zero. Each added shape supplies
  * a pose relative to its already added parent; World is parent zero. The
  * maximum physical depth is four below World. Detached solid values may own
@@ -144,6 +145,38 @@ public:
 
   /*! \brief Creates a World with no size, no Material and no volume. */
   GGEMSWorld() = default;
+
+  /*!
+   * \brief Copies the source geometry into an independently editable World.
+   * \param[in] other World supplying the captured geometry.
+   */
+  GGEMSWorld(GGEMSWorld const &other);
+
+  /*!
+   * \brief Transfers an editable World and its attached poses.
+   * \param[in,out] other World supplying its geometry.
+   * \throws core::GGEMSRecoverable If the source structure is frozen.
+   */
+  GGEMSWorld(GGEMSWorld &&other);
+
+  /*!
+   * \brief Replaces an editable World with an independent copy.
+   * \param[in] other World supplying the captured geometry.
+   * \return This World.
+   * \throws core::GGEMSRecoverable If the destination structure is frozen.
+   */
+  auto operator=(GGEMSWorld const &other) -> GGEMSWorld &;
+
+  /*!
+   * \brief Transfers an editable World into an editable destination.
+   * \param[in,out] other World supplying its geometry.
+   * \return This World.
+   * \throws core::GGEMSRecoverable If either structure is frozen.
+   */
+  auto operator=(GGEMSWorld &&other) -> GGEMSWorld &;
+
+  /*! \brief Fixes size, Material and hierarchy for initialized Runs. */
+  auto FreezeStructure() noexcept -> void { structure_frozen_ = true; }
 
   /*!
    * \brief Creates an unconfigured World with an owned display name.
@@ -373,6 +406,32 @@ public:
    */
   auto AttachVolume(GGEMSVoxelizedVolume volume,
                     std::uint32_t parent_volume_id = 0U) -> GGEMSWorld &;
+
+  /*!
+   * \brief Attaches one live source pose and captures its static geometry.
+   * \tparam Child An analytical, voxelized, or mesh source volume type.
+   * \param[in] source Source whose pose remains editable between Runs.
+   * \param[in] parent_volume_id Existing parent, or zero for World.
+   * \return This World after successful admission.
+   * \throws core::GGEMSRecoverable If the source is already attached or fails
+   * geometry admission.
+   */
+  template <class Child>
+  auto AttachLiveVolume(Child &source, std::uint32_t parent_volume_id = 0U)
+    -> GGEMSWorld & {
+    auto capture = source.CaptureForAttachment();
+
+    if constexpr (std::is_base_of_v<GGEMSVolumeAuthoring, Child>) {
+      auto const root = volumes_.size();
+      AttachVolume(source, parent_volume_id);
+      capture.ClearChildRecipes();
+      std::get<Child>(std::get<Volume>(volumes_[root].volume)) =
+        std::move(capture);
+      return *this;
+    } else {
+      return AttachVolume(std::move(capture), parent_volume_id);
+    }
+  }
 
   /*!
    * \brief Atomically attaches a complete independently captured subtree.
@@ -631,6 +690,13 @@ public:
     -> GGEMSVoxelizedSceneData;
 
   /*!
+   * \brief Packs grid poses with their existing label and palette offsets.
+   * \return Grid descriptors in voxel occurrence order.
+   */
+  [[nodiscard]] auto BuildVoxelizedVolumeRecords() const
+    -> std::vector<GGEMSVoxelizedVolumeRecord>;
+
+  /*!
    * \brief Packs poses, shared Polyhedra profiles, and immutable mesh assets.
    * \param[in] mesh_material_ids Dense MaterialIDs in mesh occurrence order.
    * \return Descriptor-prefixed bytes for multiple or imported occurrences.
@@ -766,6 +832,12 @@ public:
     -> std::span<GGEMSBox const>;
 
 private:
+  /*! \brief Rejects structural edits after a Run initializes this World. */
+  auto RequireEditableStructure() const -> void;
+
+  /*! \brief Whether this World has been prepared by an initialized Run. */
+  bool structure_frozen_{false};
+
   /*! \brief Owned presentation label; empty selects the generic World name. */
   std::string name_;
 
@@ -951,11 +1023,11 @@ private:
     std::vector<std::size_t> profile_sources;
 
     /*!
-     * \brief First occurrence index and buffer byte offset per mesh import.
-     * Keys identify World-owned imports during this packing operation.
+     * \brief First occurrence and byte offset per static or independently posed
+     * asset. Keys identify World-owned meshes or their shared immutable
+     * imports.
      */
-    std::unordered_map<GGEMSMeshData const *,
-                       std::pair<std::size_t, std::size_t>>
+    std::unordered_map<void const *, std::pair<std::size_t, std::size_t>>
       mesh_assets;
 
     /*! \brief Total auxiliary allocation size in bytes. */

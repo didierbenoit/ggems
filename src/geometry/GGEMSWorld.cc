@@ -705,14 +705,32 @@ BuildSurfaceScale(ggems::geometry::GGEMSTrap const &trap,
  * vertices.
  * \param[in] mesh Captured direct World child.
  * \param[in] pose Final uploaded placement.
+ * \param[in] translated Posed vertices in FP32 pm, empty for the source pose.
  * \return Absolute world envelope and overall minimum local half-width.
  */
 [[nodiscard]] auto
 BuildMeshSurfaceScale(ggems::geometry::GGEMSMesh const &mesh,
-                      ggems::geometry::GGEMSBoxPoseRecord const &pose)
+                      ggems::geometry::GGEMSBoxPoseRecord const &pose,
+                      std::span<std::array<float, 3> const> translated)
   -> SurfaceScale {
   auto const &data = mesh.GetData();
-  auto const &bounds = data.bounds_pm;
+  std::span<std::array<float, 3> const> vertices = data.vertices_pm;
+  auto bounds = data.bounds_pm;
+  if (!translated.empty()) {
+    vertices = translated;
+    auto const &origin = vertices[data.triangles.front()[0]];
+    bounds = {.minimum = origin, .maximum = origin};
+    for (auto const &triangle : data.triangles) {
+      for (auto corner : triangle) {
+        for (std::size_t axis = 0; axis < origin.size(); ++axis) {
+          bounds.minimum[axis] =
+            std::min(bounds.minimum[axis], vertices[corner][axis]);
+          bounds.maximum[axis] =
+            std::max(bounds.maximum[axis], vertices[corner][axis]);
+        }
+      }
+    }
+  }
 
   SurfaceScale scale{
     .minimum_half_extent_pm = std::numeric_limits<double>::max(),
@@ -752,7 +770,7 @@ BuildMeshSurfaceScale(ggems::geometry::GGEMSMesh const &mesh,
   // solid.
   for (auto const &triangle : data.triangles) {
     for (auto vertex_index : triangle) {
-      auto const &vertex = data.vertices_pm[vertex_index];
+      auto const &vertex = vertices[vertex_index];
       for (std::size_t axis = 0; axis < rows.size(); ++axis) {
         auto const &row = rows[axis];
         double const coordinate = center[axis] + (row[0] * vertex[0]) +
@@ -1156,8 +1174,56 @@ GGEMSWorld::GGEMSWorld(std::string name) : name_(std::move(name)) {}
 
 // -----------------------------------------------------------------------------
 
+GGEMSWorld::GGEMSWorld(GGEMSWorld const &other)
+    : name_(other.name_), half_extent_pm_(other.half_extent_pm_),
+      material_(other.material_), volumes_(other.volumes_),
+      repeater_recipes_(other.repeater_recipes_),
+      authored_groups_(other.authored_groups_) {}
+
+// -----------------------------------------------------------------------------
+
+GGEMSWorld::GGEMSWorld(GGEMSWorld &&other) { *this = std::move(other); }
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::operator=(GGEMSWorld const &other) -> GGEMSWorld & {
+  RequireEditableStructure();
+  if (this != &other) {
+    *this = GGEMSWorld{other};
+  }
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::operator=(GGEMSWorld &&other) -> GGEMSWorld & {
+  RequireEditableStructure();
+  if (this != &other) {
+    other.RequireEditableStructure();
+    name_ = std::move(other.name_);
+    half_extent_pm_ = other.half_extent_pm_;
+    material_ = std::move(other.material_);
+    volumes_ = std::move(other.volumes_);
+    repeater_recipes_ = std::move(other.repeater_recipes_);
+    authored_groups_ = std::move(other.authored_groups_);
+  }
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::RequireEditableStructure() const -> void {
+  if (structure_frozen_) {
+    throw core::GGEMSRecoverable(
+      "World size, Material and topology are fixed after Run initialization.");
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSWorld::SetSize(units::Length size_x, units::Length size_y,
                          units::Length size_z) -> GGEMSWorld & {
+  RequireEditableStructure();
   HalfExtent3PM const half_extent{
     .x = RequireWorldHalfExtentPM(size_x, "X"),
     .y = RequireWorldHalfExtentPM(size_y, "Y"),
@@ -1189,8 +1255,9 @@ auto GGEMSWorld::GetVolumeNavigationTolerancePM(std::size_t index) const
   auto const pose = BuildOccurrencePose(index);
 
   if (auto const *mesh = GetMeshVolume(index)) {
-    return RequiredTolerancePM(BuildMeshSurfaceScale(*mesh, pose),
-                               WorldSpacingPM(half_extent_pm_));
+    return RequiredTolerancePM(
+      BuildMeshSurfaceScale(*mesh, pose, mesh->BuildTranslatedVertices()),
+      WorldSpacingPM(half_extent_pm_));
   }
 
   return std::visit(
@@ -1205,6 +1272,7 @@ auto GGEMSWorld::GetVolumeNavigationTolerancePM(std::size_t index) const
 
 auto GGEMSWorld::SetMaterial(core::materials::GGEMSMaterial material)
   -> GGEMSWorld & {
+  RequireEditableStructure();
   material_ = std::move(material);
   return *this;
 }
@@ -1296,6 +1364,7 @@ auto GGEMSWorld::AttachVolume(GGEMSVoxelizedVolume volume,
 // -----------------------------------------------------------------------------
 
 auto GGEMSWorld::AttachImport(Occurrence occurrence) -> GGEMSWorld & {
+  RequireEditableStructure();
   if (occurrence.parent_volume_id != 0U) {
     throw core::GGEMSRecoverable(
       "Imported volumes may attach directly to World only.");
@@ -1331,7 +1400,7 @@ auto GGEMSWorld::AttachImport(Occurrence occurrence) -> GGEMSWorld & {
 
   candidate.Validate();
 
-  volumes_.swap(candidate.volumes_);
+  volumes_.push_back(std::move(candidate.volumes_.back()));
 
   return *this;
 }
@@ -1340,6 +1409,7 @@ auto GGEMSWorld::AttachImport(Occurrence occurrence) -> GGEMSWorld & {
 
 auto GGEMSWorld::AddOccurrence(Volume volume, std::uint32_t parent_volume_id)
   -> GGEMSWorld & {
+  RequireEditableStructure();
   if (std::visit([](auto const &shape)
                    -> bool { return shape.GetDescendantCount() != 0U; },
                  volume)) {
@@ -1494,6 +1564,7 @@ auto GGEMSWorld::AttachBatch(Volume volume, std::array<std::uint32_t, 3> count,
 
 auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
                               std::uint32_t parent_volume_id) -> GGEMSWorld & {
+  RequireEditableStructure();
 
   if (half_extent_pm_.x == 0ULL || !material_) {
     throw core::GGEMSRecoverable("Configure World size and material before "
@@ -1614,7 +1685,11 @@ auto GGEMSWorld::AttachRecipe(detail::GGEMSVolumeRecipe const &recipe,
 
   expand(expand, recipe, parent_volume_id);
   candidate.Validate();
-  volumes_.swap(candidate.volumes_);
+  // Preserve live pose ownership in the existing prefix.
+  volumes_.reserve(total);
+  for (auto index = volumes_.size(); index < total; ++index) {
+    volumes_.push_back(std::move(candidate.volumes_[index]));
+  }
   repeater_recipes_.swap(candidate.repeater_recipes_);
   authored_groups_.swap(candidate.authored_groups_);
 
@@ -1819,8 +1894,13 @@ auto GGEMSWorld::ValidateHierarchy() const -> void {
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
     if (auto const *mesh = GetMeshVolume(index)) {
       static_cast<void>(mesh->GetMaterial());
+      auto const translated = mesh->BuildTranslatedVertices();
+      if (!translated.empty()) {
+        ValidateMeshShells(mesh->GetData(),
+                           volumes_[index].mesh_bvh->shell_roots, translated);
+      }
       auto const scale =
-        BuildMeshSurfaceScale(*mesh, BuildOccurrencePose(index));
+        BuildMeshSurfaceScale(*mesh, BuildOccurrencePose(index), translated);
 
       if (scale.envelope_pm[0] > static_cast<double>(half_extent_pm_.x) ||
           scale.envelope_pm[1] > static_cast<double>(half_extent_pm_.y) ||
@@ -2294,7 +2374,7 @@ auto GGEMSWorld::BuildAuxiliaryLayout() const -> AuxiliaryLayout {
       layout.byte_count += sizeof(GGEMSMeshOccurrenceRecord);
 
       if (layout.mesh_assets
-            .try_emplace(&mesh->GetData(), index, layout.byte_count)
+            .try_emplace(mesh->GetAssetIdentity(), index, layout.byte_count)
             .second) {
         layout.byte_count +=
           MeshBVHPackedSize(mesh->GetData(), *volumes_[index].mesh_bvh);
@@ -2534,13 +2614,11 @@ auto GGEMSWorld::BuildVoxelizedDeviceData(
   -> GGEMSVoxelizedSceneData {
   std::size_t palette_size = 0U;
   std::size_t label_count = 0U;
-  std::size_t voxelized_count = 0U;
 
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
     if (auto const *volume = GetVoxelizedVolume(index)) {
       palette_size += volume->GetMaterials().size();
       label_count += volume->GetMaterialLabels().size();
-      ++voxelized_count;
     }
   }
 
@@ -2551,12 +2629,11 @@ auto GGEMSWorld::BuildVoxelizedDeviceData(
   }
 
   GGEMSVoxelizedSceneData data;
-  data.records.reserve(voxelized_count);
+  data.records = BuildVoxelizedVolumeRecords();
   data.material_labels.reserve(label_count);
   data.material_ids.assign(palette_material_ids.begin(),
                            palette_material_ids.end());
 
-  std::uint32_t palette_offset = 0U;
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
     auto const *volume = GetVoxelizedVolume(index);
 
@@ -2564,18 +2641,32 @@ auto GGEMSWorld::BuildVoxelizedDeviceData(
       continue;
     }
 
-    data.records.push_back(BuildVoxelizedVolumeRecord(
-      index, static_cast<std::uint64_t>(data.material_labels.size()),
-      palette_offset));
-
     auto const labels = volume->GetMaterialLabels();
 
     data.material_labels.insert(data.material_labels.end(), labels.begin(),
                                 labels.end());
-    palette_offset += static_cast<std::uint32_t>(volume->GetMaterials().size());
   }
 
   return data;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::BuildVoxelizedVolumeRecords() const
+  -> std::vector<GGEMSVoxelizedVolumeRecord> {
+  std::vector<GGEMSVoxelizedVolumeRecord> records;
+  std::uint64_t label_offset{};
+  std::uint32_t palette_offset{};
+  for (std::size_t index = 0U; index < volumes_.size(); ++index) {
+    if (auto const *volume = GetVoxelizedVolume(index)) {
+      records.push_back(
+        BuildVoxelizedVolumeRecord(index, label_offset, palette_offset));
+      label_offset += volume->GetMaterialLabels().size();
+      palette_offset +=
+        static_cast<std::uint32_t>(volume->GetMaterials().size());
+    }
+  }
+  return records;
 }
 
 // -----------------------------------------------------------------------------
@@ -2606,11 +2697,16 @@ auto GGEMSWorld::BuildAnalyticAuxiliaryBuffer(
   for (std::size_t index = 0U; index < volumes_.size(); ++index) {
     if (auto const *mesh = GetMeshVolume(index)) {
       auto const &link = layout.occurrences[index];
-      auto const [source, offset] = layout.mesh_assets.at(&mesh->GetData());
+      auto const [source, offset] =
+        layout.mesh_assets.at(mesh->GetAssetIdentity());
 
+      auto const translated = mesh->BuildTranslatedVertices();
+      auto const pose = BuildOccurrencePose(index);
       GGEMSMeshOccurrenceRecord const record{
-        .pose = BuildOccurrencePose(index),
-        .tolerance_pm = GetVolumeNavigationTolerancePM(index),
+        .pose = pose,
+        .tolerance_pm =
+          RequiredTolerancePM(BuildMeshSurfaceScale(*mesh, pose, translated),
+                              WorldSpacingPM(half_extent_pm_)),
         .material_id = mesh_material_ids[link.record_index],
         .asset_offset = static_cast<std::uint32_t>(offset),
       };
@@ -2620,7 +2716,8 @@ auto GGEMSWorld::BuildAnalyticAuxiliaryBuffer(
       if (index == source) {
         auto const &bvh = *volumes_[index].mesh_bvh;
         auto const &mesh_data = mesh->GetData();
-        PackMeshBVH(mesh_data, bvh, std::span{data}.subspan(offset));
+        PackMeshBVH(mesh_data, bvh, std::span{data}.subspan(offset),
+                    translated);
       }
 
       continue;

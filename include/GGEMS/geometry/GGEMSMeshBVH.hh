@@ -91,6 +91,10 @@ struct GGEMSMeshBVH {
   /*! \brief Root by named OBJ object index, UINT32_MAX for empty objects. */
   std::vector<std::uint32_t> component_roots;
 
+  /*! \brief Edge-connected shell root per triangle for posed shell admission.
+   */
+  std::vector<std::uint32_t> shell_roots;
+
   /*! \brief Entry node of the entire mesh. */
   std::uint32_t root_index{};
 
@@ -108,6 +112,20 @@ struct GGEMSMeshBVH {
 [[nodiscard]] auto BuildMeshBVH(GGEMSMeshData const &data) -> GGEMSMeshBVH;
 
 /*!
+ * \brief Requires an outward enclosing shell for each inward cavity witness.
+ *
+ * An outward shell subtends 4 pi steradians at an interior point and zero
+ * outside. One witness per possible cavity assumes disjoint shell surfaces.
+ * \param[in] data Structurally validated mesh in source triangle order.
+ * \param[in] roots Edge-connected shell root by source triangle.
+ * \param[in] vertices Admitted or translated local coordinates in FP32 pm.
+ * \throws core::GGEMSRecoverable For zero volume or an exposed inward shell.
+ */
+auto ValidateMeshShells(GGEMSMeshData const &data,
+                        std::span<std::uint32_t const> roots,
+                        std::span<std::array<float, 3> const> vertices) -> void;
+
+/*!
  * \brief Computes the complete device asset size with checked 32-bit offsets.
  * \param[in] data Imported geometry supplying the triangle and vertex arrays.
  * \param[in] tree Partition built for this geometry.
@@ -122,9 +140,10 @@ struct GGEMSMeshBVH {
  * \param[in] data Imported geometry supplying the triangle and vertex arrays.
  * \param[in] tree Partition built for this geometry.
  * \param[out] destination Writable storage for one complete asset.
+ * \param[in] translated Posed FP32 vertices, empty for the source geometry.
  * \throws core::GGEMSRecoverable If the asset or its destination cannot fit.
  */
 auto PackMeshBVH(GGEMSMeshData const &data, GGEMSMeshBVH const &tree,
-                 std::span<std::byte> destination) -> void;
-
+                 std::span<std::byte> destination,
+                 std::span<std::array<float, 3> const> translated = {}) -> void;
 } // namespace ggems::geometry

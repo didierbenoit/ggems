@@ -96,12 +96,12 @@ TEST_F(GGEMSNavigationDeviceTest, N1PolyhedraRunUploadsVariableAuxiliaryData) {
                                               -3'000'000'000LL))
         .SetRotation(0_deg, 90_deg, 0_deg)
         .SetMaterial(materials::builtins::BuildBuiltInMaterial("Water"));
-      geometry::GGEMSWorld world;
-      world.SetSize(80_mm, 80_mm, 80_mm)
+      auto world = std::make_shared<geometry::GGEMSWorld>();
+      world->SetSize(80_mm, 80_mm, 80_mm)
         .SetMaterial(materials::builtins::BuildBuiltInMaterial("Vacuum"));
-      world.AddVolume(shape);
-      auto const tolerance = world.GetNavigationTolerancePM();
-      ASSERT_GT(world.BuildAnalyticAuxiliaryData().size(),
+      world->AddVolume(shape);
+      auto const tolerance = world->GetNavigationTolerancePM();
+      ASSERT_GT(world->BuildAnalyticAuxiliaryData().size(),
                 sizeof(geometry::GGEMSBoxPoseRecord));
       run.SetWorld(world);
       // The +X ray is local +Z at x=4.5 mm: four sections require two
@@ -110,7 +110,6 @@ TEST_F(GGEMSNavigationDeviceTest, N1PolyhedraRunUploadsVariableAuxiliaryData) {
       z_planes.clear();
       inner.clear();
       outer.clear();
-      world.SetSize(160_mm, 160_mm, 160_mm);
       ASSERT_NO_THROW(run.Initialize());
       for (int repetition = 0; repetition < 2; ++repetition) {
         ASSERT_NO_THROW(run.Run());
