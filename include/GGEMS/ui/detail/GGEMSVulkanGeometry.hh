@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Declares the Vulkan procedural triangle geometry renderer.
+ * \brief Declares the Vulkan scene geometry renderer.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -42,8 +42,8 @@
 namespace ggems::ui::detail {
 
 /*!
- * \brief Owns the shared triangle pipelines, immutable scene, and procedural
- * buffers.
+ * \brief Owns the shared triangle pipelines, immutable scene, and geometry
+ * buffer.
  *
  * Physical and logical devices are borrowed and must outlive this component.
  * The application completes GPU use before replacing the scene, shutting down,
@@ -72,10 +72,9 @@ public:
 
   /*!
    * \brief Creates shared wire/solid triangle pipelines with alpha blending.
-   *
    * Initialize an inactive component; call Shutdown before reinitializing it.
    *
-   * \param[in] physical_device Device providing analytic-buffer memory
+   * \param[in] physical_device Device providing geometry-buffer memory
    * capabilities.
    * \param[in] device Logical device that must outlive the owned resources.
    * \param[in] color_format Existing offscreen color attachment format.
@@ -91,9 +90,8 @@ public:
   auto Shutdown() noexcept -> void;
 
   /*!
-   * \brief Retains an immutable scene and uploads only procedural shape
-   * and profile descriptors plus central-slice cell indices.
-   *
+   * \brief Retains an immutable scene and uploads its shape descriptors, voxel
+   * slice indices, shared indexed assets and per-range translations.
    * Initialize before supplying a nonnull scene. The caller must finish GPU use
    * of the previous buffer first. Occurrences, physical identities, parent
    * links, and local-to-World transforms remain in the shared scene unchanged.
@@ -118,32 +116,34 @@ public:
     -> ggems::render::GGEMSGeometryScene const *;
 
   /*!
-   * \brief Records visible occurrences using the same procedural triangles in
-   * both modes. Voxelized occurrences batch their three central planes by
-   * mapping identity and color, using current viewer modes. Occurrence None
-   * hides all cells; Wireframe draws surviving cells as edges; Solid preserves
-   * their mapped Solid/Wireframe modes.
-   *
+   * \brief Records visible occurrences using the same triangles in both modes.
+   * Voxelized occurrences batch their three central planes by mapping identity
+   * and color, using current viewer modes. Occurrence None hides all cells;
+   * Wireframe draws surviving cells as edges; Solid preserves their mapped
+   * Solid/Wireframe modes. Named mesh ranges follow the same rules.
    * No commands are recorded when no scene is retained. The caller has already
    * set the dynamic viewport and scissor. Record opaque occurrences first,
    * then depth-writing scene contents, then the selection before overlays in
-   * the same rendering pass.
-   * Selection resolves its nearest depth without changing color, then consumes
-   * one stencil bit to blend that surface exactly once at alpha 0.5. Farther
-   * faces and coincident Wireframe edges do not compound opacity. The caller
-   * clears stencil to zero at the start of the scene.
+   * the same rendering pass. Selection resolves its nearest depth without
+   * changing color, then consumes one stencil bit to blend that surface exactly
+   * once at alpha 0.5. Farther faces and coincident Wireframe edges do not
+   * compound opacity. The caller clears stencil to zero at the start of the
+   * scene.
    *
    * \param[in] command_buffer Recording buffer inside dynamic rendering.
    * \param[in] world_to_clip Rows mapping World meters to clip coordinates.
    * \param[in] selected_volume_id Occurrence to make translucent, or none.
+   * \param[in] selected_mesh_component Optional drawable range within that
+   * mesh.
    * \param[in] appearance Viewer state reset from the retained scene, including
-   * current occurrence and voxel mapping choices.
+   * current occurrence, voxel mapping and OBJ range choices.
    * \param[in] selected_only False for opaque occurrences excluding selection;
    * true for the selected occurrence depth and color draws.
    */
   auto Record(vk::raii::CommandBuffer const &command_buffer,
               std::array<std::array<float, 4U>, 4U> const &world_to_clip,
               std::optional<std::uint32_t> selected_volume_id,
+              std::optional<std::uint32_t> selected_mesh_component,
               render::GGEMSGeometryAppearanceState const &appearance,
               bool selected_only) const -> void;
 
@@ -165,7 +165,7 @@ private:
      */
     std::array<float, 3U> normal_row_0{};
 
-    /*! \brief Index of the shared analytic shape descriptor. */
+    /*! \brief Index of the shared shape descriptor. */
     std::uint32_t shape_index{};
 
     /*! \brief Second rigid rotation row at byte 96. */
@@ -177,16 +177,23 @@ private:
     /*! \brief Third rigid rotation row at byte 112. */
     std::array<float, 3U> normal_row_2{};
 
-    /*! \brief Central voxel slice: zero for XY, one for XZ, two for YZ. */
-    std::uint32_t slice_plane{};
+    /*!
+     * \brief Voxel slice plane or first source triangle for an indexed mesh
+     * range.
+     */
+    std::uint32_t draw_offset{};
   };
 
   /*!
-   * \brief Draws one analytic instance or batches of visible voxel slice cells.
+   * \brief Draws an analytic shape, central slice cells, or indexed mesh
+   * ranges.
    * \param[in] command_buffer Recording buffer with descriptors set.
    * \param[in] occurrence Physical occurrence and optional slice batches.
    * \param[in] mode Resolved occurrence display mode, excluding None.
-   * \param[in] appearance Current viewer-owned voxel mapping choices.
+   * \param[in] first_range First per-occurrence translation in the mesh buffer.
+   * \param[in] component Optional range index in the selected mesh.
+   * \param[in] selected_only Whether to draw selected or unselected ranges.
+   * \param[in] appearance Current viewer-owned child modes.
    * \param[in,out] bound_mode Last pipeline bound in this recording pass.
    * \param[in,out] constants Transform and alpha; color, lighting, and slice
    * selector are updated for each draw.
@@ -195,6 +202,8 @@ private:
   DrawOccurrence(vk::raii::CommandBuffer const &command_buffer,
                  render::GGEMSGeometryOccurrence const &occurrence,
                  render::GGEMSGeometryDisplayMode mode,
+                 std::uint32_t first_range,
+                 std::optional<std::uint32_t> component, bool selected_only,
                  render::GGEMSGeometryAppearanceState const &appearance,
                  std::optional<render::GGEMSGeometryDisplayMode> &bound_mode,
                  GeometryPushConstants &constants) const -> void;
@@ -210,7 +219,7 @@ private:
   /*! \brief Immutable meshes, occurrences, and physical hierarchy. */
   std::shared_ptr<ggems::render::GGEMSGeometryScene const> scene_;
 
-  /*! \brief Read-only shapes, Polyhedra profiles, and slice-index bindings. */
+  /*! \brief Read-only shapes, profiles, slice indices and indexed mesh data. */
   vk::raii::DescriptorSetLayout descriptor_layout_{nullptr};
 
   /*! \brief Shared descriptor set and 128-byte vertex push layout. */
@@ -222,14 +231,15 @@ private:
   /*! \brief Identical TriangleList rasterized as filled surfaces. */
   vk::raii::Pipeline solid_pipeline_{nullptr};
 
-  /*! \brief Pool for the current scene's three procedural storage bindings. */
+  /*! \brief Pool for the current geometry storage bindings. */
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
 
   /*! \brief Host-visible coherent allocation that outlives its bound buffer. */
   vk::raii::DeviceMemory descriptor_memory_{nullptr};
 
   /*!
-   * \brief Shared analytic parameters and slice indices; no positions/normals.
+   * \brief Shape parameters, profiles, slice indices and indexed mesh draw
+   * data.
    */
   vk::raii::Buffer descriptor_buffer_{nullptr};
 

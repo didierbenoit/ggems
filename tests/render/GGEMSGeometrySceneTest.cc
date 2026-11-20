@@ -33,7 +33,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <fstream>
 #include <numbers>
+#include <optional>
 #include <type_traits>
 #include <string>
 #include <string_view>
@@ -48,6 +50,7 @@
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSMesh.hh"
 #include "GGEMS/geometry/GGEMSPolyhedra.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/geometry/GGEMSTrap.hh"
@@ -677,6 +680,78 @@ TEST(GGEMSGeometryScene, BoundsUseCanonicalAnalyticSupportWithoutTessellation) {
               1.0e-15);
   EXPECT_NEAR(asymmetric.minimum_m[1], -0.01, 1.0e-15);
   EXPECT_NEAR(asymmetric.maximum_m[1], 0.01, 1.0e-15);
+}
+
+TEST(GGEMSGeometryScene, MeshObjectsRetainSourceRangesAndIndependentPoses) {
+  ggems::test::GGEMSVoxelizedTestFixture const grid;
+  auto const path = grid.GetRawPath().parent_path() / "objects.obj";
+  // Two closed tetrahedra. The first shell spans several OBJ declarations.
+  std::ofstream{path} << "v 0 0 0\nv 3 0 0\nv 0 3 0\nv 0 0 3\n"
+                         "v 5 0 0\nv 6 0 0\nv 5 1 0\nv 5 0 1\nv 1 1 1\n"
+                         "f 1 3 2\no leaf##%s\nf 1 2 4\no moving\n"
+                         "f 5 7 6\nf 5 6 8\nf 5 8 7\nf 6 7 8\no\nf 1 4 3\n"
+                         "o empty\no leaf##%s\nf 2 3 9\no\nf 3 4 9\nf 4 2 9\n";
+  GGEMSMesh mesh{"bank", path, "mm"};
+  auto const water = BuildBuiltInMaterial("Water");
+  mesh.SetMaterial(water);
+  auto copy = mesh;
+  copy.SetPosition({.x = -100'000'000'000LL});
+  mesh.SetColor(RED_Ruby)
+    .SetRotation(0_deg, 0_deg, 90_deg)
+    .SetPosition({.x = (100_mm).value});
+  auto world = World();
+  GGEMSBox box;
+  box.SetSize(2_mm, 2_mm, 2_mm)
+    .SetMaterial(water)
+    .SetPosition({.x = (200_mm).value});
+  world.AddVolume(box)
+    .AddVolume(grid.Import())
+    .AttachLiveVolume(mesh)
+    .AddVolume(copy);
+  mesh.SetComponentTranslation("moving", {.x = (2_mm).value});
+  auto const scene = BuildGeometryScene(world);
+  auto const &placed = scene.occurrences.at(3);
+  auto const &other = scene.occurrences.at(4);
+  ASSERT_TRUE(placed.indexed_mesh);
+  ASSERT_TRUE(other.indexed_mesh);
+  EXPECT_EQ(placed.volume_id, 3U);
+  EXPECT_EQ(placed.parent_volume_id, 0U);
+  EXPECT_EQ(placed.name, "bank");
+  EXPECT_EQ(placed.material_name, "Water");
+  EXPECT_EQ(placed.color, RED_Ruby);
+  EXPECT_EQ(other.color, water.GetColor());
+  EXPECT_EQ(placed.mesh_index, other.mesh_index);
+  ASSERT_EQ(scene.mesh_assets.size(), 1U);
+  EXPECT_EQ(scene.mesh_assets.front().get(), &mesh.GetData());
+  EXPECT_EQ(scene.occurrences[1].shape_name, "Box");
+  EXPECT_TRUE(scene.occurrences[2].voxel_slices);
+  auto const &ranges = placed.indexed_mesh->ranges;
+  ASSERT_EQ(ranges.size(), 6U);
+  EXPECT_TRUE(placed.indexed_mesh->has_objects);
+  std::vector<std::optional<std::uint32_t>> const objects{
+    std::nullopt, 0U, 1U, std::nullopt, 3U, std::nullopt};
+  std::array const counts{1U, 1U, 4U, 1U, 1U, 2U};
+  std::uint32_t next{};
+  for (std::size_t i = 0; i < ranges.size(); ++i) {
+    EXPECT_EQ(ranges[i].first_triangle, next);
+    EXPECT_EQ(ranges[i].triangle_count, counts[i]);
+    EXPECT_EQ(ranges[i].object_index, objects[i]);
+    next += counts[i];
+  }
+  EXPECT_EQ(next, mesh.GetData().triangles.size());
+  auto const &components = scene.mesh_assets.front()->components;
+  EXPECT_EQ(components[0].name, "leaf##%s");
+  EXPECT_EQ(components[3].name, components[0].name);
+  EXPECT_DOUBLE_EQ(ranges[2].translation_m[0], 0.002);
+  EXPECT_NEAR(ranges[2].minimum_m[0], 0.099, 1.e-12);
+  EXPECT_NEAR(ranges[2].minimum_m[1], 0.007, 1.e-12);
+  EXPECT_NEAR(placed.maximum_m[1], 0.008, 1.e-12);
+  EXPECT_EQ(other.indexed_mesh->ranges[2].translation_m,
+            (std::array<double, 3>{}));
+  mesh.SetComponentTranslation("moving", {});
+  auto const restored = BuildGeometryScene(world);
+  EXPECT_NEAR(restored.occurrences[3].maximum_m[1], 0.006, 1.e-12);
+  EXPECT_NEAR(placed.maximum_m[1], 0.008, 1.e-12);
 }
 
 TEST(GGEMSGeometryScene, VoxelSlicesKeepPhysicalIdsMetadataAndAnalyticSharing) {

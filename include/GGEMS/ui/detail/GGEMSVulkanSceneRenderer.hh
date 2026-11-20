@@ -79,8 +79,11 @@ public:
      */
     std::optional<std::uint32_t> selected_volume_id;
 
+    /*! \brief Optional drawable OBJ range index in the selected mesh. */
+    std::optional<std::uint32_t> selected_mesh_component;
+
     /*!
-     * \brief Viewer-owned occurrence and voxel mapping choices for this scene.
+     * \brief Viewer-owned occurrence, voxel mapping and OBJ range modes.
      */
     render::GGEMSGeometryAppearanceState const &geometry_appearance;
   };

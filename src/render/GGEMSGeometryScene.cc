@@ -52,6 +52,7 @@
 #include "GGEMS/geometry/GGEMSCons.hh"
 #include "GGEMS/geometry/GGEMSEllipsoid.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSMesh.hh"
 #include "GGEMS/geometry/GGEMSPolyhedra.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/geometry/GGEMSSphere.hh"
@@ -76,6 +77,7 @@ namespace {
 using namespace ggems::geometry;
 using ggems::render::GGEMSGeometryKind;
 using ggems::render::GGEMSGeometryMesh;
+using ggems::render::GGEMSGeometryMeshRange;
 using ggems::render::GGEMSGeometryOccurrence;
 using ggems::render::GGEMSGeometryProfile;
 using ggems::render::GGEMSGeometryProperty;
@@ -841,6 +843,136 @@ auto DescribePlacement(GGEMSGeometryOccurrence &occurrence,
 }
 
 /*!
+ * \brief Bounds the referenced positions of an anonymous triangle range.
+ * \param[in] data Immutable source vertices and triangles in mesh-local pm.
+ * \param[in] first First source triangle.
+ * \param[in] end One past the last triangle in this nonempty range.
+ * \return Local bounds in pm.
+ */
+auto AnonymousBounds(GGEMSMeshData const &data, std::size_t first,
+                     std::size_t end) -> GGEMSMeshBounds {
+  if (first == 0U && end == data.triangles.size()) {
+    return data.bounds_pm;
+  }
+
+  auto const &point = data.vertices_pm[data.triangles[first][0]];
+
+  GGEMSMeshBounds bounds{.minimum = point, .maximum = point};
+  for (auto triangle = first; triangle < end; ++triangle) {
+    for (auto vertex : data.triangles[triangle]) {
+      for (std::size_t axis = 0U; axis < 3U; ++axis) {
+        auto const coordinate = data.vertices_pm[vertex][axis];
+        bounds.minimum[axis] = std::min(bounds.minimum[axis], coordinate);
+        bounds.maximum[axis] = std::max(bounds.maximum[axis], coordinate);
+      }
+    }
+  }
+
+  return bounds;
+}
+
+/*!
+ * \brief Captures source-order ranges, absolute offsets and posed bounds.
+ * \param[in,out] occurrence Physical mesh placement receiving the ranges.
+ * \param[in] mesh Attached mesh with its current component translations.
+ * \param[in] pose Current composed mesh-to-World pose.
+ * \param[in] asset_index Index of the shared import retained by the scene.
+ */
+auto DescribeIndexedMesh(GGEMSGeometryOccurrence &occurrence,
+                         GGEMSMesh const &mesh, GGEMSWorld::Pose const &pose,
+                         std::uint32_t asset_index) -> void {
+  auto const &data = mesh.GetData();
+  auto const offsets = mesh.GetComponentTranslations();
+
+  DescribePose(occurrence, pose);
+  occurrence.shape_name = "Mesh";
+  occurrence.name = mesh.GetName();
+  occurrence.material_name = mesh.GetMaterial().GetName();
+  occurrence.material_density = mesh.GetMaterial().GetDensity();
+  occurrence.color = mesh.GetColor();
+  occurrence.dimensions = {
+    {.name = "Format",
+     .value = data.format == GGEMSMeshFormat::Obj ? "OBJ" : "STL"},
+    {.name = "Vertices", .value = std::to_string(data.vertices_pm.size())},
+    {.name = "Triangles", .value = std::to_string(data.triangles.size())},
+  };
+
+  auto &indexed = occurrence.indexed_mesh.emplace();
+  indexed.asset_index = asset_index;
+  auto const append = [&](std::size_t first, std::size_t count,
+                          std::optional<std::uint32_t> object,
+                          GGEMSMeshBounds const &bounds) {
+    auto const offset =
+      object && !offsets.empty() ? offsets[*object] : Position3PM{};
+
+    GGEMSGeometryMeshRange range{
+      .first_triangle = static_cast<std::uint32_t>(first),
+      .triangle_count = static_cast<std::uint32_t>(count),
+      .object_index = object,
+      .translation_m = {static_cast<double>(offset.x) * k_pm_to_m,
+                        static_cast<double>(offset.y) * k_pm_to_m,
+                        static_cast<double>(offset.z) * k_pm_to_m},
+      .minimum_m = occurrence.position_m,
+      .maximum_m = occurrence.position_m,
+    };
+
+    // Transform the source bounding box, including the local object offset.
+    for (std::size_t row = 0U; row < 3U; ++row) {
+      for (std::size_t axis = 0U; axis < 3U; ++axis) {
+        auto const rotation = occurrence.orientation[(3U * row) + axis];
+
+        auto const lo =
+          (bounds.minimum[axis] * k_pm_to_m + range.translation_m[axis]) *
+          rotation;
+
+        auto const hi =
+          (bounds.maximum[axis] * k_pm_to_m + range.translation_m[axis]) *
+          rotation;
+
+        range.minimum_m[row] += std::min(lo, hi);
+        range.maximum_m[row] += std::max(lo, hi);
+      }
+
+      occurrence.minimum_m[row] =
+        indexed.ranges.empty()
+          ? range.minimum_m[row]
+          : std::min(occurrence.minimum_m[row], range.minimum_m[row]);
+
+      occurrence.maximum_m[row] =
+        indexed.ranges.empty()
+          ? range.maximum_m[row]
+          : std::max(occurrence.maximum_m[row], range.maximum_m[row]);
+    }
+
+    indexed.ranges.push_back(range);
+  };
+
+  std::size_t first = 0U;
+
+  for (std::size_t object = 0U; object < data.components.size(); ++object) {
+    auto const &component = data.components[object];
+
+    if (first < component.first_triangle) {
+      append(first, component.first_triangle - first, std::nullopt,
+             AnonymousBounds(data, first, component.first_triangle));
+    }
+
+    if (component.bounds_pm) {
+      append(component.first_triangle, component.triangle_count,
+             static_cast<std::uint32_t>(object), *component.bounds_pm);
+      indexed.has_objects = true;
+    }
+
+    first = component.first_triangle + component.triangle_count;
+  }
+
+  if (first < data.triangles.size()) {
+    append(first, data.triangles.size() - first, std::nullopt,
+           AnonymousBounds(data, first, data.triangles.size()));
+  }
+}
+
+/*!
  * \brief Captures grid metadata, bounds, and all mapped central-plane cells.
  * \param[in,out] occurrence The single physical voxelized occurrence.
  * \param[in] volume Immutable imported grid and local Material palette.
@@ -1047,8 +1179,8 @@ auto BuildNamedDefinitions(GGEMSGeometryScene &scene) -> void {
       scene.groups.push_back({
         .name =
           occurrence.name.empty() ? occurrence.shape_name : occurrence.name,
-        .subtree =
-          occurrence.parent_volume_id == 0U && !occurrence.voxel_slices,
+        .subtree = occurrence.parent_volume_id == 0U &&
+                   !occurrence.voxel_slices && !occurrence.indexed_mesh,
         .physical_leaves = true,
         .members = {},
         .physical_roots = {},
@@ -1071,9 +1203,10 @@ auto BuildGroupMemberships(GGEMSGeometryScene &scene) -> void {
     auto &group = scene.groups[index];
     for (auto const root : group.physical_roots) {
       auto const &physical = scene.occurrences[root];
-      group.physical_leaves = group.physical_leaves &&
-                              physical.children.empty() &&
-                              !physical.voxel_slices;
+      group.physical_leaves =
+        group.physical_leaves && physical.children.empty() &&
+        !physical.voxel_slices &&
+        !(physical.indexed_mesh && physical.indexed_mesh->has_objects);
 
       if (group.subtree) {
         AppendAnalyticSubtree(scene, root, group.members);
@@ -1327,12 +1460,8 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
   auto const links = world.BuildOccurrenceRecords();
 
   std::vector<std::pair<std::size_t, std::uint32_t>> mesh_sources;
+  std::map<GGEMSMeshData const *, std::uint32_t> indexed_shapes;
   for (std::size_t index = 0; index < world.GetVolumeCount(); ++index) {
-    if (world.GetMeshVolume(index) != nullptr) {
-      throw ggems::core::GGEMSRecoverable(
-        "The geometry viewer does not support mesh occurrences yet.");
-    }
-
     auto const pose = world.BuildVolumePose(index);
     scene.occurrences.push_back({
       .volume_id = static_cast<std::uint32_t>(index) + 1U,
@@ -1348,7 +1477,32 @@ auto BuildGeometryScene(geometry::GGEMSWorld const &world)
 
     auto &occurrence = scene.occurrences.back();
 
-    if (auto const *voxelized = world.GetVoxelizedVolume(index)) {
+    if (auto const *mesh = world.GetMeshVolume(index)) {
+      auto const &data = mesh->GetData();
+      auto const [shape, inserted] = indexed_shapes.try_emplace(
+        &data, static_cast<std::uint32_t>(scene.meshes.size()));
+      occurrence.mesh_index = shape->second;
+
+      if (inserted) {
+        GGEMSGeometryMesh descriptor{};
+
+        descriptor.shape.header = {
+          static_cast<std::uint32_t>(GGEMSGeometryKind::Mesh),
+          static_cast<std::uint32_t>(scene.mesh_assets.size()),
+          0U,
+          0U,
+        };
+
+        descriptor.vertex_count =
+          static_cast<std::uint32_t>(data.triangles.size() * 3U);
+
+        scene.meshes.push_back(descriptor);
+        scene.mesh_assets.push_back(mesh->ShareData());
+      }
+
+      DescribeIndexedMesh(occurrence, *mesh, pose,
+                          scene.meshes[occurrence.mesh_index].shape.header[1]);
+    } else if (auto const *voxelized = world.GetVoxelizedVolume(index)) {
       occurrence.mesh_index = static_cast<std::uint32_t>(scene.meshes.size());
       scene.meshes.push_back(
         DescribeVoxelized(occurrence, *voxelized, pose, scene.voxel_cells));

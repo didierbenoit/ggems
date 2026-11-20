@@ -39,6 +39,7 @@ namespace ggems::render {
 
 // =============================================================================
 // =============================================================================
+
 auto ResolveGeometryDisplayMode(
   GGEMSGeometryOccurrence const &occurrence,
   GGEMSGeometryAppearance const &appearance) noexcept
@@ -57,31 +58,36 @@ auto ResolveGeometryDisplayMode(
 // =============================================================================
 // =============================================================================
 
-auto ResolveVoxelDisplayMode(GGEMSGeometryDisplayMode occurrence_mode,
-                             GGEMSGeometryDisplayMode mapping_mode) noexcept
+auto ResolveChildDisplayMode(GGEMSGeometryDisplayMode occurrence_mode,
+                             GGEMSGeometryDisplayMode child_mode) noexcept
   -> GGEMSGeometryDisplayMode {
   if (occurrence_mode == GGEMSGeometryDisplayMode::None ||
-      mapping_mode == GGEMSGeometryDisplayMode::None) {
+      child_mode == GGEMSGeometryDisplayMode::None) {
     return GGEMSGeometryDisplayMode::None;
   }
 
   return occurrence_mode == GGEMSGeometryDisplayMode::Wireframe
            ? GGEMSGeometryDisplayMode::Wireframe
-           : mapping_mode;
+           : child_mode;
 }
 
 // =============================================================================
 // =============================================================================
+
+auto ResolveVoxelDisplayMode(GGEMSGeometryDisplayMode occurrence_mode,
+                             GGEMSGeometryDisplayMode mapping_mode) noexcept
+  -> GGEMSGeometryDisplayMode {
+  return ResolveChildDisplayMode(occurrence_mode, mapping_mode);
+}
+
+// -----------------------------------------------------------------------------
 
 auto GGEMSGeometryAppearanceState::Reset(GGEMSGeometryScene const &scene)
   -> void {
   occurrences_.assign(scene.occurrences.size(), {});
   group_counts_.assign(scene.groups.size(), {});
 
-  mapping_modes_.clear();
-
-  mapping_modes_.resize(scene.occurrences.size());
-
+  child_modes_.assign(scene.occurrences.size(), {});
   for (auto const &occurrence : scene.occurrences) {
     auto const mode = GetOccurrenceMode(scene, occurrence.volume_id);
 
@@ -89,33 +95,37 @@ auto GGEMSGeometryAppearanceState::Reset(GGEMSGeometryScene const &scene)
       ++group_counts_[group][static_cast<std::size_t>(mode)];
     }
 
+    auto &modes = child_modes_[occurrence.volume_id];
     if (occurrence.voxel_slices) {
-      auto &modes = mapping_modes_[occurrence.volume_id];
       modes.reserve(occurrence.voxel_slices->mappings.size());
       for (auto const &mapping : occurrence.voxel_slices->mappings) {
         modes.push_back(mapping.mode);
       }
+    } else if (occurrence.indexed_mesh &&
+               occurrence.indexed_mesh->has_objects) {
+      modes.assign(occurrence.indexed_mesh->ranges.size(),
+                   GGEMSGeometryDisplayMode::Solid);
     }
   }
 }
 
-// =============================================================================
-// =============================================================================
+// -----------------------------------------------------------------------------
+
 auto GGEMSGeometryAppearanceState::Clear() noexcept -> void {
   occurrences_.clear();
   group_counts_.clear();
-  mapping_modes_.clear();
+  child_modes_.clear();
 }
 
-// =============================================================================
-// =============================================================================
+// -----------------------------------------------------------------------------
+
 auto GGEMSGeometryAppearanceState::GetOccurrences() const noexcept
   -> std::span<GGEMSGeometryAppearance const> {
   return occurrences_;
 }
 
-// =============================================================================
-// =============================================================================
+// -----------------------------------------------------------------------------
+
 auto GGEMSGeometryAppearanceState::GetOccurrenceMode(
   GGEMSGeometryScene const &scene, std::uint32_t volume_id) const noexcept
   -> GGEMSGeometryDisplayMode {
@@ -123,8 +133,8 @@ auto GGEMSGeometryAppearanceState::GetOccurrenceMode(
                                     occurrences_[volume_id]);
 }
 
-// =============================================================================
-// =============================================================================
+// -----------------------------------------------------------------------------
+
 auto GGEMSGeometryAppearanceState::SetOccurrenceMode(
   GGEMSGeometryScene const &scene, std::uint32_t volume_id,
   GGEMSGeometryDisplayMode mode) noexcept -> void {
@@ -142,8 +152,8 @@ auto GGEMSGeometryAppearanceState::SetOccurrenceMode(
   }
 }
 
-// =============================================================================
-// =============================================================================
+// -----------------------------------------------------------------------------
+
 auto GGEMSGeometryAppearanceState::GetGroupMode(std::uint32_t group_index)
   const noexcept -> std::optional<GGEMSGeometryDisplayMode> {
   std::optional<GGEMSGeometryDisplayMode> result;
@@ -160,8 +170,7 @@ auto GGEMSGeometryAppearanceState::GetGroupMode(std::uint32_t group_index)
   return result;
 }
 
-// =============================================================================
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 auto GGEMSGeometryAppearanceState::SetGroupMode(
   GGEMSGeometryScene const &scene, std::uint32_t group_index,
@@ -171,22 +180,36 @@ auto GGEMSGeometryAppearanceState::SetGroupMode(
   }
 }
 
-// =============================================================================
-// =============================================================================
+// -----------------------------------------------------------------------------
+
+auto GGEMSGeometryAppearanceState::GetChildMode(
+  std::uint32_t volume_id, std::uint32_t index) const noexcept
+  -> GGEMSGeometryDisplayMode {
+  return child_modes_[volume_id][index];
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSGeometryAppearanceState::SetChildMode(
+  std::uint32_t volume_id, std::uint32_t index,
+  GGEMSGeometryDisplayMode mode) noexcept -> void {
+  child_modes_[volume_id][index] = mode;
+}
+
+// -----------------------------------------------------------------------------
 
 auto GGEMSGeometryAppearanceState::GetVoxelMappingMode(
   std::uint32_t volume_id, std::uint32_t mapping_index) const noexcept
   -> GGEMSGeometryDisplayMode {
-  return mapping_modes_[volume_id][mapping_index];
+  return GetChildMode(volume_id, mapping_index);
 }
 
-// =============================================================================
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 auto GGEMSGeometryAppearanceState::SetVoxelMappingMode(
   std::uint32_t volume_id, std::uint32_t mapping_index,
   GGEMSGeometryDisplayMode mode) noexcept -> void {
-  mapping_modes_[volume_id][mapping_index] = mode;
+  SetChildMode(volume_id, mapping_index, mode);
 }
 
 } // namespace ggems::render

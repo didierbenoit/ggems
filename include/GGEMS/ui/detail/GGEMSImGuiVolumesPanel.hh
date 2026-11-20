@@ -29,33 +29,24 @@
 
 #pragma once
 
-#include <cstdint>
-#include <optional>
-
-#include "GGEMS/render/GGEMSGeometryScene.hh"
-#include "GGEMS/render/GGEMSGeometryAppearance.hh"
+namespace ggems::render {
+struct GGEMSGeometryScene;
+}
 
 namespace ggems::ui::detail {
+
+struct GGEMSWorkbenchState;
 
 /*!
  * \brief Displays named controls and physical rows above owned metadata.
  *
- * Single clicks select a group or occurrence; physical double clicks frame it.
+ * Single clicks select a group, occurrence or OBJ object. Double clicks
+ * frame the selected geometry in its current pose.
  * The tree child owns its resizable height through Dear ImGui window state.
- * \param[in,out] show_window Panel visibility, updated on close.
- * \param[in,out] selected_volume_id Snapshot-local selection, or no selection.
- * \param[in,out] selected_geometry_group Viewer-only group index, or no
- * selection.
+ * \param[in,out] workbench Viewer-owned visibility, selection, modes and
+ * camera.
  * \param[in] scene Borrowed immutable scene, or null before World submission.
- * \param[in,out] appearance Snapshot-local modes and cached group summaries.
- * \param[in] presentation_revision Separates widget state between snapshots.
- * \return VolumeID to frame after a label double click, otherwise no request.
  */
-[[nodiscard]] auto BuildVolumesPanel(
-  bool &show_window, std::optional<std::uint32_t> &selected_volume_id,
-  std::optional<std::uint32_t> &selected_geometry_group,
-  render::GGEMSGeometryScene const *scene,
-  render::GGEMSGeometryAppearanceState &appearance,
-  std::uint32_t presentation_revision) -> std::optional<std::uint32_t>;
-
+auto BuildVolumesPanel(GGEMSWorkbenchState &workbench,
+                       render::GGEMSGeometryScene const *scene) -> void;
 } // namespace ggems::ui::detail

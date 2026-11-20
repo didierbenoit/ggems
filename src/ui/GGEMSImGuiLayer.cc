@@ -159,15 +159,7 @@ auto GGEMSImGuiLayer::BuildFrame(
   }
 
   if (workbench.show_volumes_panel) {
-    auto const focus = detail::BuildVolumesPanel(
-      workbench.show_volumes_panel, workbench.selected_volume_id,
-      workbench.selected_geometry_group, inputs.geometry_scene,
-      workbench.geometry_appearance, workbench.geometry_presentation_revision);
-
-    if (focus) {
-      auto const &occurrence = inputs.geometry_scene->occurrences[*focus];
-      workbench.camera.FrameBounds(occurrence.minimum_m, occurrence.maximum_m);
-    }
+    detail::BuildVolumesPanel(workbench, inputs.geometry_scene);
   }
 
   if (inputs.geometry_scene != nullptr) {

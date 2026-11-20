@@ -134,12 +134,11 @@ public:
   auto SubmitLastRunSourceSnapshot(ggems::core::GGEMSRun const &run) -> void;
 
   /*!
-   * \brief Copies Run-owned geometry into immutable wireframe presentation
-   * data.
+   * \brief Snapshots the Run's current host World for display.
    *
    * No simulation execution is required. A Run without a World clears the
-   * displayed geometry. Do not call concurrently with Run::SetWorld.
-   * \param[in] run Run whose captured World is read during this call only.
+   * displayed geometry. Submit again to display subsequent pose changes.
+   * \param[in] run Run whose World must remain stable during this call.
    * \throws core::GGEMSRecoverable If the GUI has not been initialized.
    */
   auto SubmitRunGeometry(ggems::core::GGEMSRun const &run) -> void;

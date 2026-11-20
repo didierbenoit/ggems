@@ -57,6 +57,7 @@
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
@@ -409,6 +410,37 @@ TEST_F(GGEMSMeshTest, PhysicalTreeRetainsAnonymousFacesAndNamedObjectIndices) {
   EXPECT_EQ(tree.depth, 2U);
   GGEMSMesh const open{Write(k_triangle_obj), "mm"};
   EXPECT_THROW((void)BuildMeshBVH(open.GetData()), GGEMSRecoverable);
+}
+
+TEST_F(GGEMSMeshTest, AnonymousOBJAndSTLDrawAsWholeMeshes) {
+  auto const stl = Write(BinarySTL({
+                           {{{0, 0, 0}, {0, 1, 0}, {1, 0, 0}}},
+                           {{{0, 0, 0}, {1, 0, 0}, {0, 0, 1}}},
+                           {{{0, 0, 0}, {0, 0, 1}, {0, 1, 0}}},
+                           {{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}},
+                         }),
+                         "tetrahedron.stl");
+  std::filesystem::path const obj =
+    GGEMS_TEST_PROBE_ROOT "/../navigation/meshes/hollow_box.obj";
+  for (auto const &path : {obj, stl}) {
+    ggems::geometry::GGEMSWorld world;
+    world.SetSize(100_mm, 100_mm, 100_mm)
+      .SetMaterial(
+        ggems::core::materials::builtins::BuildBuiltInMaterial("Air"));
+    GGEMSMesh mesh{path};
+    mesh.SetMaterial(
+      ggems::core::materials::builtins::BuildBuiltInMaterial("Water"));
+    world.AddVolume(mesh);
+    auto const scene = ggems::render::BuildGeometryScene(world);
+    auto const &indexed = scene.occurrences.at(1).indexed_mesh;
+    ASSERT_TRUE(indexed);
+    EXPECT_FALSE(indexed->has_objects);
+    ASSERT_EQ(indexed->ranges.size(), 1U);
+    EXPECT_FALSE(indexed->ranges.front().object_index);
+    EXPECT_EQ(indexed->ranges.front().first_triangle, 0U);
+    EXPECT_EQ(indexed->ranges.front().triangle_count,
+              mesh.GetData().triangles.size());
+  }
 }
 
 TEST_F(GGEMSMeshTest, AdmitsInwardCavityAndRejectsExposedInwardShell) {

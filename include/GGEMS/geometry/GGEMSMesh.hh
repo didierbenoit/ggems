@@ -39,6 +39,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <span>
 
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRigidPose.hh"
@@ -204,6 +205,24 @@ public:
    */
   [[nodiscard]] auto GetData() const noexcept -> GGEMSMeshData const & {
     return *data_;
+  }
+
+  /*! \brief Retains shared ownership of the immutable imported geometry.
+   * \return Indexed source data independent of the mesh's authoring state.
+   */
+  [[nodiscard]] auto ShareData() const noexcept
+    -> std::shared_ptr<GGEMSMeshData const> {
+    return data_;
+  }
+
+  /*! \brief Reads the current absolute mesh-local component translations.
+   * \return Borrowed picometer offsets in OBJ declaration order, empty when
+   * all offsets are zero. A component edit can invalidate the span.
+   */
+  [[nodiscard]] auto GetComponentTranslations() const noexcept
+    -> std::span<Position3PM const> {
+    return translations_ ? std::span<Position3PM const>{*translations_}
+                         : std::span<Position3PM const>{};
   }
 
   /*!

@@ -21,8 +21,7 @@
 
 /*!
  * \file
- * \brief Owns shared procedural triangle resources and records physical
- * occurrences.
+ * \brief Uploads scene geometry and draws physical occurrences and OBJ ranges.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -37,10 +36,12 @@
 #include <memory>
 #include <utility>
 #include <optional>
+#include <span>
 
 #include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/geometry/GGEMSMesh.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/render/GGEMSGeometryAppearance.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanColorConversion.hh"
@@ -162,26 +163,15 @@ auto GGEMSVulkanGeometry::Initialize(
     .size = sizeof(GeometryPushConstants),
   };
 
-  std::array<vk::DescriptorSetLayoutBinding, 3U> const bindings{
-    vk::DescriptorSetLayoutBinding{
-      .binding = 0U,
+  std::array<vk::DescriptorSetLayoutBinding, 4U> bindings{};
+  for (std::uint32_t binding = 0; binding < bindings.size(); ++binding) {
+    bindings[binding] = vk::DescriptorSetLayoutBinding{
+      .binding = binding,
       .descriptorType = vk::DescriptorType::eStorageBuffer,
       .descriptorCount = 1U,
       .stageFlags = vk::ShaderStageFlagBits::eVertex,
-    },
-    vk::DescriptorSetLayoutBinding{
-      .binding = 1U,
-      .descriptorType = vk::DescriptorType::eStorageBuffer,
-      .descriptorCount = 1U,
-      .stageFlags = vk::ShaderStageFlagBits::eVertex,
-    },
-    vk::DescriptorSetLayoutBinding{
-      .binding = 2U,
-      .descriptorType = vk::DescriptorType::eStorageBuffer,
-      .descriptorCount = 1U,
-      .stageFlags = vk::ShaderStageFlagBits::eVertex,
-    },
-  };
+    };
+  }
 
   descriptor_layout_ = vk::raii::DescriptorSetLayout{
     device, vk::DescriptorSetLayoutCreateInfo{
@@ -200,7 +190,7 @@ auto GGEMSVulkanGeometry::Initialize(
 
   vk::DescriptorPoolSize const pool_size{
     .type = vk::DescriptorType::eStorageBuffer,
-    .descriptorCount = 3U,
+    .descriptorCount = static_cast<std::uint32_t>(bindings.size()),
   };
 
   descriptor_pool_ = vk::raii::DescriptorPool{
@@ -210,6 +200,13 @@ auto GGEMSVulkanGeometry::Initialize(
               .poolSizeCount = 1U,
               .pPoolSizes = &pool_size,
             }};
+
+  descriptor_set_ = std::move(vk::raii::DescriptorSets{
+    *device_, vk::DescriptorSetAllocateInfo{
+                .descriptorPool = *descriptor_pool_,
+                .descriptorSetCount = 1U,
+                .pSetLayouts = &layout,
+              }}.front());
 
   vk::PipelineRenderingCreateInfo const rendering{
     .colorAttachmentCount = 1U,
@@ -258,17 +255,16 @@ auto GGEMSVulkanGeometry::Shutdown() noexcept -> void {
 
 auto GGEMSVulkanGeometry::SetScene(
   std::shared_ptr<render::GGEMSGeometryScene const> scene) -> void {
-  descriptor_set_ = nullptr;
-  descriptor_buffer_ = nullptr;
-  descriptor_memory_ = nullptr;
-  scene_ = std::move(scene);
 
-  if (!scene_) {
+  if (!scene) {
+    descriptor_buffer_ = nullptr;
+    descriptor_memory_ = nullptr;
+    scene_.reset();
     return;
   }
 
   auto const shape_bytes = static_cast<vk::DeviceSize>(
-    scene_->meshes.size() * sizeof(render::GGEMSGeometryShape));
+    scene->meshes.size() * sizeof(render::GGEMSGeometryShape));
 
   auto const limits = physical_device_->getProperties().limits;
 
@@ -279,33 +275,54 @@ auto GGEMSVulkanGeometry::SetScene(
 
   // Vulkan requires a nonempty descriptor range even when no Polyhedra uses it.
   auto const profile_bytes = static_cast<vk::DeviceSize>(
-    std::max(scene_->profiles.size(), std::size_t{1U}) *
+    std::max(scene->profiles.size(), std::size_t{1U}) *
     sizeof(render::GGEMSGeometryProfile));
 
   auto const cell_offset =
     ((profile_offset + profile_bytes + alignment - 1U) / alignment) * alignment;
 
   auto const cell_bytes = static_cast<vk::DeviceSize>(
-    std::max(scene_->voxel_cells.size(), std::size_t{1U}) *
+    std::max(scene->voxel_cells.size(), std::size_t{1U}) *
     sizeof(std::uint32_t));
+
+  auto const mesh_offset =
+    ((cell_offset + cell_bytes + alignment - 1U) / alignment) * alignment;
+
+  // Relative byte offsets in binding 3 address packed XYZ triples.
+  vk::DeviceSize mesh_bytes{};
+
+  for (auto const &occurrence : scene->occurrences) {
+    if (occurrence.indexed_mesh) {
+      mesh_bytes +=
+        occurrence.indexed_mesh->ranges.size() * sizeof(std::array<float, 3>);
+    }
+  }
+
+  for (auto const &asset : scene->mesh_assets) {
+    mesh_bytes += std::span{asset->vertices_pm}.size_bytes() +
+                  std::span{asset->triangles}.size_bytes();
+  }
+
+  mesh_bytes = std::max(mesh_bytes, vk::DeviceSize{sizeof(std::uint32_t)});
 
   if (shape_bytes > limits.maxStorageBufferRange ||
       profile_bytes > limits.maxStorageBufferRange ||
-      cell_bytes > limits.maxStorageBufferRange) {
-    throw ggems::core::GGEMSInternal(
-      "Geometry procedural descriptors exceed the "
-      "device's maxStorageBufferRange.");
+      cell_bytes > limits.maxStorageBufferRange ||
+      mesh_bytes > limits.maxStorageBufferRange) {
+    throw ggems::core::GGEMSInternal("Geometry scene buffers exceed the "
+                                     "device's maxStorageBufferRange.");
   }
 
-  auto const buffer_size = cell_offset + cell_bytes;
-  descriptor_buffer_ = vk::raii::Buffer{
-    *device_, vk::BufferCreateInfo{
-                .size = buffer_size,
-                .usage = vk::BufferUsageFlagBits::eStorageBuffer,
-                .sharingMode = vk::SharingMode::eExclusive,
-              }};
+  auto const buffer_size = mesh_offset + mesh_bytes;
+  vk::raii::DeviceMemory memory{nullptr};
+  vk::raii::Buffer buffer{*device_,
+                          vk::BufferCreateInfo{
+                            .size = buffer_size,
+                            .usage = vk::BufferUsageFlagBits::eStorageBuffer,
+                            .sharingMode = vk::SharingMode::eExclusive,
+                          }};
 
-  auto const requirements = descriptor_buffer_.getMemoryRequirements();
+  auto const requirements = buffer.getMemoryRequirements();
 
   vk::PhysicalDeviceMemoryProperties const memory_properties =
     physical_device_->getMemoryProperties();
@@ -331,72 +348,99 @@ auto GGEMSVulkanGeometry::SetScene(
 
   if (memory_type_index == memory_properties.memoryTypeCount) {
     throw ggems::core::GGEMSInternal(
-      "No suitable Vulkan memory type was found for the geometry analytic "
-      "buffer.");
+      "No suitable Vulkan memory type was found for the geometry buffer.");
   }
 
-  descriptor_memory_ =
+  memory =
     vk::raii::DeviceMemory{*device_, vk::MemoryAllocateInfo{
                                        .allocationSize = requirements.size,
                                        .memoryTypeIndex = memory_type_index,
                                      }};
 
-  descriptor_buffer_.bindMemory(*descriptor_memory_, 0U);
+  buffer.bindMemory(*memory, 0U);
 
-  void *mapped = descriptor_memory_.mapMemory(0U, buffer_size);
+  void *mapped = memory.mapMemory(0U, buffer_size);
   auto *bytes = static_cast<std::byte *>(mapped);
 
-  for (std::size_t index = 0U; index < scene_->meshes.size(); ++index) {
-    std::memcpy(bytes + (index * sizeof(render::GGEMSGeometryShape)),
-                &scene_->meshes[index].shape,
-                sizeof(render::GGEMSGeometryShape));
+  auto *const mesh_begin = bytes + mesh_offset;
+  auto *cursor = mesh_begin;
+
+  for (auto const &occurrence : scene->occurrences) {
+    if (occurrence.indexed_mesh) {
+      for (auto const &range : occurrence.indexed_mesh->ranges) {
+        std::array<float, 3> const translation{
+          static_cast<float>(range.translation_m[0]),
+          static_cast<float>(range.translation_m[1]),
+          static_cast<float>(range.translation_m[2])};
+
+        std::memcpy(cursor, translation.data(), sizeof(translation));
+
+        cursor += sizeof(translation);
+      }
+    }
+  }
+
+  for (std::size_t index = 0U; index < scene->meshes.size(); ++index) {
+    auto shape = scene->meshes[index].shape;
+    if (shape.header[0] ==
+        static_cast<std::uint32_t>(render::GGEMSGeometryKind::Mesh)) {
+      auto const &asset = *scene->mesh_assets[shape.header[1]];
+      auto const positions = std::as_bytes(std::span{asset.vertices_pm});
+      auto const triangles = std::as_bytes(std::span{asset.triangles});
+
+      shape.header[1] = static_cast<std::uint32_t>(cursor - mesh_begin);
+
+      std::memcpy(cursor, positions.data(), positions.size());
+      cursor += positions.size();
+      shape.header[2] = static_cast<std::uint32_t>(cursor - mesh_begin);
+
+      std::memcpy(cursor, triangles.data(), triangles.size());
+      cursor += triangles.size();
+    }
+    std::memcpy(bytes + (index * sizeof(shape)), &shape, sizeof(shape));
   }
 
   std::memset(bytes + profile_offset, 0,
               static_cast<std::size_t>(profile_bytes));
 
-  if (!scene_->profiles.empty()) {
-    std::memcpy(bytes + profile_offset, scene_->profiles.data(),
-                scene_->profiles.size() * sizeof(render::GGEMSGeometryProfile));
+  if (!scene->profiles.empty()) {
+    std::memcpy(bytes + profile_offset, scene->profiles.data(),
+                scene->profiles.size() * sizeof(render::GGEMSGeometryProfile));
   }
 
   std::memset(bytes + cell_offset, 0, static_cast<std::size_t>(cell_bytes));
 
-  if (!scene_->voxel_cells.empty()) {
-    std::memcpy(bytes + cell_offset, scene_->voxel_cells.data(),
-                scene_->voxel_cells.size() * sizeof(std::uint32_t));
+  if (!scene->voxel_cells.empty()) {
+    std::memcpy(bytes + cell_offset, scene->voxel_cells.data(),
+                scene->voxel_cells.size() * sizeof(std::uint32_t));
   }
 
-  descriptor_memory_.unmapMemory();
+  memory.unmapMemory();
 
-  auto const layout = *descriptor_layout_;
-
-  descriptor_set_ = std::move(vk::raii::DescriptorSets{
-    *device_, vk::DescriptorSetAllocateInfo{
-                .descriptorPool = *descriptor_pool_,
-                .descriptorSetCount = 1U,
-                .pSetLayouts = &layout,
-              }}.front());
-
-  std::array<vk::DescriptorBufferInfo, 3U> const buffers{
+  std::array<vk::DescriptorBufferInfo, 4U> const buffers{
     vk::DescriptorBufferInfo{
-      .buffer = *descriptor_buffer_,
+      .buffer = *buffer,
       .offset = 0U,
       .range = shape_bytes,
     },
     vk::DescriptorBufferInfo{
-      .buffer = *descriptor_buffer_,
+      .buffer = *buffer,
       .offset = profile_offset,
       .range = profile_bytes,
     },
     vk::DescriptorBufferInfo{
-      .buffer = *descriptor_buffer_,
+      .buffer = *buffer,
       .offset = cell_offset,
       .range = cell_bytes,
     },
+    vk::DescriptorBufferInfo{
+      .buffer = *buffer,
+      .offset = mesh_offset,
+      .range = mesh_bytes,
+    },
   };
 
-  std::array<vk::WriteDescriptorSet, 3U> writes{};
+  std::array<vk::WriteDescriptorSet, buffers.size()> writes{};
 
   for (std::uint32_t binding = 0U; binding < writes.size(); ++binding) {
     writes[binding] = vk::WriteDescriptorSet{
@@ -409,6 +453,9 @@ auto GGEMSVulkanGeometry::SetScene(
   }
 
   device_->updateDescriptorSets(writes, {});
+  descriptor_buffer_ = std::move(buffer);
+  descriptor_memory_ = std::move(memory);
+  scene_ = std::move(scene);
 }
 
 // -----------------------------------------------------------------------------
@@ -424,6 +471,7 @@ auto GGEMSVulkanGeometry::Record(
   vk::raii::CommandBuffer const &command_buffer,
   std::array<std::array<float, 4U>, 4U> const &world_to_clip,
   std::optional<std::uint32_t> selected_volume_id,
+  std::optional<std::uint32_t> selected_mesh_component,
   render::GGEMSGeometryAppearanceState const &appearance,
   bool selected_only) const -> void {
   if (!scene_ || (selected_only && !selected_volume_id)) {
@@ -443,13 +491,25 @@ auto GGEMSVulkanGeometry::Record(
 
   GeometryPushConstants constants;
 
+  std::uint32_t next_range = 0U;
   for (auto const &occurrence : scene_->occurrences) {
-    if ((selected_volume_id == occurrence.volume_id) != selected_only) {
+    auto const first_range = next_range;
+
+    if (occurrence.indexed_mesh) {
+      next_range +=
+        static_cast<std::uint32_t>(occurrence.indexed_mesh->ranges.size());
+    }
+
+    bool const selected = selected_volume_id == occurrence.volume_id;
+    auto const component = selected ? selected_mesh_component : std::nullopt;
+
+    if (selected != selected_only && !component) {
       continue;
     }
 
     auto const mode =
       appearance.GetOccurrenceMode(*scene_, occurrence.volume_id);
+
     if (mode == render::GGEMSGeometryDisplayMode::None) {
       continue;
     }
@@ -481,8 +541,8 @@ auto GGEMSVulkanGeometry::Record(
       // Consume its stencil bit once, including coincident Wireframe edges.
       constants.color[3U] = 0.0F;
 
-      DrawOccurrence(command_buffer, occurrence, mode, appearance, bound_mode,
-                     constants);
+      DrawOccurrence(command_buffer, occurrence, mode, first_range, component,
+                     selected_only, appearance, bound_mode, constants);
 
       command_buffer.setStencilOp(vk::StencilFaceFlagBits::eFrontAndBack,
                                   vk::StencilOp::eKeep, vk::StencilOp::eZero,
@@ -490,8 +550,8 @@ auto GGEMSVulkanGeometry::Record(
       constants.color[3U] = 0.5F;
     }
 
-    DrawOccurrence(command_buffer, occurrence, mode, appearance, bound_mode,
-                   constants);
+    DrawOccurrence(command_buffer, occurrence, mode, first_range, component,
+                   selected_only, appearance, bound_mode, constants);
   }
 }
 
@@ -500,7 +560,8 @@ auto GGEMSVulkanGeometry::Record(
 auto GGEMSVulkanGeometry::DrawOccurrence(
   vk::raii::CommandBuffer const &command_buffer,
   render::GGEMSGeometryOccurrence const &occurrence,
-  render::GGEMSGeometryDisplayMode mode,
+  render::GGEMSGeometryDisplayMode mode, std::uint32_t first_range,
+  std::optional<std::uint32_t> component, bool selected_only,
   render::GGEMSGeometryAppearanceState const &appearance,
   std::optional<render::GGEMSGeometryDisplayMode> &bound_mode,
   GeometryPushConstants &constants) const -> void {
@@ -508,7 +569,7 @@ auto GGEMSVulkanGeometry::DrawOccurrence(
   auto const alpha = constants.color[3U];
 
   auto const draw = [&](render::GGEMSGeometryDisplayMode draw_mode,
-                        std::uint32_t instances,
+                        std::uint32_t vertices, std::uint32_t instances,
                         std::uint32_t first_instance) -> void {
     bool const solid = draw_mode == render::GGEMSGeometryDisplayMode::Solid;
 
@@ -524,12 +585,36 @@ auto GGEMSVulkanGeometry::DrawOccurrence(
       *pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
       vk::ArrayProxy<GeometryPushConstants const>{1U, &constants});
 
-    command_buffer.draw(mesh.vertex_count, instances, 0U, first_instance);
+    command_buffer.draw(vertices, instances, 0U, first_instance);
   };
 
+  if (occurrence.indexed_mesh) {
+    auto const &ranges = occurrence.indexed_mesh->ranges;
+
+    for (std::uint32_t i = 0U; i < ranges.size(); ++i) {
+      if (component && (i == *component) != selected_only) {
+        continue;
+      }
+
+      auto const &range = ranges[i];
+      auto const draw_mode =
+        range.object_index
+          ? render::ResolveChildDisplayMode(
+              mode, appearance.GetChildMode(occurrence.volume_id, i))
+          : mode;
+
+      if (draw_mode != render::GGEMSGeometryDisplayMode::None) {
+        constants.draw_offset = range.first_triangle;
+        draw(draw_mode, 3U * range.triangle_count, 1U, first_range + i);
+      }
+    }
+
+    return;
+  }
+
   if (!occurrence.voxel_slices) {
-    constants.slice_plane = 0U;
-    draw(mode, 1U, 0U);
+    constants.draw_offset = 0U;
+    draw(mode, mesh.vertex_count, 1U, 0U);
     return;
   }
 
@@ -544,9 +629,10 @@ auto GGEMSVulkanGeometry::DrawOccurrence(
 
     constants.color = ToVulkanClearColor(batch.color);
     constants.color[3U] = alpha;
-    constants.slice_plane = batch.plane;
+    constants.draw_offset = batch.plane;
 
-    draw(draw_mode, batch.instance_count, batch.first_instance);
+    draw(draw_mode, mesh.vertex_count, batch.instance_count,
+         batch.first_instance);
   }
 }
 

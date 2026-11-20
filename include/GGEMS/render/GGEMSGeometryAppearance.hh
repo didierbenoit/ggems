@@ -46,11 +46,10 @@ enum class GGEMSGeometryDisplayMode : std::uint8_t {
   /*! \brief Omits this occurrence without hiding its physical children. */
   None,
 
-  /*! \brief Draws the edges of the shared procedural triangles. */
+  /*! \brief Draws the edges of the displayed triangles. */
   Wireframe,
 
-  /*! \brief Fills the shared procedural triangles opaquely, except for World.
-   */
+  /*! \brief Fills the displayed triangles. */
   Solid,
 };
 
@@ -77,11 +76,21 @@ ResolveGeometryDisplayMode(GGEMSGeometryOccurrence const &occurrence,
   -> GGEMSGeometryDisplayMode;
 
 /*!
- * \brief Applies a whole-grid mode over a retained independent mapping mode.
- * \param[in] occurrence_mode Current whole-grid visibility and topology.
- * \param[in] mapping_mode Current mode of the exact original mapping row.
- * \return None if either is hidden; whole-grid Wireframe forces visible edges;
- * Solid preserves the mapping's own topology.
+ * \brief Combines an occurrence mode with its voxel mapping or OBJ object mode.
+ * \param[in] occurrence_mode Whole-occurrence visibility and topology.
+ * \param[in] child_mode Independently retained child row mode.
+ * \return None if either is hidden, otherwise the less solid of the two modes.
+ */
+[[nodiscard]] auto
+ResolveChildDisplayMode(GGEMSGeometryDisplayMode occurrence_mode,
+                        GGEMSGeometryDisplayMode child_mode) noexcept
+  -> GGEMSGeometryDisplayMode;
+
+/*!
+ * \brief Applies a whole-grid mode over one independent mapping mode.
+ * \param[in] occurrence_mode Whole-grid visibility and topology.
+ * \param[in] mapping_mode Original mapping row's display mode.
+ * \return Effective mapping mode.
  */
 [[nodiscard]] auto
 ResolveVoxelDisplayMode(GGEMSGeometryDisplayMode occurrence_mode,
@@ -152,6 +161,25 @@ public:
                     GGEMSGeometryDisplayMode mode) noexcept -> void;
 
   /*!
+   * \brief Reads a retained voxel mapping or OBJ range mode.
+   * \param[in] volume_id Physical occurrence in the reset scene.
+   * \param[in] index Snapshot-local mapping or mesh range index.
+   * \return Display choice independent of the parent mode.
+   */
+  [[nodiscard]] auto GetChildMode(std::uint32_t volume_id,
+                                  std::uint32_t index) const noexcept
+    -> GGEMSGeometryDisplayMode;
+
+  /*!
+   * \brief Changes a child display choice in the current snapshot.
+   * \param[in] volume_id Physical occurrence in the reset scene.
+   * \param[in] index Snapshot-local mapping or mesh range index.
+   * \param[in] mode Display override independent of the parent's mode.
+   */
+  auto SetChildMode(std::uint32_t volume_id, std::uint32_t index,
+                    GGEMSGeometryDisplayMode mode) noexcept -> void;
+
+  /*!
    * \brief Resolves the current mode of one exact voxel mapping row.
    * \param[in] volume_id Physical voxel occurrence in the reset scene.
    * \param[in] mapping_index Index in its immutable voxel_slices.mappings.
@@ -178,8 +206,8 @@ private:
   /*! \brief None/Wireframe/Solid member counts indexed by scene group. */
   std::vector<std::array<std::size_t, 3>> group_counts_;
 
-  /*! \brief Mapping modes indexed first by VolumeID, then original row. */
-  std::vector<std::vector<GGEMSGeometryDisplayMode>> mapping_modes_;
+  /*! \brief Modes by VolumeID and voxel mapping or mesh range index. */
+  std::vector<std::vector<GGEMSGeometryDisplayMode>> child_modes_;
 };
 
 } // namespace ggems::render

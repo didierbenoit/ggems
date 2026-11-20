@@ -21,10 +21,10 @@
 
 /*!
  * \file
- * \brief Generates procedural analytic solids and instanced voxel slice Boxes.
+ * \brief Draws analytic solids, voxel slice Boxes, and indexed OBJ/STL meshes.
  *
- * Read-only shape parameters are shared by equal physical shapes. PolygonMode
- * selects filled triangles or their edges; no host position/normal mesh exists.
+ * Read-only geometry is shared across occurrences. PolygonMode selects filled
+ * triangles or their edges. Indexed mesh vertices retain their import order.
  * Curved shapes use 64 azimuth sectors and 32 latitude bands for visualization.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
@@ -33,7 +33,8 @@
 
 /*! \brief Matches the 64-byte immutable GGEMSGeometryShape descriptor. */
 struct GeometryShape {
-  /*! \brief Kind and analytic topology, or kind and voxel X/Y/Z counts. */
+  /*! \brief Kind and family-specific topology, grid counts, or mesh buffer
+   * offsets. */
   uint4 header;
 
   /*! \brief Analytic parameters, or full voxel spacing in parameters[0].xyz. */
@@ -87,8 +88,8 @@ struct GeometryPushConstants {
   /*! \brief Row 2 rotating an outward local normal into World. */
   float3 normal_to_world_row_2;
 
-  /*! \brief Central voxel slice: zero for XY, one for XZ, two for YZ. */
-  uint slice_plane;
+  /*! \brief Voxel slice plane or first triangle of the source mesh range. */
+  uint draw_offset;
 };
 
 /*! \brief One consistently outward triangle in occurrence-local meters. */
@@ -125,6 +126,11 @@ StructuredBuffer<GeometryProfile> g_geometry_profiles;
  */
 [[vk::binding(2, 0)]]
 StructuredBuffer<uint> g_voxel_cells;
+
+/*! \brief Packed range translations (m), source vertices (pm) and triangle
+ * indices. */
+[[vk::binding(3, 0)]]
+ByteAddressBuffer g_mesh_data;
 
 /*! \brief Borrows transforms, color, and shared shape identity for one draw. */
 [[vk::push_constant]]
@@ -386,9 +392,9 @@ GeometryTriangle GeometryPolyhedraTriangle(GeometryShape shape, uint triangle) {
 }
 
 /*!
- * \brief Selects an analytic solid or the Box topology shared by voxel cells.
- * \param[in] shape Immutable procedural descriptor.
- * \param[in] triangle Index bounded by the host's derived draw count.
+ * \brief Reads an indexed mesh face or generates a procedural surface triangle.
+ * \param[in] shape Shared topology parameters or mesh byte offsets.
+ * \param[in] triangle Zero-based triangle index in the current draw.
  * \return One occurrence-local outward triangle.
  */
 GeometryTriangle GeometryShapeTriangle(GeometryShape shape, uint triangle) {
@@ -397,6 +403,18 @@ GeometryTriangle GeometryShapeTriangle(GeometryShape shape, uint triangle) {
     shape.header.x = 0;
     shape.parameters[0].xyz *= 0.5;
     return GeometryPlanarTriangle(shape, triangle);
+  }
+  if (kind == 9) {
+    uint3 indices = g_mesh_data.Load3(shape.header.z +
+                                      12 * (g_geometry.draw_offset + triangle));
+    GeometryTriangle face;
+    face.first =
+      asfloat(g_mesh_data.Load3(shape.header.y + 12 * indices.x)) * 1.0e-12;
+    face.second =
+      asfloat(g_mesh_data.Load3(shape.header.y + 12 * indices.y)) * 1.0e-12;
+    face.third =
+      asfloat(g_mesh_data.Load3(shape.header.y + 12 * indices.z)) * 1.0e-12;
+    return face;
   }
   if (kind == 0 || kind == 6 || kind == 7) {
     return GeometryPlanarTriangle(shape, triangle);
@@ -419,9 +437,9 @@ GeometryTriangle GeometryShapeTriangle(GeometryShape shape, uint triangle) {
 float3 GeometryVoxelCellCenter(GeometryShape shape, uint instance_id) {
   uint3 dimensions = shape.header.yzw;
   uint3 cell = dimensions / 2;
-  if (g_geometry.slice_plane == 0) {
+  if (g_geometry.draw_offset == 0) {
     cell.xy = uint2(instance_id % dimensions.x, instance_id / dimensions.x);
-  } else if (g_geometry.slice_plane == 1) {
+  } else if (g_geometry.draw_offset == 1) {
     cell.xz = uint2(instance_id % dimensions.x, instance_id / dimensions.x);
   } else {
     cell.yz = uint2(instance_id % dimensions.y, instance_id / dimensions.y);
@@ -431,10 +449,9 @@ float3 GeometryVoxelCellCenter(GeometryShape shape, uint instance_id) {
 }
 
 /*!
- * \brief Generates one procedural vertex and applies the occurrence transform.
- * \param[in] vertex_id Vertex index within the shared procedural topology.
- * \param[in] instance_id Index in the visible central-slice stream; zero for
- * analytics.
+ * \brief Projects one posed triangle vertex into clip space.
+ * \param[in] vertex_id Zero-based triangle corner within the draw.
+ * \param[in] instance_id Central-slice cell or mesh translation index.
  * \return Clip position, authored RGB with optional light, and supplied alpha.
  */
 [shader("vertex")] GeometryVertexOutput
@@ -448,6 +465,9 @@ VertexMain(uint vertex_id /*! \cond */ : SV_VertexID /*! \endcond */,
                              : (corner == 1 ? triangle.second : triangle.third);
   if (shape.header.x == 8) {
     point += GeometryVoxelCellCenter(shape, g_voxel_cells[instance_id]);
+  } else if (shape.header.x == 9) {
+    // Translation cancels in triangle edge differences used for lighting.
+    point += asfloat(g_mesh_data.Load3(12 * instance_id));
   }
   float4 position = float4(point, 1.0);
   GeometryVertexOutput output;

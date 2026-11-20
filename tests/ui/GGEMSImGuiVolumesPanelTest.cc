@@ -30,6 +30,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
@@ -43,6 +44,7 @@
 #include "GGEMSVoxelizedTestFixture.hh"
 
 #include "GGEMS/geometry/GGEMSBox.hh"
+#include "GGEMS/geometry/GGEMSMesh.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSVolumeAuthoring.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -181,6 +183,7 @@ protected:
     scene_ = std::move(scene);
     loaded_ = true;
     workbench_.selected_volume_id.reset();
+    workbench_.selected_mesh_component.reset();
     workbench_.selected_geometry_group.reset();
     workbench_.geometry_appearance.Reset(scene_);
     ++workbench_.geometry_presentation_revision;
@@ -803,6 +806,49 @@ TEST_F(GGEMSImGuiVolumes, ReplacementResetsModesSelectionAndExpansionScope) {
   EXPECT_LT(Child("##volume_tree")->ContentSize.y,
             8.0F * (ImGui::GetFrameHeight() +
                     (2.0F * ImGui::GetStyle().CellPadding.y)));
+}
+
+TEST_F(GGEMSImGuiVolumes, DuplicateObjRowsSelectFrameAndHideIndependently) {
+  auto const path = std::filesystem::path{GGEMS_TEST_PROBE_ROOT}.parent_path() /
+                    "navigation/meshes/three_slabs.obj";
+  GGEMSMesh mesh{"Collimator", path, "mm"};
+  mesh.SetPosition(MakePositionPM(0, 30'000'000'000LL, 0))
+    .SetRotation(0_deg, 0_deg, 90_deg)
+    .SetMaterial(BuildBuiltInMaterial("Tungsten"));
+  auto world = MakeWorld();
+  world.AddVolume(mesh);
+  Load(render::BuildGeometryScene(world));
+  Click(Row(2, 2, true));
+  PauseClicks();
+  Click(Row(4, 3));
+  ASSERT_EQ(workbench_.selected_volume_id, 1U);
+  // The anonymous first range has no row. Source object 1 is range 2.
+  ASSERT_EQ(workbench_.selected_mesh_component, 2U);
+  auto const &object = scene_.occurrences[1].indexed_mesh->ranges[2];
+  auto expected = workbench_.camera;
+  expected.FrameBounds(object.minimum_m, object.maximum_m);
+  Click(Row(4, 3));
+  EXPECT_EQ(workbench_.camera.GetDiagnostics().target_m,
+            expected.GetDiagnostics().target_m);
+  Frame(true);
+  EXPECT_NE(text_.find("slab [0]"), std::string::npos);
+  EXPECT_NE(text_.find("slab [1]"), std::string::npos);
+  EXPECT_NE(text_.find("Source index (zero-based): 1"), std::string::npos);
+  EXPECT_NE(text_.find("Parent mesh: Collimator"), std::string::npos);
+  EXPECT_NE(text_.find("Triangles: 12"), std::string::npos);
+  EXPECT_NE(text_.find("Name: Tungsten"), std::string::npos);
+  ChangeMode(3, Mode::None);
+  auto const &appearance = workbench_.geometry_appearance;
+  EXPECT_EQ(appearance.GetChildMode(1U, 1U), Mode::None);
+  EXPECT_EQ(appearance.GetChildMode(1U, 2U), Mode::Solid);
+  EXPECT_EQ(workbench_.selected_mesh_component, 2U);
+  Click(Row(2, 2));
+  EXPECT_EQ(workbench_.selected_volume_id, 1U);
+  EXPECT_FALSE(workbench_.selected_mesh_component);
+  Click(Row(3, 3));
+  Click(Row(1, 1));
+  EXPECT_EQ(workbench_.selected_geometry_group, 0U);
+  EXPECT_FALSE(workbench_.selected_mesh_component);
 }
 
 } // namespace

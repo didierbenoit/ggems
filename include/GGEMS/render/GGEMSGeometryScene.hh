@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines owned procedural presentation data derived from a real World.
+ * \brief Defines owned presentation data derived from a real World.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSColorTypes.hh"
@@ -43,11 +44,12 @@
 
 namespace ggems::geometry {
 class GGEMSWorld;
-}
+struct GGEMSMeshData;
+} // namespace ggems::geometry
 
 namespace ggems::render {
 
-/*! \brief Identifies the procedural family in the host and Slang ABI. */
+/*! \brief Identifies the geometry family in the host and Slang ABI. */
 enum class GGEMSGeometryKind : std::uint32_t {
   /*! \brief Centered rectangular solid. */
   Box = 0U,
@@ -75,6 +77,9 @@ enum class GGEMSGeometryKind : std::uint32_t {
 
   /*! \brief Instanced Box cells of three central regular-grid slices. */
   Voxelized = 8U,
+
+  /*! \brief Indexed OBJ or STL geometry. */
+  Mesh = 9U,
 };
 
 /*!
@@ -88,8 +93,8 @@ enum class GGEMSGeometryKind : std::uint32_t {
  * parameters[1].xyz for each end's half height and two half widths,
  * parameters[0].w for half length, and parameters[2] for the two skews,
  * inclination theta, and inclination phi. Voxelized uses header.yzw for grid
- * dimensions and parameters[0].xyz for full cell spacing. Unused components
- * are zero.
+ * dimensions and parameters[0].xyz for full cell spacing. Mesh uses header.y
+ * for its shared source asset index before Vulkan packs the buffer offsets.
  */
 struct GGEMSGeometryShape {
   /*! \brief Family and analytic topology, or family and voxel X/Y/Z counts. */
@@ -119,7 +124,7 @@ struct GGEMSGeometryMesh {
   /*! \brief Immutable parameters uploaded independently of the draw count. */
   GGEMSGeometryShape shape;
 
-  /*! \brief Number of generated triangle vertices, always divisible by three.*/
+  /*! \brief Number of triangle vertices in a complete draw. */
   std::uint32_t vertex_count;
 };
 
@@ -202,6 +207,40 @@ struct GGEMSGeometryVoxelSlices {
   std::vector<GGEMSGeometryVoxelMapping> mappings{};
 };
 
+/*! \brief Describes one nonempty drawable range in the source triangle array.
+ */
+struct GGEMSGeometryMeshRange {
+  /*! \brief First source triangle, independent of occurrence pose. */
+  std::uint32_t first_triangle;
+
+  /*! \brief Number of consecutive source triangles in this range. */
+  std::uint32_t triangle_count;
+
+  /*! \brief Original OBJ declaration index, absent for anonymous triangles. */
+  std::optional<std::uint32_t> object_index;
+
+  /*! \brief Absolute component translation in local meters. */
+  std::array<double, 3> translation_m;
+
+  /*! \brief Conservative posed minimum in World meters. */
+  std::array<double, 3> minimum_m;
+
+  /*! \brief Conservative posed maximum in World meters. */
+  std::array<double, 3> maximum_m;
+};
+
+/*! \brief Captures the drawable ranges of one indexed mesh occurrence. */
+struct GGEMSGeometryIndexedMesh {
+  /*! \brief Index of the immutable import in the scene's mesh assets. */
+  std::uint32_t asset_index;
+
+  /*! \brief All drawable triangle ranges in source order. */
+  std::vector<GGEMSGeometryMeshRange> ranges;
+
+  /*! \brief True when at least one range belongs to a named OBJ object. */
+  bool has_objects{};
+};
+
 /*!
  * \brief Retains one physical identity, placement, and owned inspection data.
  */
@@ -260,6 +299,9 @@ struct GGEMSGeometryOccurrence {
    */
   std::optional<GGEMSGeometryVoxelSlices> voxel_slices{std::nullopt};
 
+  /*! \brief Per-occurrence indexed mesh ranges, present for OBJ and STL. */
+  std::optional<GGEMSGeometryIndexedMesh> indexed_mesh{};
+
   /*!
    * \brief Exact host-authored repeater instance, or zero for an ordinary root.
    *
@@ -304,7 +346,7 @@ struct GGEMSGeometryGroup {
   /*! \brief True for a named analytic World child controlling its subtree. */
   bool subtree{false};
 
-  /*! \brief All physical roots are analytic leaves with uniform row height. */
+  /*! \brief All physical root rows have uniform height with no disclosures. */
   bool physical_leaves{false};
 
   /*! \brief Physical IDs changed by one group command, prepared once. */
@@ -329,7 +371,7 @@ struct GGEMSGeometryRootEntry {
   std::vector<std::uint32_t> volumes;
 };
 
-/*! \brief Owns procedural display data and occurrences, including World. */
+/*! \brief Owns display data and physical occurrences, including World. */
 struct GGEMSGeometryScene {
   /*! \brief Shared authored polygon profiles; no CPU tessellation is stored. */
   std::vector<GGEMSGeometryProfile> profiles;
@@ -351,13 +393,16 @@ struct GGEMSGeometryScene {
 
   /*! \brief Cached named and unnamed roots in physical insertion order. */
   std::vector<GGEMSGeometryRootEntry> root_entries{};
+
+  /*! \brief Retains each source import once across independent placements. */
+  std::vector<std::shared_ptr<geometry::GGEMSMeshData const>> mesh_assets{};
 };
 
 /*!
- * \brief Packs independent procedural display data from a validated World.
+ * \brief Captures display data from the current host World.
  *
- * Slang generates all visual triangles and normals from these parameters;
- * wireframe and solid modes share that topology. Equal shape parameters share
+ * Slang builds procedural triangles and reads indexed mesh triangles.
+ * Wireframe and solid modes share that topology. Equal shape parameters share
  * descriptors independently of pose, Material, or color. Inspection metadata
  * and model colors are owned independently of World. Bounds use conservative
  * analytic envelopes under the render transform, without tessellation or a
@@ -368,10 +413,12 @@ struct GGEMSGeometryScene {
  * exact mapping rows. Initially hidden cells remain available for later viewer
  * edits. No full 3D labels or per-cell meshes are copied.
  * Their full physical outer bounds, rather than slice bounds, drive framing.
- * \param[in] world Validated Run-owned World, borrowed only during this call.
+ * Indexed meshes retain their immutable source triangles and capture current
+ * object translations and posed bounds independently for each occurrence.
+ * \param[in] world Current host World, borrowed only during this call.
  * \return Owned presentation data with unchanged physical IDs and parent links.
- * \throws core::GGEMSRecoverable If voxel slices exceed the Vulkan instance
- * count or visible-cell index domain.
+ * \throws core::GGEMSRecoverable If a voxel or mesh draw exceeds Vulkan's
+ * 32-bit draw domain.
  */
 [[nodiscard]] auto BuildGeometryScene(geometry::GGEMSWorld const &world)
   -> GGEMSGeometryScene;

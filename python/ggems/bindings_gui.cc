@@ -77,7 +77,9 @@ void BindGui(py::module_ &module) {
          py::arg("run"))
 
     .def("submit_run_geometry",
-         &ggems::ui::GGEMSGuiApplication::SubmitRunGeometry, py::arg("run"))
+         &ggems::ui::GGEMSGuiApplication::SubmitRunGeometry, py::arg("run"),
+         "Display a snapshot of the Run's current host World. Submit again "
+         "after a geometry update to display the new pose.")
 
     .def(
       "submit_particle_traces_from_observer",

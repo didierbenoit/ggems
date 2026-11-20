@@ -484,6 +484,7 @@ auto GGEMSGuiApplication::RenderFrame(bool framebuffer_resized) -> void {
       .cartesian_grid =
         displayed_geometry_scene_ ? &workbench_.cartesian_grid : nullptr,
       .selected_volume_id = workbench_.selected_volume_id,
+      .selected_mesh_component = workbench_.selected_mesh_component,
       .geometry_appearance = workbench_.geometry_appearance,
     };
 
@@ -560,6 +561,7 @@ auto GGEMSGuiApplication::ApplyPendingScene() -> void {
     scene_renderer_->SetGeometryScene(*geometry);
     displayed_geometry_scene_ = std::move(*geometry);
     workbench_.selected_volume_id.reset();
+    workbench_.selected_mesh_component.reset();
     workbench_.selected_geometry_group.reset();
     ++workbench_.geometry_presentation_revision;
 

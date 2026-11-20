@@ -109,6 +109,9 @@ struct GGEMSWorkbenchState {
   /*! \brief Selected physical VolumeID, cleared when the snapshot changes. */
   std::optional<std::uint32_t> selected_volume_id;
 
+  /*! \brief Selected drawable OBJ range within the selected occurrence. */
+  std::optional<std::uint32_t> selected_mesh_component;
+
   /*! \brief Viewer-only named group index, mutually exclusive with VolumeID. */
   std::optional<std::uint32_t> selected_geometry_group;
 

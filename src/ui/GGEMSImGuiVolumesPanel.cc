@@ -41,10 +41,12 @@
 #include <imgui.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiVolumesPanel.hh"
+#include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/render/GGEMSGeometryScene.hh"
 #include "GGEMS/render/GGEMSGeometryAppearance.hh"
+#include "GGEMS/geometry/GGEMSMesh.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
@@ -163,23 +165,88 @@ struct VolumeTree {
   /*! \brief Immutable presentation metadata and prepared memberships. */
   ggems::render::GGEMSGeometryScene const &scene;
 
-  /*! \brief Viewer-owned modes and cached effective group counts. */
-  ggems::render::GGEMSGeometryAppearanceState &appearance;
+  /*! \brief Viewer-owned selection, independent modes and framing camera. */
+  ggems::ui::detail::GGEMSWorkbenchState &workbench;
 
-  /*! \brief Physical selection shared with the existing inspector. */
-  std::optional<std::uint32_t> &selected_volume_id;
+  /*!
+   * \brief Selects the clicked row and frames its posed bounds on double click.
+   * \param[in] occurrence Parent physical identity and World bounds.
+   * \param[in] component Optional drawable range in this mesh occurrence.
+   */
+  auto Select(ggems::render::GGEMSGeometryOccurrence const &occurrence,
+              std::optional<std::uint32_t> component = std::nullopt) -> void {
+    if (!ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+      return;
+    }
 
-  /*! \brief Viewer-only named group selection, independent of VolumeID. */
-  std::optional<std::uint32_t> &selected_geometry_group;
+    workbench.selected_volume_id = occurrence.volume_id;
+    workbench.selected_mesh_component = component;
+    workbench.selected_geometry_group.reset();
 
-  /*! \brief Double-click request for the caller's camera. */
-  std::optional<std::uint32_t> &focus;
+    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+      if (component) {
+        auto const &range = occurrence.indexed_mesh->ranges[*component];
+        workbench.camera.FrameBounds(range.minimum_m, range.maximum_m);
+      } else {
+        workbench.camera.FrameBounds(occurrence.minimum_m,
+                                     occurrence.maximum_m);
+      }
+    }
+  }
+
+  /*!
+   * \brief Displays named OBJ ranges under their single physical occurrence.
+   * \param[in] occurrence Mesh with drawable named objects.
+   */
+  auto Objects(ggems::render::GGEMSGeometryOccurrence const &occurrence)
+    -> void {
+    auto const &mesh = *occurrence.indexed_mesh;
+    auto const &objects = scene.mesh_assets[mesh.asset_index]->components;
+
+    for (std::uint32_t index = 0; index < mesh.ranges.size(); ++index) {
+      auto const &range = mesh.ranges[index];
+
+      if (!range.object_index) {
+        continue;
+      }
+
+      ImGui::PushID(static_cast<int>(index));
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+
+      auto const position = ImGui::GetCursorScreenPos();
+      bool const selected =
+        workbench.selected_volume_id == occurrence.volume_id &&
+        workbench.selected_mesh_component == index;
+
+      ImGui::Selectable("##object", selected,
+                        ImGuiSelectableFlags_AllowDoubleClick,
+                        ImVec2{0.0F, ImGui::GetFrameHeight()});
+
+      Select(occurrence, index);
+
+      ImGui::SetCursorScreenPos(
+        ImVec2{position.x, position.y + ImGui::GetStyle().FramePadding.y});
+
+      ImGui::Text("%s [%u]", objects[*range.object_index].name.c_str(),
+                  *range.object_index);
+      auto &appearance = workbench.geometry_appearance;
+
+      if (auto const mode = BuildModeButtons(
+            appearance.GetChildMode(occurrence.volume_id, index))) {
+        appearance.SetChildMode(occurrence.volume_id, index, *mode);
+      }
+
+      ImGui::PopID();
+    }
+  }
 
   /*!
    * \brief Displays independent original mapping entries under a voxel row.
    * \param[in] volume_id Physical voxel occurrence whose mappings are edited.
    */
   auto Mappings(std::uint32_t volume_id) -> void {
+    auto &appearance = workbench.geometry_appearance;
     auto const &mappings = scene.occurrences[volume_id].voxel_slices->mappings;
     ImGui::PushID("##mappings");
 
@@ -225,25 +292,24 @@ struct VolumeTree {
     ImGui::PushID("##physical");
     ImGui::PushID(static_cast<int>(volume_id));
 
-    bool const leaf =
-      !children || (occurrence.children.empty() && !occurrence.voxel_slices);
+    bool const objects =
+      occurrence.indexed_mesh && occurrence.indexed_mesh->has_objects;
+    bool const leaf = !children || (occurrence.children.empty() &&
+                                    !occurrence.voxel_slices && !objects);
     bool const opened = BeginTreeRow(leaf, volume_id == 0U && children);
     auto const label =
       volume_id == 0U ? occurrence.shape_name
                       : std::format("{} #{}", occurrence.shape_name, volume_id);
 
-    ImGui::Selectable(label.c_str(), selected_volume_id == volume_id,
+    ImGui::Selectable(label.c_str(),
+                      workbench.selected_volume_id == volume_id &&
+                        !workbench.selected_mesh_component,
                       ImGuiSelectableFlags_AllowDoubleClick);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-      selected_volume_id = volume_id;
-      selected_geometry_group.reset();
-      if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-        focus = volume_id;
-      }
-    }
+    Select(occurrence);
 
     if (controls && !occurrence.voxel_slices) {
+      auto &appearance = workbench.geometry_appearance;
       if (auto const mode = BuildModeButtons(
             appearance.GetOccurrenceMode(scene, volume_id), volume_id == 0U)) {
         appearance.SetOccurrenceMode(scene, volume_id, *mode);
@@ -258,6 +324,8 @@ struct VolumeTree {
         Roots();
       } else if (occurrence.voxel_slices) {
         Mappings(volume_id);
+      } else if (objects) {
+        Objects(occurrence);
       } else {
         for (auto const &branch : occurrence.child_branches) {
           Branch(branch);
@@ -314,14 +382,18 @@ struct VolumeTree {
    */
   auto Group(std::uint32_t group_index) -> void {
     auto const &group = scene.groups[group_index];
+    auto &appearance = workbench.geometry_appearance;
 
     ImGui::PushID("##named");
     ImGui::PushID(static_cast<int>(group_index));
 
+    auto const &first = scene.occurrences[group.physical_roots.front()];
+
     bool const expandable =
-      group.subtree ||
-      scene.occurrences[group.physical_roots.front()].voxel_slices.has_value();
+      group.subtree || first.voxel_slices || first.indexed_mesh;
+
     bool opened = false;
+
     if (expandable) {
       opened = BeginTreeRow(false, true);
     } else {
@@ -336,10 +408,11 @@ struct VolumeTree {
                                    group.members.size(), mode ? "" : " Mixed");
     auto const position = ImGui::GetCursorScreenPos();
     if (ImGui::Selectable(
-          "##group_selection", selected_geometry_group == group_index,
+          "##group_selection", workbench.selected_geometry_group == group_index,
           ImGuiSelectableFlags_None, ImVec2{0.0F, ImGui::GetFrameHeight()})) {
-      selected_geometry_group = group_index;
-      selected_volume_id.reset();
+      workbench.selected_geometry_group = group_index;
+      workbench.selected_volume_id.reset();
+      workbench.selected_mesh_component.reset();
     }
     ImGui::SetItemTooltip(group.subtree
                             ? "Entire analytic subtree: %zu occurrences."
@@ -404,6 +477,7 @@ struct VolumeTree {
   /*! \brief Displays the actual World name without adding a project node. */
   auto Build() -> void {
     auto const &world = scene.occurrences.front();
+    auto &appearance = workbench.geometry_appearance;
 
     if (world.name.empty()) {
       Physical(0U);
@@ -439,14 +513,27 @@ struct VolumeTree {
 // =============================================================================
 
 /*!
- * \brief Displays captured authored dimensions, material, and composed pose.
- *
+ * \brief Displays three meter coordinates with the viewer's length units.
+ * \param[in] coordinates Signed X, Y and Z values in meters.
+ */
+auto BuildCoordinates(std::array<double, 3> const &coordinates) -> void {
+  for (std::size_t axis = 0U; axis < coordinates.size(); ++axis) {
+    auto const position =
+      ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(
+        coordinates[axis], "m");
+    std::string const text = position
+                               ? ggems::units::HumanReadable(*position, 3)
+                               : "N/A (outside unit range)";
+    ImGui::Text("%c: %s", static_cast<int>('X' + axis), text.c_str());
+  }
+}
+
+/*!
+ * \brief Displays captured authored dimensions and composed pose.
  * \param[in] occurrence Selected physical occurrence from the current scene.
  */
 auto BuildVolumeMetadata(
   ggems::render::GGEMSGeometryOccurrence const &occurrence) -> void {
-  ImGui::PushTextWrapPos(ImGui::GetCursorPosX() +
-                         ImGui::GetContentRegionAvail().x);
 
   ImGui::Text("VolumeID: %u", occurrence.volume_id);
 
@@ -470,15 +557,7 @@ auto BuildVolumeMetadata(
 
   ImGui::SeparatorText("World position");
 
-  for (std::size_t axis = 0U; axis < 3U; ++axis) {
-    auto const position =
-      ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(
-        occurrence.position_m[axis], "m");
-    std::string const text = position
-                               ? ggems::units::HumanReadable(*position, 3)
-                               : "N/A (outside unit range)";
-    ImGui::Text("%c: %s", static_cast<int>('X' + axis), text.c_str());
-  }
+  BuildCoordinates(occurrence.position_m);
 
   ImGui::SeparatorText("World orientation");
   ImGui::TextDisabled("Local axes in World coordinates");
@@ -488,9 +567,52 @@ auto BuildVolumeMetadata(
                 occurrence.orientation[axis], occurrence.orientation[3U + axis],
                 occurrence.orientation[6U + axis]);
   }
+}
 
+/*!
+ * \brief Displays a source OBJ object's identity, motion, and posed bounds.
+ * \param[in] scene Current snapshot owning the indexed source asset.
+ * \param[in] occurrence Parent mesh occurrence.
+ * \param[in] index Selected drawable range in the occurrence.
+ */
+auto BuildObjectMetadata(
+  ggems::render::GGEMSGeometryScene const &scene,
+  ggems::render::GGEMSGeometryOccurrence const &occurrence, std::uint32_t index)
+  -> void {
+  auto const &mesh = *occurrence.indexed_mesh;
+  auto const &range = mesh.ranges[index];
+  auto const &source =
+    scene.mesh_assets[mesh.asset_index]->components[*range.object_index];
+
+  ImGui::Text("OBJ object: %s", source.name.c_str());
+  ImGui::Text("Source index (zero-based): %u", *range.object_index);
+  ImGui::Text("Parent VolumeID: %u", occurrence.volume_id);
+
+  if (!occurrence.name.empty()) {
+    ImGui::Text("Parent mesh: %s", occurrence.name.c_str());
+  }
+
+  ImGui::Text("Triangles: %u", range.triangle_count);
+  ImGui::SeparatorText("Mesh-local translation");
+
+  BuildCoordinates(range.translation_m);
+
+  ImGui::SeparatorText("World bounds minimum");
+
+  BuildCoordinates(range.minimum_m);
+
+  ImGui::SeparatorText("World bounds maximum");
+
+  BuildCoordinates(range.maximum_m);
+}
+
+/*!
+ * \brief Displays the selected occurrence's homogeneous material or palette.
+ * \param[in] occurrence Physical occurrence providing the inspected material.
+ */
+auto BuildMaterialMetadata(
+  ggems::render::GGEMSGeometryOccurrence const &occurrence) -> void {
   ImGui::SeparatorText("Material");
-
   if (occurrence.voxel_slices) {
     ImGui::Text("Material palette: %zu entries",
                 occurrence.voxel_slices->palette_size);
@@ -504,7 +626,6 @@ auto BuildVolumeMetadata(
   }
 
   ImGui::TextWrapped("Production Cuts: not available in this scene snapshot");
-  ImGui::PopTextWrapPos();
 }
 
 } // namespace
@@ -513,16 +634,10 @@ namespace ggems::ui::detail {
 
 // =============================================================================
 // =============================================================================
-auto BuildVolumesPanel(bool &show_window,
-                       std::optional<std::uint32_t> &selected_volume_id,
-                       std::optional<std::uint32_t> &selected_geometry_group,
-                       render::GGEMSGeometryScene const *scene,
-                       render::GGEMSGeometryAppearanceState &appearance,
-                       std::uint32_t presentation_revision)
-  -> std::optional<std::uint32_t> {
-  std::optional<std::uint32_t> focus;
 
-  if (ImGui::Begin(k_volumes_window_name, &show_window)) {
+auto BuildVolumesPanel(GGEMSWorkbenchState &workbench,
+                       render::GGEMSGeometryScene const *scene) -> void {
+  if (ImGui::Begin(k_volumes_window_name, &workbench.show_volumes_panel)) {
     float const available = std::max(1.0F, ImGui::GetContentRegionAvail().y);
     float const minimum =
       std::min(3.0F * ImGui::GetTextLineHeightWithSpacing(), 0.3F * available);
@@ -534,7 +649,8 @@ auto BuildVolumesPanel(bool &show_window,
     if (ImGui::BeginChild("##volume_tree", ImVec2{0.0F, 0.5F * available},
                           ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY)) {
       if (scene != nullptr && !scene->occurrences.empty()) {
-        ImGui::PushID(static_cast<int>(presentation_revision));
+        ImGui::PushID(
+          static_cast<int>(workbench.geometry_presentation_revision));
 
         auto const controls_width =
           ModeControlsWidth(scene->occurrences.size() == 1U);
@@ -549,13 +665,7 @@ auto BuildVolumesPanel(bool &show_window,
           ImGui::TableSetupColumn("Display", ImGuiTableColumnFlags_WidthFixed,
                                   controls_width);
 
-          VolumeTree tree{
-            .scene = *scene,
-            .appearance = appearance,
-            .selected_volume_id = selected_volume_id,
-            .selected_geometry_group = selected_geometry_group,
-            .focus = focus,
-          };
+          VolumeTree tree{.scene = *scene, .workbench = workbench};
 
           tree.Build();
           ImGui::EndTable();
@@ -571,33 +681,42 @@ auto BuildVolumesPanel(bool &show_window,
 
     if (ImGui::BeginChild("##volume_metadata", ImVec2{0.0F, 0.0F},
                           ImGuiChildFlags_Borders)) {
-      if (scene != nullptr && selected_geometry_group) {
-        auto const &group = scene->groups[*selected_geometry_group];
-        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() +
-                               ImGui::GetContentRegionAvail().x);
+      ImGui::PushTextWrapPos(ImGui::GetCursorPosX() +
+                             ImGui::GetContentRegionAvail().x);
+      if (scene != nullptr && workbench.selected_geometry_group) {
+        auto const &group = scene->groups[*workbench.selected_geometry_group];
         ImGui::TextUnformatted(group.name.c_str());
         ImGui::SeparatorText("Group properties");
+
         for (auto const &property : group.inspection) {
           ImGui::Text("%s: %s", property.name.c_str(), property.value.c_str());
         }
+
         ImGui::TextWrapped(
           "Production Cuts: not available in this scene snapshot");
-        ImGui::PopTextWrapPos();
-      } else if (scene != nullptr && selected_volume_id) {
-        auto const &occurrence = scene->occurrences[*selected_volume_id];
-        BuildVolumeMetadata(occurrence);
+      } else if (scene != nullptr && workbench.selected_volume_id) {
+        auto const &occurrence =
+          scene->occurrences[*workbench.selected_volume_id];
+        if (workbench.selected_mesh_component) {
+          BuildObjectMetadata(*scene, occurrence,
+                              *workbench.selected_mesh_component);
+        } else {
+          BuildVolumeMetadata(occurrence);
+        }
+        BuildMaterialMetadata(occurrence);
       } else {
-        ImGui::TextDisabled("Select a group or physical volume to inspect it.");
+        ImGui::TextDisabled(
+          "Select a group, volume or OBJ object to inspect it.");
         ImGui::TextWrapped(
-          "Double-click a row to center and frame that occurrence.");
+          "Double-click a geometry row to center and frame it.");
       }
+      ImGui::PopTextWrapPos();
     }
 
     ImGui::EndChild();
   }
 
   ImGui::End();
-  return focus;
 }
 
 } // namespace ggems::ui::detail

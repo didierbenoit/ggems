@@ -506,9 +506,9 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
   command_buffer.setViewport(0U, viewport);
   command_buffer.setScissor(0U, scissor);
 
-  geometry_.Record(command_buffer, parameters.world_to_clip,
-                   parameters.selected_volume_id,
-                   parameters.geometry_appearance, false);
+  geometry_.Record(
+    command_buffer, parameters.world_to_clip, parameters.selected_volume_id,
+    parameters.selected_mesh_component, parameters.geometry_appearance, false);
 
   auto const *scene = geometry_.GetScene();
   if (parameters.show_axes && scene != nullptr) {
@@ -519,9 +519,9 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
   particle_traces_.Record(command_buffer, parameters.world_to_clip,
                           parameters.trace_visibility);
 
-  geometry_.Record(command_buffer, parameters.world_to_clip,
-                   parameters.selected_volume_id,
-                   parameters.geometry_appearance, true);
+  geometry_.Record(
+    command_buffer, parameters.world_to_clip, parameters.selected_volume_id,
+    parameters.selected_mesh_component, parameters.geometry_appearance, true);
 
   if (parameters.cartesian_grid != nullptr && scene != nullptr) {
     cartesian_grid_.Record(command_buffer, parameters.world_to_clip,
